@@ -1,0 +1,25 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# build output
+.next/
+out/
+dist/
+.astro/
+.turbo/
+
+# env
+.env
+.env.local
+.env*.local
+!.env.example
+
+# misc
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+next-env.d.ts
+coverage/

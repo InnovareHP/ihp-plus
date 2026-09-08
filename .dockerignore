@@ -1,0 +1,17 @@
+**/node_modules
+**/.next
+**/.turbo
+**/.astro
+**/dist
+**/out
+**/coverage
+.git
+.gitignore
+**/.env
+**/.env.local
+**/*.log
+**/.DS_Store
+infra/data
+README.md
+**/AGENTS.md
+**/CLAUDE.md

@@ -1,0 +1,38 @@
+# Dev infra only — Postgres + Redis in Docker, apps run on the host via `pnpm dev`.
+# Bind-mounting node_modules into Linux containers on Windows is slow and breaks
+# native binaries, so apps stay on the host. Use compose.yml for a full container run.
+#   pnpm infra:up  then  pnpm dev
+#   web     -> http://localhost:3000/app
+#   landing -> http://localhost:4321
+
+name: ihp-plus-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ihp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_locally}
+      POSTGRES_DB: ${POSTGRES_DB:-ihp_plus}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-ihp} -d ${POSTGRES_DB:-ihp_plus}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-dev-data:/data
+
+volumes:
+  postgres-dev-data:
+  redis-dev-data:

@@ -1,0 +1,11 @@
+{
+  "name": "@ihp/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig/*": "./tsconfig/*",
+    "./tailwind/*": "./tailwind/*"
+  },
+  "files": ["tsconfig", "tailwind"]
+}
