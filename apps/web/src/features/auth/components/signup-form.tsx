@@ -24,12 +24,13 @@ export function SignupForm() {
     resolver: zodResolver(signupSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: { email: '', password: '', confirmPassword: '' },
   })
 
   async function onSubmit(values: SignupValues) {
     const { error } = await authClient.signUp.email({
-      name: values.name,
+      // signUp.email requires a name; onboarding replaces this with the real one.
+      name: values.email.split('@')[0] ?? values.email,
       email: values.email,
       password: values.password,
     })
@@ -52,16 +53,6 @@ export function SignupForm() {
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <Stack gap="md">
         <FormError message={errors.root?.message} title="Could not create your account" />
-
-        <TextInput
-          {...register('name')}
-          label="Full name"
-          autoComplete="name"
-          required
-          aria-required="true"
-          error={errors.name?.message}
-          errorProps={{ role: 'alert' }}
-        />
 
         <TextInput
           {...register('email')}

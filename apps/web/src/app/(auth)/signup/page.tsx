@@ -12,7 +12,7 @@ export default function SignupPage() {
           Create your account
         </Title>
         <Text size="sm" c="dimmed">
-          Sign up with an email and password, or continue with Outlook.
+          Start with an email and password, or continue with Outlook. Your details come next.
         </Text>
       </Stack>
       <SignupForm />

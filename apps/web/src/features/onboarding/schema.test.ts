@@ -15,7 +15,6 @@ const validEmployment = {
   department: 'Information Technology',
   employmentType: 'Full-time',
   startDate: '2026-01-05',
-  employeeId: '',
 }
 
 function personalError(overrides: Partial<typeof validPersonal>) {
@@ -75,26 +74,40 @@ describe('employmentStepSchema', () => {
   it('requires a start date', () => {
     expect(employmentError({ startDate: '' })).toBe('Your start date is required')
   })
-
-  it('rejects an employee ID with punctuation', () => {
-    expect(employmentError({ employeeId: 'IHP/42' })).toBe('Use letters, numbers and hyphens only')
-  })
 })
 
 describe('onboardingSchema', () => {
+  const complete = {
+    ...validPersonal,
+    ...validEmployment,
+    photoKey: 'users/u1/photo-abc.jpg',
+    confirmed: true,
+  }
+
+  it('accepts a complete profile', () => {
+    expect(onboardingSchema.safeParse(complete).success).toBe(true)
+  })
+
   it('refuses to submit until the confirmation box is ticked', () => {
-    const values = { ...validPersonal, ...validEmployment, confirmed: false }
-    const result = onboardingSchema.safeParse(values)
+    const result = onboardingSchema.safeParse({ ...complete, confirmed: false })
     expect(result.success).toBe(false)
-    expect(onboardingSchema.safeParse({ ...values, confirmed: true }).success).toBe(true)
+  })
+
+  it('refuses to submit without an uploaded photo', () => {
+    const result = onboardingSchema.safeParse({ ...complete, photoKey: '' })
+    expect(result.success).toBe(false)
+    expect(result.success ? undefined : result.error.issues[0]?.message).toBe(
+      'Add a photo to finish setup',
+    )
   })
 })
 
 describe('step metadata', () => {
   it('maps every field to exactly one step', () => {
-    const all = [0, 1, 2].flatMap((step) => stepFields(step))
+    const all = [0, 1, 2, 3].flatMap((step) => stepFields(step))
     expect(new Set(all).size).toBe(all.length)
     expect(stepFields(1)).toContain('startDate')
-    expect(stepFields(2)).toEqual(['confirmed'])
+    expect(stepFields(2)).toEqual(['photoKey'])
+    expect(stepFields(3)).toEqual(['confirmed'])
   })
 })

@@ -58,6 +58,15 @@ export default async function DashboardPage() {
           </Text>
         </SummaryCard>
 
+        <SummaryCard title="IHP company ID">
+          <Text size="sm" ff="monospace" fw={600}>
+            {profile.ihpId ?? 'Not issued'}
+          </Text>
+          <Text size="sm" c="dimmed">
+            Issued at setup and never reissued. Quote it when you contact People &amp; Culture.
+          </Text>
+        </SummaryCard>
+
         <SummaryCard title="Session">
           <Text size="sm">Expires {dateTime.format(new Date(session.expiresAt))}</Text>
           <Text size="sm" c="dimmed">

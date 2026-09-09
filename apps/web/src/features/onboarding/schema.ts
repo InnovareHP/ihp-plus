@@ -64,11 +64,11 @@ const employmentFields = {
     .trim()
     .min(1, 'Your start date is required')
     .refine((value) => value === '' || isRealDate(value), 'Enter a date as YYYY-MM-DD'),
-  employeeId: z
-    .string()
-    .trim()
-    .max(24, 'Employee ID must be 24 characters or fewer')
-    .regex(/^[A-Za-z0-9-]*$/, 'Use letters, numbers and hyphens only'),
+}
+
+// Holds the object key the upload action returned, never the file itself.
+const photoFields = {
+  photoKey: z.string().min(1, 'Add a photo to finish setup'),
 }
 
 const confirmFields = {
@@ -77,9 +77,11 @@ const confirmFields = {
 
 export const personalStepSchema = z.object(personalFields)
 export const employmentStepSchema = z.object(employmentFields)
+export const photoStepSchema = z.object(photoFields)
 export const onboardingSchema = z.object({
   ...personalFields,
   ...employmentFields,
+  ...photoFields,
   ...confirmFields,
 })
 
@@ -101,8 +103,9 @@ export const ONBOARDING_STEPS = [
   {
     label: 'Your role',
     description: 'Position and employment',
-    fields: ['jobTitle', 'department', 'employmentType', 'startDate', 'employeeId'],
+    fields: ['jobTitle', 'department', 'employmentType', 'startDate'],
   },
+  { label: 'Photo', description: 'For your company ID', fields: ['photoKey'] },
   { label: 'Review', description: 'Confirm and finish', fields: ['confirmed'] },
 ] as const satisfies readonly OnboardingStep[]
 

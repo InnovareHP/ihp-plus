@@ -11,9 +11,9 @@ export const loginSchema = z.object({
   rememberMe: z.boolean(),
 })
 
+// No name here: the onboarding stepper collects it, so signup asks for the minimum.
 export const signupSchema = z
   .object({
-    name: z.string().trim().min(1, 'Name is required'),
     email,
     password: z.string().min(MIN_PASSWORD, `Password must be at least ${MIN_PASSWORD} characters`),
     confirmPassword: z.string().min(1, 'Confirm your password'),

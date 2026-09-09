@@ -1,7 +1,8 @@
-import { Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Avatar, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { requireOnboarded } from '@/lib/auth-guard'
+import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 
 export const metadata: Metadata = { title: 'Settings' }
 
@@ -17,6 +18,8 @@ function date(value: Date | null) {
 
 export default async function SettingsPage() {
   const { user, profile } = await requireOnboarded()
+  const photoUrl =
+    profile.photoKey && isObjectStorageConfigured() ? await objectUrl(profile.photoKey) : undefined
 
   return (
     <Stack gap="lg">
@@ -28,6 +31,25 @@ export default async function SettingsPage() {
           The profile you completed at setup. Email People &amp; Culture to correct anything here.
         </Text>
       </Stack>
+
+      <Card withBorder radius="md" padding="lg">
+        <Group gap="lg" align="center" wrap="nowrap">
+          <Avatar src={photoUrl} alt="" size={72} radius="md" color="brand">
+            {initials(user.name)}
+          </Avatar>
+          <Stack gap={2}>
+            <Text size="sm" c="dimmed">
+              IHP company ID
+            </Text>
+            <Text size="xl" ff="monospace" fw={600}>
+              {profile.ihpId ?? 'Not issued'}
+            </Text>
+            <Text size="xs" c="dimmed">
+              This photo and ID are what your company ID card is printed from.
+            </Text>
+          </Stack>
+        </Group>
+      </Card>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
         <Card withBorder radius="md" padding="lg">
@@ -52,12 +74,20 @@ export default async function SettingsPage() {
             <Row label="Department" value={text(profile.department)} />
             <Row label="Employment type" value={text(profile.employmentType)} />
             <Row label="Start date" value={date(profile.startDate)} />
-            <Row label="Employee ID" value={text(profile.employeeId)} />
           </Stack>
         </Card>
       </SimpleGrid>
     </Stack>
   )
+}
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('')
 }
 
 function Row({ label, value }: { label: string; value: ReactNode }) {

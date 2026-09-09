@@ -12,6 +12,7 @@
     "db:generate": "prisma migrate dev --create-only",
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio",
+    "db:push": "prisma db push",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf src/generated .turbo tsconfig.tsbuildinfo"
   },

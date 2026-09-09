@@ -32,12 +32,15 @@ model User {
   jobTitle              String?
   department            String?
   employmentType        String?
-  employeeId            String?
   startDate             DateTime?
   onboardingCompletedAt DateTime?
 
+  photoKey String?
+  ihpId    String?
+
   @@unique([email])
   @@map("user")
+  @@unique([ihpId])
 }
 
 model Session {

@@ -23,7 +23,6 @@ vi.mock('@/lib/auth-client', () => ({
 }))
 
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText(/full name/i), 'Ada Lovelace')
   await user.type(screen.getByLabelText(/email address/i), 'ada@innovarehp.com')
   await user.type(screen.getByLabelText(/^password/i), 'correct-horse-battery')
   await user.type(screen.getByLabelText(/confirm password/i), 'correct-horse-battery')
@@ -35,7 +34,7 @@ describe('SignupForm', () => {
     mocks.signUpEmail.mockResolvedValue({ data: {}, error: null })
   })
 
-  it('creates the account without forwarding the confirmation field', async () => {
+  it('sends a provisional name derived from the address, since onboarding collects the real one', async () => {
     const user = userEvent.setup()
     render(<SignupForm />)
 
@@ -44,7 +43,7 @@ describe('SignupForm', () => {
 
     await waitFor(() =>
       expect(mocks.signUpEmail).toHaveBeenCalledWith({
-        name: 'Ada Lovelace',
+        name: 'ada',
         email: 'ada@innovarehp.com',
         password: 'correct-horse-battery',
       }),
@@ -66,7 +65,6 @@ describe('SignupForm', () => {
     const user = userEvent.setup()
     render(<SignupForm />)
 
-    await user.type(screen.getByLabelText(/full name/i), 'Ada Lovelace')
     await user.type(screen.getByLabelText(/email address/i), 'ada@innovarehp.com')
     await user.type(screen.getByLabelText(/^password/i), 'correct-horse-battery')
     await user.type(screen.getByLabelText(/confirm password/i), 'something-else-here')

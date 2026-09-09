@@ -49,7 +49,6 @@ export function ReviewStep({ form, email, onEdit }: ReviewStepProps) {
     { label: 'Department', value: text(values.department) },
     { label: 'Employment type', value: text(values.employmentType) },
     { label: 'Start date', value: formatDate(values.startDate) },
-    { label: 'Employee ID', value: text(values.employeeId) },
   ]
 
   return (

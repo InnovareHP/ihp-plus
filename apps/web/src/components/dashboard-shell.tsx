@@ -26,7 +26,7 @@ const NAV_ITEMS = [
 ] as const
 
 export interface DashboardShellProps {
-  user: { name: string; email: string; jobTitle?: string | null }
+  user: { name: string; email: string; jobTitle?: string | null; photoUrl?: string }
   children: ReactNode
 }
 
@@ -71,7 +71,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
               <Menu.Target>
                 <UnstyledButton aria-label={`Account menu for ${user.name}`}>
                   <Group gap="xs" wrap="nowrap">
-                    <Avatar color="brand" radius="xl" size={30}>
+                    <Avatar src={user.photoUrl} alt="" color="brand" radius="xl" size={30}>
                       {initials(user.name)}
                     </Avatar>
                     <Text size="sm" fw={500} visibleFrom="xs">
@@ -125,7 +125,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
             onClick={closeNav}
           >
             <Group gap="sm" wrap="nowrap">
-              <Avatar color="brand" radius="xl" size={34}>
+              <Avatar src={user.photoUrl} alt="" color="brand" radius="xl" size={34}>
                 {initials(user.name)}
               </Avatar>
               <Stack gap={0} miw={0}>

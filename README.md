@@ -20,10 +20,10 @@ infra/
 
 Single origin means no CORS and shared cookies between landing and app.
 
-| Path      | Served by            |
-| --------- | -------------------- |
-| `/`       | Astro landing        |
-| `/app/*`  | Next.js (incl. `_next`, `api`) |
+| Path     | Served by                      |
+| -------- | ------------------------------ |
+| `/`      | Astro landing                  |
+| `/app/*` | Next.js (incl. `_next`, `api`) |
 
 ## Prerequisites
 
@@ -37,14 +37,15 @@ containers on Windows is slow and breaks native binaries.
 ```bash
 cp .env.example .env   # then fill BETTER_AUTH_SECRET (>= 32 chars)
 pnpm install
-pnpm infra:up          # postgres + redis
+pnpm infra:up          # postgres + redis + minio (S3 for profile photos)
 pnpm db:migrate        # creates the Better Auth tables
 pnpm dev               # both apps via turbo
 ```
 
-Nothing reads `REDIS_URL` yet, so `pnpm infra:pg` (Postgres alone) is enough for
-day-to-day work. `pnpm infra:redis` starts Redis alone; `pnpm infra:pg:stop` /
-`pnpm infra:redis:stop` stop one without touching the other. Same compose file and
+Nothing reads `REDIS_URL` yet, so `pnpm infra:pg` plus `pnpm infra:s3` is enough for
+day-to-day work — Postgres for everything, MinIO for the onboarding photo upload.
+`pnpm infra:redis` starts Redis alone; `pnpm infra:pg:stop` /
+`pnpm infra:redis:stop` / `pnpm infra:s3:stop` stop one without touching the others. Same compose file and
 the same volumes either way — the scripts only pick which service comes up.
 
 `.env` at the repo root is the only env file. Turbo 2 does not read `.env`, so the
@@ -67,21 +68,22 @@ Change the entry port with `PROXY_PORT` in `.env`.
 
 ## Scripts
 
-| Script           | Does                                  |
-| ---------------- | ------------------------------------- |
-| `pnpm build`     | turbo build both apps                 |
-| `pnpm test`      | vitest (web)                          |
-| `pnpm lint`      | eslint (web)                          |
-| `pnpm typecheck` | `tsc --noEmit` + `astro check`        |
-| `pnpm format`    | prettier, incl. `.astro`              |
+| Script                | Does                                     |
+| --------------------- | ---------------------------------------- |
+| `pnpm build`          | turbo build both apps                    |
+| `pnpm test`           | vitest (web)                             |
+| `pnpm lint`           | eslint (web)                             |
+| `pnpm typecheck`      | `tsc --noEmit` + `astro check`           |
+| `pnpm format`         | prettier, incl. `.astro`                 |
 | `pnpm db:auth-schema` | regenerate the Better Auth Prisma models |
-| `pnpm db:generate` | create a migration without applying it |
-| `pnpm db:migrate`  | apply migrations to `DATABASE_URL`  |
-| `pnpm db:studio`   | prisma studio                       |
-| `pnpm infra:up`  | dev postgres + redis                  |
-| `pnpm infra:pg`  | dev postgres only                     |
-| `pnpm infra:redis` | dev redis only                      |
-| `pnpm stack:up`  | full docker stack                     |
+| `pnpm db:generate`    | create a migration without applying it   |
+| `pnpm db:migrate`     | apply migrations to `DATABASE_URL`       |
+| `pnpm db:studio`      | prisma studio                            |
+| `pnpm infra:up`       | dev postgres + redis                     |
+| `pnpm infra:pg`       | dev postgres only                        |
+| `pnpm infra:redis`    | dev redis only                           |
+| `pnpm infra:s3`       | dev minio + bucket creation              |
+| `pnpm stack:up`       | full docker stack                        |
 
 ## Conventions
 
@@ -112,10 +114,11 @@ and Microsoft Entra ID ("Continue with Outlook") are both enabled.
 
 Routes in `apps/web/src/app` use route groups, which do not appear in the URL:
 
-| Folder         | URLs                                                    | Session  |
-| -------------- | ------------------------------------------------------- | -------- |
-| `(auth)/`      | `/login`, `/signup`, `/forgot-password`, `/reset-password` | none     |
-| `(dashboard)/` | `/`, `/settings`                                        | required |
+| Folder          | URLs                                                       | Session                      |
+| --------------- | ---------------------------------------------------------- | ---------------------------- |
+| `(auth)/`       | `/login`, `/signup`, `/forgot-password`, `/reset-password` | none                         |
+| `(onboarding)/` | `/onboarding`                                              | required, profile unfinished |
+| `(dashboard)/`  | `/`, `/settings`                                           | required, profile finished   |
 
 `src/lib/routes.ts` is the single source for those paths. `src/proxy.ts` (Next 16's
 rename of middleware) does a cookie-only optimistic redirect; `requireSession()`

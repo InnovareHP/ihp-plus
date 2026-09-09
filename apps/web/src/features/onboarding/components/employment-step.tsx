@@ -96,15 +96,6 @@ export function EmploymentStep({ form }: EmploymentStepProps) {
         error={errors.startDate?.message}
         errorProps={{ role: 'alert' }}
       />
-
-      <TextInput
-        {...register('employeeId')}
-        label="Employee ID"
-        description="Optional. Leave blank if HR has not issued one yet."
-        styles={NARROW_INPUT}
-        error={errors.employeeId?.message}
-        errorProps={{ role: 'alert' }}
-      />
     </Stack>
   )
 }

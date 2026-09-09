@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { OnboardingStepper } from '@/features/onboarding/components/onboarding-stepper'
 import { DEPARTMENTS, EMPLOYMENT_TYPES, POSITIONS } from '@/features/onboarding/options'
 import { requireOnboarding } from '@/lib/auth-guard'
+import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 
 export const metadata: Metadata = { title: 'Finish your profile' }
 
@@ -21,6 +22,9 @@ export default async function OnboardingPage() {
   // Outlook sign-in supplies one full name, which is the best first guess for the name fields.
   const [guessedFirst = '', ...guessedRest] = user.name.trim().split(/\s+/)
 
+  const photoUrl =
+    profile.photoKey && isObjectStorageConfigured() ? await objectUrl(profile.photoKey) : undefined
+
   return (
     <Paper withBorder radius="md" p={{ base: 'lg', sm: 'xl' }}>
       <Stack gap="lg">
@@ -36,6 +40,7 @@ export default async function OnboardingPage() {
 
         <OnboardingStepper
           email={user.email}
+          photoUrl={photoUrl}
           defaultValues={{
             firstName: profile.firstName ?? guessedFirst,
             middleInitial: profile.middleInitial ?? '',
@@ -47,7 +52,7 @@ export default async function OnboardingPage() {
             department: option(DEPARTMENTS, profile.department),
             employmentType: option(EMPLOYMENT_TYPES, profile.employmentType),
             startDate: isoDate(profile.startDate),
-            employeeId: profile.employeeId ?? '',
+            photoKey: profile.photoKey ?? '',
             confirmed: false,
           }}
         />

@@ -12,6 +12,7 @@ export default function DashboardLoading() {
         <Skeleton height={140} radius="md" />
         <Skeleton height={140} radius="md" />
         <Skeleton height={140} radius="md" />
+        <Skeleton height={140} radius="md" />
       </SimpleGrid>
     </Stack>
   )
