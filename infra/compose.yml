@@ -42,6 +42,12 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-ihp}:${POSTGRES_PASSWORD:-change_me_locally}@postgres:5432/${POSTGRES_DB:-ihp_plus}
       REDIS_URL: redis://redis:6379
+      # Behind the proxy the browser-visible origin is the proxy, not the container port.
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID:-}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET:-}
+      MICROSOFT_TENANT_ID: ${MICROSOFT_TENANT_ID:-common}
     depends_on:
       postgres:
         condition: service_healthy
