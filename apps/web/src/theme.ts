@@ -26,4 +26,11 @@ export const theme = createTheme({
   defaultRadius: 'md',
   focusRing: 'auto',
   respectReducedMotion: true,
+  cursorType: 'pointer',
+  components: {
+    Card: { defaultProps: { withBorder: true, radius: 'md' } },
+    Paper: { defaultProps: { radius: 'md' } },
+    Button: { defaultProps: { fw: 600 } },
+    Title: { defaultProps: { fw: 650 } },
+  },
 })

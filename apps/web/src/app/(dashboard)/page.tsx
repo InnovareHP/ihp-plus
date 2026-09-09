@@ -1,39 +1,90 @@
-import { Card, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
-import { requireSession } from '@/lib/auth-guard'
+import type { ReactNode } from 'react'
+import { requireOnboarded } from '@/lib/auth-guard'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
+const dateTime = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+const dateOnly = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' })
+
 export default async function DashboardPage() {
-  const { user, session } = await requireSession()
+  const { user, session, profile } = await requireOnboarded()
+  const greetingName = profile.preferredName ?? profile.firstName ?? user.name
 
   return (
     <Stack gap="lg">
       <Stack gap={4}>
         <Title order={1} size="h2">
-          Welcome back, {user.name}
+          Welcome back, {greetingName}
         </Title>
-        <Text c="dimmed">Signed in as {user.email}</Text>
+        <Text c="dimmed">
+          {profile.jobTitle} · {profile.department}
+        </Text>
       </Stack>
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-        <Card withBorder radius="md" padding="lg">
-          <Title order={2} size="h5">
-            Session
-          </Title>
-          <Text size="sm" c="dimmed" mt="xs">
-            Expires {new Date(session.expiresAt).toLocaleString()}
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+        <SummaryCard title="Your role">
+          <Text size="sm">{profile.jobTitle}</Text>
+          <Text size="sm" c="dimmed">
+            {profile.employmentType} in {profile.department}
           </Text>
-        </Card>
-        <Card withBorder radius="md" padding="lg">
-          <Title order={2} size="h5">
-            Email verified
-          </Title>
-          <Text size="sm" c="dimmed" mt="xs">
-            {user.emailVerified ? 'Yes' : 'Not yet — check your inbox'}
+          {profile.startDate ? (
+            <Text size="sm" c="dimmed">
+              Started {dateOnly.format(profile.startDate)}
+            </Text>
+          ) : null}
+        </SummaryCard>
+
+        <SummaryCard
+          title="Email"
+          badge={
+            user.emailVerified ? (
+              <Badge color="green" variant="light">
+                Verified
+              </Badge>
+            ) : (
+              <Badge color="yellow" variant="light">
+                Unverified
+              </Badge>
+            )
+          }
+        >
+          <Text size="sm">{user.email}</Text>
+          <Text size="sm" c="dimmed">
+            {user.emailVerified
+              ? 'This address receives portal notices.'
+              : 'Check your inbox for the verification link.'}
           </Text>
-        </Card>
+        </SummaryCard>
+
+        <SummaryCard title="Session">
+          <Text size="sm">Expires {dateTime.format(new Date(session.expiresAt))}</Text>
+          <Text size="sm" c="dimmed">
+            You are signed out automatically when it lapses.
+          </Text>
+        </SummaryCard>
       </SimpleGrid>
     </Stack>
+  )
+}
+
+interface SummaryCardProps {
+  title: string
+  badge?: ReactNode
+  children: ReactNode
+}
+
+function SummaryCard({ title, badge, children }: SummaryCardProps) {
+  return (
+    <Card withBorder radius="md" padding="lg">
+      <Group justify="space-between" align="center" mb="xs" wrap="nowrap">
+        <Title order={2} size="h6">
+          {title}
+        </Title>
+        {badge}
+      </Group>
+      <Stack gap={4}>{children}</Stack>
+    </Card>
   )
 }

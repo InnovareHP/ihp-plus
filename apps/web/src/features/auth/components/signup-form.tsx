@@ -5,11 +5,11 @@ import { Anchor, Button, Divider, PasswordInput, Stack, TextInput } from '@manti
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
+import { FormError } from '@/components/form-error'
 import { authClient } from '@/lib/auth-client'
 import { routes } from '@/lib/routes'
 import { authErrorMessage } from '../messages'
 import { signupSchema, type SignupValues } from '../schema'
-import { FormError } from './form-error'
 import { OutlookButton } from './outlook-button'
 
 export function SignupForm() {
@@ -44,7 +44,7 @@ export function SignupForm() {
       return
     }
 
-    router.replace(routes.dashboard)
+    router.replace(routes.onboarding)
     router.refresh()
   }
 
@@ -103,7 +103,7 @@ export function SignupForm() {
         <Divider label="or" labelPosition="center" />
 
         <OutlookButton
-          callbackPath={routes.dashboard}
+          callbackPath={routes.onboarding}
           onFailure={(message) => setError('root', { message })}
         />
 

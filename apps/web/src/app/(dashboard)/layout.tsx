@@ -1,16 +1,24 @@
 import type { ReactNode } from 'react'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { SkipLink } from '@/components/skip-link'
-import { requireSession } from '@/lib/auth-guard'
+import { requireOnboarded } from '@/lib/auth-guard'
 
-// Route group: every segment here revalidates the session before anything renders.
+// Route group: every segment here revalidates the session and the onboarding gate first.
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user } = await requireSession()
+  const { user, profile } = await requireOnboarded()
 
   return (
     <>
       <SkipLink />
-      <DashboardShell user={{ name: user.name, email: user.email }}>{children}</DashboardShell>
+      <DashboardShell
+        user={{
+          name: profile.preferredName ?? user.name,
+          email: user.email,
+          jobTitle: profile.jobTitle,
+        }}
+      >
+        {children}
+      </DashboardShell>
     </>
   )
 }

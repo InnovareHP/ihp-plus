@@ -23,6 +23,19 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
+  firstName             String?
+  lastName              String?
+  middleInitial         String?
+  preferredName         String?
+  phone                 String?
+  dateOfBirth           DateTime?
+  jobTitle              String?
+  department            String?
+  employmentType        String?
+  employeeId            String?
+  startDate             DateTime?
+  onboardingCompletedAt DateTime?
+
   @@unique([email])
   @@map("user")
 }

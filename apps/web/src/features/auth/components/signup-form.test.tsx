@@ -49,7 +49,7 @@ describe('SignupForm', () => {
         password: 'correct-horse-battery',
       }),
     )
-    expect(mocks.replace).toHaveBeenCalledWith('/')
+    expect(mocks.replace).toHaveBeenCalledWith('/onboarding')
   })
 
   it('rejects a password under twelve characters', async () => {

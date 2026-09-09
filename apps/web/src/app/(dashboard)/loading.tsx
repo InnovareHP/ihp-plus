@@ -8,9 +8,10 @@ export default function DashboardLoading() {
         <Skeleton height={32} width="18rem" />
         <Skeleton height={20} width="12rem" />
       </Stack>
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-        <Skeleton height={116} radius="md" />
-        <Skeleton height={116} radius="md" />
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+        <Skeleton height={140} radius="md" />
+        <Skeleton height={140} radius="md" />
+        <Skeleton height={140} radius="md" />
       </SimpleGrid>
     </Stack>
   )

@@ -14,6 +14,24 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: prismaAdapter(db, { provider: 'postgresql' }),
 
+  // Onboarding writes these through a server action, so none of them accept API input.
+  user: {
+    additionalFields: {
+      firstName: { type: 'string', required: false, input: false },
+      lastName: { type: 'string', required: false, input: false },
+      middleInitial: { type: 'string', required: false, input: false },
+      preferredName: { type: 'string', required: false, input: false },
+      phone: { type: 'string', required: false, input: false },
+      dateOfBirth: { type: 'date', required: false, input: false },
+      jobTitle: { type: 'string', required: false, input: false },
+      department: { type: 'string', required: false, input: false },
+      employmentType: { type: 'string', required: false, input: false },
+      employeeId: { type: 'string', required: false, input: false },
+      startDate: { type: 'date', required: false, input: false },
+      onboardingCompletedAt: { type: 'date', required: false, input: false },
+    },
+  },
+
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 12,

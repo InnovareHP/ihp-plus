@@ -4,11 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Alert, Anchor, Button, Stack, TextInput } from '@mantine/core'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
+import { FormError } from '@/components/form-error'
 import { authClient } from '@/lib/auth-client'
 import { routes, withBasePath } from '@/lib/routes'
 import { authErrorMessage } from '../messages'
 import { forgotPasswordSchema, type ForgotPasswordValues } from '../schema'
-import { FormError } from './form-error'
 
 export function ForgotPasswordForm() {
   const {

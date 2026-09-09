@@ -1,51 +1,54 @@
 'use client'
 
-import { AppShell, Burger, Group, Menu, NavLink, Text, UnstyledButton } from '@mantine/core'
+import {
+  AppShell,
+  Avatar,
+  Burger,
+  Group,
+  Menu,
+  NavLink,
+  Stack,
+  Text,
+  UnstyledButton,
+} from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { notifications } from '@mantine/notifications'
-import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
-import { authClient } from '@/lib/auth-client'
+import { useSignOut } from '@/features/auth/use-sign-out'
 import { routes } from '@/lib/routes'
+import { AppLogo } from './app-logo'
 import { ColorSchemeToggle } from './color-scheme-toggle'
 
 const NAV_ITEMS = [
-  { href: routes.dashboard, label: 'Dashboard' },
-  { href: routes.settings, label: 'Settings' },
+  { href: routes.dashboard, label: 'Dashboard', description: 'Your day at a glance' },
+  { href: routes.settings, label: 'Settings', description: 'Profile and account' },
 ] as const
 
 export interface DashboardShellProps {
-  user: { name: string; email: string }
+  user: { name: string; email: string; jobTitle?: string | null }
   children: ReactNode
+}
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('')
 }
 
 export function DashboardShell({ user, children }: DashboardShellProps) {
   const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure(false)
   const pathname = usePathname()
-  const router = useRouter()
-
-  // Sign-out is not optimistic: the server clears the cookie and the redirect is the feedback.
-  const signOut = useMutation({
-    mutationFn: async () => {
-      const { error } = await authClient.signOut()
-      if (error) throw new Error(error.message ?? 'Sign-out failed')
-    },
-    onSuccess: () => {
-      router.replace(routes.login)
-      router.refresh()
-    },
-    onError: (error: Error) => {
-      notifications.show({ color: 'red', autoClose: false, message: error.message })
-    },
-  })
+  const signOut = useSignOut()
 
   return (
     <AppShell
-      padding="md"
+      padding={{ base: 'md', sm: 'lg' }}
       header={{ height: 60 }}
-      navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !navOpened } }}
+      navbar={{ width: 260, breakpoint: 'sm', collapsed: { mobile: !navOpened } }}
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
@@ -59,7 +62,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
               aria-expanded={navOpened}
               aria-controls="primary-navigation"
             />
-            <Text fw={700}>IHP Plus</Text>
+            <AppLogo size={28} />
           </Group>
 
           <Group gap="sm">
@@ -67,9 +70,14 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
             <Menu position="bottom-end" withinPortal>
               <Menu.Target>
                 <UnstyledButton aria-label={`Account menu for ${user.name}`}>
-                  <Text size="sm" fw={500}>
-                    {user.name}
-                  </Text>
+                  <Group gap="xs" wrap="nowrap">
+                    <Avatar color="brand" radius="xl" size={30}>
+                      {initials(user.name)}
+                    </Avatar>
+                    <Text size="sm" fw={500} visibleFrom="xs">
+                      {user.name}
+                    </Text>
+                  </Group>
                 </UnstyledButton>
               </Menu.Target>
               <Menu.Dropdown>
@@ -90,18 +98,47 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar id="primary-navigation" p="xs" aria-label="Primary">
-        {NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.href}
+      <AppShell.Navbar id="primary-navigation" p="sm" aria-label="Primary">
+        <AppShell.Section grow>
+          <Stack gap={4}>
+            {NAV_ITEMS.map((item) => (
+              <NavLink
+                key={item.href}
+                component={Link}
+                href={item.href}
+                label={item.label}
+                description={item.description}
+                active={pathname === item.href}
+                aria-current={pathname === item.href ? 'page' : undefined}
+                onClick={closeNav}
+              />
+            ))}
+          </Stack>
+        </AppShell.Section>
+
+        <AppShell.Section>
+          <UnstyledButton
             component={Link}
-            href={item.href}
-            label={item.label}
-            active={pathname === item.href}
-            aria-current={pathname === item.href ? 'page' : undefined}
+            href={routes.settings}
+            w="100%"
+            p="xs"
             onClick={closeNav}
-          />
-        ))}
+          >
+            <Group gap="sm" wrap="nowrap">
+              <Avatar color="brand" radius="xl" size={34}>
+                {initials(user.name)}
+              </Avatar>
+              <Stack gap={0} miw={0}>
+                <Text size="sm" fw={500} truncate>
+                  {user.name}
+                </Text>
+                <Text size="xs" c="dimmed" truncate>
+                  {user.jobTitle ?? user.email}
+                </Text>
+              </Stack>
+            </Group>
+          </UnstyledButton>
+        </AppShell.Section>
       </AppShell.Navbar>
 
       <AppShell.Main id="main">{children}</AppShell.Main>

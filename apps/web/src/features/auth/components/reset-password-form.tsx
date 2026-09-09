@@ -6,11 +6,11 @@ import { notifications } from '@mantine/notifications'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
+import { FormError } from '@/components/form-error'
 import { authClient } from '@/lib/auth-client'
 import { routes } from '@/lib/routes'
 import { authErrorMessage } from '../messages'
 import { resetPasswordSchema, type ResetPasswordValues } from '../schema'
-import { FormError } from './form-error'
 
 export function ResetPasswordForm() {
   const router = useRouter()

@@ -5,11 +5,11 @@ import { Anchor, Button, Checkbox, Divider, PasswordInput, Stack, TextInput } fr
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
+import { FormError } from '@/components/form-error'
 import { authClient } from '@/lib/auth-client'
 import { routes } from '@/lib/routes'
 import { authErrorMessage } from '../messages'
 import { loginSchema, type LoginValues } from '../schema'
-import { FormError } from './form-error'
 import { OutlookButton } from './outlook-button'
 
 // A "next" value from the query string is attacker-controlled, so only in-app paths pass.

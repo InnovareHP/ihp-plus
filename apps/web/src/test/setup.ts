@@ -30,3 +30,6 @@ vi.stubGlobal(
     disconnect() {}
   },
 )
+
+// jsdom has no scrollIntoView, and Mantine's Combobox calls it while highlighting an option.
+Element.prototype.scrollIntoView = vi.fn()
