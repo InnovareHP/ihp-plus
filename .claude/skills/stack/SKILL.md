@@ -80,6 +80,8 @@ order:
 
 1. `Get-NetTCPConnection -LocalPort 5432 -State Listen` → owning process. A
    `postgres.exe` that is not Docker means the port is shadowed.
+   `prisma migrate` prints nothing useful and just exits 1, so read the real error
+   from a direct `pg` connection rather than from its exit code.
 2. Test the container over the docker network, which bypasses the host port and
    uses the real scram path:
    `docker run --rm --network ihp-plus-dev_default -e PGPASSWORD=<pw> postgres:17-alpine psql -h postgres -U ihp -d ihp_plus -c 'select 1'`
@@ -109,18 +111,3 @@ verification links are logged by `apps/web/src/lib/email.ts`, not sent.
 
 Postgres **is** wired, through `@ihp/db` (Prisma 7). See `.claude/rules/infra.md`.
 
-## A local Postgres install shadows the container
-
-`28P01 password authentication failed for user "ihp"` with a healthy container
-means something else already owns the published port. On Windows a native
-`postgres.exe` and Docker's proxy can both bind `0.0.0.0:5432`; the native one
-answers and has no `ihp` role. Confirm with:
-
-```bash
-docker exec ihp-plus-dev-postgres-1 sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U ihp -d ihp_plus -tAc "select 1"'
-```
-
-If that succeeds, the container is fine and the host port is contested. Either stop
-the native server or set `POSTGRES_PORT` **and** the port inside `DATABASE_URL` to a
-free port. `prisma migrate` swallows the underlying error and just exits 1, so
-diagnose with a direct `pg` connection rather than trusting its exit code.
