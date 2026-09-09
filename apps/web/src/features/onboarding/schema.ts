@@ -77,7 +77,6 @@ const confirmFields = {
 
 export const personalStepSchema = z.object(personalFields)
 export const employmentStepSchema = z.object(employmentFields)
-export const photoStepSchema = z.object(photoFields)
 export const onboardingSchema = z.object({
   ...personalFields,
   ...employmentFields,
