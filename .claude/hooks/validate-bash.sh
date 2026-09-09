@@ -46,10 +46,14 @@ case "$lower" in
 esac
 
 # --- env file --------------------------------------------------------------
-case "$cmd" in
-  *">"*".env"|*">"*".env "*|*"rm "*".env"*)
-    block ".env is real local config and is gitignored. Document the variable in .env.example instead." ;;
-esac
+# Glob matching was too loose here: any '>' plus a later '.env' argument (e.g.
+# '--env-file .env ... 2>&1') tripped it, so match the redirect target precisely.
+if printf '%s' "$cmd" | grep -Eq '(^|[[:space:]])>>?[[:space:]]*\.env([[:space:]]|$)'; then
+  block ".env is real local config and is gitignored. Document the variable in .env.example instead."
+fi
+if printf '%s' "$cmd" | grep -Eq '(^|[[:space:]])rm([[:space:]]+-[^[:space:]]+)*[[:space:]]+\.env([[:space:]]|$)'; then
+  block "removing .env destroys real local config. Ask the user before touching it."
+fi
 
 # --- filesystem ------------------------------------------------------------
 case "$lower" in
