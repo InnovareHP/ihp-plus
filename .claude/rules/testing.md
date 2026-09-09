@@ -26,6 +26,7 @@ Vitest over Jest: the repo is ESM + Vite already (Astro), and Next 16 works with
 | `@ihp/ui` component | render, each variant/size, disabled, keyboard interaction, axe clean |
 | form | valid submit, each validation rule, server error via `setError`, error announced |
 | TanStack Query hook | success, error, and the invalidation a mutation triggers |
+| CRUD mutation | optimistic value visible before the server resolves, **and** the cache restored to the snapshot on failure with the error announced |
 | RPC call | success and a `ConnectError` code path, against the generated client type |
 | route handler | happy path + failure status |
 | bug fix | a test that fails before the fix |

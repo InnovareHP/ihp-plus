@@ -68,12 +68,64 @@ external system it synchronizes with. No comment → delete it.
 - Query keys are arrays, most general → most specific: `['leads', orgId, filters]`.
   Keep them in a `queryKeys` object per feature; never inline a raw string key twice.
 - Mutations use `useMutation` + `queryClient.invalidateQueries({ queryKey })` in
-  `onSuccess`. Do not refetch by flipping a counter in state.
+  `onSettled`. Do not refetch by flipping a counter in state.
 - Read `isPending` / `isError` / `error` from the hook. A `useState` holding a
   loading flag next to a query is a bug.
 - Prefer a React Server Component for data that is read once and never refetched;
   reach for Query when the data is interactive — refetched, invalidated, paginated,
   polled, or mutated.
+
+## Optimistic updates: required for CRUD
+
+Every create, update, and delete applies to the cache immediately and rolls back on
+failure. A CRUD mutation that leaves the user staring at a spinner until the server
+answers is not done.
+
+The four callbacks, always all four:
+
+```ts
+useMutation({
+  mutationFn: updateLead,
+  onMutate: async (next) => {
+    // In-flight refetches would overwrite the optimistic value on arrival.
+    await queryClient.cancelQueries({ queryKey: leadKeys.detail(next.id) })
+    const previous = queryClient.getQueryData(leadKeys.detail(next.id))
+    queryClient.setQueryData(leadKeys.detail(next.id), (old) => ({ ...old, ...next }))
+    return { previous }
+  },
+  onError: (_err, next, ctx) => {
+    queryClient.setQueryData(leadKeys.detail(next.id), ctx?.previous)
+  },
+  onSettled: (_data, _err, next) => {
+    queryClient.invalidateQueries({ queryKey: leadKeys.detail(next.id) })
+  },
+})
+```
+
+Rules that follow from it:
+
+- **Cancel before writing.** Skipping `cancelQueries` lets an in-flight refetch land
+  on top of the optimistic value.
+- **Snapshot and return it** from `onMutate`; `onError` restores that exact
+  snapshot. Never "undo" by recomputing the previous value.
+- **Invalidate in `onSettled`**, not `onSuccess` — the server stays the source of
+  truth on both paths.
+- **Touch every affected key**: a create or delete updates the list key *and* the
+  detail key; an item inside a paginated or filtered list updates the key holding it.
+- **Creates need a temporary id** (`crypto.randomUUID()`), replaced by the server's
+  id on settle. Never key a list row by array index.
+- **Deletes remove the row immediately** and restore it in place on failure.
+- **Rollback must be announced**, not silent — surface the error in a live region
+  (`.claude/rules/accessibility.md`) so the row snapping back is explained. Field-level
+  failures also go through `setError`.
+- **Disable the control while `isPending`** only where a double submit is harmful;
+  the point of optimism is that the UI has already moved on.
+- Skip optimism only when the server's response is unpredictable (server-computed
+  totals, ordering, or side effects the client cannot model). Say why in one
+  sentence at the mutation.
+
+Every optimistic mutation is tested on both paths — applied, and rolled back
+(`.claude/rules/testing.md`).
 
 ## Composition
 

@@ -41,21 +41,25 @@ service call.
 10. **Data fetching** — a raw `fetch`/RPC call outside TanStack Query in a client
     component, a string query key, a mutation that refetches without
     `invalidateQueries`, or a `QueryClient` constructed in a component body.
-11. **RPC** — a hand-written REST handler or response type where a generated
+11. **Optimistic updates** — a create/update/delete with no `onMutate`, or one
+    missing `cancelQueries`, the returned snapshot, the `onError` rollback, the
+    `onSettled` invalidate, an affected list/detail key, a temporary id on create,
+    or an announced rollback. Un-optimistic CRUD needs a one-sentence reason.
+12. **RPC** — a hand-written REST handler or response type where a generated
     client exists, an edited generated file, or a `ConnectError` swallowed instead
     of mapped to `setError` + a live region.
-12. **Accessibility (ADA/WCAG AA)** — `div` acting as a control, missing label or
+13. **Accessibility (ADA/WCAG AA)** — `div` acting as a control, missing label or
     accessible name, `outline-none` with no focus indicator, error state shown by
     color alone, form errors without `aria-invalid`/`aria-describedby`/live region,
     heading level skipped, non-token color pairing with unverified contrast.
-13. **Missing tests** — a feature, branch, boundary, or bug fix with no test
+14. **Missing tests** — a feature, branch, boundary, or bug fix with no test
     (`.claude/rules/testing.md`); a test asserting internal state; `getByTestId`
     where a role or label exists; an interactive component with no axe assertion.
-14. **Comments** — any comment longer than one sentence, restating what the code
+15. **Comments** — any comment longer than one sentence, restating what the code
     does, commented-out code, or an ownerless `TODO`.
-15. **Invented infrastructure** — code assuming a DB client, ORM, proto, or test
+16. **Invented infrastructure** — code assuming a DB client, ORM, proto, or test
     runner that is not installed in this repo.
-16. **Docs drift** — `README.md` script table or layout no longer matching reality.
+17. **Docs drift** — `README.md` script table or layout no longer matching reality.
 
 ## Output
 
