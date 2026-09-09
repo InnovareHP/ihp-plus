@@ -11,6 +11,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/web/package.json apps/web/
 COPY apps/landing/package.json apps/landing/
 COPY packages/ui/package.json packages/ui/
+COPY packages/db/package.json packages/db/
 COPY packages/config/package.json packages/config/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store && \

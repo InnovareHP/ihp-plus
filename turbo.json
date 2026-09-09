@@ -7,13 +7,25 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "env": ["DATABASE_URL", "REDIS_URL", "NEXT_PUBLIC_*"]
+      "env": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "NEXT_PUBLIC_*",
+        "BETTER_AUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "MICROSOFT_TENANT_ID"
+      ]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "lint": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
       "dependsOn": ["^build"]
     },
     "typecheck": {

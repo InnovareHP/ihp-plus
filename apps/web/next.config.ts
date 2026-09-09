@@ -12,8 +12,11 @@ const nextConfig: NextConfig = {
   // Astro owns "/", Next is mounted under "/app" by the nginx proxy.
   basePath: '/app',
 
-  // @ihp/ui ships raw TSX, so Next must compile it.
-  transpilePackages: ['@ihp/ui'],
+  // @ihp/db ships raw TS, so Next must compile it.
+  transpilePackages: ['@ihp/db'],
+
+  // pg opens real sockets; bundling it breaks the standalone server.
+  serverExternalPackages: ['pg'],
 
   reactStrictMode: true,
   poweredByHeader: false,
