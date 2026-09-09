@@ -6,8 +6,18 @@ Two compose files, two Dockerfiles, one nginx proxy. Know which one you are in.
 
 | Command | Runs | Use when |
 | --- | --- | --- |
-| `pnpm infra:up` | `infra/compose.dev.yml` — postgres + redis only, ports published | normal development; apps run on the host via `pnpm dev` |
+| `pnpm infra:up` | `infra/compose.dev.yml` — postgres + redis, ports published | normal development; apps run on the host via `pnpm dev` |
+| `pnpm infra:pg` | the same file, postgres only | the usual case — nothing reads `REDIS_URL` yet |
+| `pnpm infra:redis` | the same file, redis only | working on something that needs Redis and not the DB |
 | `pnpm stack:up` | `infra/compose.yml` — postgres, redis, web, landing, proxy, built from source | verifying the production shape, Dockerfiles, or nginx routing |
+
+The per-service scripts are **additive, not exclusive**: `up -d <service>` starts
+what is named and leaves everything else alone, so `infra:pg` followed by
+`infra:redis` ends up identical to `infra:up`, in either order and at any time. Same
+compose file, same project name, same volumes — the scripts only choose which
+containers come up. `infra:pg:stop` / `infra:redis:stop` stop one service without
+touching the other; `infra:down` removes both containers (volumes survive — never
+add `-v`).
 
 Project names differ (`ihp-plus-dev` vs `ihp-plus`), so the two stacks have
 **separate volumes** — data written in dev is not visible in the full stack.

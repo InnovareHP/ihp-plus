@@ -21,6 +21,10 @@
     "db:studio": "pnpm --filter @ihp/db db:studio",
     "infra:up": "docker compose --env-file .env -f infra/compose.dev.yml up -d",
     "infra:down": "docker compose --env-file .env -f infra/compose.dev.yml down",
+    "infra:pg": "docker compose --env-file .env -f infra/compose.dev.yml up -d postgres",
+    "infra:pg:stop": "docker compose --env-file .env -f infra/compose.dev.yml stop postgres",
+    "infra:redis": "docker compose --env-file .env -f infra/compose.dev.yml up -d redis",
+    "infra:redis:stop": "docker compose --env-file .env -f infra/compose.dev.yml stop redis",
     "stack:up": "docker compose --env-file .env -f infra/compose.yml up --build",
     "stack:down": "docker compose --env-file .env -f infra/compose.yml down"
   },

@@ -42,6 +42,11 @@ pnpm db:migrate        # creates the Better Auth tables
 pnpm dev               # both apps via turbo
 ```
 
+Nothing reads `REDIS_URL` yet, so `pnpm infra:pg` (Postgres alone) is enough for
+day-to-day work. `pnpm infra:redis` starts Redis alone; `pnpm infra:pg:stop` /
+`pnpm infra:redis:stop` stop one without touching the other. Same compose file and
+the same volumes either way — the scripts only pick which service comes up.
+
 `.env` at the repo root is the only env file. Turbo 2 does not read `.env`, so the
 root `dev`/`build`/`test` scripts go through `dotenv-cli` — they fail loudly if you
 skipped the `cp` above.
@@ -73,6 +78,8 @@ Change the entry port with `PROXY_PORT` in `.env`.
 | `pnpm db:migrate`  | apply migrations to `DATABASE_URL`  |
 | `pnpm db:studio`   | drizzle studio                      |
 | `pnpm infra:up`  | dev postgres + redis                  |
+| `pnpm infra:pg`  | dev postgres only                     |
+| `pnpm infra:redis` | dev redis only                      |
 | `pnpm stack:up`  | full docker stack                     |
 
 ## Conventions

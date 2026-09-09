@@ -1,7 +1,8 @@
 # Dev infra only — Postgres + Redis in Docker, apps run on the host via `pnpm dev`.
 # Bind-mounting node_modules into Linux containers on Windows is slow and breaks
 # native binaries, so apps stay on the host. Use compose.yml for a full container run.
-#   pnpm infra:up  then  pnpm dev
+#   pnpm infra:up  then  pnpm dev      (both services)
+#   pnpm infra:pg  /  pnpm infra:redis (one service; nothing reads REDIS_URL yet)
 #   web     -> http://localhost:3000/app
 #   landing -> http://localhost:4321
 

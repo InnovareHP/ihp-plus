@@ -16,6 +16,11 @@ pnpm infra:up      # postgres + redis, ports published
 pnpm dev           # turbo runs both apps
 ```
 
+Single service: `pnpm infra:pg` (Postgres alone — the usual case, nothing reads
+`REDIS_URL` yet) or `pnpm infra:redis`. They are additive, so running both equals
+`infra:up`; `pnpm infra:pg:stop` / `pnpm infra:redis:stop` stop one without
+touching the other.
+
 Web is at `http://localhost:3000/app` — **not** `:3000`, the `basePath` is `/app`,
 so bare `/` returns a 404 by design. Landing is `http://localhost:4321`.
 Single app: `pnpm dev:web` / `pnpm dev:landing`.

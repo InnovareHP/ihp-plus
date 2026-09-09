@@ -17,7 +17,9 @@ came from, the file wins — fix this table.
 | `pnpm format` | prettier write, incl. `.astro` — repo-wide, rewrites unrelated files |
 | `pnpm db:generate` / `db:migrate` / `db:studio` | `drizzle-kit` in `@ihp/db` |
 | `pnpm clean` | per-package clean + removes root `node_modules` |
-| `pnpm infra:up` / `infra:down` | `infra/compose.dev.yml` |
+| `pnpm infra:up` / `infra:down` | `infra/compose.dev.yml`, both services |
+| `pnpm infra:pg` / `infra:pg:stop` | same file, `postgres` only (additive) |
+| `pnpm infra:redis` / `infra:redis:stop` | same file, `redis` only (additive) |
 | `pnpm stack:up` / `stack:down` | `infra/compose.yml` (`up --build`) |
 
 Both compose scripts pass `--env-file .env`. `dev`, `dev:web`, `dev:landing`,
