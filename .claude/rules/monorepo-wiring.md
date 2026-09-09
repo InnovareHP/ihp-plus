@@ -59,6 +59,12 @@ turbo will serve a cached build that baked in the old value.
 `lint`, `test`, and `typecheck` all `dependsOn: ["^build"]`, so they build
 dependencies first — expect them to be slower than a bare `tsc`.
 
+**Turbo 2 runs strict env mode**: a task sees only the vars it declares, so `dev`
+and `test` repeat `build`'s `env` list. Miss it and the symptom is not an error —
+`process.env.DATABASE_URL` is simply `undefined` inside `next dev`, and Postgres
+answers "no PostgreSQL user name specified in startup packet". A new env var goes in
+every task that reads it, not just `build`.
+
 ## Package naming
 
 Scope is `@ihp/*`; `name` matches the folder (`apps/web` → `@ihp/web`). Filters use

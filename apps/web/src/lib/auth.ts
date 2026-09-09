@@ -7,7 +7,8 @@ import { AUTH_BASE_PATH } from './routes'
 
 export const auth = betterAuth({
   appName: 'IHP Plus',
-  baseURL: process.env.BETTER_AUTH_URL,
+  // The router derives its own base from baseURL at init, so an unset value 404s every route.
+  baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
   // Next mounts everything under basePath '/app', so Better Auth's own path carries it too.
   basePath: AUTH_BASE_PATH,
   secret: process.env.BETTER_AUTH_SECRET,

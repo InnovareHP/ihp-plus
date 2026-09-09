@@ -81,6 +81,13 @@ where a Mantine prop exists, and no arbitrary hex.
 - Route handlers follow `src/app/api/health/route.ts`: named HTTP-verb export,
   `NextResponse.json`, explicit `export const dynamic` when the route must not be
   statically evaluated.
+- **Next strips `basePath` from `request.url` inside a route handler** — a handler at
+  `/app/api/x` sees `http://host/api/x`. Anything that routes on the pathname (Better
+  Auth does) needs `/app` put back first; see `src/app/api/auth/[...all]/route.ts`.
+  `request.nextUrl.pathname` in `proxy.ts` is stripped the same way, but `NextURL`
+  re-adds the prefix when it serialises, so redirects built from it are correct.
+- A `proxy.ts` matcher group (`'/((?!api/).*)'`) requires at least one character, so
+  it never matches `/`. List `'/'` separately or the root route goes unguarded.
 - The root `layout.tsx` types children via Next 16's generated `LayoutProps<'/'>`.
   A **route-group** layout cannot: both it and the root layout sit at `'/'`, so those
   take a hand-written `{ children: ReactNode }`.

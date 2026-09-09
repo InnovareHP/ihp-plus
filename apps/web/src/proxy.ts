@@ -27,5 +27,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api/|_next/static|_next/image|favicon.ico).*)'],
+  // '/' is listed separately: a matcher group requires one character, so it misses the root.
+  matcher: ['/', '/((?!api/|_next/static|_next/image|favicon.ico).*)'],
 }

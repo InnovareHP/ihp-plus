@@ -15,18 +15,41 @@
         "BETTER_AUTH_SECRET",
         "MICROSOFT_CLIENT_ID",
         "MICROSOFT_CLIENT_SECRET",
-        "MICROSOFT_TENANT_ID"
+        "MICROSOFT_TENANT_ID",
+        "EMAIL_FROM"
       ]
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "NEXT_PUBLIC_*",
+        "BETTER_AUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "MICROSOFT_TENANT_ID",
+        "EMAIL_FROM"
+      ]
     },
     "lint": {
       "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "env": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "NEXT_PUBLIC_*",
+        "BETTER_AUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "MICROSOFT_TENANT_ID",
+        "EMAIL_FROM"
+      ]
     },
     "typecheck": {
       "dependsOn": ["^build"]
