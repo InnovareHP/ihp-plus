@@ -8,6 +8,19 @@ write code that assumes one exists; propose the package first.
 
 Read `README.md` for the layout table and the dev/stack commands.
 
+## Docs MCP servers
+
+`.mcp.json` wires two documentation servers, both enabled in `.claude/settings.json`.
+Query them instead of recalling an API from training data:
+
+- **better-auth** (`https://mcp.better-auth.com/mcp`) — Better Auth docs, examples,
+  setup help. Use before writing any auth code. Better Auth is **not installed**
+  here and needs a DB adapter, which this repo does not have yet.
+- **mantine** (`npx @mantine/mcp-server`) — `list_items`, `get_item_doc`,
+  `get_item_props`, `search_docs` for Mantine v8. Note the apps use Tailwind v4 and
+  `@ihp/ui`, **not** Mantine — treat this as reference until a decision says
+  otherwise, and never mix the two design systems in one app.
+
 ## Working rules
 
 - Node >= 22.12, pnpm 10 only. Never `npm` or `yarn` — the lockfile is pnpm's.

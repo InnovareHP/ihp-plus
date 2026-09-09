@@ -1,4 +1,5 @@
 {
+  "enabledMcpjsonServers": ["better-auth", "mantine"],
   "permissions": {
     "allow": [
       "Read(./apps/**)",
