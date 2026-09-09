@@ -71,9 +71,32 @@ scanned `packages/ui/src`.
 be in `turbo.json` `env`; `.env` is a `globalDependency`, so editing it invalidates
 the cache, but a var read at build time and not declared will still be baked in.
 
+**`password authentication failed for user "ihp"` (28P01)** — usually not the
+password. A native Postgres service on the host (`postgresql-x64-18` was found on
+this machine, bound to `0.0.0.0:5432` and `[::]:5432`) also owns 5432; Windows
+allows the duplicate bind, so compose reports the mapping while `localhost:5432`
+actually reaches the native server, which has no `ihp` role. Diagnose in this
+order:
+
+1. `Get-NetTCPConnection -LocalPort 5432 -State Listen` → owning process. A
+   `postgres.exe` that is not Docker means the port is shadowed.
+2. Test the container over the docker network, which bypasses the host port and
+   uses the real scram path:
+   `docker run --rm --network ihp-plus-dev_default -e PGPASSWORD=<pw> postgres:17-alpine psql -h postgres -U ihp -d ihp_plus -c 'select 1'`
+   Success here proves the credentials and the volume are fine.
+3. Do **not** test with `docker compose exec ... psql -h 127.0.0.1`: the image's
+   `host all all 127.0.0.1/32 trust` line accepts any password, so it passes even
+   when the real path fails.
+
+Fix by moving the container off the contested port — `POSTGRES_PORT=55432` **and**
+the port inside `DATABASE_URL` (nothing derives one from the other), then
+`pnpm infra:pg`. Data survives; only the published port changes. Stopping the
+native service is the alternative and needs an elevated shell.
+
 **Port already in use** — report which port and which process. Do not silently
 change 3000/4321/`PROXY_PORT`; the values are duplicated across compose files,
-nginx, and the README.
+nginx, and the README. `POSTGRES_PORT`/`REDIS_PORT` are the exception — they exist
+to be moved when a host service already owns the port.
 
 **Dev data missing from the full stack** — different compose project names mean
 different volumes (`ihp-plus-dev` vs `ihp-plus`). This is expected, not a bug.
