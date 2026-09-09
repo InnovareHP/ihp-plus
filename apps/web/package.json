@@ -8,6 +8,8 @@
     "start": "next start --port 3000",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "clean": "rm -rf .next .turbo"
   },
   "dependencies": {
@@ -42,7 +44,6 @@
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "typescript": "^5.9.3",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest-axe": "^0.1.0"
   }
 }
