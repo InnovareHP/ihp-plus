@@ -4,3 +4,4 @@ dist
 .astro
 .turbo
 node_modules
+packages/db/src/generated

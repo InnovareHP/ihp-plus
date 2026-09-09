@@ -26,7 +26,8 @@
     "infra:redis": "docker compose --env-file .env -f infra/compose.dev.yml up -d redis",
     "infra:redis:stop": "docker compose --env-file .env -f infra/compose.dev.yml stop redis",
     "stack:up": "docker compose --env-file .env -f infra/compose.yml up --build",
-    "stack:down": "docker compose --env-file .env -f infra/compose.yml down"
+    "stack:down": "docker compose --env-file .env -f infra/compose.yml down",
+    "db:auth-schema": "pnpm --filter @ihp/db db:auth-schema"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^5.0.0",

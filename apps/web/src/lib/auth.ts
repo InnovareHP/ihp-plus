@@ -1,5 +1,5 @@
-import { drizzleAdapter } from '@better-auth/drizzle-adapter'
-import { db, schema } from '@ihp/db'
+import { prismaAdapter } from '@better-auth/prisma-adapter'
+import { db } from '@ihp/db'
 import { betterAuth } from 'better-auth/minimal'
 import { nextCookies } from 'better-auth/next-js'
 import { sendEmail } from './email'
@@ -12,7 +12,7 @@ export const auth = betterAuth({
   // Next mounts everything under basePath '/app', so Better Auth's own path carries it too.
   basePath: AUTH_BASE_PATH,
   secret: process.env.BETTER_AUTH_SECRET,
-  database: drizzleAdapter(db, { provider: 'pg', schema }),
+  database: prismaAdapter(db, { provider: 'postgresql' }),
 
   emailAndPassword: {
     enabled: true,
@@ -59,7 +59,7 @@ export const auth = betterAuth({
     cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
 
-  // The generated Drizzle schema ships relations, so /get-session can join instead of fanning out.
+  // The generated Prisma schema ships relations, so /get-session can join instead of fanning out.
   advanced: {
     database: { joins: true },
   },

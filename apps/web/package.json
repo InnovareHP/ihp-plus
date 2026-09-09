@@ -13,7 +13,7 @@
     "clean": "rm -rf .next .turbo"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "^1.7.3",
+    "@better-auth/prisma-adapter": "1.7.3",
     "@hookform/resolvers": "^5.9.1",
     "@ihp/db": "workspace:*",
     "@mantine/core": "^9.6.1",

@@ -12,11 +12,11 @@ const nextConfig: NextConfig = {
   // Astro owns "/", Next is mounted under "/app" by the nginx proxy.
   basePath: '/app',
 
-  // @ihp/db ships raw TS, so Next must compile it.
+  // @ihp/db ships raw TS, including Prisma's generated client, so Next must compile it.
   transpilePackages: ['@ihp/db'],
 
-  // pg opens real sockets; bundling it breaks the standalone server.
-  serverExternalPackages: ['pg'],
+  // The pg driver opens real sockets; bundling it breaks the standalone server.
+  serverExternalPackages: ['@prisma/adapter-pg', 'pg'],
 
   reactStrictMode: true,
   poweredByHeader: false,

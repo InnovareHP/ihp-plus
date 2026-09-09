@@ -75,11 +75,23 @@ Postgres 17, Redis 7 with AOF on. Volumes: `postgres-data`/`redis-data` (full
 stack), `postgres-dev-data`/`redis-dev-data` (dev). Both compose files gate `web`
 on `service_healthy` for postgres and redis.
 
-Postgres is reached through `@ihp/db`: Drizzle ORM + `node-postgres`, one pooled
-client cached on `globalThis` so Next's dev reloads do not leak pools. Migrations
-are SQL files in `packages/db/migrations`, generated with `pnpm db:generate` and
-applied with `pnpm db:migrate`. Nothing reads `REDIS_URL` yet — propose a client
-before assuming one.
+Postgres is reached through `@ihp/db`: Prisma 7 with the `@prisma/adapter-pg`
+driver adapter, one client cached on `globalThis` so Next's dev reloads do not leak
+connections. Prisma 7 forbids `url` in the schema's `datasource`, so the connection
+string lives in `packages/db/prisma.config.ts` (which loads the repo-root `.env`)
+and the client gets it through the adapter.
+
+Migrations are SQL in `packages/db/prisma/migrations`: `pnpm db:generate` creates
+one without applying it (`migrate dev --create-only`), `pnpm db:migrate` applies
+them (`migrate deploy`). `pnpm db:auth-schema` regenerates the Better Auth models
+into `prisma/schema.prisma`.
+
+Prisma Client is **generated, not committed** — `pnpm --filter @ihp/db build` runs
+`prisma generate` into `packages/db/src/generated/`, which is gitignored because the
+output is coupled to the installed `@prisma/client` version. `prisma` and
+`@prisma/engines` are therefore in `onlyBuiltDependencies`.
+
+Nothing reads `REDIS_URL` yet — propose a client before assuming one.
 
 Turbo 2 does not read `.env` files, so the root `dev`/`build`/`test` scripts run
 through `dotenv-cli` to load the repo-root `.env`. Inside compose, env comes from

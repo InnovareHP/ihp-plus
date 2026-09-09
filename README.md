@@ -11,7 +11,7 @@ apps/
 packages/
   ui/         shared React components, source-only TSX (@ihp/ui) — landing only
   config/     shared tsconfig presets + Tailwind v4 theme tokens (@ihp/config)
-  db/         Drizzle ORM client + Better Auth schema and migrations (@ihp/db)
+  db/         Prisma 7 client + Better Auth schema and migrations (@ihp/db)
 infra/
   compose.yml       full containerized stack (postgres, redis, web, landing, proxy)
   compose.dev.yml   dev infra only (postgres, redis)
@@ -74,9 +74,10 @@ Change the entry port with `PROXY_PORT` in `.env`.
 | `pnpm lint`      | eslint (web)                          |
 | `pnpm typecheck` | `tsc --noEmit` + `astro check`        |
 | `pnpm format`    | prettier, incl. `.astro`              |
-| `pnpm db:generate` | drizzle-kit migration from the schema |
+| `pnpm db:auth-schema` | regenerate the Better Auth Prisma models |
+| `pnpm db:generate` | create a migration without applying it |
 | `pnpm db:migrate`  | apply migrations to `DATABASE_URL`  |
-| `pnpm db:studio`   | drizzle studio                      |
+| `pnpm db:studio`   | prisma studio                       |
 | `pnpm infra:up`  | dev postgres + redis                  |
 | `pnpm infra:pg`  | dev postgres only                     |
 | `pnpm infra:redis` | dev redis only                      |
@@ -84,8 +85,12 @@ Change the entry port with `PROXY_PORT` in `.env`.
 
 ## Conventions
 
-- **Shared UI is source-only.** `@ihp/ui` exports raw `.tsx`; Next compiles it via
-  `transpilePackages`, Astro via Vite. No build step, no `dist/`, no stale output.
+- **Shared UI is source-only.** `@ihp/ui` exports raw `.tsx`; Astro compiles it via
+  Vite. No build step, no `dist/`, no stale output.
+- **`@ihp/db` is the one package with a build step.** `pnpm --filter @ihp/db build`
+  runs `prisma generate` into `src/generated/`, which is gitignored — the output is
+  coupled to the installed `@prisma/client`. Turbo sequences it via `^build`; the web
+  Dockerfile runs it explicitly because `pnpm --filter` does not build dependencies.
 - **One design system per app.** `apps/web` is Mantine v9 (`src/theme.ts`);
   `apps/landing` is Tailwind v4 + `@ihp/ui`. They are never mixed inside one app.
 - **Tailwind v4 is CSS-first** and now only in `apps/landing`. Tokens live in
@@ -102,7 +107,7 @@ Change the entry port with `PROXY_PORT` in `.env`.
 
 ## Auth
 
-Better Auth on the Drizzle adapter, mounted at `/app/api/auth/*`. Email + password
+Better Auth on the Prisma adapter, mounted at `/app/api/auth/*`. Email + password
 and Microsoft Entra ID ("Continue with Outlook") are both enabled.
 
 Routes in `apps/web/src/app` use route groups, which do not appear in the URL:

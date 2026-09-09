@@ -103,6 +103,24 @@ different volumes (`ihp-plus-dev` vs `ihp-plus`). This is expected, not a bug.
 
 ## Not wired yet
 
-Postgres and Redis run, but no client, ORM, migrations, or `packages/db` exist. A
-task that needs persistence starts with choosing Drizzle or Prisma — ask, do not
-pick one unilaterally.
+Redis runs but nothing reads `REDIS_URL` — propose a client before assuming one.
+There is no transactional email provider either: Better Auth's reset and
+verification links are logged by `apps/web/src/lib/email.ts`, not sent.
+
+Postgres **is** wired, through `@ihp/db` (Prisma 7). See `.claude/rules/infra.md`.
+
+## A local Postgres install shadows the container
+
+`28P01 password authentication failed for user "ihp"` with a healthy container
+means something else already owns the published port. On Windows a native
+`postgres.exe` and Docker's proxy can both bind `0.0.0.0:5432`; the native one
+answers and has no `ihp` role. Confirm with:
+
+```bash
+docker exec ihp-plus-dev-postgres-1 sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U ihp -d ihp_plus -tAc "select 1"'
+```
+
+If that succeeds, the container is fine and the host port is contested. Either stop
+the native server or set `POSTGRES_PORT` **and** the port inside `DATABASE_URL` to a
+free port. `prisma migrate` swallows the underlying error and just exits 1, so
+diagnose with a direct `pg` connection rather than trusting its exit code.

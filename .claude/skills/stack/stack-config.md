@@ -15,7 +15,8 @@ came from, the file wins — fix this table.
 | `pnpm lint` | `turbo run lint` — only `@ihp/web` defines it |
 | `pnpm typecheck` | `tsc --noEmit` (web, ui, db) + `astro check` (landing) |
 | `pnpm format` | prettier write, incl. `.astro` — repo-wide, rewrites unrelated files |
-| `pnpm db:generate` / `db:migrate` / `db:studio` | `drizzle-kit` in `@ihp/db` |
+| `pnpm db:generate` / `db:migrate` / `db:studio` | `prisma` in `@ihp/db` (`migrate dev --create-only` / `migrate deploy` / `studio`) |
+| `pnpm db:auth-schema` | regenerates the Better Auth models in `prisma/schema.prisma` |
 | `pnpm clean` | per-package clean + removes root `node_modules` |
 | `pnpm infra:up` / `infra:down` | `infra/compose.dev.yml`, both services |
 | `pnpm infra:pg` / `infra:pg:stop` | same file, `postgres` only (additive) |
@@ -35,10 +36,10 @@ Both compose scripts pass `--env-file .env`. `dev`, `dev:web`, `dev:landing`,
 | `@ihp/landing` | `apps/landing` | Astro ^7.3.1, `output: 'static'`, `@astrojs/react`, Tailwind v4 + `@ihp/ui` |
 | `@ihp/ui` | `packages/ui` | source-only TSX, `Button` + `Card`, no build step — consumed by landing only |
 | `@ihp/config` | `packages/config` | `tsconfig/base.json`, `tsconfig/nextjs.json`, `tailwind/theme.css` |
-| `@ihp/db` | `packages/db` | Drizzle 0.45 + `pg` 8.23, Better Auth schema, `migrations/` |
+| `@ihp/db` | `packages/db` | Prisma 7.10 + `@prisma/adapter-pg`, `prisma/schema.prisma`, `prisma/migrations/`; client generated into `src/generated/` by its `build` script |
 
-Built deps allowed in `pnpm-workspace.yaml`: `@tailwindcss/oxide`, `esbuild`,
-`sharp`, `unrs-resolver`.
+Built deps allowed in `pnpm-workspace.yaml`: `@prisma/engines`, `@tailwindcss/oxide`,
+`esbuild`, `prisma`, `sharp`, `unrs-resolver`.
 
 ## Ports and URLs
 

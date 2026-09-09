@@ -3,8 +3,8 @@
 pnpm workspace monorepo: Astro 7 static marketing site (`/`) + Next.js 16 App Router
 app (`/app`) behind one nginx origin. `apps/web` is **Mantine v9**; `apps/landing` is
 **Tailwind v4 + `@ihp/ui`**. Shared tsconfig/Tailwind tokens in `@ihp/config`.
-Postgres is reached through `@ihp/db` (Drizzle ORM + node-postgres, migrations in
-`packages/db/migrations`). Redis runs but **nothing reads `REDIS_URL` yet** — propose
+Postgres is reached through `@ihp/db` (Prisma 7 + the `@prisma/adapter-pg` driver
+adapter, migrations in `packages/db/prisma/migrations`). Redis runs but **nothing reads `REDIS_URL` yet** — propose
 a client before assuming one.
 
 Read `README.md` for the layout table and the dev/stack commands.
@@ -16,8 +16,8 @@ Query them instead of recalling an API from training data:
 
 - **better-auth** (`https://mcp.better-auth.com/mcp`) — Better Auth docs, examples,
   setup help. Use before writing any auth code. Better Auth **1.7.3 is installed**
-  in `apps/web` on the Drizzle adapter (`@better-auth/drizzle-adapter`, a separate
-  package in 1.7 — not `better-auth/adapters/drizzle`).
+  in `apps/web` on the Prisma adapter (`@better-auth/prisma-adapter`, a separate
+  package in 1.7 — not `better-auth/adapters/prisma`).
 - **mantine** (`npx @mantine/mcp-server`) — `list_items`, `get_item_doc`,
   `get_item_props`, `search_docs`. The server tracks the Mantine release, so it
   documents **v9**, which is what `apps/web` runs. Mantine is the UI layer in
@@ -58,9 +58,12 @@ Query them instead of recalling an API from training data:
   the local Postgres data volume.
 - Ports are fixed: web 3000, landing 4321, proxy `PROXY_PORT` (default 80). Don't
   change them to dodge a conflict — report the conflict.
-- Never hand-edit `packages/db/src/schema/auth.ts`; it is Better Auth CLI output
-  (`pnpm dlx auth@latest generate --config apps/web/src/lib/auth.ts --output packages/db/src/schema/auth.ts`).
-  App tables belong in sibling files under `packages/db/src/schema/`.
+- Never hand-edit the models in `packages/db/prisma/schema.prisma`; they are Better
+  Auth CLI output — regenerate with `pnpm db:auth-schema`. It rewrites the whole file,
+  so app models added below them are lost; keep those in a separate `.prisma` file.
+- `packages/db/src/generated/` is Prisma Client output: gitignored, rebuilt by
+  `pnpm --filter @ihp/db build`, and version-coupled to `@prisma/client`. Never edit
+  it and never commit it.
 
 ## Rules
 

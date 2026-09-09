@@ -22,7 +22,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 FROM deps AS builder
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm --filter @ihp/web build
+RUN pnpm --filter @ihp/db build && pnpm --filter @ihp/web build
 
 # ---- runner: only the standalone bundle ----
 FROM base AS runner
