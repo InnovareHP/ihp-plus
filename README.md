@@ -6,11 +6,12 @@ pnpm workspace monorepo: Astro marketing site + Next.js app behind one nginx ori
 
 ```
 apps/
-  web/        Next.js 16 (App Router, RSC) — mounted at /app via basePath
-  landing/    Astro 7 (static output) — mounted at /
+  web/        Next.js 16 (App Router, RSC) — mounted at /app via basePath, Mantine v9
+  landing/    Astro 7 (static output) — mounted at /, Tailwind v4 + @ihp/ui
 packages/
-  ui/         shared React components, source-only TSX (@ihp/ui)
+  ui/         shared React components, source-only TSX (@ihp/ui) — landing only
   config/     shared tsconfig presets + Tailwind v4 theme tokens (@ihp/config)
+  db/         Drizzle ORM client + Better Auth schema and migrations (@ihp/db)
 infra/
   compose.yml       full containerized stack (postgres, redis, web, landing, proxy)
   compose.dev.yml   dev infra only (postgres, redis)
@@ -34,11 +35,16 @@ Apps on the host, infra in Docker — bind-mounting `node_modules` into Linux
 containers on Windows is slow and breaks native binaries.
 
 ```bash
-cp .env.example .env
+cp .env.example .env   # then fill BETTER_AUTH_SECRET (>= 32 chars)
 pnpm install
 pnpm infra:up          # postgres + redis
+pnpm db:migrate        # creates the Better Auth tables
 pnpm dev               # both apps via turbo
 ```
+
+`.env` at the repo root is the only env file. Turbo 2 does not read `.env`, so the
+root `dev`/`build`/`test` scripts go through `dotenv-cli` — they fail loudly if you
+skipped the `cp` above.
 
 - app: http://localhost:3000/app
 - landing: http://localhost:4321
@@ -59,9 +65,13 @@ Change the entry port with `PROXY_PORT` in `.env`.
 | Script           | Does                                  |
 | ---------------- | ------------------------------------- |
 | `pnpm build`     | turbo build both apps                 |
+| `pnpm test`      | vitest (web)                          |
 | `pnpm lint`      | eslint (web)                          |
 | `pnpm typecheck` | `tsc --noEmit` + `astro check`        |
 | `pnpm format`    | prettier, incl. `.astro`              |
+| `pnpm db:generate` | drizzle-kit migration from the schema |
+| `pnpm db:migrate`  | apply migrations to `DATABASE_URL`  |
+| `pnpm db:studio`   | drizzle studio                      |
 | `pnpm infra:up`  | dev postgres + redis                  |
 | `pnpm stack:up`  | full docker stack                     |
 
@@ -69,9 +79,12 @@ Change the entry port with `PROXY_PORT` in `.env`.
 
 - **Shared UI is source-only.** `@ihp/ui` exports raw `.tsx`; Next compiles it via
   `transpilePackages`, Astro via Vite. No build step, no `dist/`, no stale output.
-- **Tailwind v4 is CSS-first.** Tokens live in `packages/config/tailwind/theme.css`,
-  imported by each app's global CSS. Each app also needs
+- **One design system per app.** `apps/web` is Mantine v9 (`src/theme.ts`);
+  `apps/landing` is Tailwind v4 + `@ihp/ui`. They are never mixed inside one app.
+- **Tailwind v4 is CSS-first** and now only in `apps/landing`. Tokens live in
+  `packages/config/tailwind/theme.css`, and the landing global CSS needs
   `@source '../../../../packages/ui/src'` so Tailwind scans the shared package.
+  `apps/web/src/theme.ts` mirrors the same OKLCH ramp as Mantine shades.
 - **Docker builds use the repo root as context** (`context: ..`) — the lockfile and
   workspace links live there. Dockerfiles copy every workspace `package.json` before
   the source so `pnpm install` stays cached.
@@ -80,7 +93,42 @@ Change the entry port with `PROXY_PORT` in `.env`.
 - Adding a workspace package? Add its `package.json` to the `COPY` list in both
   Dockerfiles.
 
+## Auth
+
+Better Auth on the Drizzle adapter, mounted at `/app/api/auth/*`. Email + password
+and Microsoft Entra ID ("Continue with Outlook") are both enabled.
+
+Routes in `apps/web/src/app` use route groups, which do not appear in the URL:
+
+| Folder         | URLs                                                    | Session  |
+| -------------- | ------------------------------------------------------- | -------- |
+| `(auth)/`      | `/login`, `/signup`, `/forgot-password`, `/reset-password` | none     |
+| `(dashboard)/` | `/`, `/settings`                                        | required |
+
+`src/lib/routes.ts` is the single source for those paths. `src/proxy.ts` (Next 16's
+rename of middleware) does a cookie-only optimistic redirect; `requireSession()`
+revalidates against the database in every protected layout.
+
+Feature code lives under `src/features/<feature>/` — schemas, messages, and
+components together. `src/lib` holds the auth instance, client, guard, and query
+client; `src/components` holds app chrome (providers, shell, skip link).
+
+### Outlook sign-in setup
+
+Register a Web app in [Microsoft Entra](https://entra.microsoft.com), then set
+`MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET` in `.env` and add the redirect URI
+for the environment you are running:
+
+```
+http://localhost:3000/app/api/auth/callback/microsoft   # host dev
+http://localhost/app/api/auth/callback/microsoft        # full stack via the proxy
+```
+
+`MICROSOFT_TENANT_ID=common` accepts work/school Entra accounts and personal
+Outlook.com accounts.
+
 ## Not yet wired
 
-Postgres and Redis run but no client is installed — pick an ORM (Drizzle/Prisma) and
-add it as `packages/db`, then read `DATABASE_URL` / `REDIS_URL` from the env.
+No transactional email provider: password-reset and verification links are written
+to the server log instead of sent. No Redis client either — `REDIS_URL` is set but
+nothing reads it.

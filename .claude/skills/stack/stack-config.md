@@ -1,6 +1,6 @@
 # Stack lookup table
 
-Copied from the repo on 2026-09-09. If any value here disagrees with the file it
+Copied from the repo on 2026-09-10. If any value here disagrees with the file it
 came from, the file wins — fix this table.
 
 ## Commands (root `package.json`)
@@ -11,23 +11,29 @@ came from, the file wins — fix this table.
 | `pnpm dev:web` | `turbo run dev --filter=@ihp/web` |
 | `pnpm dev:landing` | `turbo run dev --filter=@ihp/landing` |
 | `pnpm build` | `turbo run build` |
+| `pnpm test` | `turbo run test` — only `@ihp/web` defines it (`vitest run`) |
 | `pnpm lint` | `turbo run lint` — only `@ihp/web` defines it |
-| `pnpm typecheck` | `tsc --noEmit` (web, ui) + `astro check` (landing) |
-| `pnpm format` | prettier write, incl. `.astro` |
+| `pnpm typecheck` | `tsc --noEmit` (web, ui, db) + `astro check` (landing) |
+| `pnpm format` | prettier write, incl. `.astro` — repo-wide, rewrites unrelated files |
+| `pnpm db:generate` / `db:migrate` / `db:studio` | `drizzle-kit` in `@ihp/db` |
 | `pnpm clean` | per-package clean + removes root `node_modules` |
 | `pnpm infra:up` / `infra:down` | `infra/compose.dev.yml` |
 | `pnpm stack:up` / `stack:down` | `infra/compose.yml` (`up --build`) |
 
-Both compose scripts pass `--env-file .env`.
+Both compose scripts pass `--env-file .env`. `dev`, `dev:web`, `dev:landing`,
+`build`, and `test` are prefixed with `dotenv -e .env --`: turbo 2 does not read
+`.env` files, so without it nothing on the host sees `DATABASE_URL` or
+`BETTER_AUTH_SECRET`. They fail hard if `.env` is missing.
 
 ## Workspaces
 
 | Package | Path | Notes |
 | --- | --- | --- |
-| `@ihp/web` | `apps/web` | Next 16.3.4, React 19.2.8, `basePath: '/app'`, `output: 'standalone'` |
-| `@ihp/landing` | `apps/landing` | Astro ^7.3.1, `output: 'static'`, `@astrojs/react` |
-| `@ihp/ui` | `packages/ui` | source-only TSX, `Button` + `Card`, no build step |
+| `@ihp/web` | `apps/web` | Next 16.3.4, React 19.2.8, `basePath: '/app'`, `output: 'standalone'`, Mantine 9.6.1, Better Auth 1.7.3 |
+| `@ihp/landing` | `apps/landing` | Astro ^7.3.1, `output: 'static'`, `@astrojs/react`, Tailwind v4 + `@ihp/ui` |
+| `@ihp/ui` | `packages/ui` | source-only TSX, `Button` + `Card`, no build step — consumed by landing only |
 | `@ihp/config` | `packages/config` | `tsconfig/base.json`, `tsconfig/nextjs.json`, `tailwind/theme.css` |
+| `@ihp/db` | `packages/db` | Drizzle 0.45 + `pg` 8.23, Better Auth schema, `migrations/` |
 
 Built deps allowed in `pnpm-workspace.yaml`: `@tailwindcss/oxide`, `esbuild`,
 `sharp`, `unrs-resolver`.
@@ -40,6 +46,10 @@ Built deps allowed in `pnpm-workspace.yaml`: `@tailwindcss/oxide`, `esbuild`,
 | Astro dev | `http://localhost:4321` |
 | Full stack entry | `http://localhost:${PROXY_PORT}` (default 80) |
 | Health route | `/app/api/health` → `{ status, service: 'web', ts }` |
+| Auth routes | `/app/api/auth/*` (Better Auth `basePath: '/app/api/auth'`) |
+| Entra redirect URI | `${BETTER_AUTH_URL}/app/api/auth/callback/microsoft` |
+| Sign-in page | `/app/login` — also `/app/signup`, `/app/forgot-password`, `/app/reset-password` |
+| Dashboard | `/app` and `/app/settings`, both session-gated |
 | Postgres (dev) | `localhost:${POSTGRES_PORT}` default 5432 |
 | Redis (dev) | `localhost:${REDIS_PORT}` default 6379 |
 
@@ -70,11 +80,18 @@ Compose project names: `ihp-plus` (full), `ihp-plus-dev` (dev) — separate volu
 ## Env vars (`.env.example`)
 
 `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`, `REDIS_PORT`,
-`DATABASE_URL`, `REDIS_URL`, `NEXT_PUBLIC_SITE_URL`, `PROXY_PORT`.
+`DATABASE_URL`, `REDIS_URL`, `NEXT_PUBLIC_SITE_URL`, `PROXY_PORT`,
+`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `MICROSOFT_CLIENT_ID`,
+`MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, `EMAIL_FROM`.
+
+`BETTER_AUTH_URL` is the origin the **browser** hits: `http://localhost:3000` for host
+dev, `http://localhost` behind the proxy. `infra/compose.yml` requires
+`BETTER_AUTH_SECRET` and fails the `web` service without it.
 
 Host dev uses `localhost`; inside compose use service names `postgres` / `redis`
 (`infra/compose.yml` sets those for `web` directly). `turbo.json` declares
-`DATABASE_URL`, `REDIS_URL`, `NEXT_PUBLIC_*` for `build`, and `.env` as a global
+`DATABASE_URL`, `REDIS_URL`, `NEXT_PUBLIC_*`, `BETTER_AUTH_URL`,
+`BETTER_AUTH_SECRET`, and `MICROSOFT_*` for `build`, and `.env` as a global
 dependency.
 
 ## No CI
@@ -83,7 +100,9 @@ There is no `.github/`, no pipeline, and no deploy target as of 2026-09-10.
 Deployment is manual `docker compose` for now — do not reference a pipeline that
 does not exist.
 
-No test runner is installed yet either, though tests are required for every major
-feature (`.claude/rules/testing.md`): the first tested feature adds Vitest +
-Testing Library, a `test` task in `turbo.json`, and a root `pnpm test` — update
-this table then.
+Tests do exist: Vitest 5 + Testing Library + `vitest-axe` in `@ihp/web`
+(`apps/web/vitest.config.ts`, jsdom, setup at `src/test/setup.ts`), a `test` task in
+`turbo.json`, and `pnpm test` at the root. No other workspace has a runner.
+
+There is no email provider: password-reset and verification links are logged by
+`apps/web/src/lib/email.ts`, not sent. Nothing reads `REDIS_URL`.

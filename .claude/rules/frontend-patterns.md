@@ -11,18 +11,20 @@ the end) and `.claude/rules/code-style.md` (tokens, `@ihp/ui` component shape).
 
 ## Packages
 
-**None of these are installed yet** — the first task that needs one installs it:
+**Installed in `@ihp/web`:** `react-hook-form`, `@hookform/resolvers`, `zod` (v4 —
+`z.email()`, not the deprecated `z.string().email()`), `@tanstack/react-query`,
+`@mantine/core`, `@mantine/hooks`, `@mantine/notifications`.
 
-```bash
-pnpm add -F @ihp/web react-hook-form @hookform/resolvers zod @tanstack/react-query
-```
+Do not hand-roll a substitute for any of them. **Mantine v9 is the UI layer in
+`apps/web`** — it supplies the dialog, menu, toast, and focus-trap primitives this
+file assumes, so no Radix and no hand-rolled focus trap or toast queue. Tailwind and
+`@ihp/ui` are **not** installed in web; they stay in `apps/landing`. Anything Mantine
+does not cover still needs a proposal and a yes before it is installed.
 
-Do not hand-roll a substitute for any of them. Same rule for the UI primitives this
-file assumes but nobody has picked yet — a headless dialog/menu/toast layer (Radix is
-the intended pick) and a table/virtualizer. **Propose the package, get a yes, then
-install** — never hand-roll a focus trap, a toast queue, or a sortable table body.
-Mantine is reference-only per `CLAUDE.md`; do not pull its components in beside
-Tailwind and `@ihp/ui`.
+Theme tokens for web live in `apps/web/src/theme.ts`, which mirrors the OKLCH ramp in
+`packages/config/tailwind/theme.css` as Mantine shades. `primaryShade` is 6 in light
+and 4 in dark from measured contrast; `autoContrast` is on. Add a shade there rather
+than hardcoding a colour on a component.
 
 ## Principles
 

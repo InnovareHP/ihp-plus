@@ -57,11 +57,19 @@ Follow `src/button.tsx` and `src/card.tsx` exactly — they are the pattern:
 
 ## Styling
 
-Tailwind v4, CSS-first. Design tokens live only in
+One design system per app; never both in one app.
+
+**`apps/landing`** — Tailwind v4, CSS-first. Design tokens live only in
 `packages/config/tailwind/theme.css` (`--color-brand-*`, `--font-sans`,
 `--radius-card`). Use the token classes (`bg-brand-600`, `rounded-card`,
 `font-sans`); add a new token to `theme.css` rather than hardcoding a hex or an
 arbitrary value. There is no `tailwind.config.js` and none should be added.
+
+**`apps/web`** — Mantine v9. Tailwind is not installed there. Style with Mantine
+props and its CSS variables (`var(--mantine-color-body)`,
+`var(--mantine-spacing-md)`); the theme is `apps/web/src/theme.ts`, whose `brand`
+tuple mirrors the same OKLCH ramp. No `className` utility strings, no `style` prop
+where a Mantine prop exists, and no arbitrary hex.
 
 ## Next.js app (`apps/web`)
 
@@ -73,8 +81,17 @@ arbitrary value. There is no `tailwind.config.js` and none should be added.
 - Route handlers follow `src/app/api/health/route.ts`: named HTTP-verb export,
   `NextResponse.json`, explicit `export const dynamic` when the route must not be
   statically evaluated.
-- `layout.tsx` types children via Next 16's generated `LayoutProps<'/'>`, not a
-  hand-written `{ children: ReactNode }`.
+- The root `layout.tsx` types children via Next 16's generated `LayoutProps<'/'>`.
+  A **route-group** layout cannot: both it and the root layout sit at `'/'`, so those
+  take a hand-written `{ children: ReactNode }`.
+- Route groups carry the structure: `(auth)/` is session-free, `(dashboard)/` requires
+  one, and neither appears in the URL. Paths live in `src/lib/routes.ts` — never a
+  literal `'/login'` in a component.
+- Feature code goes in `src/features/<feature>/` (schema, messages, components).
+  `src/lib` is cross-cutting singletons; `src/components` is app chrome.
+- A server component cannot pass `component={Link}` into a Mantine component — that
+  ships a function across the RSC boundary and fails at build. Put the leaf in a
+  `'use client'` file.
 
 ## Astro app (`apps/landing`)
 

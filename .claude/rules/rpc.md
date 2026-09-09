@@ -33,7 +33,7 @@ packages/rpc/      generated TS clients + shared transport (@ihp/rpc)
 - Generate with `buf generate` via `protoc-gen-es` / `protoc-gen-connect-es`.
   Generated output is **committed** so installs and Docker builds need no codegen
   step, and it is never hand-edited.
-- Adding either package means the four-place wiring in
+- Adding either package means the wiring checklist in
   `.claude/rules/monorepo-wiring.md` — both Dockerfile COPY lists included.
 - Proto style: one service per file, `package ihp.<domain>.v1`, versioned from day
   one. Field numbers are permanent; add fields, never renumber or reuse.

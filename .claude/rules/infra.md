@@ -65,8 +65,15 @@ Postgres 17, Redis 7 with AOF on. Volumes: `postgres-data`/`redis-data` (full
 stack), `postgres-dev-data`/`redis-dev-data` (dev). Both compose files gate `web`
 on `service_healthy` for postgres and redis.
 
-Nothing in the app connects to either yet — no ORM is installed. Picking one
-(Drizzle or Prisma as `packages/db`) is an open decision; ask before choosing.
+Postgres is reached through `@ihp/db`: Drizzle ORM + `node-postgres`, one pooled
+client cached on `globalThis` so Next's dev reloads do not leak pools. Migrations
+are SQL files in `packages/db/migrations`, generated with `pnpm db:generate` and
+applied with `pnpm db:migrate`. Nothing reads `REDIS_URL` yet — propose a client
+before assuming one.
+
+Turbo 2 does not read `.env` files, so the root `dev`/`build`/`test` scripts run
+through `dotenv-cli` to load the repo-root `.env`. Inside compose, env comes from
+the service definitions instead.
 
 Destructive commands are blocked by `.claude/hooks/validate-bash.sh`: volume
 removal, prunes, `DROP`/`TRUNCATE`, `git push`. If one is genuinely needed, say so

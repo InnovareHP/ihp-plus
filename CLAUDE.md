@@ -1,10 +1,11 @@
 # ihp-plus
 
 pnpm workspace monorepo: Astro 7 static marketing site (`/`) + Next.js 16 App Router
-app (`/app`) behind one nginx origin. Shared React components in `@ihp/ui`, shared
-tsconfig/Tailwind tokens in `@ihp/config`. Postgres + Redis run in Docker but **no
-client is installed yet** — there is no ORM, no `packages/db`, no migrations. Do not
-write code that assumes one exists; propose the package first.
+app (`/app`) behind one nginx origin. `apps/web` is **Mantine v9**; `apps/landing` is
+**Tailwind v4 + `@ihp/ui`**. Shared tsconfig/Tailwind tokens in `@ihp/config`.
+Postgres is reached through `@ihp/db` (Drizzle ORM + node-postgres, migrations in
+`packages/db/migrations`). Redis runs but **nothing reads `REDIS_URL` yet** — propose
+a client before assuming one.
 
 Read `README.md` for the layout table and the dev/stack commands.
 
@@ -14,25 +15,30 @@ Read `README.md` for the layout table and the dev/stack commands.
 Query them instead of recalling an API from training data:
 
 - **better-auth** (`https://mcp.better-auth.com/mcp`) — Better Auth docs, examples,
-  setup help. Use before writing any auth code. Better Auth is **not installed**
-  here and needs a DB adapter, which this repo does not have yet.
+  setup help. Use before writing any auth code. Better Auth **1.7.3 is installed**
+  in `apps/web` on the Drizzle adapter (`@better-auth/drizzle-adapter`, a separate
+  package in 1.7 — not `better-auth/adapters/drizzle`).
 - **mantine** (`npx @mantine/mcp-server`) — `list_items`, `get_item_doc`,
-  `get_item_props`, `search_docs` for Mantine v8. Note the apps use Tailwind v4 and
-  `@ihp/ui`, **not** Mantine — treat this as reference until a decision says
-  otherwise, and never mix the two design systems in one app.
+  `get_item_props`, `search_docs`. The server tracks the Mantine release, so it
+  documents **v9**, which is what `apps/web` runs. Mantine is the UI layer in
+  `apps/web` only; `apps/landing` stays Tailwind + `@ihp/ui`. **Never mix the two
+  design systems inside one app.**
 
 ## Working rules
 
 - Node >= 22.12, pnpm 10 only. Never `npm` or `yarn` — the lockfile is pnpm's.
 - Workspace deps use `workspace:*`. Add deps with `pnpm add -F @ihp/<pkg> <dep>`,
   never by hand-editing a `package.json`.
-- Verify with `pnpm typecheck` then `pnpm lint`, and `pnpm format` before finishing.
-  `typecheck` runs in `@ihp/web`, `@ihp/ui` (`tsc --noEmit`) and `@ihp/landing`
-  (`astro check`) — `@ihp/config` has no script. `lint` is web-only; Astro and the
-  packages have no eslint config.
-- **Every major feature ships with tests** — see `.claude/rules/testing.md`. No test
-  runner is installed yet; the first tested feature adds Vitest + Testing Library and
-  wires `pnpm test`. Until then, do not claim a suite passed.
+- Verify with `pnpm typecheck`, `pnpm test`, then `pnpm lint`, and format before
+  finishing. `typecheck` runs in `@ihp/web`, `@ihp/ui`, `@ihp/db` (`tsc --noEmit`)
+  and `@ihp/landing` (`astro check`) — `@ihp/config` has no script. `lint` and `test`
+  are web-only; Astro and the packages have no eslint config or tests.
+- **Every major feature ships with tests** — see `.claude/rules/testing.md`. Vitest +
+  Testing Library + `vitest-axe` are installed in `@ihp/web`; run `pnpm test`. Never
+  claim a suite passed without running it.
+- `pnpm format`'s glob is repo-wide and the checked-in tree is **not** prettier-clean,
+  so a bare `pnpm format` rewrites ~10 unrelated files. Format only the paths you
+  touched (`pnpm exec prettier --write <paths>`).
 - **Commit at every major milestone.** Finish a coherent chunk → `git add` the files
   it touched and commit with a message saying what changed and why. Do not batch a
   whole session into one commit, and never `git push` (that's the user's call).
@@ -52,6 +58,9 @@ Query them instead of recalling an API from training data:
   the local Postgres data volume.
 - Ports are fixed: web 3000, landing 4321, proxy `PROXY_PORT` (default 80). Don't
   change them to dodge a conflict — report the conflict.
+- Never hand-edit `packages/db/src/schema/auth.ts`; it is Better Auth CLI output
+  (`pnpm dlx auth@latest generate --config apps/web/src/lib/auth.ts --output packages/db/src/schema/auth.ts`).
+  App tables belong in sibling files under `packages/db/src/schema/`.
 
 ## Rules
 

@@ -4,7 +4,7 @@
 not when it renders. No "tests to follow", no PR that adds a form, a query, or an
 RPC call with nothing covering it.
 
-## Stack (not installed yet — the first tested feature installs it)
+## Stack (installed)
 
 ```bash
 pnpm add -Dw vitest @vitest/coverage-v8
@@ -12,10 +12,17 @@ pnpm add -D -F @ihp/web @testing-library/react @testing-library/user-event \
   @testing-library/jest-dom jsdom vitest-axe
 ```
 
-Then: a `vitest.config.ts` per workspace that has tests, a `"test": "vitest run"`
-script in each, a `test` task in `turbo.json` (`dependsOn: ["^build"]`, no
-`outputs`), and `pnpm test` at the root. Update `.claude/skills/stack/stack-config.md`
-and the README script table in the same change.
+Wired in `@ihp/web`: `vitest.config.ts` (jsdom, `resolve.tsconfigPaths`, no
+`vite-tsconfig-paths` plugin), `"test": "vitest run"`, a `test` task in
+`turbo.json`, and `pnpm test` at the root. A new workspace that gains tests
+repeats all four and updates `.claude/skills/stack/stack-config.md` plus the
+README script table in the same change.
+
+`src/test/setup.ts` stubs `matchMedia` and `ResizeObserver` — jsdom has neither and
+Mantine reads both. Render through `src/test/render.tsx`: it wraps in
+`MantineProvider env="test"` (no transitions, no portals) and a fresh
+`QueryClient` with retries off. `vitest-axe` still augments Vitest 1's `Vi`
+namespace, so the matcher type is redeclared in `src/test/vitest-axe.d.ts`.
 
 Vitest over Jest: the repo is ESM + Vite already (Astro), and Next 16 works with it.
 

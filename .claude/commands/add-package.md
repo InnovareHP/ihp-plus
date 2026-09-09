@@ -13,14 +13,17 @@ package name). Follow `.claude/rules/monorepo-wiring.md`.
    Next app) and adds `@ihp/config` as a devDependency.
 4. Add `COPY <path>/package.json <path>/` to the deps stage of **both**
    `infra/docker/web.Dockerfile` and `infra/docker/landing.Dockerfile`.
-5. If it ships raw TSX used by Next, add it to `transpilePackages` in
-   `apps/web/next.config.ts`.
+5. If it ships raw TS/TSX used by Next, add it to `transpilePackages` in
+   `apps/web/next.config.ts`; a native or socket-opening dep goes in
+   `serverExternalPackages` there too.
 6. If it contains Tailwind classes, add an `@source` line pointing at its `src` in
-   `apps/web/src/app/globals.css` and `apps/landing/src/styles/global.css`, with the
-   correct relative depth.
+   `apps/landing/src/styles/global.css` — the only Tailwind-rooted app — with the
+   correct relative depth. `apps/web` is Mantine and has no `@source` line.
 7. If it is an app, add `dev:<name>` to the root `package.json` scripts and update
    the README layout section and script table.
 8. Wire consumers with `pnpm add -F @ihp/<consumer> @ihp/<name>@workspace:*`, then
    run `pnpm install` so `pnpm-lock.yaml` is updated in the same change.
-9. Verify: `pnpm typecheck`, then `pnpm stack:up` — a missing COPY only fails inside
-   Docker.
+9. If it will have tests, add `vitest.config.ts`, a `"test": "vitest run"` script,
+   and update the README script table (`.claude/rules/testing.md`).
+10. Verify: `pnpm typecheck` and `pnpm test`, then `pnpm stack:up` — a missing COPY
+    only fails inside Docker.
