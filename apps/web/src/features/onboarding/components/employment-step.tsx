@@ -3,6 +3,7 @@
 import { Select, Stack, TextInput } from '@mantine/core'
 import { Controller, type UseFormReturn } from 'react-hook-form'
 import { DEPARTMENTS, EMPLOYMENT_TYPES, POSITIONS } from '../options'
+import { NARROW_INPUT } from '../field-styles'
 import type { OnboardingValues } from '../schema'
 
 export interface EmploymentStepProps {
@@ -89,7 +90,7 @@ export function EmploymentStep({ form }: EmploymentStepProps) {
         label="Start date"
         description="The first day of your current position."
         type="date"
-        maw={240}
+        styles={NARROW_INPUT}
         required
         aria-required="true"
         error={errors.startDate?.message}
@@ -100,7 +101,7 @@ export function EmploymentStep({ form }: EmploymentStepProps) {
         {...register('employeeId')}
         label="Employee ID"
         description="Optional. Leave blank if HR has not issued one yet."
-        maw={240}
+        styles={NARROW_INPUT}
         error={errors.employeeId?.message}
         errorProps={{ role: 'alert' }}
       />

@@ -1,7 +1,8 @@
 'use client'
 
-import { Fieldset, Stack, TextInput } from '@mantine/core'
+import { Fieldset, Stack, Text, TextInput } from '@mantine/core'
 import type { UseFormReturn } from 'react-hook-form'
+import { NARROW_INPUT, TINY_INPUT } from '../field-styles'
 import type { OnboardingValues } from '../schema'
 
 export interface PersonalStepProps {
@@ -17,7 +18,7 @@ export function PersonalStep({ form, email }: PersonalStepProps) {
 
   return (
     <Stack gap="lg">
-      <Fieldset legend="Legal name" variant="unstyled">
+      <Fieldset legend={<Legend>Legal name</Legend>} variant="unstyled">
         <Stack gap="md">
           <TextInput
             {...register('firstName')}
@@ -33,7 +34,7 @@ export function PersonalStep({ form, email }: PersonalStepProps) {
             label="Middle initial"
             description="Optional."
             maxLength={1}
-            maw={140}
+            styles={TINY_INPUT}
             autoComplete="additional-name"
             error={errors.middleInitial?.message}
             errorProps={{ role: 'alert' }}
@@ -50,7 +51,7 @@ export function PersonalStep({ form, email }: PersonalStepProps) {
         </Stack>
       </Fieldset>
 
-      <Fieldset legend="How we reach you" variant="unstyled">
+      <Fieldset legend={<Legend>How we reach you</Legend>} variant="unstyled">
         <Stack gap="md">
           <TextInput
             label="Email address"
@@ -83,12 +84,21 @@ export function PersonalStep({ form, email }: PersonalStepProps) {
             description="Optional. Used for benefits eligibility only."
             type="date"
             autoComplete="bday"
-            maw={240}
+            styles={NARROW_INPUT}
             error={errors.dateOfBirth?.message}
             errorProps={{ role: 'alert' }}
           />
         </Stack>
       </Fieldset>
     </Stack>
+  )
+}
+
+// An unstyled fieldset renders its legend as plain body text, which reads as help text.
+function Legend({ children }: { children: string }) {
+  return (
+    <Text component="span" size="sm" fw={600}>
+      {children}
+    </Text>
   )
 }

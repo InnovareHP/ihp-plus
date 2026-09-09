@@ -116,7 +116,7 @@ export function OnboardingStepper({ email, defaultValues }: OnboardingStepperPro
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
       <Text size="sm" c="dimmed" mb="md">
-        Step {step + 1} of {ONBOARDING_STEPS.length} · {current.description}
+        Step {step + 1} of {ONBOARDING_STEPS.length}
       </Text>
       <VisuallyHidden aria-live="polite">
         Step {step + 1} of {ONBOARDING_STEPS.length}: {current.label}

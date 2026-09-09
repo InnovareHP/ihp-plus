@@ -76,7 +76,7 @@ describe('OnboardingStepper', () => {
   it('opens on the first step with the sign-in address shown but not editable', () => {
     renderStepper()
 
-    expect(screen.getByText('Step 1 of 3 · Name and contact')).toBeInTheDocument()
+    expect(screen.getByText('Step 1 of 3')).toBeInTheDocument()
     expect(screen.getByLabelText('Email address')).toHaveValue('ada@innovarehp.com')
     expect(screen.getByLabelText('Email address')).toHaveAttribute('readonly')
   })
@@ -90,7 +90,7 @@ describe('OnboardingStepper', () => {
     const error = await screen.findByText('First name is required')
     expect(error).toBeInTheDocument()
     expect(screen.getByLabelText(/First name/)).toHaveFocus()
-    expect(screen.getByText('Step 1 of 3 · Name and contact')).toBeInTheDocument()
+    expect(screen.getByText('Step 1 of 3')).toBeInTheDocument()
   })
 
   it('advances once the required names are filled in', async () => {
@@ -101,7 +101,7 @@ describe('OnboardingStepper', () => {
     await person.type(screen.getByLabelText(/Last name/), 'Lovelace')
     await person.click(screen.getByRole('button', { name: 'Continue' }))
 
-    expect(await screen.findByText('Step 2 of 3 · Position and employment')).toBeInTheDocument()
+    expect(await screen.findByText('Step 2 of 3')).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: /Current position/ })).toBeInTheDocument()
   })
 
@@ -114,7 +114,7 @@ describe('OnboardingStepper', () => {
     await person.click(screen.getByRole('option', { name: 'Finance' }))
     await person.click(screen.getByRole('button', { name: 'Continue' }))
 
-    expect(await screen.findByText('Step 3 of 3 · Confirm and finish')).toBeInTheDocument()
+    expect(await screen.findByText('Step 3 of 3')).toBeInTheDocument()
     expect(screen.getByText('Finance')).toBeInTheDocument()
   })
 
@@ -177,7 +177,7 @@ describe('OnboardingStepper', () => {
     await person.click(await screen.findByLabelText('These details are correct.'))
     await person.click(screen.getByRole('button', { name: 'Finish setup' }))
 
-    expect(await screen.findByText('Step 1 of 3 · Name and contact')).toBeInTheDocument()
+    expect(await screen.findByText('Step 1 of 3')).toBeInTheDocument()
     expect(complete.completeOnboarding).not.toHaveBeenCalled()
   })
 
