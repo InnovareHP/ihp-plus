@@ -51,7 +51,7 @@ export function ForgotPasswordForm() {
 
         <TextInput
           {...register('email')}
-          label="Email address (required)"
+          label="Email address"
           placeholder="you@innovarehp.com"
           type="email"
           autoComplete="email"

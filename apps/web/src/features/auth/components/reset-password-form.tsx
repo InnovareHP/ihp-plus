@@ -67,7 +67,7 @@ export function ResetPasswordForm() {
 
         <PasswordInput
           {...register('password')}
-          label="New password (required)"
+          label="New password"
           description="At least 12 characters."
           autoComplete="new-password"
           required
@@ -78,7 +78,7 @@ export function ResetPasswordForm() {
 
         <PasswordInput
           {...register('confirmPassword')}
-          label="Confirm new password (required)"
+          label="Confirm new password"
           autoComplete="new-password"
           required
           aria-required="true"

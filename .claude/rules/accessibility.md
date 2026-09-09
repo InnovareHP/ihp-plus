@@ -37,8 +37,10 @@ Pairs with `.claude/rules/frontend-patterns.md` — react-hook-form owns the sta
 this owns the markup:
 
 - A real `<label htmlFor>` for every input; placeholder is never the label.
-- Required fields: `required` + `aria-required`, and the word "required" in the
-  label — not just an asterisk.
+- Required fields: `required` + `aria-required`, and the asterisk Mantine's
+  `required` prop renders — no "(required)" in the label text. The asterisk is
+  decorative (`aria-hidden`); `aria-required` is what a screen reader announces, so
+  both must be present.
 - Invalid fields: `aria-invalid="true"` plus `aria-describedby` pointing at the
   error element's `id`.
 - Error text sits in a container with `role="alert"` (or `aria-live="polite"` for a

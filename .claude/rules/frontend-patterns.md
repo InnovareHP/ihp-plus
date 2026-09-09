@@ -46,12 +46,12 @@ than hardcoding a colour on a component.
 Build all five before calling a view done. Missing one is the most common defect in
 this repo's kind of app.
 
-| State | What ships |
-| --- | --- |
-| **Ideal** | real data, primary action obvious |
-| **Loading** | skeleton with the same layout as the ideal state, `aria-busy` |
-| **Empty** | one sentence saying why it is empty + the control that fills it |
-| **Error** | plain-language cause, a retry control, no lost user input |
+| State       | What ships                                                         |
+| ----------- | ------------------------------------------------------------------ |
+| **Ideal**   | real data, primary action obvious                                  |
+| **Loading** | skeleton with the same layout as the ideal state, `aria-busy`      |
+| **Empty**   | one sentence saying why it is empty + the control that fills it    |
+| **Error**   | plain-language cause, a retry control, no lost user input          |
 | **Partial** | few rows, long strings, missing fields — must not break the layout |
 
 Rules:
@@ -73,7 +73,7 @@ Budgets, in order of the human thresholds they map to:
 - **< 100 ms** — feels instant. Every local interaction (open, toggle, select, tab
   switch) lands here; no network on the path.
 - **< 1 s** — flow unbroken. Navigation and mutations aim here; optimistic updates
-  *report* instant even when the server is slower.
+  _report_ instant even when the server is slower.
 - **> 1 s** — needs feedback. Show the skeleton or progress and keep it in place
   until the data lands.
 - **Delay spinners ~300 ms.** A spinner that flashes for 80 ms is noise; render it
@@ -95,7 +95,7 @@ Budgets, in order of the human thresholds they map to:
 - Confirm dialogs are for the genuinely irreversible only. Then: name the object in
   the copy, label the button with the verb (**Delete lead**, never "OK"), and require
   typing the name for account- or org-level destruction.
-- Success needs no toast when the change is visible on screen — the row updating *is*
+- Success needs no toast when the change is visible on screen — the row updating _is_
   the feedback.
 - A failed action leaves the UI in its pre-action state, with the reason visible and
   the control ready to retry.
@@ -149,8 +149,9 @@ No `useState` per field, no manual `onChange` wiring, no ad-hoc validation.
 - One column, label above the input, related fields in a `fieldset`. Multi-column
   forms cost more scanning than they save in scrolling.
 - Ask for the minimum. Every optional field is a decision billed to the user; if the
-  owner needs it, mark it required and say why in help text.
-- Help text sits under the label *before* the mistake; error text appears in its own
+  owner needs it, mark it required (asterisk only, per
+  `.claude/rules/accessibility.md`) and say why in help text.
+- Help text sits under the label _before_ the mistake; error text appears in its own
   `role="alert"` node and replaces nothing.
 - Type the input for the platform: `type`, `inputMode`, and `autoComplete` on every
   real-world field (email, tel, postal code, one-time code).
@@ -166,13 +167,13 @@ No `useState` per field, no manual `onChange` wiring, no ad-hoc validation.
 
 Before adding `useState`, place the state in one of these first:
 
-| State really is | Use |
-| --- | --- |
-| form field / validation / submit status | react-hook-form |
-| server data, its loading + error status | TanStack Query |
-| URL-worthy (filters, tab, page, sort) | `useSearchParams` + `router.replace` |
-| derived from props or other state | compute during render, no state at all |
-| a DOM value nothing renders | `useRef` |
+| State really is                         | Use                                    |
+| --------------------------------------- | -------------------------------------- |
+| form field / validation / submit status | react-hook-form                        |
+| server data, its loading + error status | TanStack Query                         |
+| URL-worthy (filters, tab, page, sort)   | `useSearchParams` + `router.replace`   |
+| derived from props or other state       | compute during render, no state at all |
+| a DOM value nothing renders             | `useRef`                               |
 
 `useState` survives only for genuinely local, ephemeral UI: an open/closed
 disclosure, a hover, an uncontrolled toggle. If a `useState` is set from a `useEffect`,
@@ -249,7 +250,7 @@ Rules that follow from it:
   snapshot. Never "undo" by recomputing the previous value.
 - **Invalidate in `onSettled`**, not `onSuccess` — the server stays the source of
   truth on both paths.
-- **Touch every affected key**: a create or delete updates the list key *and* the
+- **Touch every affected key**: a create or delete updates the list key _and_ the
   detail key; an item inside a paginated or filtered list updates the key holding it.
 - **Creates need a temporary id** (`crypto.randomUUID()`), replaced by the server's
   id on settle. Never key a list row by array index.

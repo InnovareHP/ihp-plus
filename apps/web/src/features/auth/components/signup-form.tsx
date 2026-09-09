@@ -55,7 +55,7 @@ export function SignupForm() {
 
         <TextInput
           {...register('name')}
-          label="Full name (required)"
+          label="Full name"
           autoComplete="name"
           required
           aria-required="true"
@@ -65,7 +65,7 @@ export function SignupForm() {
 
         <TextInput
           {...register('email')}
-          label="Email address (required)"
+          label="Email address"
           placeholder="you@innovarehp.com"
           type="email"
           autoComplete="email"
@@ -77,7 +77,7 @@ export function SignupForm() {
 
         <PasswordInput
           {...register('password')}
-          label="Password (required)"
+          label="Password"
           description="At least 12 characters."
           autoComplete="new-password"
           required
@@ -88,7 +88,7 @@ export function SignupForm() {
 
         <PasswordInput
           {...register('confirmPassword')}
-          label="Confirm password (required)"
+          label="Confirm password"
           autoComplete="new-password"
           required
           aria-required="true"

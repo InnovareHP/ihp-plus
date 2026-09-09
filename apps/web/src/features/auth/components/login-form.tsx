@@ -57,7 +57,7 @@ export function LoginForm() {
 
         <TextInput
           {...register('email')}
-          label="Email address (required)"
+          label="Email address"
           placeholder="you@innovarehp.com"
           type="email"
           autoComplete="email"
@@ -69,7 +69,7 @@ export function LoginForm() {
 
         <PasswordInput
           {...register('password')}
-          label="Password (required)"
+          label="Password"
           autoComplete="current-password"
           required
           aria-required="true"
