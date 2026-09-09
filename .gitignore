@@ -23,3 +23,7 @@ Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
 coverage/
+
+# claude code (personal)
+CLAUDE.local.md
+.claude/settings.local.json
