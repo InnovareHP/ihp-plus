@@ -1,6 +1,7 @@
 'use server'
 
 import { db } from '@ihp/db'
+import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { requireSession } from '@/lib/auth-guard'
 import { deleteObject, objectUrl, putObject, S3NotConfiguredError } from '@/lib/s3'
@@ -50,6 +51,13 @@ export async function completeOnboarding(values: unknown): Promise<CompleteOnboa
     return { ok: false, message: 'That department no longer exists — pick another one.' }
   }
 
+  // Joining first: if this fails, onboardingCompletedAt is never set and the user can retry.
+  // The other order left someone permanently onboarded with no department and no way back.
+  const joined = await joinDepartment(session.user.id, team.id, team.organizationId)
+  if (!joined) {
+    return { ok: false, message: 'Could not join that department — try again in a moment.' }
+  }
+
   try {
     await db.user.update({
       where: { id: session.user.id },
@@ -74,29 +82,34 @@ export async function completeOnboarding(values: unknown): Promise<CompleteOnboa
     return { ok: false, message: 'Could not save your profile — check your connection and retry.' }
   }
 
-  // addMember writes the membershipKey and memberCount that the plugin maintains, so
-  // membership is never inserted directly. Passing userId makes it work without a session.
-  try {
-    await auth.api.addMember({
-      body: {
-        userId: session.user.id,
-        role: 'member',
-        organizationId: team.organizationId,
-        teamId: team.id,
-      },
-    })
-  } catch (error) {
-    // An abandoned earlier attempt can already have created the membership.
-    if (!isAlreadyMember(error)) {
-      return { ok: false, message: 'Saved your details, but joining your department failed.' }
-    }
-  }
-
   return { ok: true }
 }
 
-function isAlreadyMember(error: unknown) {
-  return error instanceof Error && error.message.toLowerCase().includes('already a member')
+// Both endpoints maintain teamMember.membershipKey and team.memberCount, which is why
+// membership is never inserted directly.
+async function joinDepartment(userId: string, teamId: string, organizationId: string) {
+  // Whether they are already in the organization decides which endpoint applies: addMember
+  // rejects an existing member outright, and its team join goes with it. The seeded owner is
+  // exactly that case, and an existing role must not be overwritten with 'member' either.
+  const existing = await db.member.findFirst({
+    where: { userId, organizationId },
+    select: { id: true },
+  })
+
+  try {
+    if (existing) {
+      // Unlike addMember this one requires headers, so it runs as the signed-in caller.
+      await auth.api.addTeamMember({
+        body: { teamId, userId, organizationId },
+        headers: await headers(),
+      })
+    } else {
+      await auth.api.addMember({ body: { userId, role: 'member', organizationId, teamId } })
+    }
+    return true
+  } catch {
+    return false
+  }
 }
 
 export type UploadPhotoResult =
