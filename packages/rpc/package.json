@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./members": "./src/gen/ihp/members/v1/members_pb.ts",
-    "./onboarding": "./src/gen/ihp/onboarding/v1/onboarding_pb.ts"
+    "./onboarding": "./src/gen/ihp/onboarding/v1/onboarding_pb.ts",
+    "./requests": "./src/gen/ihp/requests/v1/requests_pb.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

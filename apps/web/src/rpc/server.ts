@@ -1,5 +1,6 @@
 import { createClient, createRouterTransport } from '@ihp/rpc'
 import { MembersService } from '@ihp/rpc/members'
+import { RequestsService } from '@ihp/rpc/requests'
 import { registerRoutes } from './routes'
 
 // Dispatches straight into the implementations, so a server component pays no network hop
@@ -10,4 +11,5 @@ const transport = createRouterTransport(registerRoutes)
 // next/headers. Client components import ./browser instead.
 export const serverClients = {
   members: createClient(MembersService, transport),
+  requests: createClient(RequestsService, transport),
 }

@@ -1,0 +1,272 @@
+syntax = "proto3";
+
+package ihp.requests.v1;
+
+enum FieldType {
+  FIELD_TYPE_UNSPECIFIED = 0;
+  FIELD_TYPE_TEXT = 1;
+  FIELD_TYPE_TEXTAREA = 2;
+  FIELD_TYPE_NUMBER = 3;
+  FIELD_TYPE_DATE = 4;
+  FIELD_TYPE_SELECT = 5;
+  FIELD_TYPE_CHECKBOX = 6;
+}
+
+// A draft is invisible to requesters; archiving retires a form without deleting the requests
+// already raised against it.
+enum FormStatus {
+  FORM_STATUS_UNSPECIFIED = 0;
+  FORM_STATUS_DRAFT = 1;
+  FORM_STATUS_PUBLISHED = 2;
+  FORM_STATUS_ARCHIVED = 3;
+}
+
+enum RequestStatus {
+  REQUEST_STATUS_UNSPECIFIED = 0;
+  REQUEST_STATUS_PENDING = 1;
+  REQUEST_STATUS_APPROVED = 2;
+  REQUEST_STATUS_REJECTED = 3;
+  REQUEST_STATUS_WITHDRAWN = 4;
+}
+
+// Filter value: ALL is the queue's default, and has no stored counterpart.
+enum RequestStatusFilter {
+  REQUEST_STATUS_FILTER_UNSPECIFIED = 0;
+  REQUEST_STATUS_FILTER_ALL = 1;
+  REQUEST_STATUS_FILTER_PENDING = 2;
+  REQUEST_STATUS_FILTER_APPROVED = 3;
+  REQUEST_STATUS_FILTER_REJECTED = 4;
+  REQUEST_STATUS_FILTER_WITHDRAWN = 5;
+}
+
+message FormField {
+  string id = 1;
+  FieldType type = 2;
+  string label = 3;
+  string help = 4;
+  bool required = 5;
+  // SELECT only; empty for every other type.
+  repeated string options = 6;
+  // NUMBER only.
+  optional double min = 7;
+  optional double max = 8;
+}
+
+message TeamRef {
+  string team_id = 1;
+  string name = 2;
+}
+
+message RequestForm {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  FormStatus status = 4;
+  repeated FormField fields = 5;
+  // The departments the form is offered to. A published form with none reaches nobody, which
+  // is why publishing requires at least one.
+  repeated TeamRef teams = 6;
+  int32 submission_count = 7;
+  string updated_at = 8;
+}
+
+// One answer. The oneof keeps a number a number across the wire rather than making every
+// consumer reparse a string.
+message FieldValue {
+  string field_id = 1;
+  oneof value {
+    string text = 2;
+    double number = 3;
+    bool boolean = 4;
+    string date = 5;
+  }
+}
+
+message RequestSubmission {
+  string id = 1;
+  string form_id = 2;
+  // Snapshots taken at submission: the live form may have moved on since.
+  string form_name = 3;
+  repeated FormField fields = 4;
+  repeated FieldValue values = 5;
+
+  string requester_id = 6;
+  string requester_name = 7;
+  optional string team_name = 8;
+
+  RequestStatus status = 9;
+  optional string decided_by = 10;
+  optional string decided_at = 11;
+  optional string decision_note = 12;
+  string created_at = 13;
+
+  // Resolved for the caller: an approver for this department, or an admin.
+  bool can_decide = 14;
+  bool is_mine = 15;
+}
+
+message PageInfo {
+  int32 page = 1;
+  int32 page_size = 2;
+  int32 total = 3;
+  int32 page_count = 4;
+  bool has_previous = 5;
+  bool has_next = 6;
+}
+
+message Approver {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message DepartmentApprovers {
+  string team_id = 1;
+  string team_name = 2;
+  repeated Approver approvers = 3;
+}
+
+message ListFormsRequest {}
+
+message ListFormsResponse {
+  repeated RequestForm forms = 1;
+}
+
+message GetFormRequest {
+  string form_id = 1;
+}
+
+message GetFormResponse {
+  RequestForm form = 1;
+}
+
+// One call creates and updates: an absent form_id is a create.
+message SaveFormRequest {
+  optional string form_id = 1;
+  string name = 2;
+  string description = 3;
+  repeated FormField fields = 4;
+  repeated string team_ids = 5;
+}
+
+message SaveFormResponse {
+  RequestForm form = 1;
+}
+
+message SetFormStatusRequest {
+  string form_id = 1;
+  FormStatus status = 2;
+}
+
+message SetFormStatusResponse {
+  RequestForm form = 1;
+}
+
+message DeleteFormRequest {
+  string form_id = 1;
+}
+
+message DeleteFormResponse {}
+
+message ListAvailableFormsRequest {}
+
+message ListAvailableFormsResponse {
+  repeated RequestForm forms = 1;
+}
+
+message SubmitRequestRequest {
+  string form_id = 1;
+  repeated FieldValue values = 2;
+}
+
+message SubmitRequestResponse {
+  RequestSubmission submission = 1;
+}
+
+message ListMyRequestsRequest {
+  RequestStatusFilter status = 1;
+}
+
+message ListMyRequestsResponse {
+  repeated RequestSubmission rows = 1;
+}
+
+message WithdrawRequestRequest {
+  string submission_id = 1;
+}
+
+message WithdrawRequestResponse {
+  RequestSubmission submission = 1;
+}
+
+message ListRequestsRequest {
+  RequestStatusFilter status = 1;
+  string search = 2;
+  repeated string team_ids = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+message ListRequestsResponse {
+  repeated RequestSubmission rows = 1;
+  PageInfo page_info = 2;
+}
+
+message GetRequestRequest {
+  string submission_id = 1;
+}
+
+message GetRequestResponse {
+  RequestSubmission submission = 1;
+}
+
+message DecideRequestRequest {
+  string submission_id = 1;
+  // APPROVED or REJECTED; anything else is invalid_argument.
+  RequestStatus decision = 2;
+  string note = 3;
+}
+
+message DecideRequestResponse {
+  RequestSubmission submission = 1;
+}
+
+message ListApproversRequest {}
+
+message ListApproversResponse {
+  repeated DepartmentApprovers departments = 1;
+}
+
+message SetApproverRequest {
+  string team_id = 1;
+  string user_id = 2;
+  bool approver = 3;
+}
+
+message SetApproverResponse {
+  DepartmentApprovers department = 1;
+}
+
+service RequestsService {
+  // Admins build and retire the forms.
+  rpc ListForms(ListFormsRequest) returns (ListFormsResponse);
+  rpc GetForm(GetFormRequest) returns (GetFormResponse);
+  rpc SaveForm(SaveFormRequest) returns (SaveFormResponse);
+  rpc SetFormStatus(SetFormStatusRequest) returns (SetFormStatusResponse);
+  rpc DeleteForm(DeleteFormRequest) returns (DeleteFormResponse);
+
+  // Anyone with a department raises and tracks their own requests.
+  rpc ListAvailableForms(ListAvailableFormsRequest) returns (ListAvailableFormsResponse);
+  rpc SubmitRequest(SubmitRequestRequest) returns (SubmitRequestResponse);
+  rpc ListMyRequests(ListMyRequestsRequest) returns (ListMyRequestsResponse);
+  rpc WithdrawRequest(WithdrawRequestRequest) returns (WithdrawRequestResponse);
+
+  // Department approvers decide their own department; admins see every department.
+  rpc ListRequests(ListRequestsRequest) returns (ListRequestsResponse);
+  rpc GetRequest(GetRequestRequest) returns (GetRequestResponse);
+  rpc DecideRequest(DecideRequestRequest) returns (DecideRequestResponse);
+
+  // Admins appoint the approvers.
+  rpc ListApprovers(ListApproversRequest) returns (ListApproversResponse);
+  rpc SetApprover(SetApproverRequest) returns (SetApproverResponse);
+}
