@@ -18,6 +18,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,astro,md,json,css}\"",
     "db:generate": "pnpm --filter @ihp/db db:generate",
     "db:migrate": "pnpm --filter @ihp/db db:migrate",
+    "db:seed": "dotenv -e .env -- pnpm --filter @ihp/db db:seed",
     "db:studio": "pnpm --filter @ihp/db db:studio",
     "db:push": "pnpm --filter @ihp/db db:push",
     "infra:up": "docker compose --env-file .env -f infra/compose.dev.yml up -d",

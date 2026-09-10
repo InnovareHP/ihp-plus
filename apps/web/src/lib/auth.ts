@@ -2,6 +2,7 @@ import { prismaAdapter } from '@better-auth/prisma-adapter'
 import { db } from '@ihp/db'
 import { betterAuth } from 'better-auth/minimal'
 import { nextCookies } from 'better-auth/next-js'
+import { admin, organization } from 'better-auth/plugins'
 import { sendEmail } from './email'
 import { AUTH_BASE_PATH } from './routes'
 
@@ -24,7 +25,6 @@ export const auth = betterAuth({
       phone: { type: 'string', required: false, input: false },
       dateOfBirth: { type: 'date', required: false, input: false },
       jobTitle: { type: 'string', required: false, input: false },
-      department: { type: 'string', required: false, input: false },
       employmentType: { type: 'string', required: false, input: false },
       startDate: { type: 'date', required: false, input: false },
       photoKey: { type: 'string', required: false, input: false },
@@ -83,7 +83,24 @@ export const auth = betterAuth({
     database: { joins: true },
   },
 
-  plugins: [nextCookies()],
+  plugins: [
+    // One organization is the company; each department is a team inside it.
+    organization({
+      allowUserToCreateOrganization: false,
+      creatorRole: 'owner',
+      teams: {
+        enabled: true,
+        // Departments are seeded explicitly, so an org must not invent a team of its own.
+        defaultTeam: { enabled: false },
+      },
+    }),
+    // Portal-wide role, separate from the owner/admin/member role held inside the organization.
+    admin({
+      defaultRole: 'member',
+      adminRoles: ['admin'],
+    }),
+    nextCookies(),
+  ],
 })
 
 export type Session = typeof auth.$Infer.Session

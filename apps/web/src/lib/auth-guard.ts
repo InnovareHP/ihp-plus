@@ -19,17 +19,38 @@ const readProfile = cache(async (userId: string) =>
       phone: true,
       dateOfBirth: true,
       jobTitle: true,
-      department: true,
       employmentType: true,
       photoKey: true,
       ihpId: true,
       startDate: true,
       onboardingCompletedAt: true,
+      role: true,
+      // Department is team membership now, and the org role sits beside it on the same read.
+      members: { select: { role: true, organizationId: true }, take: 1 },
+      teammembers: { select: { team: { select: { id: true, name: true } } }, take: 1 },
     },
   }),
 )
 
 export type OnboardingProfile = NonNullable<Awaited<ReturnType<typeof readProfile>>>
+
+export interface Membership {
+  /** Portal-wide role from the admin plugin, separate from the organization role. */
+  portalRole: string
+  /** owner | admin | member inside the organization. */
+  organizationRole: string | undefined
+  organizationId: string | undefined
+  team: { id: string; name: string } | undefined
+}
+
+export function membershipOf(profile: OnboardingProfile): Membership {
+  return {
+    portalRole: profile.role ?? 'member',
+    organizationRole: profile.members[0]?.role,
+    organizationId: profile.members[0]?.organizationId,
+    team: profile.teammembers[0]?.team,
+  }
+}
 
 // proxy.ts only sniffs the cookie, so every protected segment revalidates here.
 export async function requireSession() {

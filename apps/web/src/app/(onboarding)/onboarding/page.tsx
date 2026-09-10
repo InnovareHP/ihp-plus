@@ -1,8 +1,9 @@
 import { Paper, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import { OnboardingStepper } from '@/features/onboarding/components/onboarding-stepper'
-import { DEPARTMENTS, EMPLOYMENT_TYPES, POSITIONS } from '@/features/onboarding/options'
-import { requireOnboarding } from '@/lib/auth-guard'
+import { EMPLOYMENT_TYPES, POSITIONS } from '@/features/onboarding/options'
+import { db } from '@ihp/db'
+import { membershipOf, requireOnboarding } from '@/lib/auth-guard'
 import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 
 export const metadata: Metadata = { title: 'Finish your profile' }
@@ -22,6 +23,13 @@ export default async function OnboardingPage() {
   // Outlook sign-in supplies one full name, which is the best first guess for the name fields.
   const [guessedFirst = '', ...guessedRest] = user.name.trim().split(/\s+/)
 
+  // Departments are the organization's teams, so the options come from the database.
+  const teams = await db.team.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true },
+  })
+  const membership = membershipOf(profile)
+
   const photoUrl =
     profile.photoKey && isObjectStorageConfigured() ? await objectUrl(profile.photoKey) : undefined
 
@@ -40,6 +48,7 @@ export default async function OnboardingPage() {
 
         <OnboardingStepper
           email={user.email}
+          teams={teams.map((team) => ({ value: team.id, label: team.name }))}
           photoUrl={photoUrl}
           defaultValues={{
             firstName: profile.firstName ?? guessedFirst,
@@ -49,8 +58,8 @@ export default async function OnboardingPage() {
             phone: profile.phone ?? '',
             dateOfBirth: isoDate(profile.dateOfBirth),
             jobTitle: option(POSITIONS, profile.jobTitle),
-            department: option(DEPARTMENTS, profile.department),
             employmentType: option(EMPLOYMENT_TYPES, profile.employmentType),
+            teamId: membership.team?.id ?? '',
             startDate: isoDate(profile.startDate),
             photoKey: profile.photoKey ?? '',
             confirmed: false,

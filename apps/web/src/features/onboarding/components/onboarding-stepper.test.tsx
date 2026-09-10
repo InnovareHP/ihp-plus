@@ -51,7 +51,7 @@ const defaultValues: OnboardingValues = {
   phone: '',
   dateOfBirth: '',
   jobTitle: 'Data Analyst',
-  department: 'Information Technology',
+  teamId: 'team-it',
   employmentType: 'Full-time',
   startDate: '',
   photoKey: 'users/u1/photo-existing.jpg',
@@ -62,11 +62,17 @@ function renderStepper(values: Partial<OnboardingValues> = {}) {
   return render(
     <OnboardingStepper
       email="ada@innovarehp.com"
+      teams={TEAMS}
       photoUrl={undefined}
       defaultValues={{ ...defaultValues, ...values }}
     />,
   )
 }
+
+const TEAMS = [
+  { value: 'team-it', label: 'Information Technology' },
+  { value: 'team-finance', label: 'Finance' },
+] as const
 
 const user = () => userEvent.setup()
 
@@ -118,7 +124,7 @@ describe('OnboardingStepper', () => {
     expect(screen.getByRole('combobox', { name: /Current position/ })).toBeInTheDocument()
   })
 
-  it('records a department chosen from the seeded list', async () => {
+  it('records the team chosen for the department', async () => {
     const person = user()
     renderStepper({ firstName: 'Ada', lastName: 'Lovelace', startDate: '2026-01-05' })
 

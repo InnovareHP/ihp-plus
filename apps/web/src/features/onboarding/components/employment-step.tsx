@@ -2,15 +2,21 @@
 
 import { Select, Stack, TextInput } from '@mantine/core'
 import { Controller, type UseFormReturn } from 'react-hook-form'
-import { DEPARTMENTS, EMPLOYMENT_TYPES, POSITIONS } from '../options'
+import { EMPLOYMENT_TYPES, POSITIONS } from '../options'
 import { NARROW_INPUT } from '../field-styles'
 import type { OnboardingValues } from '../schema'
 
-export interface EmploymentStepProps {
-  form: UseFormReturn<OnboardingValues>
+export interface TeamOption {
+  value: string
+  label: string
 }
 
-export function EmploymentStep({ form }: EmploymentStepProps) {
+export interface EmploymentStepProps {
+  form: UseFormReturn<OnboardingValues>
+  teams: readonly TeamOption[]
+}
+
+export function EmploymentStep({ form, teams }: EmploymentStepProps) {
   const {
     control,
     register,
@@ -43,12 +49,12 @@ export function EmploymentStep({ form }: EmploymentStepProps) {
 
       <Controller
         control={control}
-        name="department"
+        name="teamId"
         render={({ field }) => (
           <Select
             label="Department"
             placeholder="Choose a department"
-            data={DEPARTMENTS}
+            data={teams}
             allowDeselect={false}
             required
             aria-required="true"
@@ -57,7 +63,7 @@ export function EmploymentStep({ form }: EmploymentStepProps) {
             value={field.value ?? null}
             onChange={field.onChange}
             onBlur={field.onBlur}
-            error={errors.department?.message}
+            error={errors.teamId?.message}
             errorProps={{ role: 'alert' }}
           />
         )}

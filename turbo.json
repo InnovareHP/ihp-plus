@@ -17,7 +17,8 @@
         "MICROSOFT_CLIENT_SECRET",
         "MICROSOFT_TENANT_ID",
         "EMAIL_FROM",
-        "S3_*"
+        "S3_*",
+        "ORG_*"
       ]
     },
     "dev": {
@@ -33,7 +34,8 @@
         "MICROSOFT_CLIENT_SECRET",
         "MICROSOFT_TENANT_ID",
         "EMAIL_FROM",
-        "S3_*"
+        "S3_*",
+        "ORG_*"
       ]
     },
     "lint": {
@@ -51,7 +53,8 @@
         "MICROSOFT_CLIENT_SECRET",
         "MICROSOFT_TENANT_ID",
         "EMAIL_FROM",
-        "S3_*"
+        "S3_*",
+        "ORG_*"
       ]
     },
     "typecheck": {

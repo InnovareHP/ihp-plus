@@ -5,7 +5,8 @@ import { defineConfig, env } from 'prisma/config'
 config({ path: '../../.env' })
 
 export default defineConfig({
-  schema: 'prisma/schema.prisma',
+  // A folder, not a file: auth.prisma is CLI output, each feature adds its own file.
+  schema: 'prisma/schema',
   migrations: { path: 'prisma/migrations' },
   datasource: { url: env('DATABASE_URL') },
 })

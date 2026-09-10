@@ -1,17 +1,4 @@
-// Seeded as constants because no admin surface exists to curate lookup tables yet.
-export const DEPARTMENTS = [
-  'Care Management',
-  'Clinical Operations',
-  'Provider Network',
-  'Member Services',
-  'Revenue Cycle',
-  'Quality & Compliance',
-  'Information Technology',
-  'Finance',
-  'People & Culture',
-  'Executive',
-] as const
-
+// Departments are not here: they are teams in the organization, seeded by `pnpm db:seed`.
 export const POSITIONS = [
   'Care Coordinator',
   'Case Manager',
@@ -36,6 +23,5 @@ export const EMPLOYMENT_TYPES = [
   'Intern',
 ] as const
 
-export type Department = (typeof DEPARTMENTS)[number]
 export type Position = (typeof POSITIONS)[number]
 export type EmploymentType = (typeof EMPLOYMENT_TYPES)[number]

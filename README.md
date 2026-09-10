@@ -39,6 +39,7 @@ cp .env.example .env   # then fill BETTER_AUTH_SECRET (>= 32 chars)
 pnpm install
 pnpm infra:up          # postgres + redis + minio (S3 for profile photos)
 pnpm db:migrate        # creates the Better Auth tables
+pnpm db:seed           # the org and its department teams
 pnpm dev               # both apps via turbo
 ```
 
@@ -78,12 +79,32 @@ Change the entry port with `PROXY_PORT` in `.env`.
 | `pnpm db:auth-schema` | regenerate the Better Auth Prisma models |
 | `pnpm db:generate`    | create a migration without applying it   |
 | `pnpm db:migrate`     | apply migrations to `DATABASE_URL`       |
+| `pnpm db:seed`        | create the org + one team per department |
 | `pnpm db:studio`      | prisma studio                            |
 | `pnpm infra:up`       | dev postgres + redis                     |
 | `pnpm infra:pg`       | dev postgres only                        |
 | `pnpm infra:redis`    | dev redis only                           |
 | `pnpm infra:s3`       | dev minio + bucket creation              |
 | `pnpm stack:up`       | full docker stack                        |
+
+## Database schemas
+
+Postgres multi-schema (GA in Prisma 7, no preview flag). `prisma/schema` is a folder,
+not a file:
+
+| File                             | Postgres schema | Owner                        |
+| -------------------------------- | --------------- | ---------------------------- |
+| `prisma/schema/auth.prisma`      | `auth`          | `pnpm db:auth-schema` output |
+| `prisma/schema/<feature>.prisma` | `<feature>`     | you                          |
+
+App models never go in `auth.prisma` — that file is regenerated. Each feature gets its
+own file, its own `@@schema("<feature>")`, and its name added to the datasource's
+`schemas` list, or the schema will not validate.
+
+The generator's `output` is relative to the schema _file_, so it is `../../src/generated/prisma`
+from inside `prisma/schema/`. A table that changes schema needs a hand-written
+`ALTER TABLE ... SET SCHEMA` — `prisma migrate diff` emits `CREATE TABLE` in the new schema
+and leaves the populated one behind.
 
 ## Conventions
 

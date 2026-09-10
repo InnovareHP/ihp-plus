@@ -1,7 +1,7 @@
 import { Avatar, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { requireOnboarded } from '@/lib/auth-guard'
+import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 
 export const metadata: Metadata = { title: 'Settings' }
@@ -18,6 +18,7 @@ function date(value: Date | null) {
 
 export default async function SettingsPage() {
   const { user, profile } = await requireOnboarded()
+  const membership = membershipOf(profile)
   const photoUrl =
     profile.photoKey && isObjectStorageConfigured() ? await objectUrl(profile.photoKey) : undefined
 
@@ -71,7 +72,7 @@ export default async function SettingsPage() {
           </Title>
           <Stack component="dl" gap="xs" m={0}>
             <Row label="Position" value={text(profile.jobTitle)} />
-            <Row label="Department" value={text(profile.department)} />
+            <Row label="Department" value={membership.team?.name ?? 'Not provided'} />
             <Row label="Employment type" value={text(profile.employmentType)} />
             <Row label="Start date" value={date(profile.startDate)} />
           </Stack>

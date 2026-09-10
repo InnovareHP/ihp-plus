@@ -8,9 +8,10 @@
   },
   "scripts": {
     "build": "prisma generate",
-    "db:auth-schema": "pnpm dlx auth@latest generate --config ../../apps/web/src/lib/auth.ts --output prisma/schema.prisma -y",
+    "db:auth-schema": "pnpm dlx auth@latest generate --config ../../apps/web/src/lib/auth.ts --output prisma/schema/auth.prisma -y",
     "db:generate": "prisma migrate dev --create-only",
     "db:migrate": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
     "typecheck": "tsc --noEmit",
@@ -20,6 +21,7 @@
     "@ihp/config": "workspace:*",
     "dotenv": "^17.4.2",
     "prisma": "7.10.0",
+    "tsx": "^4.23.13",
     "typescript": "^5.9.3"
   },
   "dependencies": {

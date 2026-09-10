@@ -18,13 +18,14 @@ import {
   type OnboardingValues,
 } from '../schema'
 import { useCompleteOnboarding } from '../use-complete-onboarding'
-import { EmploymentStep } from './employment-step'
+import { EmploymentStep, type TeamOption } from './employment-step'
 import { PersonalStep } from './personal-step'
 import { PhotoStep } from './photo-step'
 import { ReviewStep } from './review-step'
 
 export interface OnboardingStepperProps {
   email: string
+  teams: readonly TeamOption[]
   photoUrl: string | undefined
   defaultValues: DefaultValues<OnboardingValues>
 }
@@ -35,7 +36,12 @@ function clampStep(raw: string | null) {
   return Math.min(Math.max(parsed, 0), LAST_STEP)
 }
 
-export function OnboardingStepper({ email, photoUrl, defaultValues }: OnboardingStepperProps) {
+export function OnboardingStepper({
+  email,
+  teams,
+  photoUrl,
+  defaultValues,
+}: OnboardingStepperProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const step = clampStep(searchParams.get('step'))
@@ -141,7 +147,7 @@ export function OnboardingStepper({ email, photoUrl, defaultValues }: Onboarding
           label={ONBOARDING_STEPS[1].label}
           description={ONBOARDING_STEPS[1].description}
         >
-          <EmploymentStep form={form} />
+          <EmploymentStep form={form} teams={teams} />
         </Stepper.Step>
         <Stepper.Step
           label={ONBOARDING_STEPS[2].label}
@@ -153,7 +159,7 @@ export function OnboardingStepper({ email, photoUrl, defaultValues }: Onboarding
           label={ONBOARDING_STEPS[3].label}
           description={ONBOARDING_STEPS[3].description}
         >
-          <ReviewStep form={form} email={email} onEdit={goToStep} />
+          <ReviewStep form={form} email={email} teams={teams} onEdit={goToStep} />
         </Stepper.Step>
       </Stepper>
 

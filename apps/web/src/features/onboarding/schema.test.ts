@@ -12,7 +12,7 @@ const validPersonal = {
 
 const validEmployment = {
   jobTitle: 'Data Analyst',
-  department: 'Information Technology',
+  teamId: 'team-it',
   employmentType: 'Full-time',
   startDate: '2026-01-05',
 }
@@ -65,10 +65,15 @@ describe('employmentStepSchema', () => {
     expect(employmentError({})).toBeUndefined()
   })
 
-  it('rejects a value outside the seeded lists', () => {
-    expect(employmentError({ department: 'Ministry of Silly Walks' })).toBe(
-      'Select your department',
+  it('rejects a position outside the seeded list', () => {
+    expect(employmentError({ jobTitle: 'Chief Vibes Officer' })).toBe(
+      'Select your current position',
     )
+  })
+
+  it('requires a department to be chosen', () => {
+    // A team id is a free string here; that it belongs to the org is checked server-side.
+    expect(employmentError({ teamId: '' })).toBe('Select your department')
   })
 
   it('requires a start date', () => {

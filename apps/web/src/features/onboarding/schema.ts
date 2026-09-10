@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { DEPARTMENTS, EMPLOYMENT_TYPES, POSITIONS } from './options'
+import { EMPLOYMENT_TYPES, POSITIONS } from './options'
 
 const MIN_AGE = 16
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -57,7 +57,8 @@ const personalFields = {
 
 const employmentFields = {
   jobTitle: z.enum(POSITIONS, 'Select your current position'),
-  department: z.enum(DEPARTMENTS, 'Select your department'),
+  // A team id, checked against the organization server-side; the client cannot be trusted.
+  teamId: z.string().min(1, 'Select your department'),
   employmentType: z.enum(EMPLOYMENT_TYPES, 'Select your employment type'),
   startDate: z
     .string()
@@ -102,7 +103,7 @@ export const ONBOARDING_STEPS = [
   {
     label: 'Your role',
     description: 'Position and employment',
-    fields: ['jobTitle', 'department', 'employmentType', 'startDate'],
+    fields: ['jobTitle', 'teamId', 'employmentType', 'startDate'],
   },
   { label: 'Photo', description: 'For your company ID', fields: ['photoKey'] },
   { label: 'Review', description: 'Confirm and finish', fields: ['confirmed'] },

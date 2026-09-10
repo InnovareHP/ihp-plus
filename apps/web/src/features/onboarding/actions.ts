@@ -1,6 +1,7 @@
 'use server'
 
 import { db } from '@ihp/db'
+import { auth } from '@/lib/auth'
 import { requireSession } from '@/lib/auth-guard'
 import { deleteObject, objectUrl, putObject, S3NotConfiguredError } from '@/lib/s3'
 import { generateIhpId } from './ihp-id'
@@ -40,6 +41,15 @@ export async function completeOnboarding(values: unknown): Promise<CompleteOnboa
 
   const profile = parsed.data
 
+  // The chosen team is client input, so the organization comes from the team row, not the body.
+  const team = await db.team.findUnique({
+    where: { id: profile.teamId },
+    select: { id: true, organizationId: true },
+  })
+  if (!team) {
+    return { ok: false, message: 'That department no longer exists — pick another one.' }
+  }
+
   try {
     await db.user.update({
       where: { id: session.user.id },
@@ -52,7 +62,6 @@ export async function completeOnboarding(values: unknown): Promise<CompleteOnboa
         phone: nullIfBlank(profile.phone),
         dateOfBirth: dateOrNull(profile.dateOfBirth),
         jobTitle: profile.jobTitle,
-        department: profile.department,
         employmentType: profile.employmentType,
         startDate: dateOrNull(profile.startDate),
         photoKey: profile.photoKey,
@@ -65,7 +74,29 @@ export async function completeOnboarding(values: unknown): Promise<CompleteOnboa
     return { ok: false, message: 'Could not save your profile — check your connection and retry.' }
   }
 
+  // addMember writes the membershipKey and memberCount that the plugin maintains, so
+  // membership is never inserted directly. Passing userId makes it work without a session.
+  try {
+    await auth.api.addMember({
+      body: {
+        userId: session.user.id,
+        role: 'member',
+        organizationId: team.organizationId,
+        teamId: team.id,
+      },
+    })
+  } catch (error) {
+    // An abandoned earlier attempt can already have created the membership.
+    if (!isAlreadyMember(error)) {
+      return { ok: false, message: 'Saved your details, but joining your department failed.' }
+    }
+  }
+
   return { ok: true }
+}
+
+function isAlreadyMember(error: unknown) {
+  return error instanceof Error && error.message.toLowerCase().includes('already a member')
 }
 
 export type UploadPhotoResult =

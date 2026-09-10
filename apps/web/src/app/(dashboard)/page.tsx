@@ -1,7 +1,7 @@
 import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { requireOnboarded } from '@/lib/auth-guard'
+import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -10,6 +10,7 @@ const dateOnly = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone:
 
 export default async function DashboardPage() {
   const { user, session, profile } = await requireOnboarded()
+  const membership = membershipOf(profile)
   const greetingName = profile.preferredName ?? profile.firstName ?? user.name
 
   return (
@@ -19,7 +20,7 @@ export default async function DashboardPage() {
           Welcome back, {greetingName}
         </Title>
         <Text c="dimmed">
-          {profile.jobTitle} · {profile.department}
+          {profile.jobTitle} · {membership.team?.name ?? 'No department'}
         </Text>
       </Stack>
 
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
         <SummaryCard title="Your role">
           <Text size="sm">{profile.jobTitle}</Text>
           <Text size="sm" c="dimmed">
-            {profile.employmentType} in {profile.department}
+            {profile.employmentType} in {membership.team?.name ?? 'no department'}
           </Text>
           {profile.startDate ? (
             <Text size="sm" c="dimmed">

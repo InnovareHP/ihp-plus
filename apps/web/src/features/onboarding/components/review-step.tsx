@@ -7,6 +7,7 @@ import type { OnboardingValues } from '../schema'
 export interface ReviewStepProps {
   form: UseFormReturn<OnboardingValues>
   email: string
+  teams: readonly { value: string; label: string }[]
   onEdit: (step: number) => void
 }
 
@@ -24,7 +25,7 @@ function text(value: string | undefined) {
   return value && value.trim() !== '' ? value : EMPTY
 }
 
-export function ReviewStep({ form, email, onEdit }: ReviewStepProps) {
+export function ReviewStep({ form, email, teams, onEdit }: ReviewStepProps) {
   const {
     register,
     control,
@@ -46,7 +47,7 @@ export function ReviewStep({ form, email, onEdit }: ReviewStepProps) {
 
   const employment = [
     { label: 'Position', value: text(values.jobTitle) },
-    { label: 'Department', value: text(values.department) },
+    { label: 'Department', value: text(teams.find((t) => t.value === values.teamId)?.label) },
     { label: 'Employment type', value: text(values.employmentType) },
     { label: 'Start date', value: formatDate(values.startDate) },
   ]
