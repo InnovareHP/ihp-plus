@@ -69,23 +69,38 @@ Change the entry port with `PROXY_PORT` in `.env`.
 
 ## Scripts
 
-| Script                | Does                                     |
-| --------------------- | ---------------------------------------- |
-| `pnpm build`          | turbo build both apps                    |
-| `pnpm test`           | vitest (web)                             |
-| `pnpm lint`           | eslint (web)                             |
-| `pnpm typecheck`      | `tsc --noEmit` + `astro check`           |
-| `pnpm format`         | prettier, incl. `.astro`                 |
-| `pnpm db:auth-schema` | regenerate the Better Auth Prisma models |
-| `pnpm db:generate`    | create a migration without applying it   |
-| `pnpm db:migrate`     | apply migrations to `DATABASE_URL`       |
-| `pnpm db:seed`        | create the org + one team per department |
-| `pnpm db:studio`      | prisma studio                            |
-| `pnpm infra:up`       | dev postgres + redis                     |
-| `pnpm infra:pg`       | dev postgres only                        |
-| `pnpm infra:redis`    | dev redis only                           |
-| `pnpm infra:s3`       | dev minio + bucket creation              |
-| `pnpm stack:up`       | full docker stack                        |
+| Script                | Does                                          |
+| --------------------- | --------------------------------------------- |
+| `pnpm build`          | turbo build both apps                         |
+| `pnpm test`           | vitest (web)                                  |
+| `pnpm lint`           | eslint (web)                                  |
+| `pnpm typecheck`      | `tsc --noEmit` + `astro check`                |
+| `pnpm format`         | prettier, incl. `.astro`                      |
+| `pnpm db:auth-schema` | regenerate the Better Auth Prisma models      |
+| `pnpm db:generate`    | create a migration without applying it        |
+| `pnpm db:migrate`     | apply migrations to `DATABASE_URL`            |
+| `pnpm db:seed`        | create the org + one team per department      |
+| `pnpm rpc:generate`   | regenerate TS clients from the `.proto` files |
+| `pnpm rpc:lint`       | `buf lint` the contract                       |
+| `pnpm db:studio`      | prisma studio                                 |
+| `pnpm infra:up`       | dev postgres + redis                          |
+| `pnpm infra:pg`       | dev postgres only                             |
+| `pnpm infra:redis`    | dev redis only                                |
+| `pnpm infra:s3`       | dev minio + bucket creation                   |
+| `pnpm stack:up`       | full docker stack                             |
+
+## RPC
+
+The contract lives in `packages/proto` (`ihp.<domain>.v1`, one service per file) and
+`pnpm rpc:generate` writes TypeScript into `packages/rpc/src/gen`, which is **committed**
+so installs and Docker builds need no codegen step. Never hand-edit it.
+
+Connect v2 needs no `protoc-gen-connect-es`: `protoc-gen-es` v2 emits the service
+descriptors that both `createClient()` and `createConnectRouter()` consume.
+
+`@ihp/rpc` is the only place that depends on the Connect packages, and it exposes two
+transports — `browserTransport` for client components, and `createRouterTransport` for
+server components, which dispatches in-process with no network hop.
 
 ## Database schemas
 

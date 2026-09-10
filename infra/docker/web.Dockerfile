@@ -14,6 +14,8 @@ COPY apps/landing/package.json apps/landing/
 COPY packages/ui/package.json packages/ui/
 COPY packages/db/package.json packages/db/
 COPY packages/config/package.json packages/config/
+COPY packages/proto/package.json packages/proto/
+COPY packages/rpc/package.json packages/rpc/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store && \
     pnpm install --frozen-lockfile

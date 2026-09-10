@@ -1,0 +1,10 @@
+# Connect v2 needs no separate connect-es plugin: protoc-gen-es v2 emits the service
+# descriptors that createClient() and createConnectRouter() both consume.
+version: v2
+clean: true
+plugins:
+  - local: protoc-gen-es
+    out: ../rpc/src/gen
+    opt:
+      - target=ts
+      - import_extension=none

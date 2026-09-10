@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package ihp.members.v1;
+
+// Role inside the organization, from Better Auth's organization plugin.
+enum OrganizationRole {
+  ORGANIZATION_ROLE_UNSPECIFIED = 0;
+  ORGANIZATION_ROLE_OWNER = 1;
+  ORGANIZATION_ROLE_ADMIN = 2;
+  ORGANIZATION_ROLE_MEMBER = 3;
+}
+
+// Portal-wide role from the admin plugin. USER is what the members page labels "Member".
+enum PortalRole {
+  PORTAL_ROLE_UNSPECIFIED = 0;
+  PORTAL_ROLE_ADMIN = 1;
+  PORTAL_ROLE_USER = 2;
+}
+
+message Member {
+  string member_id = 1;
+  string user_id = 2;
+  string name = 3;
+  string email = 4;
+  OrganizationRole organization_role = 5;
+  PortalRole portal_role = 6;
+  // Absent when the person has not been put in a department yet.
+  optional string team = 7;
+  bool banned = 8;
+  // True for the caller's own row, which the UI must not offer to suspend.
+  bool is_self = 9;
+}
+
+message ListMembersRequest {}
+
+message ListMembersResponse {
+  repeated Member members = 1;
+}
+
+message SetOrganizationRoleRequest {
+  string member_id = 1;
+  OrganizationRole role = 2;
+}
+
+message SetOrganizationRoleResponse {
+  Member member = 1;
+}
+
+message SetPortalRoleRequest {
+  string user_id = 1;
+  PortalRole role = 2;
+}
+
+message SetPortalRoleResponse {
+  Member member = 1;
+}
+
+message SetMemberAccessRequest {
+  string user_id = 1;
+  bool banned = 2;
+}
+
+message SetMemberAccessResponse {
+  Member member = 1;
+}
+
+service MembersService {
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+  rpc SetOrganizationRole(SetOrganizationRoleRequest) returns (SetOrganizationRoleResponse);
+  rpc SetPortalRole(SetPortalRoleRequest) returns (SetPortalRoleResponse);
+  rpc SetMemberAccess(SetMemberAccessRequest) returns (SetMemberAccessResponse);
+}

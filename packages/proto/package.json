@@ -1,0 +1,15 @@
+{
+  "name": "@ihp/proto",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "buf generate",
+    "lint": "buf lint",
+    "format": "buf format -w"
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "1.72.0",
+    "@bufbuild/protoc-gen-es": "2.14.1"
+  }
+}
