@@ -7,19 +7,14 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { authClient } from '@/lib/auth-client'
-import { routes } from '@/lib/routes'
+import { routes, safeNextRoute } from '@/lib/routes'
 import { authErrorMessage } from '../messages'
 import { loginSchema, type LoginValues } from '../schema'
 import { OutlookButton } from './outlook-button'
 
-// A "next" value from the query string is attacker-controlled, so only in-app paths pass.
-function safeNext(value: string | null) {
-  return value && value.startsWith('/') && !value.startsWith('//') ? value : routes.dashboard
-}
-
 export function LoginForm() {
   const router = useRouter()
-  const next = safeNext(useSearchParams().get('next'))
+  const next = safeNextRoute(useSearchParams().get('next'))
 
   const {
     register,

@@ -3,17 +3,19 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Anchor, Button, Divider, PasswordInput, Stack, TextInput } from '@mantine/core'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { authClient } from '@/lib/auth-client'
-import { routes } from '@/lib/routes'
+import { routes, safeNextRoute } from '@/lib/routes'
 import { authErrorMessage } from '../messages'
 import { signupSchema, type SignupValues } from '../schema'
 import { OutlookButton } from './outlook-button'
 
 export function SignupForm() {
   const router = useRouter()
+  // An invitation link sends people here first, so signing up returns them to it.
+  const next = safeNextRoute(useSearchParams().get('next'), routes.onboarding)
 
   const {
     register,
@@ -45,7 +47,7 @@ export function SignupForm() {
       return
     }
 
-    router.replace(routes.onboarding)
+    router.replace(next)
     router.refresh()
   }
 

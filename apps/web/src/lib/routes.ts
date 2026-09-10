@@ -18,6 +18,11 @@ export const routes = {
 
 export type Route = (typeof routes)[keyof typeof routes]
 
+// A "next" value from the query string is attacker-controlled, so only in-app paths pass.
+export function safeNextRoute(value: string | null, fallback: string = routes.dashboard) {
+  return value && value.startsWith('/') && !value.startsWith('//') ? value : fallback
+}
+
 export function invitationRoute(invitationId: string) {
   return `${routes.acceptInvitation}/${invitationId}`
 }

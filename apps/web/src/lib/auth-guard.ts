@@ -1,6 +1,6 @@
 import { db } from '@ihp/db'
 import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { cache } from 'react'
 import { auth } from './auth'
 import { routes } from './routes'
@@ -93,4 +93,12 @@ export async function requireOnboarding() {
   if (!profile) redirect(routes.login)
   if (profile.onboardingCompletedAt) redirect(routes.dashboard)
   return { ...session, profile }
+}
+
+// Not a redirect: an ordinary member should not learn that the organization routes exist.
+export async function requireOrganizationManager() {
+  const session = await requireOnboarded()
+  const membership = membershipOf(session.profile)
+  if (!canManageOrganization(membership)) notFound()
+  return { ...session, membership }
 }

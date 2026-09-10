@@ -1,0 +1,309 @@
+'use client'
+
+import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  ActionIcon,
+  Badge,
+  Button,
+  Group,
+  Menu,
+  Modal,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
+import { IconDotsVertical, IconPlus, IconSearch } from '@tabler/icons-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { EmptyState } from '@/components/page-shell'
+import { useUrlQueryParam } from '@/lib/use-url-query-param'
+import {
+  createTeamSchema,
+  renameTeamSchema,
+  type CreateTeamValues,
+  type RenameTeamValues,
+  type TeamRow,
+} from '../schema'
+import { useCreateTeam, useDeleteTeam, useRenameTeam, useTeams } from '../use-teams'
+import { TeamMembersDrawer } from './team-members-drawer'
+
+const created = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
+
+export function TeamsPanel() {
+  const teams = useTeams()
+  const search = useUrlQueryParam('q')
+  const openTeam = useUrlQueryParam('team', 0)
+  const [createOpened, createModal] = useDisclosure(false)
+  const [renaming, setRenaming] = useState<TeamRow | null>(null)
+  const [deleting, setDeleting] = useState<TeamRow | null>(null)
+  const deleteTeam = useDeleteTeam()
+
+  const term = search.value.trim().toLowerCase()
+  const rows = teams.data?.filter((team) => team.name.toLowerCase().includes(term))
+  const selected = teams.data?.find((team) => team.id === openTeam.value)
+
+  const columns: DataTableColumn<TeamRow>[] = [
+    {
+      key: 'name',
+      header: 'Department',
+      rowHeader: true,
+      render: (team) => (
+        <Text size="sm" fw={500}>
+          {team.name}
+        </Text>
+      ),
+    },
+    {
+      key: 'people',
+      header: 'People',
+      width: 120,
+      render: (team) => (
+        <Badge variant="light" color={team.memberCount === 0 ? 'gray' : 'brand'}>
+          {team.memberCount}
+        </Badge>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Created',
+      width: 160,
+      render: (team) => (
+        <Text size="sm" c="dimmed">
+          {created.format(new Date(team.createdAt))}
+        </Text>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: 80,
+      align: 'right',
+      render: (team) => (
+        <Menu position="bottom-end" withinPortal>
+          <Menu.Target>
+            <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${team.name}`}>
+              <IconDotsVertical size={16} aria-hidden />
+            </ActionIcon>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item onClick={() => openTeam.commit(team.id)}>Manage people</Menu.Item>
+            <Menu.Item onClick={() => setRenaming(team)}>Rename</Menu.Item>
+            <Menu.Item color="red" onClick={() => setDeleting(team)}>
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      ),
+    },
+  ]
+
+  return (
+    <Stack gap="md">
+      <Group justify="space-between" wrap="wrap" gap="sm">
+        <SearchField initial={search.value} onSearch={search.commit} />
+        <Button leftSection={<IconPlus size={16} aria-hidden />} onClick={createModal.open}>
+          New department
+        </Button>
+      </Group>
+
+      <DataTable
+        label="Departments"
+        columns={columns}
+        rows={rows}
+        rowKey={(team) => team.id}
+        isPending={teams.isPending}
+        isError={teams.isError}
+        isFetching={teams.isFetching}
+        error={teams.error}
+        onRetry={() => teams.refetch()}
+        minWidth={620}
+        empty={
+          term ? (
+            <EmptyState
+              title="No departments match that search"
+              description="Clear the search to see every department in this organization."
+              action={
+                <Button variant="default" onClick={() => search.commit('')}>
+                  Clear filters
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              title="No departments yet"
+              description="Create the first department so people can be placed in one at setup."
+              action={<Button onClick={createModal.open}>New department</Button>}
+            />
+          )
+        }
+      />
+
+      <CreateTeamModal opened={createOpened} onClose={createModal.close} />
+
+      <RenameTeamModal team={renaming} onClose={() => setRenaming(null)} />
+
+      <Modal
+        opened={Boolean(deleting)}
+        onClose={() => setDeleting(null)}
+        title={`Delete ${deleting?.name ?? 'department'}?`}
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm">
+            Deleting {deleting?.name} cannot be undone. People already in it keep their profile but
+            lose their department.
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setDeleting(null)}>
+              Keep it
+            </Button>
+            <Button
+              color="red"
+              loading={deleteTeam.isPending}
+              onClick={() => {
+                if (!deleting) return
+                deleteTeam.mutate({ teamId: deleting.id })
+                setDeleting(null)
+              }}
+            >
+              Delete department
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <TeamMembersDrawer team={selected} onClose={() => openTeam.commit('')} />
+    </Stack>
+  )
+}
+
+function SearchField({
+  initial,
+  onSearch,
+}: {
+  initial: string
+  onSearch: (value: string) => void
+}) {
+  const { register } = useForm<{ q: string }>({ defaultValues: { q: initial } })
+  const field = register('q')
+
+  return (
+    <TextInput
+      {...field}
+      onChange={(event) => {
+        void field.onChange(event)
+        onSearch(event.currentTarget.value)
+      }}
+      type="search"
+      label="Search departments"
+      placeholder="Search by name"
+      leftSection={<IconSearch size={16} aria-hidden />}
+      w={{ base: '100%', sm: 280 }}
+    />
+  )
+}
+
+function CreateTeamModal({ opened, onClose }: { opened: boolean; onClose: () => void }) {
+  const create = useCreateTeam()
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateTeamValues>({
+    resolver: zodResolver(createTeamSchema),
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
+    defaultValues: { name: '' },
+  })
+
+  async function onSubmit(values: CreateTeamValues) {
+    try {
+      await create.mutateAsync(values)
+    } catch (error) {
+      setError('name', { message: error instanceof Error ? error.message : 'Could not create.' })
+      return
+    }
+    reset({ name: '' })
+    onClose()
+  }
+
+  return (
+    <Modal opened={opened} onClose={onClose} title="New department" centered>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack gap="md">
+          <TextInput
+            {...register('name')}
+            label="Department name"
+            placeholder="Clinical Operations"
+            required
+            aria-required="true"
+            error={errors.name?.message}
+            data-autofocus
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={isSubmitting}>
+              {isSubmitting ? 'Creating…' : 'Create department'}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
+  )
+}
+
+function RenameTeamModal({ team, onClose }: { team: TeamRow | null; onClose: () => void }) {
+  const rename = useRenameTeam()
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<RenameTeamValues>({
+    resolver: zodResolver(renameTeamSchema),
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
+    values: { teamId: team?.id ?? '', name: team?.name ?? '' },
+  })
+
+  async function onSubmit(values: RenameTeamValues) {
+    try {
+      await rename.mutateAsync(values)
+    } catch (error) {
+      setError('name', { message: error instanceof Error ? error.message : 'Could not rename.' })
+      return
+    }
+    onClose()
+  }
+
+  return (
+    <Modal opened={Boolean(team)} onClose={onClose} title={`Rename ${team?.name ?? ''}`} centered>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack gap="md">
+          <TextInput
+            {...register('name')}
+            label="Department name"
+            required
+            aria-required="true"
+            error={errors.name?.message}
+            data-autofocus
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={isSubmitting}>
+              {isSubmitting ? 'Saving…' : 'Save name'}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
+  )
+}

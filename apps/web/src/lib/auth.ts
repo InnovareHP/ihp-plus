@@ -4,12 +4,15 @@ import { betterAuth } from 'better-auth/minimal'
 import { nextCookies } from 'better-auth/next-js'
 import { admin, organization } from 'better-auth/plugins'
 import { sendEmail } from './email'
-import { AUTH_BASE_PATH } from './routes'
+import { AUTH_BASE_PATH, invitationRoute, withBasePath } from './routes'
+
+// The invitation link is a real browser URL, so it needs the origin as well as the basePath.
+const BASE_URL = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
 
 export const auth = betterAuth({
   appName: 'IHP Plus',
   // The router derives its own base from baseURL at init, so an unset value 404s every route.
-  baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+  baseURL: BASE_URL,
   // Next mounts everything under basePath '/app', so Better Auth's own path carries it too.
   basePath: AUTH_BASE_PATH,
   secret: process.env.BETTER_AUTH_SECRET,
@@ -88,6 +91,15 @@ export const auth = betterAuth({
     organization({
       allowUserToCreateOrganization: false,
       creatorRole: 'owner',
+      // Not awaited: a slow mail provider would hold up the invitation response.
+      sendInvitationEmail: async (data) => {
+        const link = `${BASE_URL}${withBasePath(invitationRoute(data.id))}`
+        void sendEmail({
+          to: data.email,
+          subject: `Join ${data.organization.name} on IHP Plus`,
+          text: `${data.inviter.user.name} invited you to ${data.organization.name}. Accept it here: ${link}`,
+        })
+      },
       teams: {
         enabled: true,
         // Departments are seeded explicitly, so an org must not invent a team of its own.

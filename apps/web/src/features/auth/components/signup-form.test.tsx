@@ -8,10 +8,12 @@ const mocks = vi.hoisted(() => ({
   signInSocial: vi.fn(),
   replace: vi.fn(),
   refresh: vi.fn(),
+  searchParams: new URLSearchParams(),
 }))
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.replace, refresh: mocks.refresh, push: vi.fn() }),
+  useSearchParams: () => mocks.searchParams,
   usePathname: () => '/signup',
 }))
 
@@ -31,6 +33,7 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 describe('SignupForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.searchParams = new URLSearchParams()
     mocks.signUpEmail.mockResolvedValue({ data: {}, error: null })
   })
 
@@ -49,6 +52,17 @@ describe('SignupForm', () => {
       }),
     )
     expect(mocks.replace).toHaveBeenCalledWith('/onboarding')
+  })
+
+  it('returns to the invitation that sent them here instead of the onboarding page', async () => {
+    mocks.searchParams = new URLSearchParams('next=/accept-invitation/invite-1')
+    const user = userEvent.setup()
+    render(<SignupForm />)
+
+    await fillValidForm(user)
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/accept-invitation/invite-1'))
   })
 
   it('rejects a password under twelve characters', async () => {
