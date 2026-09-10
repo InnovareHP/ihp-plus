@@ -1,10 +1,11 @@
-import { Skeleton, SimpleGrid, Stack } from '@mantine/core'
+import { SimpleGrid, Skeleton, Stack } from '@mantine/core'
+import { PageShell } from '@/components/page-shell'
 
 // Matches the dashboard's box sizes so the layout does not shift when data lands.
 export default function DashboardLoading() {
   return (
-    <Stack gap="lg" aria-busy="true">
-      <Stack gap={4}>
+    <PageShell>
+      <Stack gap="sm" aria-busy="true">
         <Skeleton height={32} width="18rem" />
         <Skeleton height={20} width="12rem" />
       </Stack>
@@ -14,6 +15,6 @@ export default function DashboardLoading() {
         <Skeleton height={140} radius="md" />
         <Skeleton height={140} radius="md" />
       </SimpleGrid>
-    </Stack>
+    </PageShell>
   )
 }

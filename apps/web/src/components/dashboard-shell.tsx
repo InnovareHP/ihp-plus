@@ -3,32 +3,32 @@
 import {
   AppShell,
   Avatar,
+  Badge,
   Burger,
+  Divider,
   Group,
   Menu,
   NavLink,
+  ScrollArea,
   Stack,
   Text,
   UnstyledButton,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
+import { IconChevronDown, IconLogout, IconSettings } from '@tabler/icons-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { useSignOut } from '@/features/auth/use-sign-out'
+import { isNavItemActive, visibleSections } from '@/lib/navigation'
 import { routes } from '@/lib/routes'
 import { AppLogo } from './app-logo'
 import { ColorSchemeToggle } from './color-scheme-toggle'
 
-const NAV_ITEMS = [
-  { href: routes.dashboard, label: 'Dashboard', description: 'Your day at a glance' },
-  { href: routes.members, label: 'Members', description: 'Roles and access', manageOnly: true },
-  { href: routes.settings, label: 'Settings', description: 'Profile and account' },
-] as const
-
 export interface DashboardShellProps {
   user: { name: string; email: string; jobTitle?: string | null; photoUrl?: string }
-  canManageMembers?: boolean
+  organization: { name: string; role?: string }
+  canManageOrganization?: boolean
   children: ReactNode
 }
 
@@ -41,20 +41,26 @@ function initials(name: string) {
     .join('')
 }
 
-export function DashboardShell({ user, canManageMembers, children }: DashboardShellProps) {
+export function DashboardShell({
+  user,
+  organization,
+  canManageOrganization = false,
+  children,
+}: DashboardShellProps) {
   const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure(false)
   const pathname = usePathname()
   const signOut = useSignOut()
+  const sections = visibleSections(canManageOrganization)
 
   return (
     <AppShell
-      padding={{ base: 'md', sm: 'lg' }}
+      padding={0}
       header={{ height: 60 }}
-      navbar={{ width: 260, breakpoint: 'sm', collapsed: { mobile: !navOpened } }}
+      navbar={{ width: 272, breakpoint: 'sm', collapsed: { mobile: !navOpened } }}
     >
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group gap="sm">
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+          <Group gap="sm" wrap="nowrap" miw={0}>
             <Burger
               opened={navOpened}
               onClick={toggleNav}
@@ -65,11 +71,15 @@ export function DashboardShell({ user, canManageMembers, children }: DashboardSh
               aria-controls="primary-navigation"
             />
             <AppLogo size={28} />
+            <Divider orientation="vertical" my="sm" visibleFrom="sm" />
+            <Text size="sm" c="dimmed" truncate visibleFrom="sm">
+              {organization.name}
+            </Text>
           </Group>
 
-          <Group gap="sm">
+          <Group gap="sm" wrap="nowrap">
             <ColorSchemeToggle />
-            <Menu position="bottom-end" withinPortal>
+            <Menu position="bottom-end" withinPortal shadow="md" width={220}>
               <Menu.Target>
                 <UnstyledButton aria-label={`Account menu for ${user.name}`}>
                   <Group gap="xs" wrap="nowrap">
@@ -79,17 +89,24 @@ export function DashboardShell({ user, canManageMembers, children }: DashboardSh
                     <Text size="sm" fw={500} visibleFrom="xs">
                       {user.name}
                     </Text>
+                    <IconChevronDown size={14} aria-hidden />
                   </Group>
                 </UnstyledButton>
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Label>{user.email}</Menu.Label>
-                <Menu.Item component={Link} href={routes.settings}>
+                <Menu.Item
+                  component={Link}
+                  href={routes.settings}
+                  leftSection={<IconSettings size={16} aria-hidden />}
+                >
                   Settings
                 </Menu.Item>
+                <Menu.Divider />
                 <Menu.Item
                   color="red"
                   disabled={signOut.isPending}
+                  leftSection={<IconLogout size={16} aria-hidden />}
                   onClick={() => signOut.mutate()}
                 >
                   {signOut.isPending ? 'Signing out…' : 'Sign out'}
@@ -101,24 +118,36 @@ export function DashboardShell({ user, canManageMembers, children }: DashboardSh
       </AppShell.Header>
 
       <AppShell.Navbar id="primary-navigation" p="sm" aria-label="Primary">
-        <AppShell.Section grow>
-          <Stack gap={4}>
-            {NAV_ITEMS.filter((item) => !('manageOnly' in item) || canManageMembers).map((item) => (
-              <NavLink
-                key={item.href}
-                component={Link}
-                href={item.href}
-                label={item.label}
-                description={item.description}
-                active={pathname === item.href}
-                aria-current={pathname === item.href ? 'page' : undefined}
-                onClick={closeNav}
-              />
+        <AppShell.Section grow component={ScrollArea} type="scroll">
+          <Stack gap="lg">
+            {sections.map((section) => (
+              <Stack key={section.id} gap={4} component="nav" aria-label={section.label}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="xs" lts="0.04em">
+                  {section.label}
+                </Text>
+                {section.items.map((item) => {
+                  const active = isNavItemActive(pathname, item.href)
+                  return (
+                    <NavLink
+                      key={item.href}
+                      component={Link}
+                      href={item.href}
+                      label={item.label}
+                      description={item.description}
+                      leftSection={<item.icon size={18} stroke={1.6} aria-hidden />}
+                      active={active}
+                      aria-current={active ? 'page' : undefined}
+                      onClick={closeNav}
+                    />
+                  )
+                })}
+              </Stack>
             ))}
           </Stack>
         </AppShell.Section>
 
-        <AppShell.Section>
+        <AppShell.Section pt="sm">
+          <Divider mb="sm" />
           <UnstyledButton
             component={Link}
             href={routes.settings}
@@ -130,7 +159,7 @@ export function DashboardShell({ user, canManageMembers, children }: DashboardSh
               <Avatar src={user.photoUrl} alt="" color="brand" radius="xl" size={34}>
                 {initials(user.name)}
               </Avatar>
-              <Stack gap={0} miw={0}>
+              <Stack gap={0} miw={0} style={{ flex: 1 }}>
                 <Text size="sm" fw={500} truncate>
                   {user.name}
                 </Text>
@@ -138,6 +167,11 @@ export function DashboardShell({ user, canManageMembers, children }: DashboardSh
                   {user.jobTitle ?? user.email}
                 </Text>
               </Stack>
+              {organization.role ? (
+                <Badge size="xs" variant="light" tt="capitalize">
+                  {organization.role}
+                </Badge>
+              ) : null}
             </Group>
           </UnstyledButton>
         </AppShell.Section>

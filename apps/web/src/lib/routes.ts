@@ -4,15 +4,23 @@ export const BASE_PATH = '/app'
 export const routes = {
   dashboard: '/',
   onboarding: '/onboarding',
-  members: '/members',
+  organization: '/organization',
+  members: '/organization/members',
+  teams: '/organization/teams',
+  invitations: '/organization/invitations',
   settings: '/settings',
   login: '/login',
   signup: '/signup',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
+  acceptInvitation: '/accept-invitation',
 } as const
 
 export type Route = (typeof routes)[keyof typeof routes]
+
+export function invitationRoute(invitationId: string) {
+  return `${routes.acceptInvitation}/${invitationId}`
+}
 
 // The (auth) route group is invisible in the URL, so the guard matches these prefixes instead.
 export const PUBLIC_ROUTES: readonly Route[] = [
@@ -20,6 +28,7 @@ export const PUBLIC_ROUTES: readonly Route[] = [
   routes.signup,
   routes.forgotPassword,
   routes.resetPassword,
+  routes.acceptInvitation,
 ]
 
 export function isPublicRoute(pathname: string) {

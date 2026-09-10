@@ -26,7 +26,14 @@ const readProfile = cache(async (userId: string) =>
       onboardingCompletedAt: true,
       role: true,
       // Department is team membership now, and the org role sits beside it on the same read.
-      members: { select: { role: true, organizationId: true }, take: 1 },
+      members: {
+        select: {
+          role: true,
+          organizationId: true,
+          organization: { select: { id: true, name: true, slug: true, logo: true } },
+        },
+        take: 1,
+      },
       teammembers: { select: { team: { select: { id: true, name: true } } }, take: 1 },
     },
   }),
@@ -40,16 +47,28 @@ export interface Membership {
   /** owner | admin | member inside the organization. */
   organizationRole: string | undefined
   organizationId: string | undefined
+  organization: { id: string; name: string; slug: string; logo: string | null } | undefined
   team: { id: string; name: string } | undefined
 }
 
 export function membershipOf(profile: OnboardingProfile): Membership {
+  const member = profile.members[0]
   return {
     portalRole: profile.role ?? 'user',
-    organizationRole: profile.members[0]?.role,
-    organizationId: profile.members[0]?.organizationId,
+    organizationRole: member?.role,
+    organizationId: member?.organizationId,
+    organization: member?.organization,
     team: profile.teammembers[0]?.team,
   }
+}
+
+// Portal admins manage the company too, so the two role systems are collapsed in one place.
+export function canManageOrganization(membership: Membership) {
+  return (
+    membership.portalRole === 'admin' ||
+    membership.organizationRole === 'owner' ||
+    membership.organizationRole === 'admin'
+  )
 }
 
 // proxy.ts only sniffs the cookie, so every protected segment revalidates here.

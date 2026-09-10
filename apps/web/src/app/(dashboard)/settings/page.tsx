@@ -1,6 +1,7 @@
 import { Avatar, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { PageHeader, PageShell } from '@/components/page-shell'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 
@@ -23,17 +24,13 @@ export default async function SettingsPage() {
     profile.photoKey && isObjectStorageConfigured() ? await objectUrl(profile.photoKey) : undefined
 
   return (
-    <Stack gap="lg">
-      <Stack gap={4}>
-        <Title order={1} size="h2">
-          Settings
-        </Title>
-        <Text c="dimmed">
-          The profile you completed at setup. Email People &amp; Culture to correct anything here.
-        </Text>
-      </Stack>
+    <PageShell>
+      <PageHeader
+        title="Settings"
+        description="The profile you completed at setup. Email People & Culture to correct anything here."
+      />
 
-      <Card withBorder radius="md" padding="lg">
+      <Card padding="lg">
         <Group gap="lg" align="center" wrap="nowrap">
           <Avatar src={photoUrl} alt="" size={72} radius="md" color="brand">
             {initials(user.name)}
@@ -53,8 +50,8 @@ export default async function SettingsPage() {
       </Card>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-        <Card withBorder radius="md" padding="lg">
-          <Title order={2} size="h6" mb="sm">
+        <Card component="section" padding="lg">
+          <Title order={2} size="h5" mb="sm">
             About you
           </Title>
           <Stack component="dl" gap="xs" m={0}>
@@ -66,8 +63,8 @@ export default async function SettingsPage() {
           </Stack>
         </Card>
 
-        <Card withBorder radius="md" padding="lg">
-          <Title order={2} size="h6" mb="sm">
+        <Card component="section" padding="lg">
+          <Title order={2} size="h5" mb="sm">
             Your role
           </Title>
           <Stack component="dl" gap="xs" m={0}>
@@ -78,7 +75,7 @@ export default async function SettingsPage() {
           </Stack>
         </Card>
       </SimpleGrid>
-    </Stack>
+    </PageShell>
   )
 }
 

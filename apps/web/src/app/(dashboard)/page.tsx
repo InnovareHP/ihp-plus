@@ -1,6 +1,7 @@
 import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { PageHeader, PageShell } from '@/components/page-shell'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
 
 export const metadata: Metadata = { title: 'Dashboard' }
@@ -14,15 +15,11 @@ export default async function DashboardPage() {
   const greetingName = profile.preferredName ?? profile.firstName ?? user.name
 
   return (
-    <Stack gap="lg">
-      <Stack gap={4}>
-        <Title order={1} size="h2">
-          Welcome back, {greetingName}
-        </Title>
-        <Text c="dimmed">
-          {profile.jobTitle} · {membership.team?.name ?? 'No department'}
-        </Text>
-      </Stack>
+    <PageShell>
+      <PageHeader
+        title={`Welcome back, ${greetingName}`}
+        description={`${profile.jobTitle} · ${membership.team?.name ?? 'No department'}`}
+      />
 
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
         <SummaryCard title="Your role">
@@ -75,7 +72,7 @@ export default async function DashboardPage() {
           </Text>
         </SummaryCard>
       </SimpleGrid>
-    </Stack>
+    </PageShell>
   )
 }
 
@@ -87,7 +84,7 @@ interface SummaryCardProps {
 
 function SummaryCard({ title, badge, children }: SummaryCardProps) {
   return (
-    <Card withBorder radius="md" padding="lg">
+    <Card padding="lg">
       <Group justify="space-between" align="center" mb="xs" wrap="nowrap">
         <Title order={2} size="h6">
           {title}

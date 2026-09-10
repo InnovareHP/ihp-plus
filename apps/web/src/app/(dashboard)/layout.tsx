@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { SkipLink } from '@/components/skip-link'
-import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
+import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 
 // Route group: every segment here revalidates the session and the onboarding gate first.
@@ -15,11 +15,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     <>
       <SkipLink />
       <DashboardShell
-        canManageMembers={
-          membership.portalRole === 'admin' ||
-          membership.organizationRole === 'owner' ||
-          membership.organizationRole === 'admin'
-        }
+        canManageOrganization={canManageOrganization(membership)}
+        organization={{
+          name: membership.organization?.name ?? 'Innovare Health Partners',
+          role: membership.organizationRole,
+        }}
         user={{
           name: profile.preferredName ?? user.name,
           email: user.email,

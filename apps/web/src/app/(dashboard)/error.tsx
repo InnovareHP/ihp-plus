@@ -1,13 +1,12 @@
 'use client'
 
-import { Alert, Button, Group, Stack, Text, Title } from '@mantine/core'
+import { Alert, Button, Group, Text } from '@mantine/core'
+import { PageHeader, PageShell } from '@/components/page-shell'
 
 export default function DashboardError({ reset }: { error: Error; reset: () => void }) {
   return (
-    <Stack gap="md">
-      <Title order={1} size="h2">
-        This page could not load
-      </Title>
+    <PageShell>
+      <PageHeader title="This page could not load" />
       <Alert role="alert" color="red" title="Request failed" variant="light">
         <Text size="sm">
           The portal could not reach the server. Your session is still valid — retrying usually
@@ -17,6 +16,6 @@ export default function DashboardError({ reset }: { error: Error; reset: () => v
       <Group>
         <Button onClick={reset}>Try again</Button>
       </Group>
-    </Stack>
+    </PageShell>
   )
 }
