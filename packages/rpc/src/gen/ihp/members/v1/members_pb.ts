@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ihp/members/v1/members.proto.
  */
 export const file_ihp_members_v1_members: GenFile = /*@__PURE__*/
-  fileDesc("ChxpaHAvbWVtYmVycy92MS9tZW1iZXJzLnByb3RvEg5paHAubWVtYmVycy52MSL0AQoGTWVtYmVyEhEKCW1lbWJlcl9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSDQoFZW1haWwYBCABKAkSOwoRb3JnYW5pemF0aW9uX3JvbGUYBSABKA4yIC5paHAubWVtYmVycy52MS5Pcmdhbml6YXRpb25Sb2xlEi8KC3BvcnRhbF9yb2xlGAYgASgOMhouaWhwLm1lbWJlcnMudjEuUG9ydGFsUm9sZRIRCgR0ZWFtGAcgASgJSACIAQESDgoGYmFubmVkGAggASgIEg8KB2lzX3NlbGYYCSABKAhCBwoFX3RlYW0iFAoSTGlzdE1lbWJlcnNSZXF1ZXN0Ij4KE0xpc3RNZW1iZXJzUmVzcG9uc2USJwoHbWVtYmVycxgBIAMoCzIWLmlocC5tZW1iZXJzLnYxLk1lbWJlciJfChpTZXRPcmdhbml6YXRpb25Sb2xlUmVxdWVzdBIRCgltZW1iZXJfaWQYASABKAkSLgoEcm9sZRgCIAEoDjIgLmlocC5tZW1iZXJzLnYxLk9yZ2FuaXphdGlvblJvbGUiRQobU2V0T3JnYW5pemF0aW9uUm9sZVJlc3BvbnNlEiYKBm1lbWJlchgBIAEoCzIWLmlocC5tZW1iZXJzLnYxLk1lbWJlciJRChRTZXRQb3J0YWxSb2xlUmVxdWVzdBIPCgd1c2VyX2lkGAEgASgJEigKBHJvbGUYAiABKA4yGi5paHAubWVtYmVycy52MS5Qb3J0YWxSb2xlIj8KFVNldFBvcnRhbFJvbGVSZXNwb25zZRImCgZtZW1iZXIYASABKAsyFi5paHAubWVtYmVycy52MS5NZW1iZXIiOQoWU2V0TWVtYmVyQWNjZXNzUmVxdWVzdBIPCgd1c2VyX2lkGAEgASgJEg4KBmJhbm5lZBgCIAEoCCJBChdTZXRNZW1iZXJBY2Nlc3NSZXNwb25zZRImCgZtZW1iZXIYASABKAsyFi5paHAubWVtYmVycy52MS5NZW1iZXIqjQEKEE9yZ2FuaXphdGlvblJvbGUSIQodT1JHQU5JWkFUSU9OX1JPTEVfVU5TUEVDSUZJRUQQABIbChdPUkdBTklaQVRJT05fUk9MRV9PV05FUhABEhsKF09SR0FOSVpBVElPTl9ST0xFX0FETUlOEAISHAoYT1JHQU5JWkFUSU9OX1JPTEVfTUVNQkVSEAMqVgoKUG9ydGFsUm9sZRIbChdQT1JUQUxfUk9MRV9VTlNQRUNJRklFRBAAEhUKEVBPUlRBTF9ST0xFX0FETUlOEAESFAoQUE9SVEFMX1JPTEVfVVNFUhACMpoDCg5NZW1iZXJzU2VydmljZRJWCgtMaXN0TWVtYmVycxIiLmlocC5tZW1iZXJzLnYxLkxpc3RNZW1iZXJzUmVxdWVzdBojLmlocC5tZW1iZXJzLnYxLkxpc3RNZW1iZXJzUmVzcG9uc2USbgoTU2V0T3JnYW5pemF0aW9uUm9sZRIqLmlocC5tZW1iZXJzLnYxLlNldE9yZ2FuaXphdGlvblJvbGVSZXF1ZXN0GisuaWhwLm1lbWJlcnMudjEuU2V0T3JnYW5pemF0aW9uUm9sZVJlc3BvbnNlElwKDVNldFBvcnRhbFJvbGUSJC5paHAubWVtYmVycy52MS5TZXRQb3J0YWxSb2xlUmVxdWVzdBolLmlocC5tZW1iZXJzLnYxLlNldFBvcnRhbFJvbGVSZXNwb25zZRJiCg9TZXRNZW1iZXJBY2Nlc3MSJi5paHAubWVtYmVycy52MS5TZXRNZW1iZXJBY2Nlc3NSZXF1ZXN0GicuaWhwLm1lbWJlcnMudjEuU2V0TWVtYmVyQWNjZXNzUmVzcG9uc2ViBnByb3RvMw");
+  fileDesc("ChxpaHAvbWVtYmVycy92MS9tZW1iZXJzLnByb3RvEg5paHAubWVtYmVycy52MSLiAgoGTWVtYmVyEhEKCW1lbWJlcl9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSDQoFZW1haWwYBCABKAkSOwoRb3JnYW5pemF0aW9uX3JvbGUYBSABKA4yIC5paHAubWVtYmVycy52MS5Pcmdhbml6YXRpb25Sb2xlEi8KC3BvcnRhbF9yb2xlGAYgASgOMhouaWhwLm1lbWJlcnMudjEuUG9ydGFsUm9sZRIRCgR0ZWFtGAcgASgJSACIAQESFgoJam9iX3RpdGxlGAggASgJSAGIAQESEwoGaWhwX2lkGAkgASgJSAKIAQESFwoKc3RhcnRfZGF0ZRgKIAEoCUgDiAEBEg4KBmJhbm5lZBgLIAEoCBIPCgdpc19zZWxmGAwgASgIQgcKBV90ZWFtQgwKCl9qb2JfdGl0bGVCCQoHX2locF9pZEINCgtfc3RhcnRfZGF0ZSJ2CghQYWdlSW5mbxIMCgRwYWdlGAEgASgFEhEKCXBhZ2Vfc2l6ZRgCIAEoBRINCgV0b3RhbBgDIAEoBRISCgpwYWdlX2NvdW50GAQgASgFEhQKDGhhc19wcmV2aW91cxgFIAEoCBIQCghoYXNfbmV4dBgGIAEoCCLPAwoLTWVtYmVyUXVlcnkSDgoGc2VhcmNoGAEgASgJEjwKEm9yZ2FuaXphdGlvbl9yb2xlcxgCIAMoDjIgLmlocC5tZW1iZXJzLnYxLk9yZ2FuaXphdGlvblJvbGUSMAoMcG9ydGFsX3JvbGVzGAMgAygOMhouaWhwLm1lbWJlcnMudjEuUG9ydGFsUm9sZRIYChBlbXBsb3ltZW50X3R5cGVzGAQgAygJEhAKCHRlYW1faWRzGAUgAygJEiwKBnN0YXR1cxgGIAEoDjIcLmlocC5tZW1iZXJzLnYxLk1lbWJlclN0YXR1cxIcCg9zdGFydF9kYXRlX2Zyb20YByABKAlIAIgBARIaCg1zdGFydF9kYXRlX3RvGAggASgJSAGIAQESLgoHc29ydF9ieRgJIAEoDjIdLmlocC5tZW1iZXJzLnYxLk1lbWJlclNvcnRLZXkSNQoOc29ydF9kaXJlY3Rpb24YCiABKA4yHS5paHAubWVtYmVycy52MS5Tb3J0RGlyZWN0aW9uEgwKBHBhZ2UYCyABKAUSEQoJcGFnZV9zaXplGAwgASgFQhIKEF9zdGFydF9kYXRlX2Zyb21CEAoOX3N0YXJ0X2RhdGVfdG8iQAoSTGlzdE1lbWJlcnNSZXF1ZXN0EioKBXF1ZXJ5GAEgASgLMhsuaWhwLm1lbWJlcnMudjEuTWVtYmVyUXVlcnkiaAoTTGlzdE1lbWJlcnNSZXNwb25zZRIkCgRyb3dzGAEgAygLMhYuaWhwLm1lbWJlcnMudjEuTWVtYmVyEisKCXBhZ2VfaW5mbxgCIAEoCzIYLmlocC5tZW1iZXJzLnYxLlBhZ2VJbmZvIkEKClRlYW1PcHRpb24SDwoHdGVhbV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhQKDG1lbWJlcl9jb3VudBgDIAEoBSIgCh5MaXN0TWVtYmVyRmlsdGVyT3B0aW9uc1JlcXVlc3QiZgofTGlzdE1lbWJlckZpbHRlck9wdGlvbnNSZXNwb25zZRIpCgV0ZWFtcxgBIAMoCzIaLmlocC5tZW1iZXJzLnYxLlRlYW1PcHRpb24SGAoQZW1wbG95bWVudF90eXBlcxgCIAMoCSJfChpTZXRPcmdhbml6YXRpb25Sb2xlUmVxdWVzdBIRCgltZW1iZXJfaWQYASABKAkSLgoEcm9sZRgCIAEoDjIgLmlocC5tZW1iZXJzLnYxLk9yZ2FuaXphdGlvblJvbGUiUQoUU2V0UG9ydGFsUm9sZVJlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCRIoCgRyb2xlGAIgASgOMhouaWhwLm1lbWJlcnMudjEuUG9ydGFsUm9sZSI5ChZTZXRNZW1iZXJBY2Nlc3NSZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAkSDgoGYmFubmVkGAIgASgIIkUKG1NldE9yZ2FuaXphdGlvblJvbGVSZXNwb25zZRImCgZtZW1iZXIYASABKAsyFi5paHAubWVtYmVycy52MS5NZW1iZXIiPwoVU2V0UG9ydGFsUm9sZVJlc3BvbnNlEiYKBm1lbWJlchgBIAEoCzIWLmlocC5tZW1iZXJzLnYxLk1lbWJlciJBChdTZXRNZW1iZXJBY2Nlc3NSZXNwb25zZRImCgZtZW1iZXIYASABKAsyFi5paHAubWVtYmVycy52MS5NZW1iZXIqjQEKEE9yZ2FuaXphdGlvblJvbGUSIQodT1JHQU5JWkFUSU9OX1JPTEVfVU5TUEVDSUZJRUQQABIbChdPUkdBTklaQVRJT05fUk9MRV9PV05FUhABEhsKF09SR0FOSVpBVElPTl9ST0xFX0FETUlOEAISHAoYT1JHQU5JWkFUSU9OX1JPTEVfTUVNQkVSEAMqVgoKUG9ydGFsUm9sZRIbChdQT1JUQUxfUk9MRV9VTlNQRUNJRklFRBAAEhUKEVBPUlRBTF9ST0xFX0FETUlOEAESFAoQUE9SVEFMX1JPTEVfVVNFUhACKnsKDE1lbWJlclN0YXR1cxIdChlNRU1CRVJfU1RBVFVTX1VOU1BFQ0lGSUVEEAASFQoRTUVNQkVSX1NUQVRVU19BTEwQARIYChRNRU1CRVJfU1RBVFVTX0FDVElWRRACEhsKF01FTUJFUl9TVEFUVVNfU1VTUEVOREVEEAMqjAIKDU1lbWJlclNvcnRLZXkSHwobTUVNQkVSX1NPUlRfS0VZX1VOU1BFQ0lGSUVEEAASGAoUTUVNQkVSX1NPUlRfS0VZX05BTUUQARIZChVNRU1CRVJfU09SVF9LRVlfRU1BSUwQAhIlCiFNRU1CRVJfU09SVF9LRVlfT1JHQU5JWkFUSU9OX1JPTEUQAxIfChtNRU1CRVJfU09SVF9LRVlfUE9SVEFMX1JPTEUQBBIdChlNRU1CRVJfU09SVF9LRVlfSk9CX1RJVExFEAUSHgoaTUVNQkVSX1NPUlRfS0VZX1NUQVJUX0RBVEUQBhIeChpNRU1CRVJfU09SVF9LRVlfQ1JFQVRFRF9BVBAHKmAKDVNvcnREaXJlY3Rpb24SHgoaU09SVF9ESVJFQ1RJT05fVU5TUEVDSUZJRUQQABIWChJTT1JUX0RJUkVDVElPTl9BU0MQARIXChNTT1JUX0RJUkVDVElPTl9ERVNDEAIylgQKDk1lbWJlcnNTZXJ2aWNlElYKC0xpc3RNZW1iZXJzEiIuaWhwLm1lbWJlcnMudjEuTGlzdE1lbWJlcnNSZXF1ZXN0GiMuaWhwLm1lbWJlcnMudjEuTGlzdE1lbWJlcnNSZXNwb25zZRJ6ChdMaXN0TWVtYmVyRmlsdGVyT3B0aW9ucxIuLmlocC5tZW1iZXJzLnYxLkxpc3RNZW1iZXJGaWx0ZXJPcHRpb25zUmVxdWVzdBovLmlocC5tZW1iZXJzLnYxLkxpc3RNZW1iZXJGaWx0ZXJPcHRpb25zUmVzcG9uc2USbgoTU2V0T3JnYW5pemF0aW9uUm9sZRIqLmlocC5tZW1iZXJzLnYxLlNldE9yZ2FuaXphdGlvblJvbGVSZXF1ZXN0GisuaWhwLm1lbWJlcnMudjEuU2V0T3JnYW5pemF0aW9uUm9sZVJlc3BvbnNlElwKDVNldFBvcnRhbFJvbGUSJC5paHAubWVtYmVycy52MS5TZXRQb3J0YWxSb2xlUmVxdWVzdBolLmlocC5tZW1iZXJzLnYxLlNldFBvcnRhbFJvbGVSZXNwb25zZRJiCg9TZXRNZW1iZXJBY2Nlc3MSJi5paHAubWVtYmVycy52MS5TZXRNZW1iZXJBY2Nlc3NSZXF1ZXN0GicuaWhwLm1lbWJlcnMudjEuU2V0TWVtYmVyQWNjZXNzUmVzcG9uc2ViBnByb3RvMw");
 
 /**
  * @generated from message ihp.members.v1.Member
@@ -47,21 +47,36 @@ export type Member = Message<"ihp.members.v1.Member"> & {
   portalRole: PortalRole;
 
   /**
-   * Absent when the person has not been put in a department yet.
+   * Each absent when the person has no department, title, issued ID or start date yet.
    *
    * @generated from field: optional string team = 7;
    */
   team?: string | undefined;
 
   /**
-   * @generated from field: bool banned = 8;
+   * @generated from field: optional string job_title = 8;
+   */
+  jobTitle?: string | undefined;
+
+  /**
+   * @generated from field: optional string ihp_id = 9;
+   */
+  ihpId?: string | undefined;
+
+  /**
+   * @generated from field: optional string start_date = 10;
+   */
+  startDate?: string | undefined;
+
+  /**
+   * @generated from field: bool banned = 11;
    */
   banned: boolean;
 
   /**
    * True for the caller's own row, which the UI must not offer to suspend.
    *
-   * @generated from field: bool is_self = 9;
+   * @generated from field: bool is_self = 12;
    */
   isSelf: boolean;
 };
@@ -74,9 +89,130 @@ export const MemberSchema: GenMessage<Member> = /*@__PURE__*/
   messageDesc(file_ihp_members_v1_members, 0);
 
 /**
+ * @generated from message ihp.members.v1.PageInfo
+ */
+export type PageInfo = Message<"ihp.members.v1.PageInfo"> & {
+  /**
+   * @generated from field: int32 page = 1;
+   */
+  page: number;
+
+  /**
+   * @generated from field: int32 page_size = 2;
+   */
+  pageSize: number;
+
+  /**
+   * @generated from field: int32 total = 3;
+   */
+  total: number;
+
+  /**
+   * @generated from field: int32 page_count = 4;
+   */
+  pageCount: number;
+
+  /**
+   * @generated from field: bool has_previous = 5;
+   */
+  hasPrevious: boolean;
+
+  /**
+   * @generated from field: bool has_next = 6;
+   */
+  hasNext: boolean;
+};
+
+/**
+ * Describes the message ihp.members.v1.PageInfo.
+ * Use `create(PageInfoSchema)` to create a new message.
+ */
+export const PageInfoSchema: GenMessage<PageInfo> = /*@__PURE__*/
+  messageDesc(file_ihp_members_v1_members, 1);
+
+/**
+ * Already parsed: turning ?a=x,y into these fields is the caller's job, so a stale URL
+ * falls back on the client rather than reaching the service.
+ *
+ * @generated from message ihp.members.v1.MemberQuery
+ */
+export type MemberQuery = Message<"ihp.members.v1.MemberQuery"> & {
+  /**
+   * @generated from field: string search = 1;
+   */
+  search: string;
+
+  /**
+   * @generated from field: repeated ihp.members.v1.OrganizationRole organization_roles = 2;
+   */
+  organizationRoles: OrganizationRole[];
+
+  /**
+   * @generated from field: repeated ihp.members.v1.PortalRole portal_roles = 3;
+   */
+  portalRoles: PortalRole[];
+
+  /**
+   * @generated from field: repeated string employment_types = 4;
+   */
+  employmentTypes: string[];
+
+  /**
+   * @generated from field: repeated string team_ids = 5;
+   */
+  teamIds: string[];
+
+  /**
+   * @generated from field: ihp.members.v1.MemberStatus status = 6;
+   */
+  status: MemberStatus;
+
+  /**
+   * @generated from field: optional string start_date_from = 7;
+   */
+  startDateFrom?: string | undefined;
+
+  /**
+   * @generated from field: optional string start_date_to = 8;
+   */
+  startDateTo?: string | undefined;
+
+  /**
+   * @generated from field: ihp.members.v1.MemberSortKey sort_by = 9;
+   */
+  sortBy: MemberSortKey;
+
+  /**
+   * @generated from field: ihp.members.v1.SortDirection sort_direction = 10;
+   */
+  sortDirection: SortDirection;
+
+  /**
+   * @generated from field: int32 page = 11;
+   */
+  page: number;
+
+  /**
+   * @generated from field: int32 page_size = 12;
+   */
+  pageSize: number;
+};
+
+/**
+ * Describes the message ihp.members.v1.MemberQuery.
+ * Use `create(MemberQuerySchema)` to create a new message.
+ */
+export const MemberQuerySchema: GenMessage<MemberQuery> = /*@__PURE__*/
+  messageDesc(file_ihp_members_v1_members, 2);
+
+/**
  * @generated from message ihp.members.v1.ListMembersRequest
  */
 export type ListMembersRequest = Message<"ihp.members.v1.ListMembersRequest"> & {
+  /**
+   * @generated from field: ihp.members.v1.MemberQuery query = 1;
+   */
+  query?: MemberQuery | undefined;
 };
 
 /**
@@ -84,16 +220,21 @@ export type ListMembersRequest = Message<"ihp.members.v1.ListMembersRequest"> & 
  * Use `create(ListMembersRequestSchema)` to create a new message.
  */
 export const ListMembersRequestSchema: GenMessage<ListMembersRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_members_v1_members, 1);
+  messageDesc(file_ihp_members_v1_members, 3);
 
 /**
  * @generated from message ihp.members.v1.ListMembersResponse
  */
 export type ListMembersResponse = Message<"ihp.members.v1.ListMembersResponse"> & {
   /**
-   * @generated from field: repeated ihp.members.v1.Member members = 1;
+   * @generated from field: repeated ihp.members.v1.Member rows = 1;
    */
-  members: Member[];
+  rows: Member[];
+
+  /**
+   * @generated from field: ihp.members.v1.PageInfo page_info = 2;
+   */
+  pageInfo?: PageInfo | undefined;
 };
 
 /**
@@ -101,7 +242,69 @@ export type ListMembersResponse = Message<"ihp.members.v1.ListMembersResponse"> 
  * Use `create(ListMembersResponseSchema)` to create a new message.
  */
 export const ListMembersResponseSchema: GenMessage<ListMembersResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_members_v1_members, 2);
+  messageDesc(file_ihp_members_v1_members, 4);
+
+/**
+ * @generated from message ihp.members.v1.TeamOption
+ */
+export type TeamOption = Message<"ihp.members.v1.TeamOption"> & {
+  /**
+   * @generated from field: string team_id = 1;
+   */
+  teamId: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int32 member_count = 3;
+   */
+  memberCount: number;
+};
+
+/**
+ * Describes the message ihp.members.v1.TeamOption.
+ * Use `create(TeamOptionSchema)` to create a new message.
+ */
+export const TeamOptionSchema: GenMessage<TeamOption> = /*@__PURE__*/
+  messageDesc(file_ihp_members_v1_members, 5);
+
+/**
+ * @generated from message ihp.members.v1.ListMemberFilterOptionsRequest
+ */
+export type ListMemberFilterOptionsRequest = Message<"ihp.members.v1.ListMemberFilterOptionsRequest"> & {
+};
+
+/**
+ * Describes the message ihp.members.v1.ListMemberFilterOptionsRequest.
+ * Use `create(ListMemberFilterOptionsRequestSchema)` to create a new message.
+ */
+export const ListMemberFilterOptionsRequestSchema: GenMessage<ListMemberFilterOptionsRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_members_v1_members, 6);
+
+/**
+ * @generated from message ihp.members.v1.ListMemberFilterOptionsResponse
+ */
+export type ListMemberFilterOptionsResponse = Message<"ihp.members.v1.ListMemberFilterOptionsResponse"> & {
+  /**
+   * @generated from field: repeated ihp.members.v1.TeamOption teams = 1;
+   */
+  teams: TeamOption[];
+
+  /**
+   * @generated from field: repeated string employment_types = 2;
+   */
+  employmentTypes: string[];
+};
+
+/**
+ * Describes the message ihp.members.v1.ListMemberFilterOptionsResponse.
+ * Use `create(ListMemberFilterOptionsResponseSchema)` to create a new message.
+ */
+export const ListMemberFilterOptionsResponseSchema: GenMessage<ListMemberFilterOptionsResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_members_v1_members, 7);
 
 /**
  * @generated from message ihp.members.v1.SetOrganizationRoleRequest
@@ -123,24 +326,7 @@ export type SetOrganizationRoleRequest = Message<"ihp.members.v1.SetOrganization
  * Use `create(SetOrganizationRoleRequestSchema)` to create a new message.
  */
 export const SetOrganizationRoleRequestSchema: GenMessage<SetOrganizationRoleRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_members_v1_members, 3);
-
-/**
- * @generated from message ihp.members.v1.SetOrganizationRoleResponse
- */
-export type SetOrganizationRoleResponse = Message<"ihp.members.v1.SetOrganizationRoleResponse"> & {
-  /**
-   * @generated from field: ihp.members.v1.Member member = 1;
-   */
-  member?: Member | undefined;
-};
-
-/**
- * Describes the message ihp.members.v1.SetOrganizationRoleResponse.
- * Use `create(SetOrganizationRoleResponseSchema)` to create a new message.
- */
-export const SetOrganizationRoleResponseSchema: GenMessage<SetOrganizationRoleResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_members_v1_members, 4);
+  messageDesc(file_ihp_members_v1_members, 8);
 
 /**
  * @generated from message ihp.members.v1.SetPortalRoleRequest
@@ -162,24 +348,7 @@ export type SetPortalRoleRequest = Message<"ihp.members.v1.SetPortalRoleRequest"
  * Use `create(SetPortalRoleRequestSchema)` to create a new message.
  */
 export const SetPortalRoleRequestSchema: GenMessage<SetPortalRoleRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_members_v1_members, 5);
-
-/**
- * @generated from message ihp.members.v1.SetPortalRoleResponse
- */
-export type SetPortalRoleResponse = Message<"ihp.members.v1.SetPortalRoleResponse"> & {
-  /**
-   * @generated from field: ihp.members.v1.Member member = 1;
-   */
-  member?: Member | undefined;
-};
-
-/**
- * Describes the message ihp.members.v1.SetPortalRoleResponse.
- * Use `create(SetPortalRoleResponseSchema)` to create a new message.
- */
-export const SetPortalRoleResponseSchema: GenMessage<SetPortalRoleResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_members_v1_members, 6);
+  messageDesc(file_ihp_members_v1_members, 9);
 
 /**
  * @generated from message ihp.members.v1.SetMemberAccessRequest
@@ -201,7 +370,44 @@ export type SetMemberAccessRequest = Message<"ihp.members.v1.SetMemberAccessRequ
  * Use `create(SetMemberAccessRequestSchema)` to create a new message.
  */
 export const SetMemberAccessRequestSchema: GenMessage<SetMemberAccessRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_members_v1_members, 7);
+  messageDesc(file_ihp_members_v1_members, 10);
+
+/**
+ * Each mutation gets its own response so they can evolve independently. All three carry
+ * the updated row, so an optimistic cache reconciles against what the server actually holds.
+ *
+ * @generated from message ihp.members.v1.SetOrganizationRoleResponse
+ */
+export type SetOrganizationRoleResponse = Message<"ihp.members.v1.SetOrganizationRoleResponse"> & {
+  /**
+   * @generated from field: ihp.members.v1.Member member = 1;
+   */
+  member?: Member | undefined;
+};
+
+/**
+ * Describes the message ihp.members.v1.SetOrganizationRoleResponse.
+ * Use `create(SetOrganizationRoleResponseSchema)` to create a new message.
+ */
+export const SetOrganizationRoleResponseSchema: GenMessage<SetOrganizationRoleResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_members_v1_members, 11);
+
+/**
+ * @generated from message ihp.members.v1.SetPortalRoleResponse
+ */
+export type SetPortalRoleResponse = Message<"ihp.members.v1.SetPortalRoleResponse"> & {
+  /**
+   * @generated from field: ihp.members.v1.Member member = 1;
+   */
+  member?: Member | undefined;
+};
+
+/**
+ * Describes the message ihp.members.v1.SetPortalRoleResponse.
+ * Use `create(SetPortalRoleResponseSchema)` to create a new message.
+ */
+export const SetPortalRoleResponseSchema: GenMessage<SetPortalRoleResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_members_v1_members, 12);
 
 /**
  * @generated from message ihp.members.v1.SetMemberAccessResponse
@@ -218,7 +424,7 @@ export type SetMemberAccessResponse = Message<"ihp.members.v1.SetMemberAccessRes
  * Use `create(SetMemberAccessResponseSchema)` to create a new message.
  */
 export const SetMemberAccessResponseSchema: GenMessage<SetMemberAccessResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_members_v1_members, 8);
+  messageDesc(file_ihp_members_v1_members, 13);
 
 /**
  * Role inside the organization, from Better Auth's organization plugin.
@@ -282,6 +488,116 @@ export const PortalRoleSchema: GenEnum<PortalRole> = /*@__PURE__*/
   enumDesc(file_ihp_members_v1_members, 1);
 
 /**
+ * @generated from enum ihp.members.v1.MemberStatus
+ */
+export enum MemberStatus {
+  /**
+   * @generated from enum value: MEMBER_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: MEMBER_STATUS_ALL = 1;
+   */
+  ALL = 1,
+
+  /**
+   * @generated from enum value: MEMBER_STATUS_ACTIVE = 2;
+   */
+  ACTIVE = 2,
+
+  /**
+   * @generated from enum value: MEMBER_STATUS_SUSPENDED = 3;
+   */
+  SUSPENDED = 3,
+}
+
+/**
+ * Describes the enum ihp.members.v1.MemberStatus.
+ */
+export const MemberStatusSchema: GenEnum<MemberStatus> = /*@__PURE__*/
+  enumDesc(file_ihp_members_v1_members, 2);
+
+/**
+ * Department is a to-many relation and Prisma cannot order by one, so it is filter-only.
+ *
+ * @generated from enum ihp.members.v1.MemberSortKey
+ */
+export enum MemberSortKey {
+  /**
+   * @generated from enum value: MEMBER_SORT_KEY_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: MEMBER_SORT_KEY_NAME = 1;
+   */
+  NAME = 1,
+
+  /**
+   * @generated from enum value: MEMBER_SORT_KEY_EMAIL = 2;
+   */
+  EMAIL = 2,
+
+  /**
+   * @generated from enum value: MEMBER_SORT_KEY_ORGANIZATION_ROLE = 3;
+   */
+  ORGANIZATION_ROLE = 3,
+
+  /**
+   * @generated from enum value: MEMBER_SORT_KEY_PORTAL_ROLE = 4;
+   */
+  PORTAL_ROLE = 4,
+
+  /**
+   * @generated from enum value: MEMBER_SORT_KEY_JOB_TITLE = 5;
+   */
+  JOB_TITLE = 5,
+
+  /**
+   * @generated from enum value: MEMBER_SORT_KEY_START_DATE = 6;
+   */
+  START_DATE = 6,
+
+  /**
+   * @generated from enum value: MEMBER_SORT_KEY_CREATED_AT = 7;
+   */
+  CREATED_AT = 7,
+}
+
+/**
+ * Describes the enum ihp.members.v1.MemberSortKey.
+ */
+export const MemberSortKeySchema: GenEnum<MemberSortKey> = /*@__PURE__*/
+  enumDesc(file_ihp_members_v1_members, 3);
+
+/**
+ * @generated from enum ihp.members.v1.SortDirection
+ */
+export enum SortDirection {
+  /**
+   * @generated from enum value: SORT_DIRECTION_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SORT_DIRECTION_ASC = 1;
+   */
+  ASC = 1,
+
+  /**
+   * @generated from enum value: SORT_DIRECTION_DESC = 2;
+   */
+  DESC = 2,
+}
+
+/**
+ * Describes the enum ihp.members.v1.SortDirection.
+ */
+export const SortDirectionSchema: GenEnum<SortDirection> = /*@__PURE__*/
+  enumDesc(file_ihp_members_v1_members, 4);
+
+/**
  * @generated from service ihp.members.v1.MembersService
  */
 export const MembersService: GenService<{
@@ -292,6 +608,14 @@ export const MembersService: GenService<{
     methodKind: "unary";
     input: typeof ListMembersRequestSchema;
     output: typeof ListMembersResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.members.v1.MembersService.ListMemberFilterOptions
+   */
+  listMemberFilterOptions: {
+    methodKind: "unary";
+    input: typeof ListMemberFilterOptionsRequestSchema;
+    output: typeof ListMemberFilterOptionsResponseSchema;
   },
   /**
    * @generated from rpc ihp.members.v1.MembersService.SetOrganizationRole

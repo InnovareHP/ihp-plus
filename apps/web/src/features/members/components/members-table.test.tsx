@@ -13,7 +13,7 @@ const actions = vi.hoisted(() => ({
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 const nav = vi.hoisted(() => ({ search: '', replace: vi.fn() }))
 
-vi.mock('../actions', () => actions)
+vi.mock('../rpc', () => actions)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: nav.replace }),
@@ -46,7 +46,6 @@ const ONE_PAGE = {
 }
 
 const page = (rows: unknown[], pageInfo: Partial<typeof ONE_PAGE> = {}) => ({
-  ok: true,
   rows,
   pageInfo: { ...ONE_PAGE, ...pageInfo },
 })
@@ -69,9 +68,9 @@ describe('MembersTable', () => {
     vi.clearAllMocks()
     nav.search = ''
     actions.listMembers.mockResolvedValue(page([ADA, SELF]))
-    actions.setOrganizationRole.mockResolvedValue({ ok: true })
-    actions.setPortalRole.mockResolvedValue({ ok: true })
-    actions.setBanned.mockResolvedValue({ ok: true })
+    actions.setOrganizationRole.mockResolvedValue(ADA)
+    actions.setPortalRole.mockResolvedValue(ADA)
+    actions.setBanned.mockResolvedValue(ADA)
   })
 
   it('lists each member with their department and both roles', async () => {
@@ -96,9 +95,9 @@ describe('MembersTable', () => {
   })
 
   it('shows the new portal role before the server answers', async () => {
-    let resolve: (value: { ok: true }) => void = () => {}
+    let resolve: (value: unknown) => void = () => {}
     actions.setPortalRole.mockReturnValue(
-      new Promise<{ ok: true }>((r) => {
+      new Promise<unknown>((r) => {
         resolve = r
       }),
     )
@@ -116,14 +115,13 @@ describe('MembersTable', () => {
         'Admin',
       ),
     )
-    resolve({ ok: true })
+    resolve(ADA)
   })
 
   it('restores the previous role and announces it when the server refuses', async () => {
-    actions.setPortalRole.mockResolvedValue({
-      ok: false,
-      message: 'You cannot remove your own portal admin role.',
-    })
+    actions.setPortalRole.mockRejectedValue(
+      new Error('You cannot remove your own portal admin role.'),
+    )
     const person = user()
     render(<MembersTable />)
 
@@ -147,7 +145,7 @@ describe('MembersTable', () => {
   })
 
   it('suspends optimistically and rolls the badge back on failure', async () => {
-    actions.setBanned.mockResolvedValue({ ok: false, message: 'Could not change that account.' })
+    actions.setBanned.mockRejectedValue(new Error('Could not change that account.'))
     const person = user()
     render(<MembersTable />)
 
@@ -159,7 +157,7 @@ describe('MembersTable', () => {
   })
 
   it('offers a retry when the list cannot load', async () => {
-    actions.listMembers.mockResolvedValue({ ok: false, message: 'You do not have permission.' })
+    actions.listMembers.mockRejectedValue(new Error('You do not have permission.'))
     render(<MembersTable />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('You do not have permission.')

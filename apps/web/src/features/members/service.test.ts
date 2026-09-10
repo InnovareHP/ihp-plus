@@ -1,18 +1,35 @@
+import { Code, ConnectError } from '@ihp/rpc'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { memberQuerySchema } from './schema'
 
 const prisma = vi.hoisted(() => ({
   member: { count: vi.fn(), findMany: vi.fn() },
   team: { findMany: vi.fn() },
 }))
 
-const guard = vi.hoisted(() => ({ requireOnboarded: vi.fn() }))
+const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
-vi.mock('@/lib/auth-guard', () => guard)
+// membershipOf and canManageOrganization are pure, so the real ones are kept: the manager
+// rule has one definition and this test exercises it rather than a copy.
+vi.mock('@/lib/auth-guard', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/auth-guard')>()),
+  ...guard,
+}))
 vi.mock('@/lib/auth', () => ({ auth: { api: {} } }))
 vi.mock('next/headers', () => ({ headers: vi.fn(async () => new Headers()) }))
 
-const { listMemberFilterOptions, listMembers } = await import('./actions')
+const { loadFilterOptions, loadMembersPage } = await import('./service')
+
+// The service takes a parsed query; turning URL params into one is the caller's job.
+const listMembers = (query: Record<string, unknown> = {}) =>
+  loadMembersPage(memberQuerySchema.parse(query))
+const listMemberFilterOptions = () => loadFilterOptions()
+
+async function codeOf(operation: () => Promise<unknown>) {
+  const error = await operation().catch((thrown: unknown) => thrown)
+  return ConnectError.from(error).code
+}
 
 const ROW = {
   id: 'member-1',
@@ -31,23 +48,22 @@ const ROW = {
 }
 
 function signedInAs(options: { portalRole?: string; organizationRole?: string } = {}) {
-  guard.requireOnboarded.mockResolvedValue({
-    user: { id: 'user-9' },
-    profile: {
-      role: options.portalRole ?? 'admin',
-      members: [{ role: options.organizationRole ?? 'admin', organizationId: 'org-1' }],
-    },
+  guard.getSession.mockResolvedValue({ user: { id: 'user-9' } })
+  guard.readProfile.mockResolvedValue({
+    role: options.portalRole ?? 'admin',
+    members: [{ role: options.organizationRole ?? 'admin', organizationId: 'org-1' }],
+    teammembers: [],
   })
 }
 
-/** The `where.user.AND` clauses the action handed Prisma. */
+/** The `where.user.AND` clauses the service handed Prisma. */
 async function clausesFor(query: Record<string, unknown>) {
   await listMembers(query)
   const args = prisma.member.findMany.mock.calls.at(-1)?.[0]
   return { args, clauses: args?.where?.user?.AND ?? [] }
 }
 
-describe('listMembers', () => {
+describe('loadMembersPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     signedInAs()
@@ -58,12 +74,8 @@ describe('listMembers', () => {
   it('refuses an ordinary member without touching the table', async () => {
     signedInAs({ portalRole: 'user', organizationRole: 'member' })
 
-    const result = await listMembers({})
-
-    expect(result).toEqual({
-      ok: false,
-      message: 'You do not have permission to manage members.',
-    })
+    await expect(listMembers({})).rejects.toThrow(/permission to manage members/)
+    expect(await codeOf(() => listMembers({}))).toBe(Code.PermissionDenied)
     expect(prisma.member.findMany).not.toHaveBeenCalled()
   })
 
@@ -79,7 +91,6 @@ describe('listMembers', () => {
     const result = await listMembers({})
 
     expect(result).toMatchObject({
-      ok: true,
       rows: [
         {
           memberId: 'member-1',
@@ -162,7 +173,7 @@ describe('listMembers', () => {
   })
 })
 
-describe('listMemberFilterOptions', () => {
+describe('loadFilterOptions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     signedInAs()
@@ -175,8 +186,7 @@ describe('listMemberFilterOptions', () => {
     const result = await listMemberFilterOptions()
 
     expect(result).toMatchObject({
-      ok: true,
-      options: { teams: [{ id: 'team-1', name: 'Executive', memberCount: 3 }] },
+      teams: [{ id: 'team-1', name: 'Executive', memberCount: 3 }],
     })
     expect(prisma.team.findMany.mock.calls[0]?.[0]).toMatchObject({
       where: { organizationId: 'org-1' },
@@ -186,6 +196,6 @@ describe('listMemberFilterOptions', () => {
   it('refuses an ordinary member', async () => {
     signedInAs({ portalRole: 'user', organizationRole: 'member' })
 
-    expect(await listMemberFilterOptions()).toMatchObject({ ok: false })
+    expect(await codeOf(listMemberFilterOptions)).toBe(Code.PermissionDenied)
   })
 })

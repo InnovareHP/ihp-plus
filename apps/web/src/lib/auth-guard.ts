@@ -8,7 +8,8 @@ import { routes } from './routes'
 // cache() dedupes the lookup across the layout and the page of a single request.
 export const getSession = cache(async () => auth.api.getSession({ headers: await headers() }))
 
-const readProfile = cache(async (userId: string) =>
+// Exported for RPC, which answers an unauthenticated caller with a code, not a redirect.
+export const readProfile = cache(async (userId: string) =>
   db.user.findUnique({
     where: { id: userId },
     select: {

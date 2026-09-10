@@ -15,7 +15,16 @@ import { describe, expect, it } from 'vitest'
 function register(router: ConnectRouter) {
   router.service(MembersService, {
     listMembers: () => ({
-      members: [
+      pageInfo: {
+        $typeName: 'ihp.members.v1.PageInfo' as const,
+        page: 1,
+        pageSize: 25,
+        total: 1,
+        pageCount: 1,
+        hasPrevious: false,
+        hasNext: false,
+      },
+      rows: [
         {
           $typeName: 'ihp.members.v1.Member' as const,
           memberId: 'member-1',
@@ -40,12 +49,13 @@ describe('rpc contract', () => {
   it('round-trips a response through the in-process transport', async () => {
     const client = createClient(MembersService, createRouterTransport(register))
 
-    const { members } = await client.listMembers({})
+    const { rows, pageInfo } = await client.listMembers({})
 
-    expect(members).toHaveLength(1)
-    expect(members[0]?.name).toBe('Ada Lovelace')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.name).toBe('Ada Lovelace')
+    expect(pageInfo?.total).toBe(1)
     // Enums arrive as numbers, so the UI must map them rather than compare strings.
-    expect(members[0]?.organizationRole).toBe(OrganizationRole.MEMBER)
+    expect(rows[0]?.organizationRole).toBe(OrganizationRole.MEMBER)
   })
 
   it('carries a Connect error code rather than an ok/message union', async () => {
@@ -75,9 +85,9 @@ describe('rpc contract', () => {
       fetch: (input, init) => router.handle(new Request(input as string, init)),
     })
 
-    const { members } = await createClient(MembersService, transport).listMembers({})
+    const { rows } = await createClient(MembersService, transport).listMembers({})
 
-    expect(members[0]?.email).toBe('ada@innovarehp.com')
+    expect(rows[0]?.email).toBe('ada@innovarehp.com')
   })
 
   it('404s an unknown method instead of throwing', async () => {

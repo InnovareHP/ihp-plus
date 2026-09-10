@@ -8,7 +8,7 @@ import {
   setBanned,
   setOrganizationRole,
   setPortalRole,
-} from './actions'
+} from './rpc'
 import { memberEvents } from './events'
 import { memberKeys } from './query-keys'
 import type { MemberQuery, MemberRow, MembersPage, OrganizationRole, PortalRole } from './schema'
@@ -16,11 +16,7 @@ import type { MemberQuery, MemberRow, MembersPage, OrganizationRole, PortalRole 
 export function useMembers(query: MemberQuery) {
   return useQuery({
     queryKey: memberKeys.list(query),
-    queryFn: async () => {
-      const result = await listMembers(query)
-      if (!result.ok) throw new Error(result.message)
-      return { rows: result.rows, pageInfo: result.pageInfo }
-    },
+    queryFn: () => listMembers(query),
     // Paging or refiltering keeps the previous page on screen instead of blanking the table.
     placeholderData: keepPreviousData,
   })
@@ -29,11 +25,7 @@ export function useMembers(query: MemberQuery) {
 export function useMemberFilterOptions() {
   return useQuery({
     queryKey: memberKeys.filterOptions(),
-    queryFn: async () => {
-      const result = await listMemberFilterOptions()
-      if (!result.ok) throw new Error(result.message)
-      return result.options
-    },
+    queryFn: () => listMemberFilterOptions(),
     // Departments change far less often than the list they filter.
     staleTime: 5 * 60 * 1000,
   })
@@ -62,8 +54,7 @@ function useMemberRowMutation<TVariables extends { userId: string }>(options: {
 export function useSetOrganizationRole() {
   return useMemberRowMutation<{ userId: string; memberId: string; role: OrganizationRole }>({
     mutationFn: async ({ memberId, role }) => {
-      const result = await setOrganizationRole({ memberId, role })
-      if (!result.ok) throw new Error(result.message)
+      await setOrganizationRole({ memberId, role })
     },
     patch: (row, { role }) => ({ ...row, organizationRole: role }),
     successEvent: memberEvents.roleChanged,
@@ -74,8 +65,7 @@ export function useSetOrganizationRole() {
 export function useSetPortalRole() {
   return useMemberRowMutation<{ userId: string; role: PortalRole }>({
     mutationFn: async ({ userId, role }) => {
-      const result = await setPortalRole({ userId, role })
-      if (!result.ok) throw new Error(result.message)
+      await setPortalRole({ userId, role })
     },
     patch: (row, { role }) => ({ ...row, portalRole: role }),
     successEvent: memberEvents.roleChanged,
@@ -86,8 +76,7 @@ export function useSetPortalRole() {
 export function useSetBanned() {
   return useMemberRowMutation<{ userId: string; banned: boolean }>({
     mutationFn: async ({ userId, banned }) => {
-      const result = await setBanned({ userId, banned })
-      if (!result.ok) throw new Error(result.message)
+      await setBanned({ userId, banned })
     },
     patch: (row, { banned }) => ({ ...row, banned }),
     successEvent: memberEvents.banToggled,
