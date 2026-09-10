@@ -7,9 +7,14 @@ export { Prisma } from './generated/prisma/client'
 // Prisma 7 names the row types <Model>Model; re-exported here so consumers say User, not UserModel.
 export type {
   AccountModel as Account,
+  ClientModel as Client,
   InvitationModel as Invitation,
   MemberModel as Member,
   OrganizationModel as Organization,
+  RequestApproverModel as RequestApprover,
+  RequestFormModel as RequestForm,
+  RequestFormTeamModel as RequestFormTeam,
+  RequestSubmissionModel as RequestSubmission,
   SessionModel as Session,
   TeamMemberModel as TeamMember,
   TeamModel as Team,

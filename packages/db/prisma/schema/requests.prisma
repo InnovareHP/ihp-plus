@@ -1,0 +1,90 @@
+// Company request forms, in their own Postgres schema. It stays out of auth.prisma because
+// `pnpm db:auth-schema` rewrites that file wholesale.
+
+model RequestForm {
+  id             String  @id @default(uuid())
+  // Plain columns, not relations: a relation field would have to be added to the generated
+  // User and Organization models in auth.prisma.
+  organizationId String
+  createdById    String?
+
+  name        String
+  description String?
+  // draft is invisible to requesters, published is live, archived keeps past submissions
+  // readable without offering the form again.
+  status      String  @default("draft")
+  // Ordered field definitions, validated against the zod schema in features/requests.
+  fields      Json    @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teams       RequestFormTeam[]
+  submissions RequestSubmission[]
+
+  @@index([organizationId, status])
+  @@map("requestForm")
+  @@schema("requests")
+}
+
+// Which departments a form is offered to. No rows means the form is offered to none, which is
+// why the builder refuses to publish until at least one is picked.
+model RequestFormTeam {
+  id     String      @id @default(uuid())
+  formId String
+  form   RequestForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  teamId String
+
+  @@unique([formId, teamId])
+  @@index([teamId])
+  @@map("requestFormTeam")
+  @@schema("requests")
+}
+
+// Who may decide requests raised by a department. Separate from the organization and portal
+// roles: an approver manages no members and an admin need not be one to see the queue.
+model RequestApprover {
+  id             String   @id @default(uuid())
+  organizationId String
+  teamId         String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("requestApprover")
+  @@schema("requests")
+}
+
+model RequestSubmission {
+  id             String      @id @default(uuid())
+  organizationId String
+  formId         String
+  form           RequestForm @relation(fields: [formId], references: [id], onDelete: Restrict)
+
+  requesterId String
+  // Snapshot: the department decides the queue a request lands in, and someone can move later.
+  teamId      String?
+  teamName    String?
+
+  // Both snapshots: a form renamed, reordered or archived later must still render the answers
+  // as they were given.
+  formName String
+  fields   Json
+  values   Json
+
+  status       String    @default("pending")
+  decidedById  String?
+  decidedAt    DateTime?
+  decisionNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([requesterId, status])
+  @@index([teamId, status])
+  @@map("requestSubmission")
+  @@schema("requests")
+}
