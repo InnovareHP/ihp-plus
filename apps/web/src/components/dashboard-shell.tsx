@@ -22,11 +22,13 @@ import { ColorSchemeToggle } from './color-scheme-toggle'
 
 const NAV_ITEMS = [
   { href: routes.dashboard, label: 'Dashboard', description: 'Your day at a glance' },
+  { href: routes.members, label: 'Members', description: 'Roles and access', manageOnly: true },
   { href: routes.settings, label: 'Settings', description: 'Profile and account' },
 ] as const
 
 export interface DashboardShellProps {
   user: { name: string; email: string; jobTitle?: string | null; photoUrl?: string }
+  canManageMembers?: boolean
   children: ReactNode
 }
 
@@ -39,7 +41,7 @@ function initials(name: string) {
     .join('')
 }
 
-export function DashboardShell({ user, children }: DashboardShellProps) {
+export function DashboardShell({ user, canManageMembers, children }: DashboardShellProps) {
   const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure(false)
   const pathname = usePathname()
   const signOut = useSignOut()
@@ -101,7 +103,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
       <AppShell.Navbar id="primary-navigation" p="sm" aria-label="Primary">
         <AppShell.Section grow>
           <Stack gap={4}>
-            {NAV_ITEMS.map((item) => (
+            {NAV_ITEMS.filter((item) => !('manageOnly' in item) || canManageMembers).map((item) => (
               <NavLink
                 key={item.href}
                 component={Link}

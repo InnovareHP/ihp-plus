@@ -95,8 +95,10 @@ export const auth = betterAuth({
       },
     }),
     // Portal-wide role, separate from the owner/admin/member role held inside the organization.
+    // 'user' is the plugin's own name for a non-admin and the only value set-role accepts;
+    // the members page labels it "Member".
     admin({
-      defaultRole: 'member',
+      defaultRole: 'user',
       adminRoles: ['admin'],
     }),
     nextCookies(),

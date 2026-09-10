@@ -45,7 +45,7 @@ export interface Membership {
 
 export function membershipOf(profile: OnboardingProfile): Membership {
   return {
-    portalRole: profile.role ?? 'member',
+    portalRole: profile.role ?? 'user',
     organizationRole: profile.members[0]?.role,
     organizationId: profile.members[0]?.organizationId,
     team: profile.teammembers[0]?.team,

@@ -4,6 +4,7 @@ export const BASE_PATH = '/app'
 export const routes = {
   dashboard: '/',
   onboarding: '/onboarding',
+  members: '/members',
   settings: '/settings',
   login: '/login',
   signup: '/signup',
