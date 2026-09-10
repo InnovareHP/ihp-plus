@@ -3,7 +3,12 @@ export const BASE_PATH = '/app'
 
 export const routes = {
   dashboard: '/',
+  clients: '/clients',
   onboarding: '/onboarding',
+  requests: '/requests',
+  requestApprovals: '/requests/approvals',
+  requestForms: '/requests/forms',
+  requestApprovers: '/requests/approvers',
   organization: '/organization',
   members: '/organization/members',
   teams: '/organization/teams',
@@ -22,6 +27,22 @@ export type Route = (typeof routes)[keyof typeof routes]
 export function safeNextRoute(value: string | null, fallback: string = routes.dashboard) {
   return value && value.startsWith('/') && !value.startsWith('//') ? value : fallback
 }
+
+// Static segments rather than a bare /requests/[id]: the queue and the builder sit under the
+// same prefix, and a literal segment keeps them from ever colliding with an id.
+export function newRequestRoute(formId: string) {
+  return `${routes.requests}/new/${formId}`
+}
+
+export function requestRoute(submissionId: string) {
+  return `${routes.requests}/view/${submissionId}`
+}
+
+export function requestFormRoute(formId: string) {
+  return `${routes.requestForms}/${formId}`
+}
+
+export const NEW_REQUEST_FORM_ROUTE = `${routes.requestForms}/new`
 
 export function invitationRoute(invitationId: string) {
   return `${routes.acceptInvitation}/${invitationId}`

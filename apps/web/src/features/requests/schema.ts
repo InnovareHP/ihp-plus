@@ -77,11 +77,20 @@ export const setFormStatusSchema = z.object({
 export const formIdSchema = z.object({ formId: z.string().min(1) })
 export const submissionIdSchema = z.object({ submissionId: z.string().min(1) })
 
-export const decisionSchema = z.object({
-  submissionId: z.string().min(1),
-  decision: z.enum(DECISIONS),
-  note: z.string().trim().max(1000).default(''),
-})
+export const REJECTION_NEEDS_REASON =
+  'Say why it was rejected, so the requester knows what to change.'
+
+export const decisionSchema = z
+  .object({
+    submissionId: z.string().min(1),
+    decision: z.enum(DECISIONS),
+    note: z.string().trim().max(1000).default(''),
+  })
+  // A rejection with no reason is a dead end for the requester, so it is refused on both sides.
+  .refine((values) => values.decision !== 'rejected' || values.note.length > 0, {
+    message: REJECTION_NEEDS_REASON,
+    path: ['note'],
+  })
 
 export const setApproverSchema = z.object({
   teamId: z.string().min(1),
@@ -91,6 +100,8 @@ export const setApproverSchema = z.object({
 
 export type FormField = z.infer<typeof formFieldSchema>
 export type FormDraftValues = z.infer<typeof formDraftSchema>
+// The schema fills defaults, so what a form holds while being typed is the input side of it.
+export type FormDraftInput = z.input<typeof formDraftSchema>
 export type DecisionValues = z.infer<typeof decisionSchema>
 export type SetApproverValues = z.infer<typeof setApproverSchema>
 
@@ -158,7 +169,8 @@ export interface RequestQuery {
 }
 
 // A published form must be answerable and reachable, or it is a dead entry in the catalogue.
-export function publishBlockers(form: Pick<FormRow, 'fields' | 'teams'>) {
+// Only the counts matter, so a half-typed draft is as answerable a question as a saved form.
+export function publishBlockers(form: { fields: readonly unknown[]; teams: readonly unknown[] }) {
   const blockers: string[] = []
   if (form.fields.length === 0) blockers.push('Add at least one question.')
   if (form.teams.length === 0) blockers.push('Pick at least one department.')

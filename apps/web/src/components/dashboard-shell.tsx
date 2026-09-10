@@ -29,6 +29,7 @@ export interface DashboardShellProps {
   user: { name: string; email: string; jobTitle?: string | null; photoUrl?: string }
   organization: { name: string; role?: string }
   canManageOrganization?: boolean
+  canApproveRequests?: boolean
   children: ReactNode
 }
 
@@ -45,12 +46,13 @@ export function DashboardShell({
   user,
   organization,
   canManageOrganization = false,
+  canApproveRequests = false,
   children,
 }: DashboardShellProps) {
   const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure(false)
   const pathname = usePathname()
   const signOut = useSignOut()
-  const sections = visibleSections(canManageOrganization)
+  const sections = visibleSections({ canManageOrganization, canApproveRequests })
 
   return (
     <AppShell

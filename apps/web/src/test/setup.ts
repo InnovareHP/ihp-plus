@@ -33,3 +33,9 @@ vi.stubGlobal(
 
 // jsdom has no scrollIntoView, and Mantine's Combobox calls it while highlighting an option.
 Element.prototype.scrollIntoView = vi.fn()
+
+// jsdom ships no FontFaceSet, and Mantine's autosizing Textarea listens for font loading.
+Object.defineProperty(document, 'fonts', {
+  configurable: true,
+  value: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+})
