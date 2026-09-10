@@ -11,9 +11,15 @@ const actions = vi.hoisted(() => ({
 }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
+const nav = vi.hoisted(() => ({ search: '', replace: vi.fn() }))
 
 vi.mock('../actions', () => actions)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: nav.replace }),
+  usePathname: () => '/organization/members',
+  useSearchParams: () => new URLSearchParams(nav.search),
+}))
 
 const ADA = {
   memberId: 'member-1',
@@ -23,9 +29,27 @@ const ADA = {
   organizationRole: 'member' as const,
   portalRole: 'user' as const,
   team: 'Information Technology',
+  jobTitle: 'Software Engineer',
+  ihpId: 'IHP-0001',
+  startDate: '2026-03-04T00:00:00.000Z',
   banned: false,
   isSelf: false,
 }
+
+const ONE_PAGE = {
+  page: 1,
+  pageSize: 25,
+  total: 2,
+  pageCount: 1,
+  hasPrevious: false,
+  hasNext: false,
+}
+
+const page = (rows: unknown[], pageInfo: Partial<typeof ONE_PAGE> = {}) => ({
+  ok: true,
+  rows,
+  pageInfo: { ...ONE_PAGE, ...pageInfo },
+})
 
 const SELF = {
   ...ADA,
@@ -43,7 +67,8 @@ const user = () => userEvent.setup()
 describe('MembersTable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    actions.listMembers.mockResolvedValue({ ok: true, members: [ADA, SELF] })
+    nav.search = ''
+    actions.listMembers.mockResolvedValue(page([ADA, SELF]))
     actions.setOrganizationRole.mockResolvedValue({ ok: true })
     actions.setPortalRole.mockResolvedValue({ ok: true })
     actions.setBanned.mockResolvedValue({ ok: true })
@@ -142,10 +167,62 @@ describe('MembersTable', () => {
   })
 
   it('explains an empty organization instead of showing a bare table', async () => {
-    actions.listMembers.mockResolvedValue({ ok: true, members: [] })
+    actions.listMembers.mockResolvedValue(page([], { total: 0 }))
     render(<MembersTable />)
 
     expect(await screen.findByText(/Nobody has finished onboarding yet/)).toBeInTheDocument()
+  })
+
+  it('asks the server for the page, sort and filters the URL carries', async () => {
+    nav.search = 'page=2&search=ada&status=suspended&sortBy=startDate&sortDirection=desc'
+    render(<MembersTable />)
+
+    await screen.findByText('Ada Lovelace')
+    expect(actions.listMembers).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page: 2,
+        search: 'ada',
+        status: 'suspended',
+        sortBy: 'startDate',
+        sortDirection: 'desc',
+      }),
+    )
+  })
+
+  it('puts a header click in the URL instead of sorting the page in place', async () => {
+    const person = user()
+    render(<MembersTable />)
+
+    await person.click(await screen.findByRole('button', { name: /Sort by Person, descending/ }))
+
+    expect(nav.replace).toHaveBeenCalledWith('/organization/members?sortDirection=desc', {
+      scroll: false,
+    })
+  })
+
+  it('pages through the server pages from the footer', async () => {
+    actions.listMembers.mockResolvedValue(
+      page([ADA, SELF], { total: 60, pageCount: 3, hasNext: true }),
+    )
+    const person = user()
+    render(<MembersTable />)
+
+    expect(await screen.findByText('Showing 1–25 of 60')).toBeInTheDocument()
+    await person.click(screen.getByRole('button', { name: 'Page 2' }))
+
+    expect(nav.replace).toHaveBeenCalledWith('/organization/members?page=2', { scroll: false })
+  })
+
+  it('separates a filtered dead end from an empty organization and offers a way back', async () => {
+    nav.search = 'search=nobody'
+    actions.listMembers.mockResolvedValue(page([], { total: 0 }))
+    const person = user()
+    render(<MembersTable />)
+
+    expect(await screen.findByText('No member matches these filters.')).toBeInTheDocument()
+    await person.click(screen.getByRole('button', { name: 'Clear filters' }))
+
+    expect(nav.replace).toHaveBeenCalledWith('/organization/members', { scroll: false })
   })
 
   it('has no axe violations', async () => {
