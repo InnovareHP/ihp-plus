@@ -21,13 +21,10 @@ describe('navigation', () => {
     expect(ids).toEqual(['workspace', 'requests', 'account'])
   })
 
-  it('shows the organization section to a manager', () => {
-    expect(hrefsIn(ADMIN, 'organization')).toEqual([
-      routes.organization,
-      routes.members,
-      routes.teams,
-      routes.invitations,
-    ])
+  it('shows the organization section to a manager as one entry', () => {
+    // Overview, members, departments, invitations and approvers are tabs on one page now,
+    // so the sidebar carries one link rather than five.
+    expect(hrefsIn(ADMIN, 'organization')).toEqual([routes.organization])
   })
 
   it('offers an ordinary member their own requests and nothing else under them', () => {
@@ -38,26 +35,21 @@ describe('navigation', () => {
     expect(hrefsIn(APPROVER, 'requests')).toEqual([routes.requests, routes.requestApprovals])
   })
 
-  it('gives an admin the forms and approvers screens too', () => {
+  it('gives an admin the forms screen too', () => {
     expect(hrefsIn(ADMIN, 'requests')).toEqual([
       routes.requests,
       routes.requestApprovals,
       routes.requestForms,
-      routes.requestApprovers,
     ])
   })
 
   it('marks only the exact route active, so a section landing page does not light up too', () => {
-    expect(isNavItemActive(routes.teams, routes.teams)).toBe(true)
-    expect(isNavItemActive(routes.teams, routes.organization)).toBe(false)
+    expect(isNavItemActive(routes.requestForms, routes.requestForms)).toBe(true)
+    expect(isNavItemActive(routes.requestForms, routes.requests)).toBe(false)
     expect(isNavItemActive(routes.dashboard, routes.dashboard)).toBe(true)
   })
 
   it('breadcrumbs a nested page back to its section landing page', () => {
-    expect(breadcrumbsFor(routes.members)).toEqual([
-      { label: 'Organization', href: routes.organization },
-      { label: 'Members' },
-    ])
     expect(breadcrumbsFor(routes.requestForms)).toEqual([
       { label: 'Requests', href: routes.requests },
       { label: 'Forms' },

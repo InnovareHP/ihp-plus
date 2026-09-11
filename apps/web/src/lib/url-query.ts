@@ -29,6 +29,8 @@ export function queryToHref<TQuery extends Record<string, unknown>>(
   pathname: string,
   query: TQuery,
   defaults: TQuery,
+  /** Params already in the URL that this query does not own, e.g. which tab is open. */
+  carry?: URLSearchParams,
 ) {
   const params = new URLSearchParams()
 
@@ -40,6 +42,11 @@ export function queryToHref<TQuery extends Record<string, unknown>>(
     // A value already at its default stays out of the URL, so a shared link carries only intent.
     if (value === undefined || value === '' || value === defaults[key]) continue
     params.set(key, String(value))
+  }
+
+  // Anything this list does not own stays: a filter change must not close the tab it is on.
+  for (const [key, value] of carry ?? []) {
+    if (!(key in query)) params.set(key, value)
   }
 
   const search = params.toString()
@@ -60,10 +67,12 @@ export function useUrlQuery<TQuery extends Record<string, unknown>>(
   const pathname = usePathname()
   const router = useRouter()
 
-  const query = useMemo(
-    () => parse(new URLSearchParams(searchParams?.toString() ?? '')),
-    [parse, searchParams],
+  const current = useCallback(
+    () => new URLSearchParams(searchParams?.toString() ?? ''),
+    [searchParams],
   )
+
+  const query = useMemo(() => parse(current()), [current, parse])
 
   const setQuery = useCallback(
     (patch: Partial<TQuery>) => {
@@ -71,14 +80,14 @@ export function useUrlQuery<TQuery extends Record<string, unknown>>(
       // Narrowing or re-sorting invalidates the page number the user was on.
       if (patch.page === undefined && 'page' in defaults) next.page = 1
       // replace, not push: adjusting a filter must not fill the back stack.
-      router.replace(queryToHref(pathname, next as TQuery, defaults), { scroll: false })
+      router.replace(queryToHref(pathname, next as TQuery, defaults, current()), { scroll: false })
     },
-    [defaults, pathname, query, router],
+    [current, defaults, pathname, query, router],
   )
 
   const clearFilters = useCallback(
-    () => router.replace(queryToHref(pathname, defaults, defaults), { scroll: false }),
-    [defaults, pathname, router],
+    () => router.replace(queryToHref(pathname, defaults, defaults, current()), { scroll: false }),
+    [current, defaults, pathname, router],
   )
 
   return { query, setQuery, clearFilters }

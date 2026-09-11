@@ -9,11 +9,7 @@ export const routes = {
   requests: '/requests',
   requestApprovals: '/requests/approvals',
   requestForms: '/requests/forms',
-  requestApprovers: '/requests/approvers',
   organization: '/organization',
-  members: '/organization/members',
-  teams: '/organization/teams',
-  invitations: '/organization/invitations',
   settings: '/settings',
   login: '/login',
   signup: '/signup',
@@ -23,6 +19,25 @@ export const routes = {
 } as const
 
 export type Route = (typeof routes)[keyof typeof routes]
+
+/**
+ * The organization screen is one page of tabs rather than four routes: overview, members,
+ * departments, invitations and approvers are all the same subject, and splitting them meant
+ * four page loads to do one job. The tab is a query param so each is still a deep link.
+ */
+export const ORGANIZATION_TABS = [
+  'overview',
+  'members',
+  'departments',
+  'invitations',
+  'approvers',
+] as const
+
+export type OrganizationTab = (typeof ORGANIZATION_TABS)[number]
+
+export function organizationTab(tab: OrganizationTab) {
+  return tab === 'overview' ? routes.organization : `${routes.organization}?tab=${tab}`
+}
 
 // A "next" value from the query string is attacker-controlled, so only in-app paths pass.
 export function safeNextRoute(value: string | null, fallback: string = routes.dashboard) {

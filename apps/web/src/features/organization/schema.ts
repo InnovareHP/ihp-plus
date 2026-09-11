@@ -109,6 +109,10 @@ export const teamQuerySchema = z.object({
     .union([z.boolean(), z.literal('true'), z.literal('false')])
     .transform((value) => value === true || value === 'true')
     .catch(false),
+  unledOnly: z
+    .union([z.boolean(), z.literal('true'), z.literal('false')])
+    .transform((value) => value === true || value === 'true')
+    .catch(false),
   team: z.string().trim().max(64).catch('').default(''),
 })
 

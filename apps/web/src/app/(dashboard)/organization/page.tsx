@@ -1,23 +1,32 @@
+import { Skeleton, Stack } from '@mantine/core'
 import type { Metadata } from 'next'
-import { LinkButton } from '@/components/link-button'
+import { Suspense } from 'react'
 import { PageHeader, PageShell } from '@/components/page-shell'
-import { OrganizationPanel } from '@/features/organization/components/organization-panel'
+import { OrganizationTabs } from '@/features/organization/components/organization-tabs'
 import { requireOrganizationManager } from '@/lib/auth-guard'
-import { routes } from '@/lib/routes'
 
 export const metadata: Metadata = { title: 'Organization' }
 
 export default async function OrganizationPage() {
-  await requireOrganizationManager()
+  const { user, profile } = await requireOrganizationManager()
 
   return (
     <PageShell>
       <PageHeader
         title="Organization"
-        description="Your company as the portal sees it — who belongs to it, how it is divided, and who is still waiting to join."
-        actions={<LinkButton href={routes.invitations}>Invite someone</LinkButton>}
+        description="Your company as the portal sees it — who belongs to it, how it is divided, who leads and approves, and who is still waiting to join."
       />
-      <OrganizationPanel />
+      {/* The open tab lives in the query string, which needs a boundary. */}
+      <Suspense
+        fallback={
+          <Stack gap="md" aria-busy="true">
+            <Skeleton height={40} />
+            <Skeleton height={220} />
+          </Stack>
+        }
+      >
+        <OrganizationTabs invitedBy={profile.preferredName ?? user.name} />
+      </Suspense>
     </PageShell>
   )
 }

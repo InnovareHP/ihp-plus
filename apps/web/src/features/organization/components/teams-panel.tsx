@@ -20,6 +20,7 @@ import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/page-shell'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
+import { useDepartmentLeads } from '@/features/teams/use-department-leads'
 import {
   createTeamSchema,
   DEFAULT_TEAM_QUERY,
@@ -44,26 +45,49 @@ const TEAM_FILTERS: readonly FilterControl[] = [
     label: 'Only empty departments',
     help: 'Departments nobody has been placed in yet.',
   },
+  {
+    kind: 'toggle',
+    key: 'unledOnly',
+    label: 'Only departments with no lead',
+    help: 'Nobody files their handbook documents or speaks for them.',
+  },
 ]
 
 export function TeamsPanel() {
   const teams = useTeams()
+  const leads = useDepartmentLeads()
   const { query, setQuery, clearFilters } = useUrlQuery(parseTeamQuery, DEFAULT_TEAM_QUERY)
   const [createOpened, createModal] = useDisclosure(false)
   const [renaming, setRenaming] = useState<TeamRow | null>(null)
   const [deleting, setDeleting] = useState<TeamRow | null>(null)
   const deleteTeam = useDeleteTeam()
 
+  // Who leads what is resolved once for the whole table rather than per row.
+  const leadNames = useMemo(() => {
+    const view = leads.data
+    const byTeam = new Map<string, string[]>()
+    if (!view) return byTeam
+
+    for (const lead of view.leads) {
+      const name = view.members.find((member) => member.id === lead.userId)?.name
+      if (!name) continue
+      byTeam.set(lead.teamId, [...(byTeam.get(lead.teamId) ?? []), name])
+    }
+    return byTeam
+  }, [leads.data])
+
   const term = query.search.trim().toLowerCase()
   const rows = useMemo(
     () =>
       teams.data?.filter(
         (team) =>
-          team.name.toLowerCase().includes(term) && (!query.emptyOnly || team.memberCount === 0),
+          team.name.toLowerCase().includes(term) &&
+          (!query.emptyOnly || team.memberCount === 0) &&
+          (!query.unledOnly || (leadNames.get(team.id) ?? []).length === 0),
       ),
-    [teams.data, term, query.emptyOnly],
+    [teams.data, term, query.emptyOnly, query.unledOnly, leadNames],
   )
-  const isFiltered = term.length > 0 || query.emptyOnly
+  const isFiltered = term.length > 0 || query.emptyOnly || query.unledOnly
   const selected = teams.data?.find((team) => team.id === query.team)
 
   const columns: DataTableColumn<TeamRow>[] = [
@@ -88,6 +112,26 @@ export function TeamsPanel() {
       ),
     },
     {
+      key: 'leads',
+      header: 'Leads',
+      render: (team) => {
+        const names = leadNames.get(team.id) ?? []
+        return names.length === 0 ? (
+          <Text size="sm" c="dimmed">
+            Nobody yet
+          </Text>
+        ) : (
+          <Group gap={4} wrap="wrap">
+            {names.map((name) => (
+              <Badge key={name} variant="light" size="sm">
+                {name}
+              </Badge>
+            ))}
+          </Group>
+        )
+      },
+    },
+    {
       key: 'createdAt',
       header: 'Created',
       width: 160,
@@ -110,7 +154,9 @@ export function TeamsPanel() {
             </ActionIcon>
           </Menu.Target>
           <Menu.Dropdown>
-            <Menu.Item onClick={() => setQuery({ team: team.id })}>Manage people</Menu.Item>
+            <Menu.Item onClick={() => setQuery({ team: team.id })}>
+              Manage people and leads
+            </Menu.Item>
             <Menu.Item onClick={() => setRenaming(team)}>Rename</Menu.Item>
             <Menu.Item color="red" onClick={() => setDeleting(team)}>
               Delete
@@ -146,7 +192,7 @@ export function TeamsPanel() {
         isFetching={teams.isFetching}
         error={teams.error}
         onRetry={() => teams.refetch()}
-        minWidth={620}
+        minWidth={780}
         isFiltered={isFiltered}
         noResults={
           <EmptyState

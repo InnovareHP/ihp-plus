@@ -4,6 +4,7 @@ import { Button, Divider, Drawer, Group, Select, Stack, Text } from '@mantine/co
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/page-shell'
+import { DepartmentLeads } from './department-leads'
 import type { TeamPersonRow, TeamRow } from '../schema'
 import {
   useAssignableUsers,
@@ -24,7 +25,7 @@ export function TeamMembersDrawer({ team, onClose }: TeamMembersDrawerProps) {
       onClose={onClose}
       position="right"
       size="md"
-      title={team ? `People in ${team.name}` : 'Department'}
+      title={team ? team.name : 'Department'}
     >
       {team ? <TeamMembersBody team={team} /> : null}
     </Drawer>
@@ -78,6 +79,10 @@ function TeamMembersBody({ team }: { team: TeamRow }) {
 
   return (
     <Stack gap="lg">
+      <DepartmentLeads teamId={team.id} teamName={team.name} canEdit />
+
+      <Divider />
+
       <Stack gap="xs">
         <Select
           label="Add someone to this department"

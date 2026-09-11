@@ -3,12 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { track } from '@/lib/analytics'
 import { announceFailure } from '@/lib/announce'
-import {
-  addDepartmentLead,
-  listDepartmentLeads,
-  removeDepartmentLead,
-} from '@/features/teams/actions'
-import type { DepartmentLeadValues } from '@/features/teams/schema'
+import {} from '@/features/teams/actions'
 import {
   archiveDocument,
   documentLink,
@@ -191,58 +186,5 @@ export function useOpenDocument() {
       track(bluebookEvents.openFailed, { reason: error.message })
       announceFailure(error.message)
     },
-  })
-}
-
-export function useDepartmentLeads() {
-  return useQuery({
-    queryKey: bluebookKeys.leads(),
-    queryFn: async () => {
-      const result = await listDepartmentLeads()
-      if (!result.ok) throw new Error(result.message)
-      return result.data
-    },
-  })
-}
-
-function useLeadMutation(
-  action: (values: DepartmentLeadValues) => Promise<{ ok: true } | { ok: false; message: string }>,
-  events: {
-    success: (typeof bluebookEvents)[keyof typeof bluebookEvents]
-    failure: (typeof bluebookEvents)[keyof typeof bluebookEvents]
-  },
-) {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (values: DepartmentLeadValues) => {
-      const result = await action(values)
-      if (!result.ok) throw new Error(result.message)
-    },
-    onSuccess: () => track(events.success),
-    onError: (error: Error) => {
-      track(events.failure, { reason: error.message })
-      announceFailure(error.message)
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: bluebookKeys.leads() })
-      // Who leads what decides which shelves offer an upload button.
-      queryClient.invalidateQueries({ queryKey: bluebookKeys.options() })
-      queryClient.invalidateQueries({ queryKey: bluebookKeys.lists() })
-    },
-  })
-}
-
-export function useAddDepartmentLead() {
-  return useLeadMutation(addDepartmentLead, {
-    success: bluebookEvents.leadAdded,
-    failure: bluebookEvents.leadAddFailed,
-  })
-}
-
-export function useRemoveDepartmentLead() {
-  return useLeadMutation(removeDepartmentLead, {
-    success: bluebookEvents.leadRemoved,
-    failure: bluebookEvents.leadRemoveFailed,
   })
 }
