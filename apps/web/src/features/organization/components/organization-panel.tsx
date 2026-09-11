@@ -126,26 +126,33 @@ function ProfileForm({ defaultValues }: { defaultValues: OrganizationProfileValu
       description="The name shown in the portal header and the slug used in links."
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Stack gap="md" maw={520}>
+        <Stack gap="md">
           <FormError message={errors.root?.message} title="Could not save the organization" />
 
-          <TextInput
-            {...register('name')}
-            label="Organization name"
-            required
-            aria-required="true"
-            autoComplete="organization"
-            error={errors.name?.message}
-          />
+          {/* Paired rather than stacked: two fields fill the card without either becoming a
+              text input the width of the page. */}
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+            {/* Both fields in the row carry a description, or their inputs sit at
+                different heights. */}
+            <TextInput
+              {...register('name')}
+              label="Organization name"
+              description="Shown in the portal header."
+              required
+              aria-required="true"
+              autoComplete="organization"
+              error={errors.name?.message}
+            />
 
-          <TextInput
-            {...register('slug')}
-            label="Slug"
-            description="Lowercase letters, numbers and hyphens."
-            required
-            aria-required="true"
-            error={errors.slug?.message}
-          />
+            <TextInput
+              {...register('slug')}
+              label="Slug"
+              description="Lowercase letters, numbers and hyphens."
+              required
+              aria-required="true"
+              error={errors.slug?.message}
+            />
+          </SimpleGrid>
 
           <TextInput
             {...register('logo')}
@@ -179,9 +186,12 @@ function OrganizationSkeleton() {
         <Title order={2} size="h5" mb="md">
           Company profile
         </Title>
-        <Stack gap="md" maw={520}>
-          <Skeleton height={60} />
-          <Skeleton height={76} />
+        {/* Same shape as the loaded form: a paired row, then a full-width field. */}
+        <Stack gap="md">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+            <Skeleton height={60} />
+            <Skeleton height={76} />
+          </SimpleGrid>
           <Skeleton height={76} />
           <Skeleton height={36} width={140} />
         </Stack>

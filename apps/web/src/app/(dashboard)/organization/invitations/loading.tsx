@@ -9,7 +9,7 @@ export default function InvitationsLoading() {
         <Skeleton height={20} width="36rem" />
       </Stack>
       <Card padding="lg">
-        <Stack gap="md" maw={560}>
+        <Stack gap="md">
           <Skeleton height={24} width="10rem" />
           <Skeleton height={60} />
           <Skeleton height={76} />

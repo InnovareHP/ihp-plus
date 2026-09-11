@@ -15,7 +15,7 @@ export default function OrganizationLoading() {
         ))}
       </SimpleGrid>
       <Card padding="lg">
-        <Stack gap="md" maw={520}>
+        <Stack gap="md">
           <Skeleton height={24} width="12rem" />
           <Skeleton height={60} />
           <Skeleton height={76} />
