@@ -155,16 +155,16 @@ describe('deciding a request', () => {
   it('refuses an approver appointed to another department', async () => {
     signedIn({ approverTeamIds: ['team-2'] })
 
-    expect(await codeOf(() => decideRequest({ submissionId: 'sub-1', decision: 'approved' }))).toBe(
-      Code.PermissionDenied,
-    )
+    expect(
+      await codeOf(() => decideRequest({ submissionId: 'sub-1', decision: 'approved', note: '' })),
+    ).toBe(Code.PermissionDenied)
     expect(prisma.requestSubmission.update).not.toHaveBeenCalled()
   })
 
   it('refuses an ordinary member outright', async () => {
-    expect(await codeOf(() => decideRequest({ submissionId: 'sub-1', decision: 'approved' }))).toBe(
-      Code.PermissionDenied,
-    )
+    expect(
+      await codeOf(() => decideRequest({ submissionId: 'sub-1', decision: 'approved', note: '' })),
+    ).toBe(Code.PermissionDenied)
     expect(prisma.requestSubmission.update).not.toHaveBeenCalled()
   })
 
@@ -172,9 +172,9 @@ describe('deciding a request', () => {
     signedIn({ isAdmin: true })
     prisma.requestSubmission.findFirst.mockResolvedValue({ ...PENDING, requesterId: 'user-1' })
 
-    expect(await codeOf(() => decideRequest({ submissionId: 'sub-1', decision: 'approved' }))).toBe(
-      Code.PermissionDenied,
-    )
+    expect(
+      await codeOf(() => decideRequest({ submissionId: 'sub-1', decision: 'approved', note: '' })),
+    ).toBe(Code.PermissionDenied)
     expect(prisma.requestSubmission.update).not.toHaveBeenCalled()
   })
 
@@ -193,9 +193,9 @@ describe('deciding a request', () => {
     signedIn({ isAdmin: true })
     prisma.requestSubmission.findFirst.mockResolvedValue(null)
 
-    expect(await codeOf(() => decideRequest({ submissionId: 'sub-x', decision: 'approved' }))).toBe(
-      Code.NotFound,
-    )
+    expect(
+      await codeOf(() => decideRequest({ submissionId: 'sub-x', decision: 'approved', note: '' })),
+    ).toBe(Code.NotFound)
   })
 })
 
