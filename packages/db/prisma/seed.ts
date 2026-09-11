@@ -1,3 +1,5 @@
+// Must come first: it sets DATABASE_URL before the client module reads it.
+import './load-env'
 import { db } from '../src/client'
 import { DEMO_CLIENTS } from './client-seed-data'
 import { LOOKUP_OPTION_SEED } from './lookup-seed-data'
