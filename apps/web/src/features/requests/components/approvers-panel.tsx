@@ -1,60 +1,168 @@
 'use client'
 
-import { Alert, Badge, Button, Card, Group, Select, Skeleton, Stack, Text } from '@mantine/core'
-import { useState } from 'react'
+import { Badge, Button, Group, Select, Stack, Text } from '@mantine/core'
+import { useMemo, useState } from 'react'
+import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/page-shell'
+import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
+import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
+import { approverQuerySchema, DEFAULT_APPROVER_QUERY } from '../schema'
 // Organization membership is where the candidates come from; requests only appoints among them.
 import { useAssignableUsers } from '@/features/organization/use-teams'
 import type { DepartmentApproversRow } from '../schema'
 import { useApprovers, useSetApprover } from '../use-approvers'
 
+const parseApproverQuery = searchParamsParser(approverQuerySchema)
+
+const APPROVER_FILTERS: readonly FilterControl[] = [
+  {
+    kind: 'toggle',
+    key: 'unstaffedOnly',
+    label: 'Only departments with no approver',
+    help: 'Their requests reach admins and nobody else.',
+  },
+]
+
 export function ApproversPanel() {
   const departments = useApprovers()
+  const { query, setQuery, clearFilters } = useUrlQuery(parseApproverQuery, DEFAULT_APPROVER_QUERY)
 
-  if (departments.isPending) {
-    return (
-      <Stack gap="md" aria-busy="true">
-        {[0, 1, 2].map((card) => (
-          <Skeleton key={card} height={128} radius="md" />
-        ))}
-      </Stack>
-    )
-  }
+  const term = query.search.trim().toLowerCase()
+  const rows = useMemo(
+    () =>
+      departments.data?.filter(
+        (row) =>
+          (row.teamName.toLowerCase().includes(term) ||
+            row.approvers.some((approver) => approver.name.toLowerCase().includes(term))) &&
+          (!query.unstaffedOnly || row.approvers.length === 0),
+      ),
+    [departments.data, term, query.unstaffedOnly],
+  )
+  const isFiltered = term.length > 0 || query.unstaffedOnly
 
-  if (departments.isError) {
-    return (
-      <Stack gap="md">
-        <Alert role="alert" color="red" variant="light" title="Could not load the approvers">
-          <Text size="sm">{departments.error.message}</Text>
-        </Alert>
-        <Button onClick={() => departments.refetch()} w="fit-content">
-          Try again
-        </Button>
-      </Stack>
-    )
-  }
-
-  if (departments.data.length === 0) {
-    return (
-      <EmptyState
-        title="No departments yet"
-        description="Create a department first, then appoint who decides its requests."
-      />
-    )
-  }
+  const columns: DataTableColumn<DepartmentApproversRow>[] = [
+    {
+      key: 'department',
+      header: 'Department',
+      rowHeader: true,
+      width: 220,
+      render: (row) => (
+        <Text size="sm" fw={500}>
+          {row.teamName}
+        </Text>
+      ),
+    },
+    {
+      key: 'approvers',
+      header: 'Approvers',
+      render: (row) =>
+        row.approvers.length === 0 ? (
+          <Text size="sm" c="dimmed">
+            Nobody yet — its requests reach admins only.
+          </Text>
+        ) : (
+          <Group gap="xs" wrap="wrap">
+            {row.approvers.map((approver) => (
+              <ApproverBadge key={approver.userId} department={row} approver={approver} />
+            ))}
+          </Group>
+        ),
+    },
+    {
+      key: 'add',
+      header: 'Appoint',
+      width: 340,
+      render: (row) => <AppointControl department={row} />,
+    },
+  ]
 
   return (
     <Stack gap="md">
-      {departments.data.map((department) => (
-        <DepartmentCard key={department.teamId} department={department} />
-      ))}
+      <TableToolbar
+        label="departments"
+        query={query}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={APPROVER_FILTERS}
+      />
+
+      <DataTable
+        label="Department approvers"
+        columns={columns}
+        rows={rows}
+        rowKey={(row) => row.teamId}
+        isPending={departments.isPending}
+        isError={departments.isError}
+        isFetching={departments.isFetching}
+        error={departments.error}
+        onRetry={() => departments.refetch()}
+        minWidth={880}
+        isFiltered={isFiltered}
+        noResults={
+          <EmptyState
+            title="No departments match those filters"
+            description="Clear them to see every department."
+            action={
+              <Button variant="default" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            }
+          />
+        }
+        empty={
+          <EmptyState
+            title="No departments yet"
+            description="Create a department first, then appoint who decides its requests."
+          />
+        }
+      />
     </Stack>
   )
 }
 
-function DepartmentCard({ department }: { department: DepartmentApproversRow }) {
+function ApproverBadge({
+  department,
+  approver,
+}: {
+  department: DepartmentApproversRow
+  approver: DepartmentApproversRow['approvers'][number]
+}) {
+  const setApprover = useSetApprover()
+
+  return (
+    <Badge
+      variant="light"
+      size="lg"
+      rightSection={
+        <Button
+          variant="transparent"
+          size="compact-xs"
+          color="red"
+          px={0}
+          aria-label={`Remove ${approver.name} as an approver for ${department.teamName}`}
+          onClick={() =>
+            setApprover.mutate({
+              teamId: department.teamId,
+              userId: approver.userId,
+              approver: false,
+              name: approver.name,
+              email: approver.email,
+            })
+          }
+        >
+          Remove
+        </Button>
+      }
+    >
+      {approver.name}
+    </Badge>
+  )
+}
+
+function AppointControl({ department }: { department: DepartmentApproversRow }) {
   const people = useAssignableUsers()
   const setApprover = useSetApprover()
+  // Which name is showing in this row's picker before it is appointed: local, ephemeral UI.
   const [picked, setPicked] = useState<string | null>(null)
 
   const appointed = new Set(department.approvers.map((approver) => approver.userId))
@@ -62,84 +170,39 @@ function DepartmentCard({ department }: { department: DepartmentApproversRow }) 
   const chosen = candidates.find((person) => person.userId === picked)
 
   return (
-    <Card padding="lg" component="section">
-      <Stack gap="md">
-        <Stack gap={2}>
-          <Text fw={600}>{department.teamName}</Text>
-          <Text size="sm" c="dimmed">
-            {department.approvers.length === 0
-              ? 'Nobody decides this department yet, so its requests only reach admins.'
-              : `${department.approvers.length} ${department.approvers.length === 1 ? 'approver' : 'approvers'} decide its requests.`}
-          </Text>
-        </Stack>
-
-        {department.approvers.length > 0 ? (
-          <Group gap="xs" wrap="wrap">
-            {department.approvers.map((approver) => (
-              <Badge
-                key={approver.userId}
-                variant="light"
-                size="lg"
-                rightSection={
-                  <Button
-                    variant="transparent"
-                    size="compact-xs"
-                    color="red"
-                    px={0}
-                    aria-label={`Remove ${approver.name} as an approver for ${department.teamName}`}
-                    onClick={() =>
-                      setApprover.mutate({
-                        teamId: department.teamId,
-                        userId: approver.userId,
-                        approver: false,
-                        name: approver.name,
-                        email: approver.email,
-                      })
-                    }
-                  >
-                    Remove
-                  </Button>
-                }
-              >
-                {approver.name}
-              </Badge>
-            ))}
-          </Group>
-        ) : null}
-
-        <Group align="flex-end" gap="sm" wrap="wrap">
-          <Select
-            label={`Add an approver for ${department.teamName}`}
-            placeholder={people.isPending ? 'Loading…' : 'Search people'}
-            searchable
-            nothingFoundMessage="Nobody left to appoint"
-            disabled={people.isPending}
-            value={picked}
-            onChange={setPicked}
-            data={candidates.map((person) => ({
-              value: person.userId,
-              label: person.teamName ? `${person.name} · ${person.teamName}` : person.name,
-            }))}
-            w={{ base: '100%', sm: 320 }}
-          />
-          <Button
-            disabled={!chosen}
-            onClick={() => {
-              if (!chosen) return
-              setApprover.mutate({
-                teamId: department.teamId,
-                userId: chosen.userId,
-                approver: true,
-                name: chosen.name,
-                email: chosen.email,
-              })
-              setPicked(null)
-            }}
-          >
-            Appoint
-          </Button>
-        </Group>
-      </Stack>
-    </Card>
+    <Group align="flex-end" gap="xs" wrap="nowrap">
+      <Select
+        aria-label={`Add an approver for ${department.teamName}`}
+        placeholder={people.isPending ? 'Loading…' : 'Search people'}
+        searchable
+        size="sm"
+        nothingFoundMessage="Nobody left to appoint"
+        disabled={people.isPending}
+        value={picked}
+        onChange={setPicked}
+        data={candidates.map((person) => ({
+          value: person.userId,
+          label: person.teamName ? `${person.name} · ${person.teamName}` : person.name,
+        }))}
+        w={220}
+      />
+      <Button
+        size="sm"
+        disabled={!chosen}
+        onClick={() => {
+          if (!chosen) return
+          setApprover.mutate({
+            teamId: department.teamId,
+            userId: chosen.userId,
+            approver: true,
+            name: chosen.name,
+            email: chosen.email,
+          })
+          setPicked(null)
+        }}
+      >
+        Appoint
+      </Button>
+    </Group>
   )
 }

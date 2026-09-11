@@ -128,20 +128,20 @@ describe('TeamsPanel', () => {
     const person = user()
     render(<TeamsPanel />)
 
-    await person.type(await screen.findByLabelText('Search departments'), 'fin')
+    await person.type(await screen.findByRole('searchbox', { name: 'Search departments' }), 'fin')
 
     await waitFor(() =>
-      expect(nav.replace).toHaveBeenCalledWith('/organization/teams?q=fin', {
+      expect(nav.replace).toHaveBeenCalledWith('/organization/teams?search=fin', {
         scroll: false,
       }),
     )
   })
 
   it('offers a way out when a search matches nothing', async () => {
-    nav.searchParams = new URLSearchParams('q=payroll')
+    nav.searchParams = new URLSearchParams('search=payroll')
     render(<TeamsPanel />)
 
-    expect(await screen.findByText('No departments match that search')).toBeInTheDocument()
+    expect(await screen.findByText('No departments match those filters')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Clear filters' })).toBeInTheDocument()
   })
 

@@ -1,9 +1,10 @@
 'use client'
 
-import { Alert, Button, Divider, Drawer, Group, Select, Skeleton, Stack, Text } from '@mantine/core'
+import { Button, Divider, Drawer, Group, Select, Stack, Text } from '@mantine/core'
 import { useState } from 'react'
+import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/page-shell'
-import type { TeamRow } from '../schema'
+import type { TeamPersonRow, TeamRow } from '../schema'
 import {
   useAssignableUsers,
   useAssignDepartment,
@@ -36,6 +37,41 @@ function TeamMembersBody({ team }: { team: TeamRow }) {
   const assign = useAssignDepartment()
   const remove = useRemoveFromTeam(team.id)
   const [picked, setPicked] = useState<string | null>(null)
+
+  const columns: DataTableColumn<TeamPersonRow>[] = [
+    {
+      key: 'person',
+      header: 'Person',
+      rowHeader: true,
+      render: (person) => (
+        <Stack gap={0}>
+          <Text size="sm" fw={500}>
+            {person.name}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {person.jobTitle ?? person.email}
+          </Text>
+        </Stack>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: 110,
+      align: 'right',
+      render: (person) => (
+        <Button
+          variant="subtle"
+          color="red"
+          size="compact-sm"
+          aria-label={`Remove ${person.name} from ${team.name}`}
+          onClick={() => remove.mutate({ userId: person.userId, teamId: team.id })}
+        >
+          Remove
+        </Button>
+      ),
+    },
+  ]
 
   const candidates = (assignable.data ?? []).filter((person) => person.teamId !== team.id)
   const chosen = candidates.find((person) => person.userId === picked)
@@ -74,56 +110,26 @@ function TeamMembersBody({ team }: { team: TeamRow }) {
 
       <Divider />
 
-      {members.isPending ? (
-        <Stack gap="xs" aria-busy="true">
-          <Skeleton height={52} />
-          <Skeleton height={52} />
-          <Skeleton height={52} />
-        </Stack>
-      ) : members.isError ? (
-        <Stack gap="md">
-          <Alert role="alert" color="red" variant="light" title="Could not load this department">
-            <Text size="sm">{members.error.message}</Text>
-          </Alert>
-          <Button onClick={() => members.refetch()} w="fit-content">
-            Try again
-          </Button>
-        </Stack>
-      ) : members.data.length === 0 ? (
-        <EmptyState
-          title="Nobody here yet"
-          description="Move someone into this department and they will see it on their dashboard."
-        />
-      ) : (
-        <Stack component="ul" gap="xs" m={0} p={0} style={{ listStyle: 'none' }}>
-          {members.data.map((person) => (
-            <Group
-              component="li"
-              key={person.userId}
-              justify="space-between"
-              wrap="nowrap"
-              gap="sm"
-            >
-              <Stack gap={0} miw={0}>
-                <Text size="sm" fw={500} truncate>
-                  {person.name}
-                </Text>
-                <Text size="xs" c="dimmed" truncate>
-                  {person.jobTitle ?? person.email}
-                </Text>
-              </Stack>
-              <Button
-                variant="subtle"
-                color="red"
-                size="compact-sm"
-                onClick={() => remove.mutate({ userId: person.userId, teamId: team.id })}
-              >
-                Remove {person.name}
-              </Button>
-            </Group>
-          ))}
-        </Stack>
-      )}
+      <DataTable
+        label={`People in ${team.name}`}
+        columns={columns}
+        rows={members.data}
+        rowKey={(person) => person.userId}
+        isPending={members.isPending}
+        isError={members.isError}
+        isFetching={members.isFetching}
+        error={members.error}
+        onRetry={() => members.refetch()}
+        minWidth={360}
+        stickyHeader={false}
+        skeletonRows={3}
+        empty={
+          <EmptyState
+            title="Nobody here yet"
+            description="Move someone into this department and they will see it on their dashboard."
+          />
+        }
+      />
     </Stack>
   )
 }

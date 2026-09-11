@@ -2,8 +2,11 @@
 
 import { Badge, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
+import { useMemberFilterOptions } from '../use-members'
 import {
   isFilteredQuery,
+  MEMBER_STATUSES,
   ORGANIZATION_ROLES,
   PORTAL_ROLE_LABELS,
   PORTAL_ROLES,
@@ -22,6 +25,45 @@ const PORTAL_OPTIONS = PORTAL_ROLES.map((role) => ({
 export function MembersTable() {
   const { query, setQuery, clearFilters } = useMemberQuery()
   const members = useMembers(query)
+  const options = useMemberFilterOptions()
+
+  const filters: readonly FilterControl[] = [
+    {
+      kind: 'multi',
+      key: 'teamIds',
+      label: 'Department',
+      options: (options.data?.teams ?? []).map((team) => ({ value: team.id, label: team.name })),
+    },
+    {
+      kind: 'multi',
+      key: 'organizationRoles',
+      label: 'Organization role',
+      options: ORGANIZATION_OPTIONS,
+    },
+    { kind: 'multi', key: 'portalRoles', label: 'Portal role', options: PORTAL_OPTIONS },
+    {
+      kind: 'multi',
+      key: 'employmentTypes',
+      label: 'Employment type',
+      options: (options.data?.employmentTypes ?? []).map((value) => ({ value, label: value })),
+    },
+    {
+      kind: 'select',
+      key: 'status',
+      label: 'Access',
+      options: MEMBER_STATUSES.filter((status) => status !== 'all').map((status) => ({
+        value: status,
+        label: status === 'active' ? 'Active' : 'Suspended',
+      })),
+    },
+    {
+      kind: 'dateRange',
+      fromKey: 'startDateFrom',
+      toKey: 'startDateTo',
+      label: 'Start date',
+      help: 'Anyone who started between these dates.',
+    },
+  ]
   const organizationRole = useSetOrganizationRole()
   const portalRole = useSetPortalRole()
   const banned = useSetBanned()
@@ -125,34 +167,44 @@ export function MembersTable() {
   ]
 
   return (
-    <DataTable
-      label="Members"
-      columns={columns}
-      rows={members.data?.rows}
-      rowKey={(row) => row.memberId}
-      isPending={members.isPending}
-      isError={members.isError}
-      error={members.error}
-      errorTitle="Could not load members"
-      onRetry={() => members.refetch()}
-      // Only a page or filter change keeps a stale page on screen; a plain refetch stays silent.
-      isFetching={members.isPlaceholderData}
-      isFiltered={isFilteredQuery(query)}
-      empty="Nobody has finished onboarding yet. The first person to complete it appears here."
-      noResults={
-        <Stack gap="sm" align="flex-start">
-          <Text c="dimmed">No member matches these filters.</Text>
-          <Button variant="light" onClick={clearFilters}>
-            Clear filters
-          </Button>
-        </Stack>
-      }
-      pageInfo={members.data?.pageInfo}
-      onPageChange={(page) => setQuery({ page })}
-      sort={{ key: query.sortBy, direction: query.sortDirection }}
-      onSortChange={({ key, direction }) =>
-        setQuery({ sortBy: key as MemberSortKey, sortDirection: direction })
-      }
-    />
+    <Stack gap="md">
+      <TableToolbar
+        label="members"
+        query={query}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={filters}
+      />
+
+      <DataTable
+        label="Members"
+        columns={columns}
+        rows={members.data?.rows}
+        rowKey={(row) => row.memberId}
+        isPending={members.isPending}
+        isError={members.isError}
+        error={members.error}
+        errorTitle="Could not load members"
+        onRetry={() => members.refetch()}
+        // Only a page or filter change keeps a stale page on screen; a plain refetch stays silent.
+        isFetching={members.isPlaceholderData}
+        isFiltered={isFilteredQuery(query)}
+        empty="Nobody has finished onboarding yet. The first person to complete it appears here."
+        noResults={
+          <Stack gap="sm" align="flex-start">
+            <Text c="dimmed">No member matches these filters.</Text>
+            <Button variant="light" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          </Stack>
+        }
+        pageInfo={members.data?.pageInfo}
+        onPageChange={(page) => setQuery({ page })}
+        sort={{ key: query.sortBy, direction: query.sortDirection }}
+        onSortChange={({ key, direction }) =>
+          setQuery({ sortBy: key as MemberSortKey, sortDirection: direction })
+        }
+      />
+    </Stack>
   )
 }

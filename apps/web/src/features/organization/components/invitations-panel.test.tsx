@@ -19,9 +19,15 @@ const actions = vi.hoisted(() => ({
 }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
+const nav = vi.hoisted(() => ({ replace: vi.fn(), searchParams: new URLSearchParams() }))
 
 vi.mock('../actions', () => actions)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: nav.replace, push: vi.fn(), refresh: vi.fn() }),
+  useSearchParams: () => nav.searchParams,
+  usePathname: () => '/organization/invitations',
+}))
 
 const TEAM = { id: 'team-1', name: 'Finance', memberCount: 2, createdAt: '2026-01-04T00:00:00Z' }
 
@@ -46,6 +52,7 @@ async function pickDepartment(person: ReturnType<typeof user>) {
 describe('InvitationsPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    nav.searchParams = new URLSearchParams()
     actions.listInvitations.mockResolvedValue({ ok: true, data: [PENDING] })
     actions.listTeams.mockResolvedValue({ ok: true, data: [TEAM] })
     actions.inviteMember.mockResolvedValue({ ok: true })

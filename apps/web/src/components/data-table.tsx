@@ -118,6 +118,10 @@ export function DataTable<TRow>({
         <Table
           striped
           highlightOnHover
+          // Ruled rather than floating: a border around the table and between its columns is
+          // what makes a dense grid scannable down a column as well as across a row.
+          withTableBorder
+          withColumnBorders
           stickyHeader={stickyHeader}
           aria-label={label}
           aria-busy={isFetching || undefined}

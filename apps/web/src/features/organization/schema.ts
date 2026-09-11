@@ -97,3 +97,32 @@ export interface InvitationRow {
   expired: boolean
   invitedBy: string
 }
+
+/**
+ * List state for the departments table. `team` is the department whose roster drawer is open —
+ * not a filter, but it lives here so adjusting a filter rewrites the query string without
+ * dropping it.
+ */
+export const teamQuerySchema = z.object({
+  search: z.string().trim().max(100).catch('').default(''),
+  emptyOnly: z
+    .union([z.boolean(), z.literal('true'), z.literal('false')])
+    .transform((value) => value === true || value === 'true')
+    .catch(false),
+  team: z.string().trim().max(64).catch('').default(''),
+})
+
+export const invitationQuerySchema = z.object({
+  search: z.string().trim().max(100).catch('').default(''),
+  role: z.string().trim().max(32).catch('').default(''),
+  expiredOnly: z
+    .union([z.boolean(), z.literal('true'), z.literal('false')])
+    .transform((value) => value === true || value === 'true')
+    .catch(false),
+})
+
+export type TeamQuery = z.infer<typeof teamQuerySchema>
+export type InvitationQuery = z.infer<typeof invitationQuerySchema>
+
+export const DEFAULT_TEAM_QUERY: TeamQuery = teamQuerySchema.parse({})
+export const DEFAULT_INVITATION_QUERY: InvitationQuery = invitationQuerySchema.parse({})

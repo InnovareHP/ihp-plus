@@ -1,53 +1,40 @@
 'use client'
 
-import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Group,
-  SimpleGrid,
-  Skeleton,
-  Stack,
-  Tabs,
-  Text,
-} from '@mantine/core'
+import { Alert, Badge, Button, Card, Group, SimpleGrid, Skeleton, Stack, Text } from '@mantine/core'
 import { IconFilePlus } from '@tabler/icons-react'
 import Link from 'next/link'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LinkButton } from '@/components/link-button'
 import { EmptyState, PageSection } from '@/components/page-shell'
+import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { newRequestRoute, requestRoute } from '@/lib/routes'
-import { useUrlQueryParam } from '@/lib/use-url-query-param'
+import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 import {
+  DEFAULT_MY_REQUEST_QUERY,
+  myRequestQuerySchema,
   REQUEST_STATUS_COLORS,
-  REQUEST_STATUS_FILTERS,
   REQUEST_STATUS_LABELS,
+  REQUEST_STATUS_OPTIONS,
   type FormRow,
   type RequestRow,
-  type RequestStatusFilter,
 } from '../schema'
 import { useAvailableForms, useMyRequests, useWithdrawRequest } from '../use-requests'
 
 const submitted = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 
-const STATUS_TAB_LABELS: Record<RequestStatusFilter, string> = {
-  all: 'All',
-  pending: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  withdrawn: 'Withdrawn',
-}
+type MyRequestStatus = (typeof REQUEST_STATUS_OPTIONS)[number]['value'] | 'all'
 
-function statusOf(value: string): RequestStatusFilter {
-  return (REQUEST_STATUS_FILTERS as readonly string[]).includes(value)
-    ? (value as RequestStatusFilter)
-    : 'all'
-}
+const parseMyRequestQuery = searchParamsParser(myRequestQuerySchema)
+
+const MY_REQUEST_FILTERS: readonly FilterControl[] = [
+  { kind: 'select', key: 'status', label: 'Status', options: REQUEST_STATUS_OPTIONS },
+]
 
 export function RequestsPanel({ hasDepartment }: { hasDepartment: boolean }) {
-  const statusParam = useUrlQueryParam('status', 0)
-  const status = statusOf(statusParam.value)
+  const { query, setQuery, clearFilters } = useUrlQuery(
+    parseMyRequestQuery,
+    DEFAULT_MY_REQUEST_QUERY,
+  )
 
   return (
     <>
@@ -63,16 +50,14 @@ export function RequestsPanel({ hasDepartment }: { hasDepartment: boolean }) {
         description="Everything you have sent, and where it got to."
       >
         <Stack gap="md">
-          <Tabs value={status} onChange={(value) => statusParam.commit(value ?? 'all')}>
-            <Tabs.List>
-              {REQUEST_STATUS_FILTERS.map((value) => (
-                <Tabs.Tab key={value} value={value}>
-                  {STATUS_TAB_LABELS[value]}
-                </Tabs.Tab>
-              ))}
-            </Tabs.List>
-          </Tabs>
-          <MyRequestsTable status={status} />
+          <TableToolbar
+            label="your requests"
+            query={query}
+            setQuery={setQuery}
+            clearFilters={clearFilters}
+            filters={MY_REQUEST_FILTERS}
+          />
+          <MyRequestsTable query={query} clearFilters={clearFilters} />
         </Stack>
       </PageSection>
     </>
@@ -157,9 +142,19 @@ function FormCard({ form }: { form: FormRow }) {
   )
 }
 
-function MyRequestsTable({ status }: { status: RequestStatusFilter }) {
-  const requests = useMyRequests(status)
-  const withdraw = useWithdrawRequest(status)
+function MyRequestsTable({
+  query,
+  clearFilters,
+}: {
+  query: { search: string; status: MyRequestStatus }
+  clearFilters: () => void
+}) {
+  const requests = useMyRequests(query.status)
+  const withdraw = useWithdrawRequest(query.status)
+
+  const term = query.search.trim().toLowerCase()
+  const rows = requests.data?.filter((row) => row.formName.toLowerCase().includes(term))
+  const isFiltered = term.length > 0 || query.status !== 'all'
 
   const columns: DataTableColumn<RequestRow>[] = [
     {
@@ -218,7 +213,7 @@ function MyRequestsTable({ status }: { status: RequestStatusFilter }) {
     <DataTable
       label="Your requests"
       columns={columns}
-      rows={requests.data}
+      rows={rows}
       rowKey={(row) => row.id}
       isPending={requests.isPending}
       isError={requests.isError}
@@ -226,16 +221,22 @@ function MyRequestsTable({ status }: { status: RequestStatusFilter }) {
       error={requests.error}
       onRetry={() => requests.refetch()}
       minWidth={680}
+      isFiltered={isFiltered}
+      noResults={
+        <EmptyState
+          title="Nothing matches those filters"
+          description="Clear them to see everything you have sent."
+          action={
+            <Button variant="default" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          }
+        />
+      }
       empty={
         <EmptyState
-          title={
-            status === 'all' ? 'You have not raised a request yet' : 'Nothing with that status'
-          }
-          description={
-            status === 'all'
-              ? 'Pick a form above and your request appears here with its progress.'
-              : 'Switch tabs to see your other requests.'
-          }
+          title="You have not raised a request yet"
+          description="Pick a form above and your request appears here with its progress."
         />
       }
     />

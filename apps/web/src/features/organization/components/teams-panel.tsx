@@ -13,15 +13,18 @@ import {
   TextInput,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { IconDotsVertical, IconPlus, IconSearch } from '@tabler/icons-react'
-import { useState } from 'react'
+import { IconDotsVertical, IconPlus } from '@tabler/icons-react'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/page-shell'
-import { useUrlQueryParam } from '@/lib/use-url-query-param'
+import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
+import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 import {
   createTeamSchema,
+  DEFAULT_TEAM_QUERY,
   renameTeamSchema,
+  teamQuerySchema,
   type CreateTeamValues,
   type RenameTeamValues,
   type TeamRow,
@@ -31,18 +34,37 @@ import { TeamMembersDrawer } from './team-members-drawer'
 
 const created = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
+// The open department rides in the query object too, so adjusting a filter cannot drop it.
+const parseTeamQuery = searchParamsParser(teamQuerySchema)
+
+const TEAM_FILTERS: readonly FilterControl[] = [
+  {
+    kind: 'toggle',
+    key: 'emptyOnly',
+    label: 'Only empty departments',
+    help: 'Departments nobody has been placed in yet.',
+  },
+]
+
 export function TeamsPanel() {
   const teams = useTeams()
-  const search = useUrlQueryParam('q')
-  const openTeam = useUrlQueryParam('team', 0)
+  const { query, setQuery, clearFilters } = useUrlQuery(parseTeamQuery, DEFAULT_TEAM_QUERY)
   const [createOpened, createModal] = useDisclosure(false)
   const [renaming, setRenaming] = useState<TeamRow | null>(null)
   const [deleting, setDeleting] = useState<TeamRow | null>(null)
   const deleteTeam = useDeleteTeam()
 
-  const term = search.value.trim().toLowerCase()
-  const rows = teams.data?.filter((team) => team.name.toLowerCase().includes(term))
-  const selected = teams.data?.find((team) => team.id === openTeam.value)
+  const term = query.search.trim().toLowerCase()
+  const rows = useMemo(
+    () =>
+      teams.data?.filter(
+        (team) =>
+          team.name.toLowerCase().includes(term) && (!query.emptyOnly || team.memberCount === 0),
+      ),
+    [teams.data, term, query.emptyOnly],
+  )
+  const isFiltered = term.length > 0 || query.emptyOnly
+  const selected = teams.data?.find((team) => team.id === query.team)
 
   const columns: DataTableColumn<TeamRow>[] = [
     {
@@ -88,7 +110,7 @@ export function TeamsPanel() {
             </ActionIcon>
           </Menu.Target>
           <Menu.Dropdown>
-            <Menu.Item onClick={() => openTeam.commit(team.id)}>Manage people</Menu.Item>
+            <Menu.Item onClick={() => setQuery({ team: team.id })}>Manage people</Menu.Item>
             <Menu.Item onClick={() => setRenaming(team)}>Rename</Menu.Item>
             <Menu.Item color="red" onClick={() => setDeleting(team)}>
               Delete
@@ -101,12 +123,18 @@ export function TeamsPanel() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" wrap="wrap" gap="sm">
-        <SearchField initial={search.value} onSearch={search.commit} />
-        <Button leftSection={<IconPlus size={16} aria-hidden />} onClick={createModal.open}>
-          New department
-        </Button>
-      </Group>
+      <TableToolbar
+        label="departments"
+        query={query}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={TEAM_FILTERS}
+        action={
+          <Button leftSection={<IconPlus size={16} aria-hidden />} onClick={createModal.open}>
+            New department
+          </Button>
+        }
+      />
 
       <DataTable
         label="Departments"
@@ -119,24 +147,24 @@ export function TeamsPanel() {
         error={teams.error}
         onRetry={() => teams.refetch()}
         minWidth={620}
+        isFiltered={isFiltered}
+        noResults={
+          <EmptyState
+            title="No departments match those filters"
+            description="Clear them to see every department in this organization."
+            action={
+              <Button variant="default" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            }
+          />
+        }
         empty={
-          term ? (
-            <EmptyState
-              title="No departments match that search"
-              description="Clear the search to see every department in this organization."
-              action={
-                <Button variant="default" onClick={() => search.commit('')}>
-                  Clear filters
-                </Button>
-              }
-            />
-          ) : (
-            <EmptyState
-              title="No departments yet"
-              description="Create the first department so people can be placed in one at setup."
-              action={<Button onClick={createModal.open}>New department</Button>}
-            />
-          )
+          <EmptyState
+            title="No departments yet"
+            description="Create the first department so people can be placed in one at setup."
+            action={<Button onClick={createModal.open}>New department</Button>}
+          />
         }
       />
 
@@ -174,34 +202,8 @@ export function TeamsPanel() {
         </Stack>
       </Modal>
 
-      <TeamMembersDrawer team={selected} onClose={() => openTeam.commit('')} />
+      <TeamMembersDrawer team={selected} onClose={() => setQuery({ team: '' })} />
     </Stack>
-  )
-}
-
-function SearchField({
-  initial,
-  onSearch,
-}: {
-  initial: string
-  onSearch: (value: string) => void
-}) {
-  const { register } = useForm<{ q: string }>({ defaultValues: { q: initial } })
-  const field = register('q')
-
-  return (
-    <TextInput
-      {...field}
-      onChange={(event) => {
-        void field.onChange(event)
-        onSearch(event.currentTarget.value)
-      }}
-      type="search"
-      label="Search departments"
-      placeholder="Search by name"
-      leftSection={<IconSearch size={16} aria-hidden />}
-      w={{ base: '100%', sm: 280 }}
-    />
   )
 }
 

@@ -3,13 +3,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Badge, Button, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { IconSend } from '@tabler/icons-react'
+import { useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { FormError } from '@/components/form-error'
 import { EmptyState, PageSection } from '@/components/page-shell'
+import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { announceSuccess } from '@/lib/announce'
+import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 import {
+  DEFAULT_INVITATION_QUERY,
   INVITABLE_ROLES,
+  invitationQuerySchema,
   inviteMemberSchema,
   type InvitationRow,
   type InviteMemberValues,
@@ -28,6 +33,26 @@ const ROLE_OPTIONS = INVITABLE_ROLES.map((role) => ({
 }))
 
 const expires = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+
+const parseInvitationQuery = searchParamsParser(invitationQuerySchema)
+
+const INVITATION_FILTERS: readonly FilterControl[] = [
+  {
+    kind: 'select',
+    key: 'role',
+    label: 'Organization role',
+    options: [
+      { value: 'admin', label: 'Admin' },
+      { value: 'member', label: 'Member' },
+    ],
+  },
+  {
+    kind: 'toggle',
+    key: 'expiredOnly',
+    label: 'Only expired invitations',
+    help: 'The ones that lapsed before anyone accepted them.',
+  },
+]
 
 export function InvitationsPanel({ invitedBy }: { invitedBy: string }) {
   return (
@@ -80,7 +105,7 @@ function InviteForm({ invitedBy }: { invitedBy: string }) {
       description="They get a link to join this organization in the department you pick."
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Stack gap="md" maw={560}>
+        <Stack gap="md">
           <FormError message={errors.root?.message} title="Could not send the invitation" />
 
           <TextInput
@@ -102,6 +127,8 @@ function InviteForm({ invitedBy }: { invitedBy: string }) {
               render={({ field }) => (
                 <Select
                   label="Department"
+                  // Both fields in the row need a description, or their inputs misalign.
+                  description="They can be moved later."
                   placeholder={teams.isPending ? 'Loading…' : 'Pick a department'}
                   searchable
                   required
@@ -153,6 +180,24 @@ function InvitationsTable() {
   const invitations = useInvitations()
   const cancel = useCancelInvitation()
   const resend = useResendInvitation()
+  const { query, setQuery, clearFilters } = useUrlQuery(
+    parseInvitationQuery,
+    DEFAULT_INVITATION_QUERY,
+  )
+
+  const term = query.search.trim().toLowerCase()
+  const rows = useMemo(
+    () =>
+      invitations.data?.filter(
+        (row) =>
+          (row.email.toLowerCase().includes(term) ||
+            (row.teamName ?? '').toLowerCase().includes(term)) &&
+          (!query.role || row.role === query.role) &&
+          (!query.expiredOnly || row.expired),
+      ),
+    [invitations.data, term, query.role, query.expiredOnly],
+  )
+  const isFiltered = term.length > 0 || Boolean(query.role) || query.expiredOnly
 
   const columns: DataTableColumn<InvitationRow>[] = [
     {
@@ -233,23 +278,45 @@ function InvitationsTable() {
   ]
 
   return (
-    <DataTable
-      label="Pending invitations"
-      columns={columns}
-      rows={invitations.data}
-      rowKey={(row) => row.id}
-      isPending={invitations.isPending}
-      isError={invitations.isError}
-      isFetching={invitations.isFetching}
-      error={invitations.error}
-      onRetry={() => invitations.refetch()}
-      minWidth={760}
-      empty={
-        <EmptyState
-          title="No invitations waiting"
-          description="Invite a colleague above and their invitation appears here until they accept it."
-        />
-      }
-    />
+    <Stack gap="md">
+      <TableToolbar
+        label="invitations"
+        query={query}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={INVITATION_FILTERS}
+      />
+
+      <DataTable
+        label="Pending invitations"
+        columns={columns}
+        rows={rows}
+        rowKey={(row) => row.id}
+        isPending={invitations.isPending}
+        isError={invitations.isError}
+        isFetching={invitations.isFetching}
+        error={invitations.error}
+        onRetry={() => invitations.refetch()}
+        minWidth={760}
+        isFiltered={isFiltered}
+        noResults={
+          <EmptyState
+            title="No invitations match those filters"
+            description="Clear them to see everyone still waiting to accept."
+            action={
+              <Button variant="default" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            }
+          />
+        }
+        empty={
+          <EmptyState
+            title="No invitations waiting"
+            description="Invite a colleague above and their invitation appears here until they accept it."
+          />
+        }
+      />
+    </Stack>
   )
 }

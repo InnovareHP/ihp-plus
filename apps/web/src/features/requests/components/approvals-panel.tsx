@@ -1,32 +1,23 @@
 'use client'
 
-import {
-  Badge,
-  Button,
-  Group,
-  Modal,
-  Pagination,
-  Stack,
-  Tabs,
-  Text,
-  TextInput,
-} from '@mantine/core'
-import { IconSearch } from '@tabler/icons-react'
+import { Badge, Button, Group, Modal, Stack, Text } from '@mantine/core'
 import Link from 'next/link'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/page-shell'
-import { pageRangeOf } from '@/lib/pagination'
+import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { requestRoute } from '@/lib/routes'
-import { useUrlQueryParam } from '@/lib/use-url-query-param'
+import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
+// Departments are organization data; the requests feature is a consumer of them.
+import { useTeams } from '@/features/organization/use-teams'
 import {
+  DEFAULT_REQUEST_QUERY,
   REQUEST_STATUS_COLORS,
-  REQUEST_STATUS_FILTERS,
   REQUEST_STATUS_LABELS,
+  REQUEST_STATUS_OPTIONS,
+  requestQuerySchema,
   type RequestQuery,
   type RequestRow,
-  type RequestStatusFilter,
 } from '../schema'
 import { useDecideRequest, useRequestQueue } from '../use-requests'
 import { DecisionFields } from './decision-fields'
@@ -35,32 +26,37 @@ import { RequestAnswers } from './request-answers'
 const submitted = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 const PAGE_SIZE = 25
 
-const STATUS_TAB_LABELS: Record<RequestStatusFilter, string> = {
-  all: 'All',
-  pending: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  withdrawn: 'Withdrawn',
-}
-
-function statusOf(value: string): RequestStatusFilter {
-  return (REQUEST_STATUS_FILTERS as readonly string[]).includes(value)
-    ? (value as RequestStatusFilter)
-    : 'pending'
-}
+const parseRequestQuery = searchParamsParser(requestQuerySchema, ['teamIds'])
 
 export function ApprovalsPanel() {
-  const statusParam = useUrlQueryParam('status', 0)
-  const searchParam = useUrlQueryParam('q')
-  const pageParam = useUrlQueryParam('page', 0)
+  const {
+    query: listQuery,
+    setQuery,
+    clearFilters,
+  } = useUrlQuery(parseRequestQuery, DEFAULT_REQUEST_QUERY)
+  const teams = useTeams()
 
+  // The server does the filtering and the paging; pageSize is fixed rather than URL state.
   const query: RequestQuery = {
-    status: statusOf(statusParam.value || 'pending'),
-    search: searchParam.value.trim(),
-    teamIds: [],
-    page: Number(pageParam.value) || 1,
+    status: listQuery.status,
+    search: listQuery.search.trim(),
+    teamIds: listQuery.teamIds,
+    page: listQuery.page,
     pageSize: PAGE_SIZE,
   }
+
+  const filters: readonly FilterControl[] = [
+    { kind: 'select', key: 'status', label: 'Status', options: REQUEST_STATUS_OPTIONS },
+    {
+      kind: 'multi',
+      key: 'teamIds',
+      label: 'Department',
+      options: (teams.data ?? []).map((team) => ({ value: team.id, label: team.name })),
+    },
+  ]
+
+  const isFiltered =
+    query.search.length > 0 || query.status !== 'pending' || query.teamIds.length > 0
 
   const queue = useRequestQueue(query)
   const decide = useDecideRequest(query)
@@ -131,29 +127,16 @@ export function ApprovalsPanel() {
   ]
 
   const openRow = queue.data?.rows.find((row) => row.id === expanded)
-  const pageInfo = queue.data?.pageInfo
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" wrap="wrap" gap="sm">
-        <SearchField initial={searchParam.value} onSearch={searchParam.commit} />
-      </Group>
-
-      <Tabs
-        value={query.status}
-        onChange={(value) => {
-          statusParam.commit(value ?? 'pending')
-          pageParam.commit('')
-        }}
-      >
-        <Tabs.List>
-          {REQUEST_STATUS_FILTERS.map((value) => (
-            <Tabs.Tab key={value} value={value}>
-              {STATUS_TAB_LABELS[value]}
-            </Tabs.Tab>
-          ))}
-        </Tabs.List>
-      </Tabs>
+      <TableToolbar
+        label="requests"
+        query={listQuery}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={filters}
+      />
 
       <DataTable
         label="Requests"
@@ -166,21 +149,24 @@ export function ApprovalsPanel() {
         error={queue.error}
         onRetry={() => queue.refetch()}
         minWidth={820}
+        pageInfo={queue.data?.pageInfo}
+        onPageChange={(page) => setQuery({ page })}
+        isFiltered={isFiltered}
+        noResults={
+          <EmptyState
+            title="Nothing matches those filters"
+            description="Clear them to see the whole queue."
+            action={
+              <Button variant="default" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            }
+          />
+        }
         empty={
           <EmptyState
-            title={query.search ? 'Nothing matches that search' : 'Nothing waiting on you'}
-            description={
-              query.search
-                ? 'Clear the search to see the whole queue.'
-                : 'Requests raised in the departments you approve for land here.'
-            }
-            action={
-              query.search ? (
-                <Button variant="default" onClick={() => searchParam.commit('')}>
-                  Clear filters
-                </Button>
-              ) : undefined
-            }
+            title="Nothing waiting on you"
+            description="Requests raised in the departments you approve for land here."
           />
         }
       />
@@ -197,19 +183,6 @@ export function ApprovalsPanel() {
           </Text>
           <RequestAnswers fields={openRow.fields} values={openRow.values} />
         </Stack>
-      ) : null}
-
-      {pageInfo && pageInfo.pageCount > 1 ? (
-        <Group justify="space-between" wrap="wrap" gap="sm">
-          <Text size="sm" c="dimmed">
-            Showing {pageRangeOf(pageInfo).from}–{pageRangeOf(pageInfo).to} of {pageInfo.total}
-          </Text>
-          <Pagination
-            value={pageInfo.page}
-            total={pageInfo.pageCount}
-            onChange={(page) => pageParam.commit(String(page))}
-          />
-        </Group>
       ) : null}
 
       <Modal
@@ -234,31 +207,5 @@ export function ApprovalsPanel() {
         ) : null}
       </Modal>
     </Stack>
-  )
-}
-
-function SearchField({
-  initial,
-  onSearch,
-}: {
-  initial: string
-  onSearch: (value: string) => void
-}) {
-  const { register } = useForm<{ q: string }>({ defaultValues: { q: initial } })
-  const field = register('q')
-
-  return (
-    <TextInput
-      {...field}
-      onChange={(event) => {
-        void field.onChange(event)
-        onSearch(event.currentTarget.value)
-      }}
-      type="search"
-      label="Search requests"
-      placeholder="Form or department"
-      leftSection={<IconSearch size={16} aria-hidden />}
-      w={{ base: '100%', sm: 300 }}
-    />
   )
 }

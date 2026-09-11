@@ -170,10 +170,12 @@ describe('ApprovalsPanel', () => {
     const person = user()
     render(<ApprovalsPanel />)
 
-    await person.type(await screen.findByLabelText('Search requests'), 'equip')
+    await person.type(await screen.findByRole('searchbox', { name: 'Search requests' }), 'equip')
 
     await waitFor(() =>
-      expect(nav.replace).toHaveBeenCalledWith('/requests/approvals?q=equip', { scroll: false }),
+      expect(nav.replace).toHaveBeenCalledWith('/requests/approvals?search=equip', {
+        scroll: false,
+      }),
     )
   })
 

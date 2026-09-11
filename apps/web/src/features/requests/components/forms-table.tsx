@@ -3,15 +3,27 @@
 import { ActionIcon, Badge, Button, Group, Menu, Modal, Stack, Text } from '@mantine/core'
 import { IconDotsVertical, IconPlus } from '@tabler/icons-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LinkButton } from '@/components/link-button'
 import { EmptyState } from '@/components/page-shell'
+import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { NEW_REQUEST_FORM_ROUTE, requestFormRoute } from '@/lib/routes'
-import { FORM_STATUS_LABELS, type FormRow } from '../schema'
+import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
+// Departments are organization data; the requests feature is a consumer of them.
+import { useTeams } from '@/features/organization/use-teams'
+import {
+  DEFAULT_FORM_QUERY,
+  FORM_STATUS_LABELS,
+  FORM_STATUS_OPTIONS,
+  formQuerySchema,
+  type FormRow,
+} from '../schema'
 import { useDeleteForm, useForms, useSetFormStatus } from '../use-forms'
 
 const updated = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
+
+const parseFormQuery = searchParamsParser(formQuerySchema, ['teamIds'])
 
 const STATUS_COLORS: Record<FormRow['status'], string> = {
   draft: 'gray',
@@ -21,9 +33,44 @@ const STATUS_COLORS: Record<FormRow['status'], string> = {
 
 export function FormsTable() {
   const forms = useForms()
+  const teams = useTeams()
   const setStatus = useSetFormStatus()
   const deleteForm = useDeleteForm()
   const [deleting, setDeleting] = useState<FormRow | null>(null)
+  const { query, setQuery, clearFilters } = useUrlQuery(parseFormQuery, DEFAULT_FORM_QUERY)
+
+  const filters: readonly FilterControl[] = [
+    { kind: 'select', key: 'status', label: 'Status', options: FORM_STATUS_OPTIONS },
+    {
+      kind: 'multi',
+      key: 'teamIds',
+      label: 'Offered to',
+      options: (teams.data ?? []).map((team) => ({ value: team.id, label: team.name })),
+    },
+    {
+      kind: 'toggle',
+      key: 'unplacedOnly',
+      label: 'Only forms with no department',
+      help: 'A published form offered to nobody reaches nobody.',
+    },
+  ]
+
+  const term = query.search.trim().toLowerCase()
+  const rows = useMemo(
+    () =>
+      forms.data?.filter(
+        (form) =>
+          (form.name.toLowerCase().includes(term) ||
+            form.description.toLowerCase().includes(term)) &&
+          (!query.status || form.status === query.status) &&
+          (query.teamIds.length === 0 ||
+            form.teams.some((team) => query.teamIds.includes(team.id))) &&
+          (!query.unplacedOnly || form.teams.length === 0),
+      ),
+    [forms.data, term, query.status, query.teamIds, query.unplacedOnly],
+  )
+  const isFiltered =
+    term.length > 0 || Boolean(query.status) || query.teamIds.length > 0 || query.unplacedOnly
 
   const columns: DataTableColumn<FormRow>[] = [
     {
@@ -115,16 +162,26 @@ export function FormsTable() {
 
   return (
     <Stack gap="md">
-      <Group justify="flex-end">
-        <LinkButton href={NEW_REQUEST_FORM_ROUTE} leftSection={<IconPlus size={16} aria-hidden />}>
-          New form
-        </LinkButton>
-      </Group>
+      <TableToolbar
+        label="forms"
+        query={query}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={filters}
+        action={
+          <LinkButton
+            href={NEW_REQUEST_FORM_ROUTE}
+            leftSection={<IconPlus size={16} aria-hidden />}
+          >
+            New form
+          </LinkButton>
+        }
+      />
 
       <DataTable
         label="Request forms"
         columns={columns}
-        rows={forms.data}
+        rows={rows}
         rowKey={(form) => form.id}
         isPending={forms.isPending}
         isError={forms.isError}
@@ -132,6 +189,18 @@ export function FormsTable() {
         error={forms.error}
         onRetry={() => forms.refetch()}
         minWidth={880}
+        isFiltered={isFiltered}
+        noResults={
+          <EmptyState
+            title="No forms match those filters"
+            description="Clear them to see every form this organization has."
+            action={
+              <Button variant="default" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            }
+          />
+        }
         empty={
           <EmptyState
             title="No request forms yet"

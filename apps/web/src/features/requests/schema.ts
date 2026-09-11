@@ -232,3 +232,68 @@ export function defaultAnswersOf(fields: readonly FormField[]): Record<string, F
   }
   return answers
 }
+
+const flag = z
+  .union([z.boolean(), z.literal('true'), z.literal('false')])
+  .transform((value) => value === true || value === 'true')
+  .catch(false)
+
+const csv = z
+  .union([z.string(), z.array(z.string())])
+  .optional()
+  .transform((raw) => (typeof raw === 'string' ? raw.split(',') : (raw ?? [])))
+  // Capped so a crafted URL cannot turn one filter into a thousand-branch IN clause.
+  .transform((list) =>
+    list
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 50),
+  )
+
+/** List state for the admin forms table, filtered in the browser: the list is small. */
+export const formQuerySchema = z.object({
+  search: z.string().trim().max(100).catch('').default(''),
+  status: z.string().trim().max(20).catch('').default(''),
+  teamIds: csv,
+  unplacedOnly: flag,
+})
+
+/** List state for a requester's own list. */
+export const myRequestQuerySchema = z.object({
+  search: z.string().trim().max(100).catch('').default(''),
+  status: z.enum(REQUEST_STATUS_FILTERS).catch('all'),
+})
+
+/** List state for the approvals queue, which is paged and filtered on the server. */
+export const requestQuerySchema = z.object({
+  search: z.string().trim().max(100).catch('').default(''),
+  status: z.enum(REQUEST_STATUS_FILTERS).catch('pending'),
+  teamIds: csv,
+  page: z.coerce.number().int().min(1).catch(1),
+})
+
+export type FormQuery = z.infer<typeof formQuerySchema>
+export type MyRequestQuery = z.infer<typeof myRequestQuerySchema>
+export type RequestListQuery = z.infer<typeof requestQuerySchema>
+
+export const DEFAULT_FORM_QUERY: FormQuery = formQuerySchema.parse({})
+export const DEFAULT_MY_REQUEST_QUERY: MyRequestQuery = myRequestQuerySchema.parse({})
+export const DEFAULT_REQUEST_QUERY: RequestListQuery = requestQuerySchema.parse({})
+
+export const REQUEST_STATUS_OPTIONS = REQUEST_STATUSES.map((status) => ({
+  value: status,
+  label: REQUEST_STATUS_LABELS[status],
+}))
+
+export const FORM_STATUS_OPTIONS = FORM_STATUSES.map((status) => ({
+  value: status,
+  label: FORM_STATUS_LABELS[status],
+}))
+
+export const approverQuerySchema = z.object({
+  search: z.string().trim().max(100).catch('').default(''),
+  unstaffedOnly: flag,
+})
+
+export type ApproverQuery = z.infer<typeof approverQuerySchema>
+export const DEFAULT_APPROVER_QUERY: ApproverQuery = approverQuerySchema.parse({})
