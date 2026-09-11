@@ -3,6 +3,7 @@ import './load-env'
 import { db } from '../src/client'
 import { DEMO_CLIENTS } from './client-seed-data'
 import { LOOKUP_OPTION_SEED } from './lookup-seed-data'
+import { REQUEST_FORM_SEED } from './request-seed-data'
 
 // The company's own departments. Team membership is the single source of truth for them,
 // so this list exists here and nowhere else.
@@ -52,6 +53,7 @@ async function main() {
   }
 
   await seedLookupOptions(organization.id)
+  await seedRequestForms(organization.id)
   await seedDemoClients(organization.id)
 
   if (!OWNER_EMAIL) {
@@ -158,6 +160,55 @@ async function seedLookupOptions(organizationId: string) {
       skipDuplicates: true,
     })
     if (created.count > 0) console.log(`  + ${created.count} ${kind} options`)
+  }
+}
+
+/**
+ * The forms a company starts with, published so they are usable the moment someone signs in.
+ * Written once and never again: these are content an admin edits, and a second run must not
+ * undo an edit or resurrect a form that was deliberately retired.
+ */
+async function seedRequestForms(organizationId: string) {
+  const existing = await db.requestForm.count({ where: { organizationId } })
+  if (existing > 0) {
+    console.log(`request forms already present (${existing}), seed skipped`)
+    return
+  }
+
+  const teams = await db.team.findMany({
+    where: { organizationId },
+    select: { id: true, name: true },
+  })
+  const idOf = new Map(teams.map((team) => [team.name, team.id]))
+
+  for (const form of REQUEST_FORM_SEED) {
+    const teamIds =
+      form.departments === 'all'
+        ? teams.map((team) => team.id)
+        : form.departments
+            .map((name) => idOf.get(name))
+            .filter((id): id is string => id !== undefined)
+
+    // A published form offered to nobody is a dead entry in the catalogue, which is exactly
+    // what the builder refuses to save. Left as a draft for an admin to place instead.
+    const placed = teamIds.length > 0
+
+    await db.requestForm.create({
+      data: {
+        organizationId,
+        name: form.name,
+        description: form.description,
+        status: placed ? 'published' : 'draft',
+        fields: form.fields,
+        teams: { create: teamIds.map((teamId) => ({ teamId })) },
+      },
+    })
+
+    console.log(
+      placed
+        ? `  + form ${form.name} (${teamIds.length} departments)`
+        : `  + form ${form.name} (draft: none of its departments exist)`,
+    )
   }
 }
 
