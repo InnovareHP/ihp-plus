@@ -20,6 +20,7 @@ import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/page-shell'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
+import { useApprovers } from '@/features/requests/use-approvers'
 import { useDepartmentLeads } from '@/features/teams/use-department-leads'
 import {
   createTeamSchema,
@@ -56,6 +57,8 @@ const TEAM_FILTERS: readonly FilterControl[] = [
 export function TeamsPanel() {
   const teams = useTeams()
   const leads = useDepartmentLeads()
+  // Reading approvers needs admin; for anyone else the column says so instead of erroring.
+  const approvers = useApprovers()
   const { query, setQuery, clearFilters } = useUrlQuery(parseTeamQuery, DEFAULT_TEAM_QUERY)
   const [createOpened, createModal] = useDisclosure(false)
   const [renaming, setRenaming] = useState<TeamRow | null>(null)
@@ -75,6 +78,18 @@ export function TeamsPanel() {
     }
     return byTeam
   }, [leads.data])
+
+  // Same shape as leadNames: resolved once for the table, not per row.
+  const approverNames = useMemo(() => {
+    const byTeam = new Map<string, string[]>()
+    for (const row of approvers.data ?? []) {
+      byTeam.set(
+        row.teamId,
+        row.approvers.map((person) => person.name),
+      )
+    }
+    return byTeam
+  }, [approvers.data])
 
   const term = query.search.trim().toLowerCase()
   const rows = useMemo(
@@ -124,6 +139,36 @@ export function TeamsPanel() {
           <Group gap={4} wrap="wrap">
             {names.map((name) => (
               <Badge key={name} variant="light" size="sm">
+                {name}
+              </Badge>
+            ))}
+          </Group>
+        )
+      },
+    },
+    {
+      key: 'approvers',
+      header: 'Approvers',
+      render: (team) => {
+        // Only an admin may read the approver list, so for everyone else the cell says that
+        // rather than claiming the department has none.
+        if (approvers.isError) {
+          return (
+            <Text size="sm" c="dimmed">
+              Admins only
+            </Text>
+          )
+        }
+
+        const names = approverNames.get(team.id) ?? []
+        return names.length === 0 ? (
+          <Text size="sm" c="dimmed">
+            {approvers.isPending ? 'Loading…' : 'Nobody yet'}
+          </Text>
+        ) : (
+          <Group gap={4} wrap="wrap">
+            {names.map((name) => (
+              <Badge key={name} variant="light" size="sm" color="grape">
                 {name}
               </Badge>
             ))}

@@ -14,10 +14,13 @@ const actions = vi.hoisted(() => ({
   removeFromTeam: vi.fn(),
 }))
 
+const requests = vi.hoisted(() => ({ listApprovers: vi.fn(), setApprover: vi.fn() }))
+
 const nav = vi.hoisted(() => ({ replace: vi.fn(), searchParams: new URLSearchParams() }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 
 vi.mock('../actions', () => actions)
+vi.mock('@/features/requests/rpc', () => requests)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: nav.replace, refresh: vi.fn(), push: vi.fn() }),
@@ -45,6 +48,37 @@ describe('TeamsPanel', () => {
     actions.deleteTeam.mockResolvedValue({ ok: true })
     actions.listAssignableUsers.mockResolvedValue({ ok: true, data: [] })
     actions.listTeamMembers.mockResolvedValue({ ok: true, data: [] })
+    requests.listApprovers.mockResolvedValue([
+      {
+        teamId: 'team-1',
+        teamName: 'Finance',
+        approvers: [{ userId: 'user-1', name: 'Ada Lovelace', email: 'ada@innovarehp.com' }],
+      },
+      { teamId: 'team-2', teamName: 'Information Technology', approvers: [] },
+    ])
+  })
+
+  it('names the approvers of each department', async () => {
+    render(<TeamsPanel />)
+
+    const row = await screen.findByRole('row', { name: /Finance/ })
+    expect(within(row).getByText('Ada Lovelace')).toBeInTheDocument()
+  })
+
+  it('says a department with no approver has nobody rather than leaving the cell blank', async () => {
+    render(<TeamsPanel />)
+
+    const row = await screen.findByRole('row', { name: /Information Technology/ })
+    expect(within(row).getAllByText('Nobody yet').length).toBeGreaterThan(0)
+  })
+
+  it('tells a non-admin the approvers are not theirs to see', async () => {
+    // loadApprovers requires admin, so for anyone else the query rejects.
+    requests.listApprovers.mockRejectedValue(new Error('You do not have permission.'))
+    render(<TeamsPanel />)
+
+    const row = await screen.findByRole('row', { name: /Finance/ })
+    expect(within(row).getByText('Admins only')).toBeInTheDocument()
   })
 
   it('lists each department with how many people are in it', async () => {
