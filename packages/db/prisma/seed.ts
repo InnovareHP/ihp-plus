@@ -1,6 +1,7 @@
 // Must come first: it sets DATABASE_URL before the client module reads it.
 import './load-env'
 import { db } from '../src/client'
+import { CATALOG_SEED } from './catalog'
 import { DEMO_CLIENTS } from './client-seed-data'
 import { LOOKUP_OPTION_SEED } from './lookup-seed-data'
 import { REQUEST_FORM_SEED } from './request-seed-data'
@@ -55,6 +56,7 @@ async function main() {
   await seedLookupOptions(organization.id)
   await seedRequestForms(organization.id)
   await seedDemoClients(organization.id)
+  await seedCatalog(organization.id)
 
   if (!OWNER_EMAIL) {
     console.log('ORG_OWNER_EMAIL is unset, so no owner was assigned.')
@@ -241,6 +243,30 @@ async function seedDemoClients(organizationId: string) {
     })),
   })
   console.log(`  + ${DEMO_CLIENTS.length} demo clients`)
+}
+
+/**
+ * The published rate card, so a new organization can write a contract on day one. createMany
+ * with skipDuplicates rather than upsert: a price someone has since edited in the portal is
+ * theirs, and a second run must not push it back to the card.
+ */
+async function seedCatalog(organizationId: string) {
+  const created = await db.catalogItem.createMany({
+    data: CATALOG_SEED.map((item, index) => ({
+      id: crypto.randomUUID(),
+      organizationId,
+      category: item.category,
+      name: item.name,
+      description: item.description,
+      priceMinCents: item.priceMinCents,
+      priceMaxCents: item.priceMaxCents,
+      unit: item.unit,
+      percentOfSpend: item.percentOfSpend ?? null,
+      sortOrder: index,
+    })),
+    skipDuplicates: true,
+  })
+  if (created.count > 0) console.log(`  + ${created.count} catalog items`)
 }
 
 main()

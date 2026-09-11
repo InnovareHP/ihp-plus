@@ -1,0 +1,117 @@
+// Service contracts with clients, in their own Postgres schema. It stays out of auth.prisma
+// because `pnpm db:auth-schema` rewrites that file wholesale.
+//
+// Money is stored in whole cents as Int, never Float: 0.1 + 0.2 is not 0.3 in binary floating
+// point, and a contract total has to reconcile with what Stripe charged to the cent.
+
+// The menu a contract is built from: one row per service, bundle or add-on. Seeded from the
+// published rate card and editable in the portal, because a price changes without a deploy.
+model CatalogItem {
+  id String @id @default(uuid())
+  // A plain column, not a relation: a relation field would have to be added to the generated
+  // Organization model in auth.prisma.
+  organizationId String
+
+  /// "creative" | "social" | "bundle" | "addon" — the section of the rate card.
+  category String
+  name     String
+  /// The rate card's own wording, shown when picking an item.
+  description String?
+
+  /// Inclusive price range in cents. A single price sets both to the same value, which is why
+  /// there is no separate "fixed price" flag to keep in step.
+  priceMinCents Int
+  priceMaxCents Int
+  /// "project" | "month" | "campaign" | "deck" | "video" | "once" — what the price buys.
+  unit String @default("project")
+
+  /// Percentage of ad spend instead of a flat fee, where the rate card quotes one.
+  percentOfSpend Int?
+
+  sortOrder Int @default(0)
+
+  // Archiving rather than deleting: a contract already quoting this item stays readable.
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([organizationId, category, name])
+  @@index([organizationId, category, archivedAt])
+  @@map("catalogItem")
+  @@schema("contracts")
+}
+
+// What a client agreed to. Stripe's ids are nullable because a contract is drafted, priced and
+// agreed in the portal first; billing is attached once it is signed.
+model Contract {
+  id             String  @id @default(uuid())
+  organizationId String
+  clientId       String
+  ownerId        String?
+  createdById    String?
+
+  /// Human reference quoted in email and on an invoice, e.g. "IHP-C-0007".
+  reference String
+  title     String
+
+  /// "draft" | "sent" | "active" | "paused" | "cancelled" | "completed".
+  status String @default("draft")
+
+  /// "monthly" | "project" — whether it recurs. Decides subscription vs invoice in Stripe.
+  billingCycle String @default("monthly")
+
+  /// Cached sum of the line items in cents, so a list does not aggregate to render a row.
+  subtotalCents Int @default(0)
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  /// The scope controls, stored as agreed text rather than parsed: they are contract terms a
+  /// human reads, and every proposal states them.
+  terms String?
+
+  /// Set once the client agrees, which is what makes the contract billable.
+  signedAt DateTime?
+
+  // Stripe owns the money; these only point at it. Nullable until billing is attached.
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  lines ContractLine[]
+
+  @@unique([organizationId, reference])
+  @@index([organizationId, status, archivedAt])
+  @@index([clientId])
+  @@map("contract")
+  @@schema("contracts")
+}
+
+// One agreed service on a contract. The catalog's name and price are copied here rather than
+// read through the relation, so re-pricing the rate card never rewrites a signed contract.
+model ContractLine {
+  id         String   @id @default(uuid())
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  /// Which catalog row this came from, kept for reporting. Null once that row is deleted.
+  catalogItemId String?
+
+  name        String
+  description String?
+  /// The agreed price, which the range on the catalog row only bounded.
+  unitPriceCents Int
+  quantity       Int    @default(1)
+  unit           String @default("project")
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([contractId])
+  @@map("contractLine")
+  @@schema("contracts")
+}
