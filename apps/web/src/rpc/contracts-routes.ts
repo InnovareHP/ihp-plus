@@ -8,6 +8,7 @@ import {
   loadContractsPage,
   loadContractTemplate,
   setContractStatus,
+  updateContract,
   updateContractTemplate,
 } from '@/features/contracts/service'
 import {
@@ -39,6 +40,28 @@ export const contracts: ServiceImpl<typeof ContractsService> = {
   createContract: async (request) => ({
     contract: detailToProto(
       await createContract({
+        clientId: request.clientId,
+        title: request.title,
+        billingCycle: cycleFromProto(request.billingCycle),
+        startDate: request.startDate,
+        endDate: request.endDate,
+        terms: request.terms,
+        lines: request.lines.map((line) => ({
+          catalogItemId: line.catalogItemId,
+          name: line.name,
+          description: line.description,
+          unitPriceCents: line.unitPriceCents,
+          quantity: line.quantity,
+          unit: catalogUnitFromProto(line.unit),
+        })),
+      }),
+    ),
+  }),
+
+  updateContract: async (request) => ({
+    contract: detailToProto(
+      await updateContract({
+        contractId: request.contractId,
         clientId: request.clientId,
         title: request.title,
         billingCycle: cycleFromProto(request.billingCycle),

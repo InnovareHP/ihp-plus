@@ -7,6 +7,9 @@ import {
   catalogItemSchema,
   contractDraftSchema,
   contractStatusSchema,
+  contractUpdateSchema,
+  CONTRACT_TRANSITIONS,
+  isEditable,
   subtotalOf,
   type BillingCycle,
   type CatalogCategory,
@@ -378,6 +381,68 @@ export async function createContract(input: unknown): Promise<ContractDetail> {
   return loadContract(contract.id)
 }
 
+export async function updateContract(input: unknown): Promise<ContractDetail> {
+  const { organizationId } = await requireManager()
+  const parsed = contractUpdateSchema.safeParse(input)
+  if (!parsed.success) {
+    throw new ConnectError(
+      parsed.error.issues[0]?.message ?? 'Check the highlighted fields.',
+      Code.InvalidArgument,
+    )
+  }
+
+  const values = parsed.data
+  const existing = await db.contract.findFirst({
+    where: { id: values.contractId, organizationId },
+    select: { id: true, status: true },
+  })
+  if (!existing) throw new ConnectError('That contract no longer exists.', Code.NotFound)
+
+  // Checked here rather than only in the UI: a contract a client has been shown must not be
+  // re-priced behind their back, whatever the caller sends.
+  if (!isEditable(existing.status as ContractStatus)) {
+    throw new ConnectError(
+      'Only a draft can be edited. Return it to draft first.',
+      Code.FailedPrecondition,
+    )
+  }
+
+  const client = await db.client.findFirst({
+    where: { id: values.clientId, organizationId },
+    select: { id: true },
+  })
+  if (!client) throw new ConnectError('That client no longer exists.', Code.NotFound)
+
+  await db.contract.update({
+    where: { id: existing.id },
+    data: {
+      clientId: values.clientId,
+      title: values.title,
+      billingCycle: values.billingCycle,
+      subtotalCents: subtotalOf(values.lines),
+      startDate: dateOrNull(values.startDate),
+      endDate: dateOrNull(values.endDate),
+      terms: values.terms || null,
+      // Replaced wholesale rather than diffed: a line carries no identity of its own once the
+      // contract is being re-priced, and matching them up would invent one.
+      lines: {
+        deleteMany: {},
+        create: values.lines.map((line, index) => ({
+          catalogItemId: line.catalogItemId || null,
+          name: line.name,
+          description: line.description || null,
+          unitPriceCents: line.unitPriceCents,
+          quantity: line.quantity,
+          unit: line.unit,
+          sortOrder: index,
+        })),
+      },
+    },
+  })
+
+  return loadContract(existing.id)
+}
+
 export async function setContractStatus(input: unknown): Promise<ContractDetail> {
   const { organizationId } = await requireManager()
   const parsed = contractStatusSchema.safeParse(input)
@@ -385,9 +450,17 @@ export async function setContractStatus(input: unknown): Promise<ContractDetail>
 
   const contract = await db.contract.findFirst({
     where: { id: parsed.data.contractId, organizationId },
-    select: { id: true, signedAt: true },
+    select: { id: true, signedAt: true, status: true },
   })
   if (!contract) throw new ConnectError('That contract no longer exists.', Code.NotFound)
+
+  const from = contract.status as ContractStatus
+  if (!CONTRACT_TRANSITIONS[from].includes(parsed.data.status)) {
+    throw new ConnectError(
+      `A ${from} contract cannot become ${parsed.data.status}.`,
+      Code.FailedPrecondition,
+    )
+  }
 
   await db.contract.update({
     where: { id: contract.id },

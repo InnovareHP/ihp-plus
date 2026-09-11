@@ -21,6 +21,7 @@ import type {
   ContractStatus,
   ContractsPage,
   ContractTemplateValues,
+  ContractUpdateValues,
 } from './schema'
 
 /**
@@ -64,6 +65,30 @@ export async function getContract(contractId: string): Promise<ContractDetail> {
 export async function createContract(values: ContractDraftValues): Promise<ContractDetail> {
   const response = await call(() =>
     browserClients.contracts.createContract({
+      clientId: values.clientId,
+      title: values.title,
+      billingCycle: cycleToProto(values.billingCycle),
+      startDate: values.startDate,
+      endDate: values.endDate,
+      terms: values.terms,
+      lines: values.lines.map((line) => ({
+        $typeName: 'ihp.contracts.v1.ContractDraftLine' as const,
+        catalogItemId: line.catalogItemId,
+        name: line.name,
+        description: line.description,
+        unitPriceCents: line.unitPriceCents,
+        quantity: line.quantity,
+        unit: unitToProto(line.unit),
+      })),
+    }),
+  )
+  return detailFromProto(response.contract)
+}
+
+export async function updateContract(values: ContractUpdateValues): Promise<ContractDetail> {
+  const response = await call(() =>
+    browserClients.contracts.updateContract({
+      contractId: values.contractId,
       clientId: values.clientId,
       title: values.title,
       billingCycle: cycleToProto(values.billingCycle),

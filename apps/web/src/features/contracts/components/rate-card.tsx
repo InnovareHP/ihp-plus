@@ -1,7 +1,8 @@
 'use client'
 
 import { Alert, Badge, Button, Group, Skeleton, Stack, Table, Text } from '@mantine/core'
-import { EmptyState, PageSection } from '@/components/page-shell'
+import { PageSection } from '@/components/page-section'
+import { EmptyState } from '@/components/empty-state'
 import {
   CATALOG_CATEGORIES,
   CATALOG_CATEGORY_LABELS,

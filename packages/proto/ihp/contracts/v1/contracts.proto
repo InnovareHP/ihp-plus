@@ -176,6 +176,21 @@ message CreateContractResponse {
   ContractDetail contract = 1;
 }
 
+message UpdateContractRequest {
+  string contract_id = 1;
+  string client_id = 2;
+  string title = 3;
+  BillingCycle billing_cycle = 4;
+  string start_date = 5;
+  string end_date = 6;
+  string terms = 7;
+  repeated ContractDraftLine lines = 8;
+}
+
+message UpdateContractResponse {
+  ContractDetail contract = 1;
+}
+
 message SetContractStatusRequest {
   string contract_id = 1;
   ContractStatus status = 2;
@@ -225,6 +240,7 @@ service ContractsService {
   rpc ListContracts(ListContractsRequest) returns (ListContractsResponse);
   rpc GetContract(GetContractRequest) returns (GetContractResponse);
   rpc CreateContract(CreateContractRequest) returns (CreateContractResponse);
+  rpc UpdateContract(UpdateContractRequest) returns (UpdateContractResponse);
   rpc SetContractStatus(SetContractStatusRequest) returns (SetContractStatusResponse);
   rpc ListCatalog(ListCatalogRequest) returns (ListCatalogResponse);
   rpc CreateCatalogItem(CreateCatalogItemRequest) returns (CreateCatalogItemResponse);

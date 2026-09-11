@@ -13,6 +13,7 @@ import {
   listCatalog,
   listContracts,
   setContractStatus,
+  updateContract,
   updateContractTemplate,
 } from './rpc'
 import type {
@@ -21,6 +22,7 @@ import type {
   ContractQuery,
   ContractStatus,
   ContractTemplateValues,
+  ContractUpdateValues,
 } from './schema'
 
 export function useContracts(query: ContractQuery) {
@@ -90,6 +92,24 @@ export function useCreateContract() {
     },
     // Not optimistic: the server assigns the reference and the subtotal, so there is nothing
     // truthful to show until it answers.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: contractKeys.lists() }),
+  })
+}
+
+export function useUpdateContract() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (values: ContractUpdateValues) => updateContract(values),
+    onSuccess: (contract) => {
+      track(contractEvents.updated)
+      queryClient.setQueryData(contractKeys.detail(contract.id), contract)
+      announceSuccess(`Contract ${contract.reference} saved.`)
+    },
+    onError: (error: Error) => {
+      track(contractEvents.updateFailed, { reason: error.message })
+      announceFailure(error.message)
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: contractKeys.lists() }),
   })
 }

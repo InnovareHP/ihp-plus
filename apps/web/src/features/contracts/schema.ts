@@ -49,6 +49,35 @@ export const CONTRACT_STATUS_COLORS: Record<ContractStatus, string> = {
   completed: 'teal',
 }
 
+/**
+ * Where a contract may go next. Cancelled and completed are terminal: a contract that ended is
+ * a record of what happened, and reopening one would rewrite history rather than correct it.
+ */
+export const CONTRACT_TRANSITIONS: Record<ContractStatus, readonly ContractStatus[]> = {
+  draft: ['sent', 'cancelled'],
+  // Back to draft while nobody has agreed yet, so a mistake in a sent contract is fixable.
+  sent: ['active', 'draft', 'cancelled'],
+  active: ['paused', 'completed', 'cancelled'],
+  paused: ['active', 'completed', 'cancelled'],
+  cancelled: [],
+  completed: [],
+}
+
+/** What the button says, which is the action rather than the state it lands in. */
+export const CONTRACT_TRANSITION_LABELS: Record<ContractStatus, string> = {
+  draft: 'Return to draft',
+  sent: 'Publish to client',
+  active: 'Mark as agreed',
+  paused: 'Pause',
+  cancelled: 'Cancel',
+  completed: 'Mark complete',
+}
+
+/** Only a draft may be re-priced: anything sent is what a client has been shown. */
+export function isEditable(status: ContractStatus) {
+  return status === 'draft'
+}
+
 export const BILLING_CYCLES = ['monthly', 'project'] as const
 
 export const BILLING_CYCLE_LABELS: Record<BillingCycle, string> = {
@@ -80,6 +109,10 @@ export const contractDraftSchema = z.object({
   endDate: z.string().trim().default(''),
   terms: z.string().trim().max(8_000).default(''),
   lines: z.array(contractLineSchema).min(1, 'A contract needs at least one service'),
+})
+
+export const contractUpdateSchema = contractDraftSchema.extend({
+  contractId: z.string().min(1),
 })
 
 export const contractStatusSchema = z.object({
@@ -121,6 +154,7 @@ export type ContractLineValues = z.infer<typeof contractLineSchema>
 export type ContractDraftValues = z.infer<typeof contractDraftSchema>
 /** What the form holds before zod applies its defaults; the resolver produces the type above. */
 export type ContractDraftInput = z.input<typeof contractDraftSchema>
+export type ContractUpdateValues = z.infer<typeof contractUpdateSchema>
 export type CatalogItemValues = z.infer<typeof catalogItemSchema>
 export type ContractQuery = z.infer<typeof contractQuerySchema>
 

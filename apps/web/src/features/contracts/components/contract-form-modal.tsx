@@ -20,7 +20,7 @@ import { useEffect, useRef } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { DEFAULT_CLIENT_QUERY } from '@/features/clients/schema'
-import { useClients } from '@/features/clients/use-clients'
+import { useClients } from '@/features/clients/hooks/use-clients'
 import {
   BILLING_CYCLES,
   BILLING_CYCLE_LABELS,
@@ -32,10 +32,16 @@ import {
   lineTotalCents,
   subtotalOf,
   type CatalogItemRow,
+  type ContractDetail,
   type ContractDraftInput,
   type ContractDraftValues,
 } from '../schema'
-import { useCatalog, useContractTemplate, useCreateContract } from '../use-contracts'
+import {
+  useCatalog,
+  useContractTemplate,
+  useCreateContract,
+  useUpdateContract,
+} from '../use-contracts'
 
 const EMPTY_DRAFT: ContractDraftInput = {
   clientId: '',
@@ -52,9 +58,31 @@ export interface ContractFormModalProps {
   onClose: () => void
   /** Pre-selects the client when the contract is started from one. */
   clientId?: string
+  /** Present when editing; the service refuses anything that is not still a draft. */
+  contract?: ContractDetail
 }
 
-export function ContractFormModal({ opened, onClose, clientId }: ContractFormModalProps) {
+function draftOf(contract: ContractDetail): ContractDraftInput {
+  return {
+    clientId: contract.clientId,
+    title: contract.title,
+    billingCycle: contract.billingCycle,
+    // The wire carries a full ISO timestamp; a date input wants the day.
+    startDate: contract.startDate?.slice(0, 10) ?? '',
+    endDate: contract.endDate?.slice(0, 10) ?? '',
+    terms: contract.terms ?? '',
+    lines: contract.lines.map((line) => ({
+      catalogItemId: line.catalogItemId,
+      name: line.name,
+      description: line.description ?? '',
+      unitPriceCents: line.unitPriceCents,
+      quantity: line.quantity,
+      unit: line.unit,
+    })),
+  }
+}
+
+export function ContractFormModal({ opened, onClose, clientId, contract }: ContractFormModalProps) {
   const catalog = useCatalog()
   const template = useContractTemplate()
   // One page of clients sorted by name, which the searchable Select filters. A book longer
@@ -66,6 +94,8 @@ export function ContractFormModal({ opened, onClose, clientId }: ContractFormMod
     sortDirection: 'asc',
   })
   const create = useCreateContract()
+  const update = useUpdateContract()
+  const isEditing = contract !== undefined
 
   // Three generics because the schema has defaults: the form holds the input shape and the
   // resolver hands onSubmit the parsed output.
@@ -73,7 +103,7 @@ export function ContractFormModal({ opened, onClose, clientId }: ContractFormMod
     resolver: zodResolver(contractDraftSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: { ...EMPTY_DRAFT, clientId: clientId ?? '' },
+    defaultValues: contract ? draftOf(contract) : { ...EMPTY_DRAFT, clientId: clientId ?? '' },
   })
   const {
     control,
@@ -100,7 +130,8 @@ export function ContractFormModal({ opened, onClose, clientId }: ContractFormMod
 
   // Composition is a side effect of the picked services changing, which is external to this
   // render. It stops as soon as the terms are edited: what somebody typed is never overwritten.
-  const termsEdited = useRef(false)
+  // An existing contract already has agreed wording; composing over it would discard it.
+  const termsEdited = useRef(isEditing)
   useEffect(() => {
     if (termsEdited.current || getFieldState('terms').isDirty) return
     setValue('terms', suggestedTerms)
@@ -120,15 +151,19 @@ export function ContractFormModal({ opened, onClose, clientId }: ContractFormMod
 
   async function onSubmit(values: ContractDraftValues) {
     try {
-      await create.mutateAsync(values)
+      if (contract) {
+        await update.mutateAsync({ ...values, contractId: contract.id })
+      } else {
+        await create.mutateAsync(values)
+      }
     } catch (error) {
       setError('root', {
-        message: error instanceof Error ? error.message : 'Could not create the contract.',
+        message: error instanceof Error ? error.message : 'Could not save the contract.',
       })
       return
     }
 
-    reset({ ...EMPTY_DRAFT, clientId: clientId ?? '' })
+    if (!contract) reset({ ...EMPTY_DRAFT, clientId: clientId ?? '' })
     onClose()
   }
 
@@ -138,10 +173,16 @@ export function ContractFormModal({ opened, onClose, clientId }: ContractFormMod
   }))
 
   return (
-    <Modal opened={opened} onClose={onClose} title="New contract" size="xl" centered>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={isEditing ? `Edit ${contract.reference}` : 'New contract'}
+      size="xl"
+      centered
+    >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Stack gap="md">
-          <FormError message={errors.root?.message} title="Could not create the contract" />
+          <FormError message={errors.root?.message} title="Could not save the contract" />
 
           <Group grow align="flex-start">
             <Controller
@@ -371,7 +412,7 @@ export function ContractFormModal({ opened, onClose, clientId }: ContractFormMod
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
-              {isSubmitting ? 'Creating…' : 'Create contract'}
+              {isSubmitting ? 'Saving…' : isEditing ? 'Save changes' : 'Create contract'}
             </Button>
           </Group>
         </Stack>

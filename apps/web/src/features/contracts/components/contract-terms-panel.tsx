@@ -3,7 +3,7 @@
 import { Alert, Button, Group, Skeleton, Stack, Text, Textarea } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
-import { PageSection } from '@/components/page-shell'
+import { PageSection } from '@/components/page-section'
 import type { ContractTemplateValues } from '../schema'
 import { useContractTemplate, useUpdateContractTemplate } from '../use-contracts'
 

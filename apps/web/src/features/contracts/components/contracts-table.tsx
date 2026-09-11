@@ -1,10 +1,11 @@
 'use client'
 
-import { Badge, Button, Group, Stack, Text } from '@mantine/core'
+import { Badge, Button, Group, Stack, Text, UnstyledButton } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
 import { useDisclosure } from '@mantine/hooks'
+import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { EmptyState } from '@/components/page-shell'
+import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 import {
@@ -16,9 +17,11 @@ import {
   contractQuerySchema,
   formatCents,
   isFilteredContractQuery,
+  type ContractDetail,
   type ContractRow,
 } from '../schema'
 import { useContracts } from '../use-contracts'
+import { ContractDrawer } from './contract-drawer'
 import { ContractFormModal } from './contract-form-modal'
 
 const created = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
@@ -41,6 +44,8 @@ export function ContractsTable({ canManage }: { canManage: boolean }) {
   const { query, setQuery, clearFilters } = useUrlQuery(parseContractQuery, DEFAULT_CONTRACT_QUERY)
   const contracts = useContracts(query)
   const [createOpened, createModal] = useDisclosure(false)
+  const [openContractId, setOpenContractId] = useState<string | null>(null)
+  const [editing, setEditing] = useState<ContractDetail | null>(null)
 
   const columns: DataTableColumn<ContractRow>[] = [
     {
@@ -49,14 +54,19 @@ export function ContractsTable({ canManage }: { canManage: boolean }) {
       rowHeader: true,
       sortable: true,
       render: (row) => (
-        <Stack gap={0}>
-          <Text size="sm" fw={500}>
-            {row.title}
-          </Text>
-          <Text size="xs" c="dimmed" ff="monospace">
-            {row.reference}
-          </Text>
-        </Stack>
+        <UnstyledButton
+          onClick={() => setOpenContractId(row.id)}
+          aria-label={`Open ${row.reference}, ${row.title}`}
+        >
+          <Stack gap={0}>
+            <Text size="sm" fw={500} td="underline">
+              {row.title}
+            </Text>
+            <Text size="xs" c="dimmed" ff="monospace">
+              {row.reference}
+            </Text>
+          </Stack>
+        </UnstyledButton>
       ),
     },
     {
@@ -182,6 +192,29 @@ export function ContractsTable({ canManage }: { canManage: boolean }) {
       />
 
       {canManage ? <ContractFormModal opened={createOpened} onClose={createModal.close} /> : null}
+
+      <ContractDrawer
+        contractId={openContractId}
+        onClose={() => setOpenContractId(null)}
+        canManage={canManage}
+        onEdit={(contract) => {
+          // One overlay at a time: the drawer closes so the form is not stacked on it.
+          setOpenContractId(null)
+          setEditing(contract)
+        }}
+      />
+
+      {editing ? (
+        <ContractFormModal
+          opened
+          contract={editing}
+          onClose={() => {
+            setEditing(null)
+            // Back to where the edit was started from, rather than to a bare table.
+            setOpenContractId(editing.id)
+          }}
+        />
+      ) : null}
     </Stack>
   )
 }

@@ -3,6 +3,8 @@ import type { EventName } from '@/lib/analytics'
 export const contractEvents = {
   created: 'contracts.contract.created',
   createFailed: 'contracts.contract.create_failed',
+  updated: 'contracts.contract.updated',
+  updateFailed: 'contracts.contract.update_failed',
   statusChanged: 'contracts.contract.status_changed',
   statusChangeFailed: 'contracts.contract.status_change_failed',
   catalogItemAdded: 'contracts.catalog_item.added',
