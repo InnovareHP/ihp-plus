@@ -91,7 +91,9 @@ describe('ApprovalsPanel', () => {
     render(<ApprovalsPanel />)
 
     const theirs = await screen.findByRole('row', { name: /Ada Lovelace/ })
-    expect(within(theirs).getByRole('button', { name: /Decide Ada Lovelace/ })).toBeInTheDocument()
+    expect(
+      within(theirs).getByRole('button', { name: /Approve or reject Ada Lovelace/ }),
+    ).toBeInTheDocument()
 
     const mine = screen.getByRole('row', { name: /Grace Hopper/ })
     expect(within(mine).queryByRole('button', { name: /Decide/ })).not.toBeInTheDocument()
@@ -110,7 +112,9 @@ describe('ApprovalsPanel', () => {
     const person = user()
     render(<ApprovalsPanel />)
 
-    await person.click(await screen.findByRole('button', { name: /Decide Ada Lovelace/ }))
+    await person.click(
+      await screen.findByRole('button', { name: /Approve or reject Ada Lovelace/ }),
+    )
     await person.click(await screen.findByRole('button', { name: 'Reject request' }))
 
     expect(
@@ -129,7 +133,9 @@ describe('ApprovalsPanel', () => {
     const person = user()
     render(<ApprovalsPanel />)
 
-    await person.click(await screen.findByRole('button', { name: /Decide Ada Lovelace/ }))
+    await person.click(
+      await screen.findByRole('button', { name: /Approve or reject Ada Lovelace/ }),
+    )
     await person.click(await screen.findByRole('button', { name: 'Approve request' }))
 
     await waitFor(() =>
@@ -151,7 +157,9 @@ describe('ApprovalsPanel', () => {
     const person = user()
     render(<ApprovalsPanel />)
 
-    await person.click(await screen.findByRole('button', { name: /Decide Ada Lovelace/ }))
+    await person.click(
+      await screen.findByRole('button', { name: /Approve or reject Ada Lovelace/ }),
+    )
     await person.click(await screen.findByRole('button', { name: 'Approve request' }))
 
     await waitFor(() => expect(rpc.decideRequest).toHaveBeenCalled())

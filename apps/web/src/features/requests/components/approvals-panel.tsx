@@ -110,17 +110,20 @@ export function ApprovalsPanel() {
             Answers
           </Button>
           {row.canDecide ? (
-            <>
-              <Button
-                variant="subtle"
-                size="compact-sm"
-                aria-label={`Decide ${row.requesterName}'s ${row.formName} request`}
-                onClick={() => setDeciding(row)}
-              >
-                Decide
-              </Button>
-            </>
-          ) : null}
+            <Button
+              variant="subtle"
+              size="compact-sm"
+              aria-label={`Approve or reject ${row.requesterName}'s ${row.formName} request`}
+              onClick={() => setDeciding(row)}
+            >
+              Approve or reject
+            </Button>
+          ) : (
+            // A cell with no control and no reason reads as a bug; say which rule applies.
+            <Text size="sm" c="dimmed">
+              {whyNotDecidable(row)}
+            </Text>
+          )}
         </Group>
       ),
     },
@@ -208,4 +211,15 @@ export function ApprovalsPanel() {
       </Modal>
     </Stack>
   )
+}
+
+/**
+ * Why a row offers no decision. The rules live in canDecide() on the server; this only has to
+ * name the one that applies, so an empty Actions cell is never mistaken for a broken table.
+ */
+function whyNotDecidable(row: RequestRow) {
+  if (row.status !== 'pending') return 'Already decided'
+  // Separation of duties: nobody decides their own request, whatever their role.
+  if (row.isMine) return 'Your own request'
+  return 'Not your department'
 }
