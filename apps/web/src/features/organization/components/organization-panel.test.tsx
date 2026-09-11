@@ -12,6 +12,12 @@ const nav = vi.hoisted(() => ({ refresh: vi.fn() }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 
 vi.mock('../actions', () => actions)
+// The panel nests the contract terms editor, which talks over RPC; this screen is not where
+// that is under test, so it is stubbed rather than left to reach a transport.
+vi.mock('@/features/contracts/rpc', () => ({
+  getContractTemplate: vi.fn(async () => ({ scopeTemplate: '', standardTerms: '' })),
+  updateContractTemplate: vi.fn(async () => ({ scopeTemplate: '', standardTerms: '' })),
+}))
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: nav.refresh, replace: vi.fn(), push: vi.fn() }),

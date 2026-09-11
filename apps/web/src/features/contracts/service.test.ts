@@ -24,8 +24,14 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...guard,
 }))
 
-const { createCatalogItem, createContract, loadContract, loadContractsPage, setContractStatus } =
-  await import('./service')
+const {
+  createCatalogItem,
+  createContract,
+  loadContract,
+  loadContractsPage,
+  setContractStatus,
+  updateContract,
+} = await import('./service')
 
 const listContracts = (query: Record<string, unknown> = {}) =>
   loadContractsPage(contractQuerySchema.parse(query))
@@ -219,7 +225,7 @@ describe('setContractStatus', () => {
   })
 
   it('stamps signedAt the first time a contract goes active', async () => {
-    queueWriteThenReload({ id: 'contract-1', signedAt: null })
+    queueWriteThenReload({ id: 'contract-1', signedAt: null, status: 'sent' })
 
     await setContractStatus({ contractId: 'contract-1', status: 'active' })
 
@@ -228,19 +234,94 @@ describe('setContractStatus', () => {
 
   it('keeps the original signing date when a paused contract resumes', async () => {
     const signedAt = new Date('2026-01-05T00:00:00.000Z')
-    queueWriteThenReload({ id: 'contract-1', signedAt })
+    queueWriteThenReload({ id: 'contract-1', signedAt, status: 'paused' })
 
     await setContractStatus({ contractId: 'contract-1', status: 'active' })
 
     expect(prisma.contract.update.mock.calls[0]?.[0].data.signedAt).toBe(signedAt)
   })
 
+  it('refuses a transition the flow does not allow', async () => {
+    // Straight from draft to active would skip showing it to the client.
+    queueWriteThenReload({ id: 'contract-1', signedAt: null, status: 'draft' })
+
+    expect(
+      await codeOf(() => setContractStatus({ contractId: 'contract-1', status: 'active' })),
+    ).toBe(Code.FailedPrecondition)
+    expect(prisma.contract.update).not.toHaveBeenCalled()
+  })
+
+  it('refuses to reopen a cancelled contract', async () => {
+    queueWriteThenReload({ id: 'contract-1', signedAt: null, status: 'cancelled' })
+
+    expect(
+      await codeOf(() => setContractStatus({ contractId: 'contract-1', status: 'active' })),
+    ).toBe(Code.FailedPrecondition)
+  })
+
+  it('lets a draft be published to the client', async () => {
+    queueWriteThenReload({ id: 'contract-1', signedAt: null, status: 'draft' })
+
+    await setContractStatus({ contractId: 'contract-1', status: 'sent' })
+
+    expect(prisma.contract.update.mock.calls[0]?.[0].data.status).toBe('sent')
+  })
+
   it('leaves a draft unsigned', async () => {
-    queueWriteThenReload({ id: 'contract-1', signedAt: null })
+    queueWriteThenReload({ id: 'contract-1', signedAt: null, status: 'draft' })
 
     await setContractStatus({ contractId: 'contract-1', status: 'sent' })
 
     expect(prisma.contract.update.mock.calls[0]?.[0].data.signedAt).toBeNull()
+  })
+})
+
+describe('updateContract', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    signedInAs()
+    prisma.client.findFirst.mockResolvedValue({ id: 'client-1' })
+    prisma.contract.update.mockResolvedValue({})
+    prisma.client.findMany.mockResolvedValue([{ id: 'client-1', name: 'Atlantic Home Health' }])
+  })
+
+  const EDIT = { ...DRAFT, contractId: 'contract-1' }
+
+  it('re-prices a draft and replaces its lines wholesale', async () => {
+    queueWriteThenReload({ id: 'contract-1', status: 'draft' })
+
+    await updateContract({
+      ...EDIT,
+      lines: [
+        { name: 'Growth', unitPriceCents: 400_000, quantity: 2, unit: 'month', description: '' },
+      ],
+    })
+
+    const data = prisma.contract.update.mock.calls[0]?.[0].data
+    expect(data.subtotalCents).toBe(800_000)
+    // deleteMany before create: a line has no identity of its own once it is re-priced.
+    expect(data.lines.deleteMany).toEqual({})
+    expect(data.lines.create).toHaveLength(1)
+  })
+
+  it('refuses to edit a contract the client has already been sent', async () => {
+    queueWriteThenReload({ id: 'contract-1', status: 'sent' })
+
+    expect(await codeOf(() => updateContract(EDIT))).toBe(Code.FailedPrecondition)
+    expect(prisma.contract.update).not.toHaveBeenCalled()
+  })
+
+  it('refuses to edit an active contract, whatever the caller sends', async () => {
+    queueWriteThenReload({ id: 'contract-1', status: 'active' })
+
+    expect(await codeOf(() => updateContract(EDIT))).toBe(Code.FailedPrecondition)
+    expect(prisma.contract.update).not.toHaveBeenCalled()
+  })
+
+  it('refuses an ordinary member', async () => {
+    signedInAs({ organizationRole: 'member', portalRole: 'user' })
+
+    expect(await codeOf(() => updateContract(EDIT))).toBe(Code.PermissionDenied)
   })
 })
 
