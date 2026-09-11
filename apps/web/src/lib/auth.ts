@@ -3,7 +3,7 @@ import { db } from '@ihp/db'
 import { betterAuth } from 'better-auth/minimal'
 import { nextCookies } from 'better-auth/next-js'
 import { admin, organization } from 'better-auth/plugins'
-import { sendEmail } from './email'
+import { invitationTemplate, resetPasswordTemplate, sendEmail, verifyEmailTemplate } from './email'
 import { AUTH_BASE_PATH, invitationRoute, withBasePath } from './routes'
 
 // The invitation link is a real browser URL, so it needs the origin as well as the basePath.
@@ -43,21 +43,13 @@ export const auth = betterAuth({
     revokeSessionsOnPasswordReset: true,
     // Not awaited: a slow mail provider would leak whether the address exists.
     sendResetPassword: async ({ user, url }) => {
-      void sendEmail({
-        to: user.email,
-        subject: 'Reset your IHP Plus password',
-        text: `Open this link to choose a new password: ${url}`,
-      })
+      void sendEmail({ to: user.email, ...resetPasswordTemplate({ url }) })
     },
   },
 
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
-      void sendEmail({
-        to: user.email,
-        subject: 'Verify your IHP Plus email address',
-        text: `Confirm this address: ${url}`,
-      })
+      void sendEmail({ to: user.email, ...verifyEmailTemplate({ url }) })
     },
   },
 
@@ -96,8 +88,11 @@ export const auth = betterAuth({
         const link = `${BASE_URL}${withBasePath(invitationRoute(data.id))}`
         void sendEmail({
           to: data.email,
-          subject: `Join ${data.organization.name} on IHP Plus`,
-          text: `${data.inviter.user.name} invited you to ${data.organization.name}. Accept it here: ${link}`,
+          ...invitationTemplate({
+            organizationName: data.organization.name,
+            inviterName: data.inviter.user.name,
+            url: link,
+          }),
         })
       },
       teams: {

@@ -18,7 +18,8 @@
         "MICROSOFT_CLIENT_ID",
         "MICROSOFT_CLIENT_SECRET",
         "MICROSOFT_TENANT_ID",
-        "EMAIL_FROM",
+        "EMAIL_*",
+        "SES_*",
         "S3_*",
         "ORG_*"
       ]
@@ -37,7 +38,8 @@
         "MICROSOFT_CLIENT_ID",
         "MICROSOFT_CLIENT_SECRET",
         "MICROSOFT_TENANT_ID",
-        "EMAIL_FROM",
+        "EMAIL_*",
+        "SES_*",
         "S3_*",
         "ORG_*"
       ]
@@ -58,7 +60,8 @@
         "MICROSOFT_CLIENT_ID",
         "MICROSOFT_CLIENT_SECRET",
         "MICROSOFT_TENANT_ID",
-        "EMAIL_FROM",
+        "EMAIL_*",
+        "SES_*",
         "S3_*",
         "ORG_*"
       ]
