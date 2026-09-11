@@ -10,7 +10,10 @@ const prisma = vi.hoisted(() => ({
     update: vi.fn(),
     delete: vi.fn(),
   },
+  bluebookDocumentTeam: { groupBy: vi.fn(), deleteMany: vi.fn() },
   team: { findMany: vi.fn(), findFirst: vi.fn() },
+  // The update replaces a document's shelves and rewrites it in one transaction.
+  $transaction: vi.fn(async (run: (tx: unknown) => unknown) => run(prisma)),
 }))
 
 const guard = vi.hoisted(() => ({
@@ -49,8 +52,8 @@ const {
 const DOCUMENT = {
   id: 'doc-1',
   organizationId: 'org-1',
-  teamId: 'team-1',
-  teamName: 'Revenue Cycle',
+  // No rows here is the all-departments shelf; a document may sit on several at once.
+  teams: [{ teamId: 'team-1', teamName: 'Revenue Cycle' }],
   title: 'Claim scrubbing checklist',
   description: 'Run before submission.',
   category: 'Procedure',
@@ -75,13 +78,17 @@ function signedIn(options: { isAdmin?: boolean; leads?: string[] } = {}) {
   leads.ledTeamIds.mockResolvedValue(options.leads ?? [])
 }
 
-function formDataFor(patch: Record<string, string> = {}, file?: File) {
+const TEAMS = [
+  { id: 'team-1', name: 'Revenue Cycle' },
+  { id: 'team-2', name: 'Care Management' },
+]
+
+function formDataFor(shelves: readonly string[] = ['company'], file?: File) {
   const form = new FormData()
   form.set('title', 'Time-off policy')
   form.set('description', 'Who approves what.')
   form.set('category', 'Policy')
-  form.set('shelf', 'company')
-  for (const [key, value] of Object.entries(patch)) form.set(key, value)
+  for (const shelf of shelves) form.append('shelves', shelf)
   form.set('file', file ?? new File(['x'.repeat(64)], 'policy.pdf', { type: 'application/pdf' }))
   return form
 }
@@ -92,13 +99,15 @@ beforeEach(() => {
   prisma.bluebookDocument.count.mockResolvedValue(1)
   prisma.bluebookDocument.findMany.mockResolvedValue([DOCUMENT])
   prisma.bluebookDocument.findFirst.mockResolvedValue(DOCUMENT)
-  prisma.bluebookDocument.groupBy.mockResolvedValue([{ teamId: 'team-1', _count: { _all: 3 } }])
+  prisma.bluebookDocumentTeam.groupBy.mockResolvedValue([{ teamId: 'team-1', _count: { _all: 3 } }])
   prisma.bluebookDocument.create.mockResolvedValue({ ...DOCUMENT, id: 'doc-2' })
   prisma.bluebookDocument.update.mockResolvedValue(DOCUMENT)
-  prisma.team.findMany.mockResolvedValue([
-    { id: 'team-1', name: 'Revenue Cycle' },
-    { id: 'team-2', name: 'Care Management' },
-  ])
+  // Honours the id filter it is given: the action decides a department was deleted by
+  // comparing how many rows came back with how many it asked for.
+  prisma.team.findMany.mockImplementation(async (args: { where?: { id?: { in?: string[] } } }) => {
+    const wanted = args?.where?.id?.in
+    return TEAMS.filter((team) => !wanted || wanted.includes(team.id))
+  })
   prisma.team.findFirst.mockResolvedValue({ id: 'team-1', name: 'Revenue Cycle' })
   lookups.listManyFor.mockResolvedValue(new Map([['bluebookCategory', ['Policy', 'Procedure']]]))
 })
@@ -113,7 +122,10 @@ describe('listDocuments', () => {
       skip: 0,
       take: 25,
     })
-    expect(result).toMatchObject({ ok: true, rows: [{ id: 'doc-1', teamName: 'Revenue Cycle' }] })
+    expect(result).toMatchObject({
+      ok: true,
+      rows: [{ id: 'doc-1', teams: [{ id: 'team-1', name: 'Revenue Cycle' }] }],
+    })
   })
 
   it('marks rows the viewer may not manage, so the UI offers no dead controls', async () => {
@@ -130,12 +142,13 @@ describe('listDocuments', () => {
   it('narrows to one shelf, the company-wide one included', async () => {
     await listDocuments({ shelf: 'company' })
     expect(prisma.bluebookDocument.findMany.mock.calls.at(-1)?.[0].where.AND).toEqual([
-      { teamId: null },
+      { teams: { none: {} } },
     ])
 
+    // A document filed on several shelves has to show under each of them.
     await listDocuments({ shelf: 'team-2' })
     expect(prisma.bluebookDocument.findMany.mock.calls.at(-1)?.[0].where.AND).toEqual([
-      { teamId: 'team-2' },
+      { teams: { some: { teamId: 'team-2' } } },
     ])
   })
 
@@ -203,7 +216,7 @@ describe('uploadDocument', () => {
   it('refuses a lead filing on a department they do not lead', async () => {
     signedIn({ leads: ['team-2'] })
 
-    expect(await uploadDocument(formDataFor({ shelf: 'team-1' }))).toMatchObject({ ok: false })
+    expect(await uploadDocument(formDataFor(['team-1']))).toMatchObject({ ok: false })
     expect(storage.putObject).not.toHaveBeenCalled()
   })
 
@@ -219,8 +232,8 @@ describe('uploadDocument', () => {
     expect(contentType).toBe('application/pdf')
     expect(prisma.bluebookDocument.create.mock.calls[0]?.[0].data).toMatchObject({
       organizationId: 'org-1',
-      teamId: null,
-      teamName: null,
+      // No shelf rows is the all-departments shelf.
+      teams: { create: [] },
       title: 'Time-off policy',
       category: 'Policy',
       fileName: 'policy.pdf',
@@ -234,19 +247,47 @@ describe('uploadDocument', () => {
   it('names the department on a department shelf, so a rename later still reads', async () => {
     signedIn({ isAdmin: true })
 
-    await uploadDocument(formDataFor({ shelf: 'team-1' }))
+    await uploadDocument(formDataFor(['team-1']))
 
     expect(prisma.bluebookDocument.create.mock.calls[0]?.[0].data).toMatchObject({
-      teamId: 'team-1',
-      teamName: 'Revenue Cycle',
+      teams: { create: [{ teamId: 'team-1', teamName: 'Revenue Cycle' }] },
     })
+  })
+
+  it('files one document on several department shelves at once', async () => {
+    signedIn({ isAdmin: true })
+
+    await uploadDocument(formDataFor(['team-1', 'team-2']))
+
+    expect(prisma.bluebookDocument.create.mock.calls[0]?.[0].data.teams.create).toEqual([
+      { teamId: 'team-1', teamName: 'Revenue Cycle' },
+      { teamId: 'team-2', teamName: 'Care Management' },
+    ])
+  })
+
+  it('collapses all-departments plus a department, which contradict each other', async () => {
+    signedIn({ isAdmin: true })
+
+    await uploadDocument(formDataFor(['company', 'team-1']))
+
+    expect(prisma.bluebookDocument.create.mock.calls[0]?.[0].data.teams.create).toEqual([])
+  })
+
+  it('refuses the whole upload when one department has been deleted', async () => {
+    signedIn({ isAdmin: true })
+
+    expect(await uploadDocument(formDataFor(['team-1', 'team-gone']))).toEqual({
+      ok: false,
+      message: 'One of those departments no longer exists.',
+    })
+    expect(prisma.bluebookDocument.create).not.toHaveBeenCalled()
   })
 
   it('refuses a file type the handbook does not take', async () => {
     signedIn({ isAdmin: true })
     const bad = new File(['x'], 'installer.exe', { type: 'application/x-msdownload' })
 
-    expect(await uploadDocument(formDataFor({}, bad))).toEqual({
+    expect(await uploadDocument(formDataFor(['company'], bad))).toEqual({
       ok: false,
       message: 'Upload a PDF, Office document, text file or image.',
     })
@@ -268,15 +309,53 @@ describe('updateDocument', () => {
     title: 'Claim scrubbing checklist',
     description: '',
     category: 'Procedure',
-    shelf: 'team-1',
+    shelves: ['team-1'],
   }
 
   it('checks both ends of a move: the shelf it leaves and the one it joins', async () => {
     signedIn({ leads: ['team-1'] })
-    prisma.team.findFirst.mockResolvedValue({ id: 'team-2', name: 'Care Management' })
 
     // Leading the source department is not enough to file into another one.
-    expect(await updateDocument({ ...values, shelf: 'team-2' })).toMatchObject({ ok: false })
+    expect(await updateDocument({ ...values, shelves: ['team-2'] })).toMatchObject({ ok: false })
+    expect(prisma.bluebookDocument.update).not.toHaveBeenCalled()
+  })
+
+  it('lets a lead of one shelf edit a document that is also filed elsewhere', async () => {
+    signedIn({ leads: ['team-2'] })
+    prisma.bluebookDocument.findFirst.mockResolvedValue({
+      ...DOCUMENT,
+      teams: [
+        { teamId: 'team-1', teamName: 'Revenue Cycle' },
+        { teamId: 'team-2', teamName: 'Care Management' },
+      ],
+    })
+
+    // Both shelves are kept, so the one they do not lead is left exactly as it was.
+    expect(await updateDocument({ ...values, shelves: ['team-1', 'team-2'] })).toMatchObject({
+      ok: true,
+    })
+  })
+
+  it('will not let a lead adopt a document filed only on another shelf', async () => {
+    signedIn({ leads: ['team-2'] })
+
+    expect(await updateDocument({ ...values, shelves: ['team-1', 'team-2'] })).toMatchObject({
+      ok: false,
+    })
+    expect(prisma.bluebookDocument.update).not.toHaveBeenCalled()
+  })
+
+  it('will not let a lead pull a document off a shelf they do not lead', async () => {
+    signedIn({ leads: ['team-2'] })
+    prisma.bluebookDocument.findFirst.mockResolvedValue({
+      ...DOCUMENT,
+      teams: [
+        { teamId: 'team-1', teamName: 'Revenue Cycle' },
+        { teamId: 'team-2', teamName: 'Care Management' },
+      ],
+    })
+
+    expect(await updateDocument({ ...values, shelves: ['team-2'] })).toMatchObject({ ok: false })
     expect(prisma.bluebookDocument.update).not.toHaveBeenCalled()
   })
 

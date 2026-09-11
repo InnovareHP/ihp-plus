@@ -45,7 +45,6 @@ import {
   draftOf,
   formatBytes,
   isFilteredBluebookQuery,
-  shelfLabel,
   type BluebookSortKey,
   type DocumentRow,
 } from '../schema'
@@ -157,16 +156,21 @@ export function BluebookLibrary() {
     {
       key: 'teamName',
       header: 'Filed under',
-      sortable: true,
-      width: 180,
-      render: (row) => (
-        <Badge
-          variant={row.teamId === '' ? 'filled' : 'light'}
-          color={row.teamId === '' ? 'brand' : 'gray'}
-        >
-          {shelfLabel(row)}
-        </Badge>
-      ),
+      width: 220,
+      render: (row) =>
+        row.teams.length === 0 ? (
+          <Badge variant="filled" color="brand">
+            All departments
+          </Badge>
+        ) : (
+          <Group gap={4} wrap="wrap">
+            {row.teams.map((team) => (
+              <Badge key={team.id} variant="light" color="gray">
+                {team.name}
+              </Badge>
+            ))}
+          </Group>
+        ),
     },
     {
       key: 'category',
@@ -419,7 +423,8 @@ export function BluebookLibrary() {
           formData.set('title', values.title)
           formData.set('description', values.description)
           formData.set('category', values.category)
-          formData.set('shelf', values.shelf)
+          // Repeated rather than joined: a department name may contain any character.
+          for (const shelf of values.shelves) formData.append('shelves', shelf)
           formData.set('file', file)
           await upload.mutateAsync(formData)
         }}

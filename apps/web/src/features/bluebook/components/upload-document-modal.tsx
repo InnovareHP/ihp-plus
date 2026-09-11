@@ -8,6 +8,7 @@ import {
   FileInput,
   Group,
   Modal,
+  MultiSelect,
   Select,
   Stack,
   Textarea,
@@ -15,13 +16,15 @@ import {
 } from '@mantine/core'
 import { IconPaperclip } from '@tabler/icons-react'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import {
   ACCEPTED_EXTENSIONS,
+  COMPANY_SHELF,
   documentDraftSchema,
   EMPTY_DOCUMENT_DRAFT,
   fileProblem,
   formatBytes,
+  type DocumentDraftInput,
   type DocumentDraftValues,
   type ShelfOption,
 } from '../schema'
@@ -58,6 +61,15 @@ export function UploadDocumentModal(props: UploadDocumentModalProps) {
   )
 }
 
+/** Whichever of "all departments" or a department list was chosen most recently. */
+function collapseShelves(previous: readonly string[], next: readonly string[]) {
+  const added = next.filter((value) => !previous.includes(value))
+
+  if (added.includes(COMPANY_SHELF)) return [COMPANY_SHELF]
+  if (added.length > 0) return next.filter((value) => value !== COMPANY_SHELF)
+  return [...next]
+}
+
 function DocumentForm({
   shelves,
   categories,
@@ -71,18 +83,27 @@ function DocumentForm({
 }: UploadDocumentModalProps) {
   const [file, setFile] = useState<File | null>(null)
   const {
+    control,
     register,
     handleSubmit,
     setError,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
-  } = useForm<DocumentDraftValues>({
+  } = useForm<DocumentDraftInput, unknown, DocumentDraftValues>({
     resolver: zodResolver(documentDraftSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: defaults ?? { ...EMPTY_DOCUMENT_DRAFT, shelf: shelves[0]?.value ?? '' },
+    defaultValues: defaults ?? {
+      ...EMPTY_DOCUMENT_DRAFT,
+      shelves: [shelves[0]?.value ?? COMPANY_SHELF],
+    },
   })
+
+  // useWatch rather than watch(): the latter returns a function the React compiler cannot
+  // memoize, and both values feed controls that re-render on every keystroke.
+  const watchedShelves = useWatch({ control, name: 'shelves' })
+  const category = useWatch({ control, name: 'category' }) ?? ''
+  const picked = (watchedShelves ?? []).filter((value): value is string => Boolean(value))
 
   const problem = file
     ? fileProblem({ name: file.name, size: file.size, type: file.type })
@@ -148,15 +169,20 @@ function DocumentForm({
         />
 
         <Group grow align="flex-start">
-          <Select
+          <MultiSelect
             label="Filed under"
-            description="Where people will look for it."
+            description="Every department that should find it. One document can sit on several shelves."
             data={shelves.map((shelf) => ({ value: shelf.value, label: shelf.label }))}
-            value={watch('shelf')}
-            allowDeselect={false}
+            value={picked}
             searchable
-            onChange={(value) => value && setValue('shelf', value, { shouldDirty: true })}
-            error={errors.shelf?.message}
+            required
+            aria-required="true"
+            onChange={(values) =>
+              // "All departments" and a specific one contradict each other, so the last pick
+              // wins rather than leaving both showing.
+              setValue('shelves', collapseShelves(picked, values), { shouldDirty: true })
+            }
+            error={errors.shelves?.message}
           />
           <Select
             label="Category"
@@ -168,7 +194,7 @@ function DocumentForm({
               ) : undefined
             }
             data={categories}
-            value={watch('category')}
+            value={category}
             clearable
             searchable
             nothingFoundMessage="No category yet"

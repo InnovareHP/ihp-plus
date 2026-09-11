@@ -9,13 +9,9 @@ export const BLUEBOOK_LOOKUP_KINDS = ['bluebookCategory'] as const satisfies rea
 export const COMPANY_SHELF = 'company'
 
 export const BLUEBOOK_VIEWS = ['active', 'archived'] as const
-export const BLUEBOOK_SORT_KEYS = [
-  'title',
-  'category',
-  'teamName',
-  'createdAt',
-  'byteSize',
-] as const
+// Departments are a to-many relation now, and Prisma cannot order by one, so the shelf is
+// filter-only — the same constraint the members list documents for its own department column.
+export const BLUEBOOK_SORT_KEYS = ['title', 'category', 'createdAt', 'byteSize'] as const
 
 // nginx caps a request body at 25m (infra/docker/nginx/proxy.conf), so a larger file could not
 // reach the server even if Next allowed it.
@@ -87,8 +83,20 @@ export const documentDraftSchema = z.object({
   title: z.string().trim().min(2, 'Give the document a title.').max(140),
   description: z.string().trim().max(500, 'Keep the summary under 500 characters.'),
   category: z.string().trim().max(80),
-  /** Where it is filed: the company-wide shelf, or one department's. */
-  shelf: z.string().trim().min(1, 'Choose where this is filed.').max(64),
+  /**
+   * Every shelf it is filed on: department ids, or COMPANY_SHELF on its own for the
+   * all-departments shelf. Normalized rather than rejected — "all departments plus Finance"
+   * is a contradiction the picker should not have allowed, and collapsing it is what the
+   * user meant.
+   */
+  shelves: z
+    .array(z.string().trim().min(1).max(64))
+    .min(1, 'Choose at least one department.')
+    .max(40)
+    .transform((values) => {
+      const unique = [...new Set(values)]
+      return unique.includes(COMPANY_SHELF) ? [COMPANY_SHELF] : unique
+    }),
 })
 
 export const updateDocumentSchema = documentDraftSchema.extend({ id: z.string().min(1) })
@@ -98,15 +106,18 @@ export type BluebookView = (typeof BLUEBOOK_VIEWS)[number]
 export type BluebookSortKey = (typeof BLUEBOOK_SORT_KEYS)[number]
 export type BluebookQuery = z.infer<typeof bluebookQuerySchema>
 export type DocumentDraftValues = z.infer<typeof documentDraftSchema>
+// The schema normalizes, so what the form holds while being edited is its input side.
+export type DocumentDraftInput = z.input<typeof documentDraftSchema>
 export type UpdateDocumentValues = z.infer<typeof updateDocumentSchema>
+export type UpdateDocumentInput = z.input<typeof updateDocumentSchema>
 
 export const DEFAULT_BLUEBOOK_QUERY: BluebookQuery = bluebookQuerySchema.parse({})
 
-export const EMPTY_DOCUMENT_DRAFT: DocumentDraftValues = {
+export const EMPTY_DOCUMENT_DRAFT: DocumentDraftInput = {
   title: '',
   description: '',
   category: '',
-  shelf: COMPANY_SHELF,
+  shelves: [COMPANY_SHELF],
 }
 
 export function isFilteredBluebookQuery(query: BluebookQuery) {
@@ -118,9 +129,8 @@ export interface DocumentRow {
   title: string
   description: string
   category: string
-  /** Empty for the company-wide shelf. */
-  teamId: string
-  teamName: string
+  /** Every department shelf it sits on. Empty is the company-wide shelf. */
+  teams: { id: string; name: string }[]
   fileName: string
   contentType: string
   byteSize: number
@@ -152,15 +162,15 @@ export interface BluebookOptions {
 }
 
 export function shelfLabel(row: DocumentRow) {
-  return row.teamId === '' ? 'All departments' : row.teamName
+  return row.teams.length === 0 ? 'All departments' : row.teams.map((team) => team.name).join(', ')
 }
 
-export function draftOf(row: DocumentRow): UpdateDocumentValues {
+export function draftOf(row: DocumentRow): UpdateDocumentInput {
   return {
     id: row.id,
     title: row.title,
     description: row.description,
     category: row.category,
-    shelf: row.teamId === '' ? COMPANY_SHELF : row.teamId,
+    shelves: row.teams.length === 0 ? [COMPANY_SHELF] : row.teams.map((team) => team.id),
   }
 }

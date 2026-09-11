@@ -30,8 +30,7 @@ const CHECKLIST = {
   title: 'Claim scrubbing checklist',
   description: 'Run before submission.',
   category: 'Procedure',
-  teamId: 'team-1',
-  teamName: 'Revenue Cycle',
+  teams: [{ id: 'team-1', name: 'Revenue Cycle' }],
   fileName: 'claim.pdf',
   contentType: 'application/pdf',
   byteSize: 2048,
@@ -104,6 +103,33 @@ describe('BluebookLibrary', () => {
     expect(within(table).getByText('Grace Hopper')).toBeInTheDocument()
   })
 
+  it('names every shelf a document is filed on', async () => {
+    actions.listDocuments.mockResolvedValue(
+      page([
+        {
+          ...CHECKLIST,
+          teams: [
+            { id: 'team-1', name: 'Revenue Cycle' },
+            { id: 'team-2', name: 'Care Management' },
+          ],
+        },
+      ]),
+    )
+    render(<BluebookLibrary />)
+
+    const table = await screen.findByRole('table', { name: 'Bluebook documents' })
+    expect(within(table).getByText('Revenue Cycle')).toBeInTheDocument()
+    expect(within(table).getByText('Care Management')).toBeInTheDocument()
+  })
+
+  it('marks a document on no department as the all-departments shelf', async () => {
+    actions.listDocuments.mockResolvedValue(page([{ ...CHECKLIST, teams: [] }]))
+    render(<BluebookLibrary />)
+
+    const table = await screen.findByRole('table', { name: 'Bluebook documents' })
+    expect(within(table).getByText('All departments')).toBeInTheDocument()
+  })
+
   it('offers a shelf per department plus the all-departments one, with counts', async () => {
     render(<BluebookLibrary />)
     await screen.findByText('Claim scrubbing checklist')
@@ -153,7 +179,7 @@ describe('BluebookLibrary', () => {
     await waitFor(() => expect(actions.uploadDocument).toHaveBeenCalled())
     const sent = actions.uploadDocument.mock.calls[0]?.[0] as FormData
     expect(sent.get('title')).toBe('Time-off policy')
-    expect(sent.get('shelf')).toBe('company')
+    expect(sent.getAll('shelves')).toEqual(['company'])
     expect((sent.get('file') as File).name).toBe('policy.pdf')
   })
 

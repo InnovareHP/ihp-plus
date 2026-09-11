@@ -4,10 +4,9 @@
 model BluebookDocument {
   id             String @id @default(uuid())
   organizationId String
-  // Null is the company-wide shelf every department reads; a value is that department's shelf.
-  teamId         String?
-  // Snapshot: a department renamed or deleted later must still label the document it holds.
-  teamName       String?
+  // A document sits on as many department shelves as it applies to. No rows is the
+  // company-wide shelf every department reads, which is what a null teamId used to mean.
+  teams          BluebookDocumentTeam[]
 
   title       String
   description String?
@@ -29,8 +28,23 @@ model BluebookDocument {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  @@index([organizationId, teamId, archivedAt])
+  @@index([organizationId, archivedAt])
   @@index([organizationId, category])
   @@map("bluebookDocument")
+  @@schema("bluebook")
+}
+
+/// Which department shelves one document sits on.
+model BluebookDocumentTeam {
+  id         String           @id @default(uuid())
+  documentId String
+  document   BluebookDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  teamId     String
+  // Snapshot: a department renamed or deleted later must still label the document it holds.
+  teamName   String
+
+  @@unique([documentId, teamId])
+  @@index([teamId])
+  @@map("bluebookDocumentTeam")
   @@schema("bluebook")
 }

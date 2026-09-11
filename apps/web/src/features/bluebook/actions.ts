@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@ihp/db'
-import type { BluebookDocument, Prisma } from '@ihp/db'
+import type { Prisma } from '@ihp/db'
 import { listManyFor } from '@/features/lookups/service'
 import { ledTeamIds } from '@/features/teams/leads'
 import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
@@ -58,8 +58,27 @@ function canFileOn(who: Caller, shelf: string) {
   return who.leadTeamIds.includes(shelf)
 }
 
-function shelfOf(row: { teamId: string | null }) {
-  return row.teamId ?? COMPANY_SHELF
+/**
+ * A document on several shelves is managed by an admin, or by a lead of any one of them — a
+ * Finance lead curates what sits on Finance's shelf, whoever else it is also filed for.
+ */
+function canManageDocument(who: Caller, teamIds: readonly string[]) {
+  if (who.isAdmin) return true
+  if (teamIds.length === 0) return canFileOn(who, COMPANY_SHELF)
+  return teamIds.some((teamId) => who.leadTeamIds.includes(teamId))
+}
+
+/**
+ * Which shelves a non-admin may add or remove. Shelves they do not lead have to be left as
+ * they are, so a Finance lead editing a shared document cannot quietly pull it off
+ * Compliance's shelf — or push it onto one.
+ */
+function shelfChangesAllowed(who: Caller, current: readonly string[], next: readonly string[]) {
+  if (who.isAdmin) return true
+
+  const added = next.filter((teamId) => !current.includes(teamId))
+  const removed = current.filter((teamId) => !next.includes(teamId))
+  return [...added, ...removed].every((teamId) => canFileOn(who, teamId))
 }
 
 const SEARCH_FIELDS = ['title', 'description', 'fileName', 'category'] as const
@@ -80,8 +99,9 @@ function whereOf(organizationId: string, query: BluebookQuery): Prisma.BluebookD
   }
 
   if (query.categories.length > 0) clauses.push({ category: { in: query.categories } })
-  if (query.shelf === COMPANY_SHELF) clauses.push({ teamId: null })
-  else if (query.shelf !== '') clauses.push({ teamId: query.shelf })
+  // A document filed on several shelves shows under each of them.
+  if (query.shelf === COMPANY_SHELF) clauses.push({ teams: { none: {} } })
+  else if (query.shelf !== '') clauses.push({ teams: { some: { teamId: query.shelf } } })
 
   return clauses.length > 0 ? { ...where, AND: clauses } : where
 }
@@ -92,26 +112,35 @@ const ORDER_BY: Record<
 > = {
   title: (direction) => ({ title: direction }),
   category: (direction) => ({ category: direction }),
-  teamName: (direction) => ({ teamName: direction }),
   byteSize: (direction) => ({ byteSize: direction }),
   createdAt: (direction) => ({ createdAt: direction }),
 }
 
-function rowOf(document: BluebookDocument, who: Caller): DocumentRow {
+const WITH_TEAMS = {
+  teams: { select: { teamId: true, teamName: true }, orderBy: { teamName: 'asc' } },
+} satisfies Prisma.BluebookDocumentInclude
+
+type DocumentRecord = Prisma.BluebookDocumentGetPayload<{ include: typeof WITH_TEAMS }>
+
+function rowOf(document: DocumentRecord, who: Caller): DocumentRow {
+  const teams = document.teams.map((team) => ({ id: team.teamId, name: team.teamName }))
+
   return {
     id: document.id,
     title: document.title,
     description: document.description ?? '',
     category: document.category ?? '',
-    teamId: document.teamId ?? '',
-    teamName: document.teamName ?? '',
+    teams,
     fileName: document.fileName,
     contentType: document.contentType,
     byteSize: document.byteSize,
     uploadedByName: document.uploadedByName ?? '',
     createdAt: document.createdAt.toISOString(),
     archivedAt: document.archivedAt?.toISOString(),
-    canManage: canFileOn(who, shelfOf(document)),
+    canManage: canManageDocument(
+      who,
+      teams.map((team) => team.id),
+    ),
   }
 }
 
@@ -128,6 +157,7 @@ export async function listDocuments(input?: unknown): Promise<DocumentsResult> {
 
   const documents = await db.bluebookDocument.findMany({
     where,
+    include: WITH_TEAMS,
     // The second key is the tiebreaker: without it equal values reshuffle between pages.
     orderBy: [ORDER_BY[query.sortBy](query.sortDirection), { id: 'asc' }],
     ...skipTake(pageInfo),
@@ -148,12 +178,15 @@ export async function listBluebookOptions(): Promise<Result<BluebookOptions>> {
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     }),
-    db.bluebookDocument.groupBy({
+    // One document counts on every shelf it sits on, which is the point of the count.
+    db.bluebookDocumentTeam.groupBy({
       by: ['teamId'],
-      where: { organizationId, archivedAt: null, teamId: { not: null } },
+      where: { document: { organizationId, archivedAt: null } },
       _count: { _all: true },
     }),
-    db.bluebookDocument.count({ where: { organizationId, archivedAt: null, teamId: null } }),
+    db.bluebookDocument.count({
+      where: { organizationId, archivedAt: null, teams: { none: {} } },
+    }),
     listManyFor(organizationId, BLUEBOOK_LOOKUP_KINDS),
   ])
 
@@ -199,10 +232,13 @@ export async function uploadDocument(formData: FormData): Promise<Result<Documen
     title: formData.get('title') ?? '',
     description: formData.get('description') ?? '',
     category: formData.get('category') ?? '',
-    shelf: formData.get('shelf') ?? '',
+    // Repeated fields rather than one joined string, so a department name can hold anything.
+    shelves: formData.getAll('shelves'),
   })
   if (!parsed.success) return { ok: false, message: 'Check the highlighted fields and try again.' }
-  if (!canFileOn(who, parsed.data.shelf)) return { ok: false, message: FORBIDDEN }
+  if (!parsed.data.shelves.every((shelf) => canFileOn(who, shelf))) {
+    return { ok: false, message: FORBIDDEN }
+  }
 
   const file = formData.get('file')
   if (!(file instanceof File)) return { ok: false, message: 'Choose a file to upload.' }
@@ -210,12 +246,10 @@ export async function uploadDocument(formData: FormData): Promise<Result<Documen
   const problem = fileProblem({ name: file.name, size: file.size, type: file.type })
   if (problem) return { ok: false, message: problem }
 
-  const team = await teamFor(who.organizationId, parsed.data.shelf)
-  if (parsed.data.shelf !== COMPANY_SHELF && !team) {
-    return { ok: false, message: 'That department no longer exists.' }
-  }
+  const teams = await teamsFor(who.organizationId, parsed.data.shelves)
+  if (!teams) return { ok: false, message: 'One of those departments no longer exists.' }
 
-  const key = keyFor(who.organizationId, parsed.data.shelf, file.name)
+  const key = keyFor(who.organizationId, parsed.data.shelves[0] ?? COMPANY_SHELF, file.name)
 
   try {
     await putObject(key, new Uint8Array(await file.arrayBuffer()), file.type)
@@ -227,8 +261,6 @@ export async function uploadDocument(formData: FormData): Promise<Result<Documen
   const document = await db.bluebookDocument.create({
     data: {
       organizationId: who.organizationId,
-      teamId: team?.id ?? null,
-      teamName: team?.name ?? null,
       title: parsed.data.title,
       description: parsed.data.description || null,
       category: parsed.data.category || null,
@@ -238,18 +270,29 @@ export async function uploadDocument(formData: FormData): Promise<Result<Documen
       byteSize: file.size,
       uploadedById: who.userId,
       uploadedByName: who.userName,
+      teams: {
+        create: teams.map((team) => ({ teamId: team.id, teamName: team.name })),
+      },
     },
+    include: WITH_TEAMS,
   })
 
   return { ok: true, data: rowOf(document, who) }
 }
 
-async function teamFor(organizationId: string, shelf: string) {
-  if (shelf === COMPANY_SHELF) return null
-  return db.team.findFirst({
-    where: { id: shelf, organizationId },
+/**
+ * The departments behind a set of shelf values, or undefined if any of them has been deleted.
+ * COMPANY_SHELF resolves to no departments, which is how the all-departments shelf is stored.
+ */
+async function teamsFor(organizationId: string, shelves: readonly string[]) {
+  const ids = shelves.filter((shelf) => shelf !== COMPANY_SHELF)
+  if (ids.length === 0) return []
+
+  const teams = await db.team.findMany({
+    where: { id: { in: [...ids] }, organizationId },
     select: { id: true, name: true },
   })
+  return teams.length === ids.length ? teams : undefined
 }
 
 /** Metadata only: a new file is a new upload, so a download link never changes underneath. */
@@ -262,28 +305,40 @@ export async function updateDocument(input: unknown): Promise<Result<DocumentRow
 
   const current = await db.bluebookDocument.findFirst({
     where: { id: parsed.data.id, organizationId: who.organizationId },
+    include: WITH_TEAMS,
   })
   if (!current) return { ok: false, message: GONE }
 
-  // Both ends of a move are checked: filing into a shelf is the permission being spent.
-  if (!canFileOn(who, shelfOf(current)) || !canFileOn(who, parsed.data.shelf)) {
+  const teams = await teamsFor(who.organizationId, parsed.data.shelves)
+  if (!teams) return { ok: false, message: 'One of those departments no longer exists.' }
+
+  const currentIds = current.teams.map((team) => team.teamId)
+  const nextIds = teams.map((team) => team.id)
+
+  // Both ends are checked: filing onto a shelf is the permission being spent, and taking a
+  // document off one is too.
+  if (
+    !canManageDocument(who, currentIds) ||
+    !shelfChangesAllowed(who, currentIds, nextIds) ||
+    (nextIds.length === 0 && !canFileOn(who, COMPANY_SHELF))
+  ) {
     return { ok: false, message: FORBIDDEN }
   }
 
-  const team = await teamFor(who.organizationId, parsed.data.shelf)
-  if (parsed.data.shelf !== COMPANY_SHELF && !team) {
-    return { ok: false, message: 'That department no longer exists.' }
-  }
+  const document = await db.$transaction(async (tx) => {
+    // Replaced rather than diffed: the picker always sends the whole set.
+    await tx.bluebookDocumentTeam.deleteMany({ where: { documentId: current.id } })
 
-  const document = await db.bluebookDocument.update({
-    where: { id: current.id },
-    data: {
-      title: parsed.data.title,
-      description: parsed.data.description || null,
-      category: parsed.data.category || null,
-      teamId: team?.id ?? null,
-      teamName: team?.name ?? null,
-    },
+    return tx.bluebookDocument.update({
+      where: { id: current.id },
+      data: {
+        title: parsed.data.title,
+        description: parsed.data.description || null,
+        category: parsed.data.category || null,
+        teams: { create: teams.map((team) => ({ teamId: team.id, teamName: team.name })) },
+      },
+      include: WITH_TEAMS,
+    })
   })
 
   return { ok: true, data: rowOf(document, who) }
@@ -306,10 +361,12 @@ async function setArchived(input: unknown, archivedAt: Date | null): Promise<Res
 
   const current = await db.bluebookDocument.findFirst({
     where: { id: parsed.data.id, organizationId: who.organizationId },
-    select: { id: true, teamId: true },
+    select: { id: true, teams: { select: { teamId: true } } },
   })
   if (!current) return { ok: false, message: GONE }
-  if (!canFileOn(who, shelfOf(current))) return { ok: false, message: FORBIDDEN }
+
+  const teamIds = current.teams.map((team) => team.teamId)
+  if (!canManageDocument(who, teamIds)) return { ok: false, message: FORBIDDEN }
 
   await db.bluebookDocument.update({ where: { id: current.id }, data: { archivedAt } })
   return { ok: true, data: null }

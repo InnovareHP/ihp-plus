@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   bluebookQuerySchema,
   documentDraftSchema,
+  COMPANY_SHELF,
   EMPTY_DOCUMENT_DRAFT,
   fileProblem,
   formatBytes,
@@ -59,7 +60,19 @@ describe('documentDraftSchema', () => {
   it('needs a title and somewhere to file it', () => {
     expect(draft().success).toBe(true)
     expect(draft({ title: 'T' }).error?.issues[0]?.message).toBe('Give the document a title.')
-    expect(draft({ shelf: '' }).error?.issues[0]?.message).toBe('Choose where this is filed.')
+    expect(draft({ shelves: [] }).error?.issues[0]?.message).toBe('Choose at least one department.')
+  })
+
+  it('files one document on several department shelves', () => {
+    expect(draft({ shelves: ['team-1', 'team-2'] }).data?.shelves).toEqual(['team-1', 'team-2'])
+  })
+
+  it('drops a department repeated by a double click', () => {
+    expect(draft({ shelves: ['team-1', 'team-1'] }).data?.shelves).toEqual(['team-1'])
+  })
+
+  it('collapses all-departments plus a department, which contradict each other', () => {
+    expect(draft({ shelves: ['team-1', COMPANY_SHELF] }).data?.shelves).toEqual([COMPANY_SHELF])
   })
 
   it('leaves the summary and category optional but bounded', () => {
