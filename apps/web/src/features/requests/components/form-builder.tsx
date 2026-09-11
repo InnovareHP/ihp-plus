@@ -2,50 +2,35 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
-  Card,
-  Checkbox,
   Group,
   MultiSelect,
-  NumberInput,
-  Select,
   Stack,
-  TagsInput,
   Text,
   Textarea,
   TextInput,
 } from '@mantine/core'
-import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-react'
+import { IconPlus } from '@tabler/icons-react'
 import { useRouter } from 'next/navigation'
-import {
-  Controller,
-  useFieldArray,
-  useForm,
-  useWatch,
-  type Control,
-  type UseFormRegister,
-} from 'react-hook-form'
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
-import { EmptyState, PageSection } from '@/components/page-shell'
+import { PageSection } from '@/components/page-section'
+import { EmptyState } from '@/components/empty-state'
 import { announceSuccess } from '@/lib/announce'
 import { requestFormRoute } from '@/lib/routes'
 // Departments are organization data; the requests feature is a consumer of them.
-import { useTeams } from '@/features/organization/use-teams'
+import { useTeams } from '@/features/organization/hooks/use-teams'
 import {
-  FIELD_TYPE_LABELS,
-  FIELD_TYPES,
   formDraftSchema,
   publishBlockers,
   type FormDraftInput,
   type FormDraftValues,
   type FormRow,
 } from '../schema'
-import { useSaveForm, useSetFormStatus } from '../use-forms'
-
-const TYPE_OPTIONS = FIELD_TYPES.map((type) => ({ value: type, label: FIELD_TYPE_LABELS[type] }))
+import { useSaveForm, useSetFormStatus } from '../hooks/use-forms'
+import { QuestionCard } from './question-card'
 
 function draftOf(form: FormRow | undefined): FormDraftValues {
   return {
@@ -263,162 +248,5 @@ export function FormBuilder({ form }: { form?: FormRow }) {
         </Group>
       </Stack>
     </form>
-  )
-}
-
-interface QuestionCardProps {
-  index: number
-  total: number
-  control: Control<FormDraftInput, unknown, FormDraftValues>
-  register: UseFormRegister<FormDraftInput>
-  type: FormDraftValues['fields'][number]['type']
-  labelError: string | undefined
-  optionsError: string | undefined
-  onMoveUp: () => void
-  onMoveDown: () => void
-  onRemove: () => void
-}
-
-function QuestionCard({
-  index,
-  total,
-  control,
-  register,
-  type,
-  labelError,
-  optionsError,
-  onMoveUp,
-  onMoveDown,
-  onRemove,
-}: QuestionCardProps) {
-  return (
-    <Card padding="md" component="fieldset" bd="1px solid var(--mantine-color-default-border)">
-      <Group justify="space-between" mb="sm" wrap="nowrap">
-        <Text component="legend" size="sm" fw={600}>
-          Question {index + 1}
-        </Text>
-        <Group gap={4} wrap="nowrap">
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            disabled={index === 0}
-            aria-label={`Move question ${index + 1} up`}
-            onClick={onMoveUp}
-          >
-            <IconArrowUp size={16} aria-hidden />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            disabled={index === total - 1}
-            aria-label={`Move question ${index + 1} down`}
-            onClick={onMoveDown}
-          >
-            <IconArrowDown size={16} aria-hidden />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            color="red"
-            aria-label={`Remove question ${index + 1}`}
-            onClick={onRemove}
-          >
-            <IconTrash size={16} aria-hidden />
-          </ActionIcon>
-        </Group>
-      </Group>
-
-      <Stack gap="sm">
-        <Group grow align="flex-start">
-          <TextInput
-            {...register(`fields.${index}.label`)}
-            label="Label"
-            required
-            aria-required="true"
-            error={labelError}
-            errorProps={{ role: 'alert' }}
-          />
-
-          <Controller
-            control={control}
-            name={`fields.${index}.type`}
-            render={({ field }) => (
-              <Select
-                label="Answer type"
-                data={TYPE_OPTIONS}
-                allowDeselect={false}
-                value={field.value}
-                onChange={(value) => value && field.onChange(value)}
-                onBlur={field.onBlur}
-              />
-            )}
-          />
-        </Group>
-
-        <TextInput
-          {...register(`fields.${index}.help`)}
-          label="Help text"
-          description="Shown under the label, before anyone makes a mistake."
-        />
-
-        {type === 'select' ? (
-          <Controller
-            control={control}
-            name={`fields.${index}.options`}
-            render={({ field }) => (
-              <TagsInput
-                label="Options"
-                description="Press Enter after each one."
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                error={optionsError}
-              />
-            )}
-          />
-        ) : null}
-
-        {type === 'number' ? (
-          <Group grow align="flex-start">
-            <Controller
-              control={control}
-              name={`fields.${index}.min`}
-              render={({ field }) => (
-                <NumberInput
-                  label="Lowest allowed"
-                  value={field.value ?? ''}
-                  onChange={(value) => field.onChange(value === '' ? undefined : Number(value))}
-                  onBlur={field.onBlur}
-                />
-              )}
-            />
-            <Controller
-              control={control}
-              name={`fields.${index}.max`}
-              render={({ field }) => (
-                <NumberInput
-                  label="Highest allowed"
-                  value={field.value ?? ''}
-                  onChange={(value) => field.onChange(value === '' ? undefined : Number(value))}
-                  onBlur={field.onBlur}
-                />
-              )}
-            />
-          </Group>
-        ) : null}
-
-        <Controller
-          control={control}
-          name={`fields.${index}.required`}
-          render={({ field }) => (
-            <Checkbox
-              label="Required"
-              checked={field.value}
-              onChange={(event) => field.onChange(event.currentTarget.checked)}
-              onBlur={field.onBlur}
-            />
-          )}
-        />
-      </Stack>
-    </Card>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { Loader, Select, type SelectProps } from '@mantine/core'
-import { useLookup } from '@/features/lookups/use-lookup'
+import { useLookup } from '@/features/lookups/hooks/use-lookup'
 import type { LookupKind } from '@/features/lookups/schema'
 
 export interface LookupSelectProps extends Omit<SelectProps, 'data' | 'value' | 'onChange'> {

@@ -6,8 +6,8 @@ import { auth } from '@/lib/auth'
 import { isKnownOption } from '@/features/lookups/service'
 import { requireSession } from '@/lib/auth-guard'
 import { deleteObject, objectUrl, putObject, S3NotConfiguredError } from '@/lib/s3'
-import { generateIhpId } from './ihp-id'
-import { detectPhotoType, MAX_PHOTO_BYTES, photoExtension } from './photo'
+import { generateIhpId } from './utils/ihp-id'
+import { detectPhotoType, MAX_PHOTO_BYTES, photoExtension } from './utils/photo'
 import { onboardingSchema } from './schema'
 
 // Long enough that two uploads in the same second cannot collide on one key.

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { PageHeader, PageShell } from '@/components/page-shell'
+import { PageShell } from '@/components/page-shell'
+import { PageHeader } from '@/components/page-header'
 import { RequestForm } from '@/features/requests/components/request-form'
 import { requestsAccess } from '@/features/requests/guards'
 import { loadAvailableForms } from '@/features/requests/service'

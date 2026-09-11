@@ -3,7 +3,7 @@
 import { Select, Stack, TextInput } from '@mantine/core'
 import { Controller, type UseFormReturn } from 'react-hook-form'
 import { LookupSelect } from '@/components/lookup-select'
-import { NARROW_INPUT } from '../field-styles'
+import { NARROW_INPUT } from '../utils/field-styles'
 import type { OnboardingValues } from '../schema'
 
 export interface TeamOption {

@@ -1,11 +1,10 @@
 'use client'
 
 import { Alert, Badge, Card, Group, Stack, Text } from '@mantine/core'
-import { PageSection } from '@/components/page-shell'
-import { announceSuccess } from '@/lib/announce'
+import { PageSection } from '@/components/page-section'
 import { REQUEST_STATUS_COLORS, REQUEST_STATUS_LABELS, type RequestRow } from '../schema'
-import { useDecideOne, useRequest } from '../use-requests'
-import { DecisionFields } from './decision-fields'
+import { useRequest } from '../hooks/use-requests'
+import { DecisionPanel } from './decision-panel'
 import { RequestAnswers } from './request-answers'
 
 const stamp = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
@@ -49,34 +48,5 @@ export function RequestDetail({ initial }: { initial: RequestRow }) {
 
       {row.canDecide ? <DecisionPanel row={row} /> : null}
     </Stack>
-  )
-}
-
-function DecisionPanel({ row }: { row: RequestRow }) {
-  const decide = useDecideOne()
-
-  return (
-    <PageSection
-      title="Your decision"
-      description="The requester sees the outcome and your note straight away."
-    >
-      <Stack maw={620}>
-        <DecisionFields
-          label="request"
-          isPending={decide.isPending}
-          onDecide={(decision, note) =>
-            decide.mutate(
-              { submissionId: row.id, decision, note },
-              {
-                onSuccess: (updated) =>
-                  announceSuccess(
-                    `${updated.formName} ${updated.status === 'approved' ? 'approved' : 'rejected'}.`,
-                  ),
-              },
-            )
-          }
-        />
-      </Stack>
-    </PageSection>
   )
 }

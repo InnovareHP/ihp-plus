@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { PageHeader, PageShell } from '@/components/page-shell'
+import { PageShell } from '@/components/page-shell'
+import { PageHeader } from '@/components/page-header'
 import { FormBuilder } from '@/features/requests/components/form-builder'
 import { requireFormAdmin } from '@/features/requests/guards'
 import { loadForm } from '@/features/requests/service'

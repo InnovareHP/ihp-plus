@@ -3,7 +3,7 @@
 import { Badge, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
-import { useMemberFilterOptions } from '../use-members'
+import { useMemberFilterOptions } from '../hooks/use-members'
 import {
   isFilteredQuery,
   MEMBER_STATUSES,
@@ -13,8 +13,13 @@ import {
   type MemberRow,
   type MemberSortKey,
 } from '../schema'
-import { useMemberQuery } from '../use-member-query'
-import { useMembers, useSetBanned, useSetOrganizationRole, useSetPortalRole } from '../use-members'
+import { useMemberQuery } from '../hooks/use-member-query'
+import {
+  useMembers,
+  useSetBanned,
+  useSetOrganizationRole,
+  useSetPortalRole,
+} from '../hooks/use-members'
 
 const ORGANIZATION_OPTIONS = ORGANIZATION_ROLES.map((role) => ({ value: role, label: role }))
 const PORTAL_OPTIONS = PORTAL_ROLES.map((role) => ({

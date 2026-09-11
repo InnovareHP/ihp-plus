@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { PageHeader, PageShell } from '@/components/page-shell'
+import { PageShell } from '@/components/page-shell'
+import { PageHeader } from '@/components/page-header'
 import { FormsTable } from '@/features/requests/components/forms-table'
 import { requireFormAdmin } from '@/features/requests/guards'
 import { breadcrumbsFor } from '@/lib/navigation'

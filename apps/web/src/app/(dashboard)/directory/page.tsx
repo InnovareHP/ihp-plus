@@ -1,7 +1,8 @@
 import { SimpleGrid, Skeleton, Stack } from '@mantine/core'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { PageHeader, PageShell } from '@/components/page-shell'
+import { PageShell } from '@/components/page-shell'
+import { PageHeader } from '@/components/page-header'
 import { DirectoryGrid } from '@/features/directory/components/directory-grid'
 import { requireOnboarded } from '@/lib/auth-guard'
 

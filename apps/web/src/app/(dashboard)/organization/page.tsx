@@ -1,7 +1,8 @@
 import { Skeleton, Stack } from '@mantine/core'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { PageHeader, PageShell } from '@/components/page-shell'
+import { PageShell } from '@/components/page-shell'
+import { PageHeader } from '@/components/page-header'
 import { OrganizationTabs } from '@/features/organization/components/organization-tabs'
 import { requireOrganizationManager } from '@/lib/auth-guard'
 

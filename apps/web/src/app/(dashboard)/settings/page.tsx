@@ -1,7 +1,8 @@
 import { Avatar, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { PageHeader, PageShell } from '@/components/page-shell'
+import { PageShell } from '@/components/page-shell'
+import { PageHeader } from '@/components/page-header'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 

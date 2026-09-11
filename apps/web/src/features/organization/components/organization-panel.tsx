@@ -1,29 +1,12 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  Alert,
-  Button,
-  Card,
-  Group,
-  SimpleGrid,
-  Skeleton,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { FormError } from '@/components/form-error'
-import { PageSection } from '@/components/page-shell'
+import { Alert, Button, SimpleGrid, Stack, Text } from '@mantine/core'
 // Contract boilerplate is company configuration, so it is edited where the company is.
 import { ContractTermsPanel } from '@/features/contracts/components/contract-terms-panel'
-import { announceSuccess } from '@/lib/announce'
-import { organizationProfileSchema, type OrganizationProfileValues } from '../schema'
-import { useOrganizationSummary, useUpdateOrganizationProfile } from '../use-organization'
-
-const number = new Intl.NumberFormat('en-US')
+import { useOrganizationSummary } from '../hooks/use-organization'
+import { OrganizationProfileForm } from './organization-profile-form'
+import { OrganizationSkeleton } from './organization-skeleton'
+import { StatCard } from './stat-card'
 
 export function OrganizationPanel() {
   const summary = useOrganizationSummary()
@@ -64,7 +47,7 @@ export function OrganizationPanel() {
         />
       </SimpleGrid>
 
-      <ProfileForm
+      <OrganizationProfileForm
         key={summary.data.id}
         defaultValues={{
           name: summary.data.name,
@@ -74,132 +57,6 @@ export function OrganizationPanel() {
       />
 
       <ContractTermsPanel />
-    </>
-  )
-}
-
-function StatCard({ label, value, hint }: { label: string; value: number; hint: string }) {
-  return (
-    <Card padding="lg">
-      <Text size="sm" c="dimmed">
-        {label}
-      </Text>
-      <Text fz={32} fw={700} lh={1.2}>
-        {number.format(value)}
-      </Text>
-      <Text size="xs" c="dimmed">
-        {hint}
-      </Text>
-    </Card>
-  )
-}
-
-function ProfileForm({ defaultValues }: { defaultValues: OrganizationProfileValues }) {
-  const router = useRouter()
-  const update = useUpdateOrganizationProfile()
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setError,
-    formState: { errors, isSubmitting, isDirty },
-  } = useForm<OrganizationProfileValues>({
-    resolver: zodResolver(organizationProfileSchema),
-    mode: 'onTouched',
-    reValidateMode: 'onChange',
-    defaultValues,
-  })
-
-  async function onSubmit(values: OrganizationProfileValues) {
-    try {
-      await update.mutateAsync(values)
-    } catch (error) {
-      setError('root', { message: error instanceof Error ? error.message : 'Could not save.' })
-      return
-    }
-
-    reset(values)
-    announceSuccess('Organization details saved.')
-    // The sidebar reads the name from the server, so it stays stale without a refresh.
-    router.refresh()
-  }
-
-  return (
-    <PageSection
-      title="Company profile"
-      description="The name shown in the portal header and the slug used in links."
-    >
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Stack gap="md">
-          <FormError message={errors.root?.message} title="Could not save the organization" />
-
-          {/* Paired rather than stacked: two fields fill the card without either becoming a
-              text input the width of the page. */}
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-            {/* Both fields in the row carry a description, or their inputs sit at
-                different heights. */}
-            <TextInput
-              {...register('name')}
-              label="Organization name"
-              description="Shown in the portal header."
-              required
-              aria-required="true"
-              autoComplete="organization"
-              error={errors.name?.message}
-            />
-
-            <TextInput
-              {...register('slug')}
-              label="Slug"
-              description="Lowercase letters, numbers and hyphens."
-              required
-              aria-required="true"
-              error={errors.slug?.message}
-            />
-          </SimpleGrid>
-
-          <TextInput
-            {...register('logo')}
-            label="Logo URL"
-            description="Optional. Leave blank to keep the default mark."
-            type="url"
-            inputMode="url"
-            error={errors.logo?.message}
-          />
-
-          <Group>
-            <Button type="submit" loading={isSubmitting} disabled={!isDirty}>
-              {isSubmitting ? 'Saving…' : 'Save changes'}
-            </Button>
-          </Group>
-        </Stack>
-      </form>
-    </PageSection>
-  )
-}
-
-function OrganizationSkeleton() {
-  return (
-    <>
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md" aria-busy="true">
-        {[0, 1, 2, 3].map((card) => (
-          <Skeleton key={card} height={116} radius="md" />
-        ))}
-      </SimpleGrid>
-      <Card padding="lg">
-        <Title order={2} size="h5" mb="md">
-          Company profile
-        </Title>
-        {/* Same shape as the loaded form: a paired row, then a full-width field. */}
-        <Stack gap="md">
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-            <Skeleton height={60} />
-            <Skeleton height={76} />
-          </SimpleGrid>
-          <Skeleton height={76} />
-          <Skeleton height={36} width={140} />
-        </Stack>
-      </Card>
     </>
   )
 }

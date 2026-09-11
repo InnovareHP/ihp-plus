@@ -1,37 +1,20 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Group,
-  Menu,
-  Modal,
-  Stack,
-  Text,
-  TextInput,
-} from '@mantine/core'
+import { ActionIcon, Badge, Button, Group, Menu, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconDotsVertical, IconPlus } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { EmptyState } from '@/components/page-shell'
+import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
-import { useApprovers } from '@/features/requests/use-approvers'
+import { useApprovers } from '@/features/requests/hooks/use-approvers'
 import { useDepartmentLeads } from '@/features/teams/use-department-leads'
-import {
-  createTeamSchema,
-  DEFAULT_TEAM_QUERY,
-  renameTeamSchema,
-  teamQuerySchema,
-  type CreateTeamValues,
-  type RenameTeamValues,
-  type TeamRow,
-} from '../schema'
-import { useCreateTeam, useDeleteTeam, useRenameTeam, useTeams } from '../use-teams'
+import { DEFAULT_TEAM_QUERY, teamQuerySchema, type TeamRow } from '../schema'
+import { useTeams } from '../hooks/use-teams'
+import { CreateTeamModal } from './create-team-modal'
+import { DeleteTeamModal } from './delete-team-modal'
+import { RenameTeamModal } from './rename-team-modal'
 import { TeamMembersDrawer } from './team-members-drawer'
 
 const created = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
@@ -63,7 +46,6 @@ export function TeamsPanel() {
   const [createOpened, createModal] = useDisclosure(false)
   const [renaming, setRenaming] = useState<TeamRow | null>(null)
   const [deleting, setDeleting] = useState<TeamRow | null>(null)
-  const deleteTeam = useDeleteTeam()
 
   // Who leads what is resolved once for the whole table rather than per row.
   const leadNames = useMemo(() => {
@@ -263,140 +245,9 @@ export function TeamsPanel() {
 
       <RenameTeamModal team={renaming} onClose={() => setRenaming(null)} />
 
-      <Modal
-        opened={Boolean(deleting)}
-        onClose={() => setDeleting(null)}
-        title={`Delete ${deleting?.name ?? 'department'}?`}
-        centered
-      >
-        <Stack gap="md">
-          <Text size="sm">
-            Deleting {deleting?.name} cannot be undone. People already in it keep their profile but
-            lose their department.
-          </Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setDeleting(null)}>
-              Keep it
-            </Button>
-            <Button
-              color="red"
-              loading={deleteTeam.isPending}
-              onClick={() => {
-                if (!deleting) return
-                deleteTeam.mutate({ teamId: deleting.id })
-                setDeleting(null)
-              }}
-            >
-              Delete department
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+      <DeleteTeamModal team={deleting} onClose={() => setDeleting(null)} />
 
       <TeamMembersDrawer team={selected} onClose={() => setQuery({ team: '' })} />
     </Stack>
-  )
-}
-
-function CreateTeamModal({ opened, onClose }: { opened: boolean; onClose: () => void }) {
-  const create = useCreateTeam()
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<CreateTeamValues>({
-    resolver: zodResolver(createTeamSchema),
-    mode: 'onTouched',
-    reValidateMode: 'onChange',
-    defaultValues: { name: '' },
-  })
-
-  async function onSubmit(values: CreateTeamValues) {
-    try {
-      await create.mutateAsync(values)
-    } catch (error) {
-      setError('name', { message: error instanceof Error ? error.message : 'Could not create.' })
-      return
-    }
-    reset({ name: '' })
-    onClose()
-  }
-
-  return (
-    <Modal opened={opened} onClose={onClose} title="New department" centered>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Stack gap="md">
-          <TextInput
-            {...register('name')}
-            label="Department name"
-            placeholder="Clinical Operations"
-            required
-            aria-required="true"
-            error={errors.name?.message}
-            data-autofocus
-          />
-          <Group justify="flex-end">
-            <Button variant="default" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={isSubmitting}>
-              {isSubmitting ? 'Creating…' : 'Create department'}
-            </Button>
-          </Group>
-        </Stack>
-      </form>
-    </Modal>
-  )
-}
-
-function RenameTeamModal({ team, onClose }: { team: TeamRow | null; onClose: () => void }) {
-  const rename = useRenameTeam()
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<RenameTeamValues>({
-    resolver: zodResolver(renameTeamSchema),
-    mode: 'onTouched',
-    reValidateMode: 'onChange',
-    values: { teamId: team?.id ?? '', name: team?.name ?? '' },
-  })
-
-  async function onSubmit(values: RenameTeamValues) {
-    try {
-      await rename.mutateAsync(values)
-    } catch (error) {
-      setError('name', { message: error instanceof Error ? error.message : 'Could not rename.' })
-      return
-    }
-    onClose()
-  }
-
-  return (
-    <Modal opened={Boolean(team)} onClose={onClose} title={`Rename ${team?.name ?? ''}`} centered>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Stack gap="md">
-          <TextInput
-            {...register('name')}
-            label="Department name"
-            required
-            aria-required="true"
-            error={errors.name?.message}
-            data-autofocus
-          />
-          <Group justify="flex-end">
-            <Button variant="default" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={isSubmitting}>
-              {isSubmitting ? 'Saving…' : 'Save name'}
-            </Button>
-          </Group>
-        </Stack>
-      </form>
-    </Modal>
   )
 }

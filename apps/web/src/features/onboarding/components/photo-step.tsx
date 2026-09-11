@@ -2,9 +2,9 @@
 
 import { Alert, Avatar, FileInput, Group, Stack, Text, VisuallyHidden } from '@mantine/core'
 import { useWatch, type UseFormReturn } from 'react-hook-form'
-import { ACCEPTED_PHOTO_TYPES } from '../photo'
+import { ACCEPTED_PHOTO_TYPES } from '../utils/photo'
 import type { OnboardingValues } from '../schema'
-import { useUploadPhoto } from '../use-upload-photo'
+import { useUploadPhoto } from '../hooks/use-upload-photo'
 
 const PHOTO_ERROR_ID = 'onboarding-photo-error'
 

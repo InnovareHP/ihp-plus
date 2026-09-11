@@ -4,12 +4,12 @@ import { Badge, Button, Group, Modal, Stack, Text } from '@mantine/core'
 import Link from 'next/link'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { EmptyState } from '@/components/page-shell'
+import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { requestRoute } from '@/lib/routes'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 // Departments are organization data; the requests feature is a consumer of them.
-import { useTeams } from '@/features/organization/use-teams'
+import { useTeams } from '@/features/organization/hooks/use-teams'
 import {
   DEFAULT_REQUEST_QUERY,
   REQUEST_STATUS_COLORS,
@@ -19,7 +19,7 @@ import {
   type RequestQuery,
   type RequestRow,
 } from '../schema'
-import { useDecideRequest, useRequestQueue } from '../use-requests'
+import { useDecideRequest, useRequestQueue } from '../hooks/use-requests'
 import { DecisionFields } from './decision-fields'
 import { RequestAnswers } from './request-answers'
 

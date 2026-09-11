@@ -22,7 +22,10 @@ import {
   type LookupKind,
   type LookupOptionLists,
 } from '@/features/lookups/schema'
-import { useAddLookupOptions, useRetireLookupOption } from '@/features/lookups/use-lookup-admin'
+import {
+  useAddLookupOptions,
+  useRetireLookupOption,
+} from '@/features/lookups/hooks/use-lookup-admin'
 
 export interface LookupOptionsModalProps {
   opened: boolean

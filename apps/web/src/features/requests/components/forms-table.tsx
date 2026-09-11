@@ -6,12 +6,12 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LinkButton } from '@/components/link-button'
-import { EmptyState } from '@/components/page-shell'
+import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { NEW_REQUEST_FORM_ROUTE, requestFormRoute } from '@/lib/routes'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 // Departments are organization data; the requests feature is a consumer of them.
-import { useTeams } from '@/features/organization/use-teams'
+import { useTeams } from '@/features/organization/hooks/use-teams'
 import {
   DEFAULT_FORM_QUERY,
   FORM_STATUS_LABELS,
@@ -19,7 +19,7 @@ import {
   formQuerySchema,
   type FormRow,
 } from '../schema'
-import { useDeleteForm, useForms, useSetFormStatus } from '../use-forms'
+import { useDeleteForm, useForms, useSetFormStatus } from '../hooks/use-forms'
 
 const updated = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 

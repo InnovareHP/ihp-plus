@@ -1,7 +1,8 @@
 'use client'
 
 import { Alert, Button, Group, Text } from '@mantine/core'
-import { PageHeader, PageShell } from '@/components/page-shell'
+import { PageShell } from '@/components/page-shell'
+import { PageHeader } from '@/components/page-header'
 
 export default function DashboardError({ reset }: { error: Error; reset: () => void }) {
   return (

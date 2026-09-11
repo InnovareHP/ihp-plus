@@ -17,7 +17,7 @@ import {
   type OnboardingField,
   type OnboardingValues,
 } from '../schema'
-import { useCompleteOnboarding } from '../use-complete-onboarding'
+import { useCompleteOnboarding } from '../hooks/use-complete-onboarding'
 import { EmploymentStep, type TeamOption } from './employment-step'
 import { PersonalStep } from './personal-step'
 import { PhotoStep } from './photo-step'

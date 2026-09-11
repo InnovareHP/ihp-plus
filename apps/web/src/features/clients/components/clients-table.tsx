@@ -10,16 +10,15 @@ import {
   SegmentedControl,
   Stack,
   Text,
-  TextInput,
 } from '@mantine/core'
-import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
+import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { IconAdjustments, IconDotsVertical, IconPlus, IconSearch } from '@tabler/icons-react'
+import { IconAdjustments, IconDotsVertical, IconPlus } from '@tabler/icons-react'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LookupOptionsModal } from '@/components/lookup-options-modal'
-import { EmptyState } from '@/components/page-shell'
+import { EmptyState } from '@/components/empty-state'
+import { SearchField } from '@/components/search-field'
 import {
   CLIENT_LOOKUP_KINDS,
   CLIENT_STATUS_COLORS,
@@ -32,7 +31,7 @@ import {
   type ClientRow,
   type ClientSortKey,
 } from '../schema'
-import { useClientQuery } from '../use-client-query'
+import { useClientQuery } from '../hooks/use-client-query'
 import {
   useArchiveClient,
   useClientFilterOptions,
@@ -40,7 +39,7 @@ import {
   useCreateClient,
   useRestoreClient,
   useUpdateClient,
-} from '../use-clients'
+} from '../hooks/use-clients'
 import { ClientFormModal } from './client-form-modal'
 
 const STATUS_OPTIONS = CLIENT_STATUSES.map((status) => ({
@@ -223,7 +222,14 @@ export function ClientsTable() {
       <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
         {/* A search landmark: the filter bar is its own region, separate from the table. */}
         <Group role="search" aria-label="Filter clients" align="flex-end" wrap="wrap" gap="sm">
-          <SearchField initial={query.search} onSearch={(search) => setQuery({ search })} />
+          <SearchField
+            label="clients"
+            labelVisible
+            placeholder="Name, contact, email, phone"
+            width={260}
+            initial={query.search}
+            onSearch={(search) => setQuery({ search })}
+          />
           <MultiSelect
             label="Status"
             placeholder={query.statuses.length > 0 ? undefined : 'Any'}
@@ -389,33 +395,5 @@ export function ClientsTable() {
         initialKind={managing ?? 'clientType'}
       />
     </Stack>
-  )
-}
-
-function SearchField({
-  initial,
-  onSearch,
-}: {
-  initial: string
-  onSearch: (value: string) => void
-}) {
-  const { register } = useForm<{ search: string }>({ defaultValues: { search: initial } })
-  const field = register('search')
-  // Typing must not push a URL per keystroke.
-  const commit = useDebouncedCallback(onSearch, 300)
-
-  return (
-    <TextInput
-      {...field}
-      onChange={(event) => {
-        void field.onChange(event)
-        commit(event.currentTarget.value)
-      }}
-      type="search"
-      label="Search clients"
-      placeholder="Name, contact, email, phone"
-      leftSection={<IconSearch size={16} aria-hidden />}
-      w={{ base: '100%', sm: 260 }}
-    />
   )
 }

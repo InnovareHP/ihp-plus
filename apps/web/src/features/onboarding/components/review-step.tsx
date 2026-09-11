@@ -1,8 +1,9 @@
 'use client'
 
-import { Button, Checkbox, Group, Paper, Stack, Text, Title } from '@mantine/core'
+import { Checkbox, Stack, Text } from '@mantine/core'
 import { useWatch, type UseFormReturn } from 'react-hook-form'
 import type { OnboardingValues } from '../schema'
+import { ReviewSection } from './review-section'
 
 export interface ReviewStepProps {
   form: UseFormReturn<OnboardingValues>
@@ -54,13 +55,13 @@ export function ReviewStep({ form, email, teams, onEdit }: ReviewStepProps) {
 
   return (
     <Stack gap="md">
-      <Section
+      <ReviewSection
         title="About you"
         editLabel="Edit about you"
         onEdit={() => onEdit(0)}
         rows={personal}
       />
-      <Section
+      <ReviewSection
         title="Your role"
         editLabel="Edit your role"
         onEdit={() => onEdit(1)}
@@ -84,39 +85,5 @@ export function ReviewStep({ form, email, teams, onEdit }: ReviewStepProps) {
         ) : null}
       </Stack>
     </Stack>
-  )
-}
-
-interface SectionProps {
-  title: string
-  editLabel: string
-  onEdit: () => void
-  rows: readonly { label: string; value: string }[]
-}
-
-function Section({ title, editLabel, onEdit, rows }: SectionProps) {
-  return (
-    <Paper withBorder radius="md" p="md">
-      <Group justify="space-between" align="center" mb="sm">
-        <Title order={3} size="h6">
-          {title}
-        </Title>
-        <Button variant="subtle" size="compact-sm" onClick={onEdit} aria-label={editLabel}>
-          Edit
-        </Button>
-      </Group>
-      <Stack component="dl" gap="xs" m={0}>
-        {rows.map((row) => (
-          <Group key={row.label} gap="xs" align="baseline" wrap="wrap">
-            <Text component="dt" size="sm" c="dimmed" miw={150}>
-              {row.label}
-            </Text>
-            <Text component="dd" size="sm" m={0}>
-              {row.value}
-            </Text>
-          </Group>
-        ))}
-      </Stack>
-    </Paper>
   )
 }

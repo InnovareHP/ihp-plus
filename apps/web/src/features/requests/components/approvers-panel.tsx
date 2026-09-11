@@ -1,16 +1,16 @@
 'use client'
 
-import { Badge, Button, Group, Select, Stack, Text } from '@mantine/core'
-import { useMemo, useState } from 'react'
+import { Button, Group, Stack, Text } from '@mantine/core'
+import { useMemo } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
-import { EmptyState } from '@/components/page-shell'
+import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
+import { useApprovers } from '../hooks/use-approvers'
 import { approverQuerySchema, DEFAULT_APPROVER_QUERY } from '../schema'
-// Organization membership is where the candidates come from; requests only appoints among them.
-import { useAssignableUsers } from '@/features/organization/use-teams'
 import type { DepartmentApproversRow } from '../schema'
-import { useApprovers, useSetApprover } from '../use-approvers'
+import { AppointControl } from './appoint-control'
+import { ApproverBadge } from './approver-badge'
 
 const parseApproverQuery = searchParamsParser(approverQuerySchema)
 
@@ -117,92 +117,5 @@ export function ApproversPanel() {
         }
       />
     </Stack>
-  )
-}
-
-function ApproverBadge({
-  department,
-  approver,
-}: {
-  department: DepartmentApproversRow
-  approver: DepartmentApproversRow['approvers'][number]
-}) {
-  const setApprover = useSetApprover()
-
-  return (
-    <Badge
-      variant="light"
-      size="lg"
-      rightSection={
-        <Button
-          variant="transparent"
-          size="compact-xs"
-          color="red"
-          px={0}
-          aria-label={`Remove ${approver.name} as an approver for ${department.teamName}`}
-          onClick={() =>
-            setApprover.mutate({
-              teamId: department.teamId,
-              userId: approver.userId,
-              approver: false,
-              name: approver.name,
-              email: approver.email,
-            })
-          }
-        >
-          Remove
-        </Button>
-      }
-    >
-      {approver.name}
-    </Badge>
-  )
-}
-
-function AppointControl({ department }: { department: DepartmentApproversRow }) {
-  const people = useAssignableUsers()
-  const setApprover = useSetApprover()
-  // Which name is showing in this row's picker before it is appointed: local, ephemeral UI.
-  const [picked, setPicked] = useState<string | null>(null)
-
-  const appointed = new Set(department.approvers.map((approver) => approver.userId))
-  const candidates = (people.data ?? []).filter((person) => !appointed.has(person.userId))
-  const chosen = candidates.find((person) => person.userId === picked)
-
-  return (
-    <Group align="flex-end" gap="xs" wrap="nowrap">
-      <Select
-        aria-label={`Add an approver for ${department.teamName}`}
-        placeholder={people.isPending ? 'Loading…' : 'Search people'}
-        searchable
-        size="sm"
-        nothingFoundMessage="Nobody left to appoint"
-        disabled={people.isPending}
-        value={picked}
-        onChange={setPicked}
-        data={candidates.map((person) => ({
-          value: person.userId,
-          label: person.teamName ? `${person.name} · ${person.teamName}` : person.name,
-        }))}
-        w={220}
-      />
-      <Button
-        size="sm"
-        disabled={!chosen}
-        onClick={() => {
-          if (!chosen) return
-          setApprover.mutate({
-            teamId: department.teamId,
-            userId: chosen.userId,
-            approver: true,
-            name: chosen.name,
-            email: chosen.email,
-          })
-          setPicked(null)
-        }}
-      >
-        Appoint
-      </Button>
-    </Group>
   )
 }

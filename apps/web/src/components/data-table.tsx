@@ -1,21 +1,11 @@
 'use client'
 
-import {
-  Alert,
-  Box,
-  Button,
-  Group,
-  Pagination,
-  Skeleton,
-  Stack,
-  Table,
-  Text,
-  UnstyledButton,
-  VisuallyHidden,
-} from '@mantine/core'
-import { IconArrowDown, IconArrowUp, IconArrowsSort } from '@tabler/icons-react'
+import { Alert, Button, Stack, Table, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { pageRangeOf, type PageInfo } from '@/lib/pagination'
+import type { PageInfo } from '@/lib/pagination'
+import { DataTableFooter } from './data-table-footer'
+import { DataTableSkeleton } from './data-table-skeleton'
+import { SortControl } from './data-table-sort-control'
 
 export type SortDirection = 'asc' | 'desc'
 
@@ -182,84 +172,6 @@ export function DataTable<TRow>({
       {pageInfo ? (
         <DataTableFooter label={label} pageInfo={pageInfo} onPageChange={onPageChange} />
       ) : null}
-    </Stack>
-  )
-}
-
-// Outside the scroll container: the row count and the pager must not scroll away sideways.
-function DataTableFooter({
-  label,
-  pageInfo,
-  onPageChange,
-}: {
-  label: string
-  pageInfo: PageInfo
-  onPageChange: ((page: number) => void) | undefined
-}) {
-  const range = pageRangeOf(pageInfo)
-
-  return (
-    <Group justify="space-between" wrap="wrap" gap="sm">
-      <Text size="sm" c="dimmed" aria-live="polite">
-        Showing {range.from}–{range.to} of {pageInfo.total}
-      </Text>
-      {pageInfo.pageCount > 1 && onPageChange ? (
-        <Box component="nav" aria-label={`${label} pages`}>
-          <Pagination
-            total={pageInfo.pageCount}
-            value={pageInfo.page}
-            onChange={onPageChange}
-            size="sm"
-            getItemProps={(page) => ({ 'aria-label': `Page ${page}` })}
-            getControlProps={(control) => ({ 'aria-label': `${control} page` })}
-          />
-        </Box>
-      ) : null}
-    </Group>
-  )
-}
-
-function SortControl<TRow>({
-  column,
-  sort,
-  onSortChange,
-}: {
-  column: DataTableColumn<TRow>
-  sort: DataTableSort | undefined
-  onSortChange: (sort: DataTableSort) => void
-}) {
-  const Icon = !sort ? IconArrowsSort : sort.direction === 'asc' ? IconArrowUp : IconArrowDown
-  const next: SortDirection = sort?.direction === 'asc' ? 'desc' : 'asc'
-
-  return (
-    <UnstyledButton
-      fz="sm"
-      fw={600}
-      onClick={() => onSortChange({ key: column.key, direction: next })}
-      aria-label={`Sort by ${textOf(column.header)}, ${next === 'asc' ? 'ascending' : 'descending'}`}
-    >
-      <Group gap={4} wrap="nowrap">
-        {column.header}
-        <Icon size={14} aria-hidden />
-      </Group>
-    </UnstyledButton>
-  )
-}
-
-// A sortable column's header is expected to be a string; a rich node has no spoken text.
-function textOf(header: ReactNode) {
-  return typeof header === 'string' ? header : 'this column'
-}
-
-// Same column count and row height as the loaded table, so nothing shifts when data lands.
-function DataTableSkeleton({ label, rows }: { label: string; rows: number }) {
-  return (
-    <Stack gap="xs" aria-busy="true">
-      <VisuallyHidden>Loading {label.toLowerCase()}…</VisuallyHidden>
-      <Skeleton height={38} />
-      {Array.from({ length: rows }, (_, row) => (
-        <Skeleton key={row} height={56} />
-      ))}
     </Stack>
   )
 }

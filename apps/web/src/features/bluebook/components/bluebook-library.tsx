@@ -4,14 +4,10 @@ import {
   ActionIcon,
   Badge,
   Button,
-  Card,
-  Divider,
   Flex,
   Group,
   Menu,
-  NavLink,
   SegmentedControl,
-  Select,
   Stack,
   Text,
   ThemeIcon,
@@ -22,23 +18,15 @@ import {
   IconAdjustments,
   IconDotsVertical,
   IconExternalLink,
-  IconFile,
-  IconFileSpreadsheet,
-  IconFileText,
-  IconFileTypeDoc,
-  IconFileTypePdf,
-  IconPhoto,
-  IconPresentation,
   IconUpload,
   IconUsers,
-  type Icon,
 } from '@tabler/icons-react'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LinkButton } from '@/components/link-button'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { LookupOptionsModal } from '@/components/lookup-options-modal'
-import { EmptyState } from '@/components/page-shell'
+import { EmptyState } from '@/components/empty-state'
 import { organizationTab } from '@/lib/routes'
 import {
   BLUEBOOK_LOOKUP_KINDS,
@@ -48,7 +36,7 @@ import {
   type BluebookSortKey,
   type DocumentRow,
 } from '../schema'
-import { useBluebookQuery } from '../use-bluebook-query'
+import { useBluebookQuery } from '../hooks/use-bluebook-query'
 import {
   useArchiveDocument,
   useBluebookOptions,
@@ -58,29 +46,13 @@ import {
   useRestoreDocument,
   useUpdateDocument,
   useUploadDocument,
-} from '../use-bluebook'
+} from '../hooks/use-bluebook'
+import { fileLook } from '../utils/file-look'
+import { ShelfPicker } from './shelf-picker'
+import { ShelfRail } from './shelf-rail'
 import { UploadDocumentModal } from './upload-document-modal'
 
 const filed = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
-
-/** A glance at the row should say what kind of file it is before the title is read. */
-function fileLook(contentType: string): { Icon: Icon; color: string } {
-  if (contentType === 'application/pdf') return { Icon: IconFileTypePdf, color: 'red' }
-  if (contentType.includes('word')) return { Icon: IconFileTypeDoc, color: 'blue' }
-  if (
-    contentType.includes('sheet') ||
-    contentType.includes('excel') ||
-    contentType === 'text/csv'
-  ) {
-    return { Icon: IconFileSpreadsheet, color: 'green' }
-  }
-  if (contentType.includes('presentation') || contentType.includes('powerpoint')) {
-    return { Icon: IconPresentation, color: 'orange' }
-  }
-  if (contentType.startsWith('image/')) return { Icon: IconPhoto, color: 'grape' }
-  if (contentType.startsWith('text/')) return { Icon: IconFileText, color: 'gray' }
-  return { Icon: IconFile, color: 'gray' }
-}
 
 export function BluebookLibrary() {
   const { query, setQuery, clearFilters } = useBluebookQuery()
@@ -454,77 +426,5 @@ export function BluebookLibrary() {
         initialKind="bluebookCategory"
       />
     </Stack>
-  )
-}
-
-export interface ShelfItem {
-  value: string
-  label: string
-  count: number
-}
-
-/**
- * Shelves read as a place, not a filter: a rail that stays put, names where you are, and takes a
- * dozen departments without wrapping into a wall of pills.
- */
-function ShelfRail({
-  items,
-  value,
-  onChange,
-}: {
-  items: ShelfItem[]
-  value: string
-  onChange: (value: string) => void
-}) {
-  if (items.length === 0) return null
-
-  return (
-    <Card component="nav" aria-label="Bluebook shelves" padding="xs" w={240} visibleFrom="md">
-      <Text size="xs" fw={600} c="dimmed" tt="uppercase" px="sm" py={4}>
-        Shelves
-      </Text>
-      {items.map((item, index) => (
-        <Stack key={item.value} gap={0}>
-          {/* The company-wide shelf sits above the departments it applies to. */}
-          {index === 2 ? <Divider my={4} /> : null}
-          <NavLink
-            component="button"
-            type="button"
-            active={value === item.value}
-            aria-current={value === item.value ? 'true' : undefined}
-            label={item.label}
-            onClick={() => onChange(item.value)}
-            rightSection={
-              <Badge size="sm" variant={value === item.value ? 'filled' : 'light'} color="gray">
-                {item.count}
-              </Badge>
-            }
-          />
-        </Stack>
-      ))}
-    </Card>
-  )
-}
-
-/** The same choice on a phone, where a rail would push the documents off the screen. */
-function ShelfPicker({
-  items,
-  value,
-  onChange,
-}: {
-  items: ShelfItem[]
-  value: string
-  onChange: (value: string) => void
-}) {
-  return (
-    <Select
-      label="Shelf"
-      hiddenFrom="md"
-      w="100%"
-      allowDeselect={false}
-      data={items.map((item) => ({ value: item.value, label: `${item.label} (${item.count})` }))}
-      value={value}
-      onChange={(next) => onChange(next ?? '')}
-    />
   )
 }

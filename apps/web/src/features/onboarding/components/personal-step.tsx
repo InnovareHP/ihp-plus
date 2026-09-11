@@ -2,7 +2,7 @@
 
 import { Fieldset, Stack, Text, TextInput } from '@mantine/core'
 import type { UseFormReturn } from 'react-hook-form'
-import { NARROW_INPUT, TINY_INPUT } from '../field-styles'
+import { NARROW_INPUT, TINY_INPUT } from '../utils/field-styles'
 import type { OnboardingValues } from '../schema'
 
 export interface PersonalStepProps {
