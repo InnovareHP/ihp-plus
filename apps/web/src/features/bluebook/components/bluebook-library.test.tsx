@@ -14,17 +14,10 @@ const actions = vi.hoisted(() => ({
   documentLink: vi.fn(),
 }))
 
-const teamActions = vi.hoisted(() => ({
-  listDepartmentLeads: vi.fn(),
-  addDepartmentLead: vi.fn(),
-  removeDepartmentLead: vi.fn(),
-}))
-
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 const nav = vi.hoisted(() => ({ search: '', replace: vi.fn() }))
 
 vi.mock('../actions', () => actions)
-vi.mock('@/features/teams/actions', () => teamActions)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: nav.replace }),
@@ -98,14 +91,6 @@ describe('BluebookLibrary', () => {
     actions.archiveDocument.mockResolvedValue({ ok: true, data: null })
     actions.restoreDocument.mockResolvedValue({ ok: true, data: null })
     actions.documentLink.mockResolvedValue({ ok: true, data: { url: 'https://files/x' } })
-    teamActions.listDepartmentLeads.mockResolvedValue({
-      ok: true,
-      data: {
-        teams: [{ id: 'team-1', name: 'Revenue Cycle' }],
-        members: [{ id: 'user-2', name: 'Grace Hopper', email: 'grace@innovarehp.com' }],
-        leads: [{ teamId: 'team-1', userId: 'user-2' }],
-      },
-    })
   })
 
   it('shows a document with the shelf it is filed under and its file size', async () => {
@@ -123,13 +108,11 @@ describe('BluebookLibrary', () => {
     render(<BluebookLibrary />)
     await screen.findByText('Claim scrubbing checklist')
 
-    const shelves = within(screen.getByRole('tablist', { name: 'Bluebook shelves' }))
-    expect(shelves.getByRole('tab', { name: /All departments/ })).toBeInTheDocument()
-    expect(shelves.getByRole('tab', { name: /Care Management/ })).toBeInTheDocument()
-    expect(shelves.getByRole('tab', { name: 'Everything' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    )
+    const rail = within(screen.getByRole('navigation', { name: 'Bluebook shelves' }))
+    expect(rail.getByRole('button', { name: /All departments/ })).toHaveTextContent('2')
+    expect(rail.getByRole('button', { name: /Care Management/ })).toBeInTheDocument()
+    // Everything is where the page opens, and the rail says so.
+    expect(rail.getByRole('button', { name: /Everything/ })).toHaveAttribute('aria-current', 'true')
   })
 
   it('puts the chosen shelf in the URL rather than filtering in place', async () => {
@@ -137,7 +120,8 @@ describe('BluebookLibrary', () => {
     render(<BluebookLibrary />)
     await screen.findByText('Claim scrubbing checklist')
 
-    await person.click(screen.getByRole('tab', { name: /Revenue Cycle/ }))
+    const rail = within(screen.getByRole('navigation', { name: 'Bluebook shelves' }))
+    await person.click(rail.getByRole('button', { name: /Revenue Cycle/ }))
 
     expect(nav.replace).toHaveBeenCalledWith('/bluebook?shelf=team-1', { scroll: false })
   })
@@ -269,40 +253,17 @@ describe('BluebookLibrary', () => {
     opener.mockRestore()
   })
 
-  it('lists department leads, read-only for a non-admin', async () => {
-    const person = user()
+  it('points an admin at the departments screen to name leads, and hides it otherwise', async () => {
     render(<BluebookLibrary />)
     await screen.findByText('Claim scrubbing checklist')
+    expect(screen.queryByRole('link', { name: /Department leads/ })).not.toBeInTheDocument()
 
-    await person.click(screen.getByRole('button', { name: 'Department leads' }))
-
-    const dialog = within(await screen.findByRole('dialog', { name: 'Department leads' }))
-    expect(dialog.getByText('Revenue Cycle')).toBeInTheDocument()
-    expect(dialog.getByText('Grace Hopper')).toBeInTheDocument()
-    expect(dialog.queryByRole('button', { name: 'Add lead' })).not.toBeInTheDocument()
-  })
-
-  it('lets an admin name a department lead', async () => {
     actions.listBluebookOptions.mockResolvedValue(OPTIONS({ isAdmin: true }))
-    teamActions.addDepartmentLead.mockResolvedValue({ ok: true })
-    const person = user()
     render(<BluebookLibrary />)
-    await screen.findByText('Claim scrubbing checklist')
 
-    await person.click(screen.getByRole('button', { name: 'Department leads' }))
-    const dialog = within(await screen.findByRole('dialog', { name: 'Department leads' }))
-    await person.click(dialog.getByRole('combobox', { name: 'Department' }))
-    await person.click(dialog.getByRole('option', { name: 'Revenue Cycle' }))
-    await person.click(dialog.getByRole('combobox', { name: 'Person' }))
-    await person.click(dialog.getByRole('option', { name: 'Grace Hopper' }))
-    await person.click(dialog.getByRole('button', { name: 'Add lead' }))
-
-    await waitFor(() =>
-      expect(teamActions.addDepartmentLead).toHaveBeenCalledWith({
-        teamId: 'team-1',
-        userId: 'user-2',
-      }),
-    )
+    const link = await screen.findByRole('link', { name: /Department leads/ })
+    // next/link prefixes the basePath in the browser, not in jsdom.
+    expect(link).toHaveAttribute('href', '/organization?tab=departments')
   })
 
   it('explains an empty bluebook and a filtered dead end differently', async () => {

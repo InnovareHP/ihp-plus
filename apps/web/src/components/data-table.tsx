@@ -56,6 +56,8 @@ export interface DataTableProps<TRow> {
   pageInfo?: PageInfo
   onPageChange?: (page: number) => void
   minWidth?: number
+  /** 'comfortable' gives a document library room to breathe; 'compact' is the dense default. */
+  density?: 'compact' | 'comfortable'
   stickyHeader?: boolean
   skeletonRows?: number
   sort?: DataTableSort
@@ -81,6 +83,7 @@ export function DataTable<TRow>({
   pageInfo,
   onPageChange,
   minWidth = 720,
+  density = 'compact',
   stickyHeader = true,
   skeletonRows = 3,
   sort,
@@ -117,6 +120,7 @@ export function DataTable<TRow>({
         {/* A background refetch dims the table; only isPending may replace it with the skeleton. */}
         <Table
           striped
+          verticalSpacing={density === 'comfortable' ? 'md' : 'xs'}
           highlightOnHover
           // Ruled rather than floating: a border around the table and between its columns is
           // what makes a dense grid scannable down a column as well as across a row.
