@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
   // The pg driver opens real sockets; bundling it breaks the standalone server.
   serverExternalPackages: ['@prisma/adapter-pg', 'pg'],
 
+  // Bluebook uploads travel through a server action, whose body cap is 1MB by default; nginx
+  // allows 25m, so the two limits are kept in step.
+  experimental: { serverActions: { bodySizeLimit: '25mb' } },
+
   reactStrictMode: true,
   poweredByHeader: false,
 }

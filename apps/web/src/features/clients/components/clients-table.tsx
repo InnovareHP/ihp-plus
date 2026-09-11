@@ -18,8 +18,10 @@ import { IconAdjustments, IconDotsVertical, IconPlus, IconSearch } from '@tabler
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { LookupOptionsModal } from '@/components/lookup-options-modal'
 import { EmptyState } from '@/components/page-shell'
 import {
+  CLIENT_LOOKUP_KINDS,
   CLIENT_STATUS_COLORS,
   CLIENT_STATUS_LABELS,
   CLIENT_STATUSES,
@@ -40,7 +42,6 @@ import {
   useUpdateClient,
 } from '../use-clients'
 import { ClientFormModal } from './client-form-modal'
-import { ClientOptionsModal } from './client-options-modal'
 
 const STATUS_OPTIONS = CLIENT_STATUSES.map((status) => ({
   value: status,
@@ -380,10 +381,11 @@ export function ClientsTable() {
         }}
       />
 
-      <ClientOptionsModal
+      <LookupOptionsModal
         opened={managing !== null}
         onClose={() => setManaging(null)}
-        options={options}
+        kinds={CLIENT_LOOKUP_KINDS}
+        lists={options}
         initialKind={managing ?? 'clientType'}
       />
     </Stack>

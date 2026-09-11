@@ -15,7 +15,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   // Every @@schema value in this folder must be listed here or the schema is invalid.
-  schemas  = ["auth", "clients", "requests", "lookups"]
+  schemas  = ["auth", "clients", "requests", "lookups", "org", "bluebook"]
 }
 
 model User {

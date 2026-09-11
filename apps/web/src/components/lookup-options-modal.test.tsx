@@ -1,41 +1,58 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { render, screen, userEvent, waitFor } from '@/test/render'
-import { emptyOptionMap } from '../schema'
-import { ClientOptionsModal } from './client-options-modal'
+import { LookupOptionsModal } from './lookup-options-modal'
 
 const actions = vi.hoisted(() => ({
-  addClientOptions: vi.fn(),
-  archiveClientOption: vi.fn(),
+  listLookupOptions: vi.fn(),
+  addLookupOptions: vi.fn(),
+  retireLookupOption: vi.fn(),
 }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 
-vi.mock('../actions', () => actions)
+vi.mock('@/features/lookups/actions', () => actions)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 
-const OPTIONS = { ...emptyOptionMap(), clientType: ['Hospital', 'Hospice'] }
+const KINDS = ['clientType', 'clientTag'] as const
+const LISTS = { clientType: ['Hospital', 'Hospice'], clientTag: [] }
 
 const user = () => userEvent.setup()
 
 function renderModal() {
   return render(
-    <ClientOptionsModal opened onClose={() => {}} options={OPTIONS} initialKind="clientType" />,
+    <LookupOptionsModal
+      opened
+      onClose={() => {}}
+      kinds={KINDS}
+      lists={LISTS}
+      initialKind="clientType"
+    />,
   )
 }
 
-describe('ClientOptionsModal', () => {
+describe('LookupOptionsModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    actions.addClientOptions.mockResolvedValue({ ok: true, data: { added: 2, skipped: 1 } })
-    actions.archiveClientOption.mockResolvedValue({ ok: true, data: null })
+    actions.addLookupOptions.mockResolvedValue({ ok: true, data: { added: 2, skipped: 1 } })
+    actions.retireLookupOption.mockResolvedValue({ ok: true, data: null })
   })
 
-  it('lists the values a field already has', () => {
+  it('lists the values the chosen list already holds', () => {
     renderModal()
 
-    expect(screen.getByText('Client types values (2)')).toBeInTheDocument()
+    expect(screen.getByText('Client types (2)')).toBeInTheDocument()
     expect(screen.getByText('Hospital')).toBeInTheDocument()
+  })
+
+  it('offers only the lists this screen owns', async () => {
+    const person = user()
+    renderModal()
+
+    await person.click(screen.getByRole('combobox', { name: 'List' }))
+
+    expect(screen.getByRole('option', { name: 'Client tags' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Positions' })).not.toBeInTheDocument()
   })
 
   it('adds a pasted list in one call and says what it skipped', async () => {
@@ -52,7 +69,7 @@ describe('ClientOptionsModal', () => {
 
     await person.click(screen.getByRole('button', { name: /Add 2 values/ }))
 
-    expect(actions.addClientOptions).toHaveBeenCalledWith({
+    expect(actions.addLookupOptions).toHaveBeenCalledWith({
       kind: 'clientType',
       values: ['Payer', 'Broker', 'Hospital'],
     })
@@ -64,17 +81,23 @@ describe('ClientOptionsModal', () => {
   it('will not submit an empty or fully duplicate paste', async () => {
     const person = user()
     renderModal()
-    const box = screen.getByRole('textbox', { name: /Add client types in bulk/ })
 
     expect(screen.getByRole('button', { name: /Add value/ })).toBeDisabled()
 
-    await person.type(box, 'Hospital\nhospice')
+    await person.type(
+      screen.getByRole('textbox', { name: /Add client types in bulk/ }),
+      'Hospital\nhospice',
+    )
+
     expect(screen.getByText('0 to add, 2 already in the list')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Add value/ })).toBeDisabled()
   })
 
   it('announces a refusal from the server', async () => {
-    actions.addClientOptions.mockResolvedValue({ ok: false, message: 'Paste at least one value.' })
+    actions.addLookupOptions.mockResolvedValue({
+      ok: false,
+      message: 'Only an admin can change a dropdown list.',
+    })
     const person = user()
     renderModal()
 
@@ -83,31 +106,31 @@ describe('ClientOptionsModal', () => {
 
     await waitFor(() =>
       expect(toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Paste at least one value.' }),
+        expect.objectContaining({ message: 'Only an admin can change a dropdown list.' }),
       ),
     )
   })
 
-  it('retires a value instead of deleting it', async () => {
+  it('retires a value by name instead of deleting it', async () => {
     const person = user()
     renderModal()
 
     await person.click(screen.getByRole('button', { name: 'Retire Hospice' }))
 
-    expect(actions.archiveClientOption).toHaveBeenCalledWith({
+    expect(actions.retireLookupOption).toHaveBeenCalledWith({
       kind: 'clientType',
       value: 'Hospice',
     })
   })
 
-  it('switches to another field and keeps its own list', async () => {
+  it('switches to another list and keeps its own values', async () => {
     const person = user()
     renderModal()
 
-    await person.click(screen.getByRole('combobox', { name: 'Field' }))
-    await person.click(screen.getByRole('option', { name: 'Service lines' }))
+    await person.click(screen.getByRole('combobox', { name: 'List' }))
+    await person.click(screen.getByRole('option', { name: 'Client tags' }))
 
-    expect(screen.getByText('Service lines values (0)')).toBeInTheDocument()
+    expect(screen.getByText('Client tags (0)')).toBeInTheDocument()
     expect(screen.getByText(/No values yet/)).toBeInTheDocument()
   })
 

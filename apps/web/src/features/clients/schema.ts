@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { OPTION_LIMITS, type LookupKind } from '@/features/lookups/schema'
+import type { LookupKind } from '@/features/lookups/schema'
 import { paginationSchema, sortDirectionSchema, type PageInfo } from '@/lib/pagination'
 
 export const CLIENT_STATUSES = ['prospect', 'active', 'on_hold', 'inactive'] as const
@@ -114,19 +114,6 @@ export const createClientSchema = clientDraftSchema
 export const updateClientSchema = clientDraftSchema.extend({ id: z.string().min(1) })
 export const clientIdSchema = z.object({ id: z.string().min(1) })
 
-export const addClientOptionsSchema = z.object({
-  kind: z.enum(CLIENT_LOOKUP_KINDS),
-  values: z
-    .array(z.string().trim().min(1).max(OPTION_LIMITS.maxLength))
-    .min(1)
-    .max(OPTION_LIMITS.maxBulk),
-})
-
-export const retireClientOptionSchema = z.object({
-  kind: z.enum(CLIENT_LOOKUP_KINDS),
-  value: z.string().trim().min(1).max(OPTION_LIMITS.maxLength),
-})
-
 export type ClientStatus = (typeof CLIENT_STATUSES)[number]
 export type ClientLookupKind = (typeof CLIENT_LOOKUP_KINDS)[number]
 export type ClientView = (typeof CLIENT_VIEWS)[number]
@@ -134,8 +121,6 @@ export type ClientSortKey = (typeof CLIENT_SORT_KEYS)[number]
 export type ClientQuery = z.infer<typeof clientQuerySchema>
 export type ClientDraftValues = z.infer<typeof clientDraftSchema>
 export type UpdateClientValues = z.infer<typeof updateClientSchema>
-export type AddClientOptionsValues = z.infer<typeof addClientOptionsSchema>
-export type RetireClientOptionValues = z.infer<typeof retireClientOptionSchema>
 
 export const DEFAULT_CLIENT_QUERY: ClientQuery = clientQuerySchema.parse({})
 

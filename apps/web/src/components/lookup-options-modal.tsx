@@ -16,46 +16,57 @@ import {
 import { IconX } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { LOOKUP_KIND_LABELS, parseOptionList } from '@/features/lookups/schema'
-import { CLIENT_LOOKUP_KINDS, type ClientLookupKind, type ClientOptionMap } from '../schema'
-import { useAddClientOptions, useArchiveClientOption } from '../use-client-options'
+import {
+  LOOKUP_KIND_LABELS,
+  parseOptionList,
+  type LookupKind,
+  type LookupOptionLists,
+} from '@/features/lookups/schema'
+import { useAddLookupOptions, useRetireLookupOption } from '@/features/lookups/use-lookup-admin'
 
-const KIND_OPTIONS = CLIENT_LOOKUP_KINDS.map((kind) => ({
-  value: kind,
-  label: LOOKUP_KIND_LABELS[kind],
-}))
-
-export interface ClientOptionsModalProps {
+export interface LookupOptionsModalProps {
   opened: boolean
   onClose: () => void
-  options: ClientOptionMap
-  /** Which dropdown to open on, so "Manage options" beside a field lands on that field. */
-  initialKind?: ClientLookupKind
+  /** The lists this screen owns, so the Clients modal never offers the onboarding lists. */
+  kinds: readonly LookupKind[]
+  lists: LookupOptionLists
+  /** Which list to open on, so "Manage options" beside a field lands on that field. */
+  initialKind: LookupKind
 }
 
-export function ClientOptionsModal({
+/**
+ * One place to curate a dropdown: see what a list holds, retire a value, and paste a whole
+ * column in at once. Every screen with curated dropdowns opens this rather than growing its own.
+ */
+export function LookupOptionsModal({
   opened,
   onClose,
-  options,
-  initialKind = 'clientType',
-}: ClientOptionsModalProps) {
-  const [kind, setKind] = useState<ClientLookupKind>(initialKind)
-  const add = useAddClientOptions()
-  const retire = useArchiveClientOption()
+  kinds,
+  lists,
+  initialKind,
+}: LookupOptionsModalProps) {
+  const [kind, setKind] = useState<LookupKind>(initialKind)
+  const add = useAddLookupOptions()
+  const retire = useRetireLookupOption()
   const { register, watch, reset } = useForm<{ pasted: string }>({
     defaultValues: { pasted: '' },
   })
 
+  const kindOptions = kinds.map((option) => ({
+    value: option,
+    label: LOOKUP_KIND_LABELS[option],
+  }))
+  const active = kinds.includes(kind) ? kind : initialKind
   const pasted = watch('pasted')
   const parsed = parseOptionList(pasted)
-  const existing = options[kind] ?? []
+  const existing = lists[active] ?? []
   const known = new Set(existing.map((value) => value.toLowerCase()))
   const fresh = parsed.filter((value) => !known.has(value.toLowerCase()))
 
   function onAdd() {
     if (fresh.length === 0) return
     // mutate, not mutateAsync: the failure path is already announced by the hook.
-    add.mutate({ kind, values: parsed }, { onSuccess: () => reset({ pasted: '' }) })
+    add.mutate({ kind: active, values: parsed }, { onSuccess: () => reset({ pasted: '' }) })
   }
 
   return (
@@ -69,21 +80,21 @@ export function ClientOptionsModal({
     >
       <Stack gap="md">
         <Select
-          label="Field"
-          description="Each field keeps its own list, and every client form reads it."
-          data={KIND_OPTIONS}
-          value={kind}
+          label="List"
+          description="Each list is its own dropdown, and every form that reads it updates at once."
+          data={kindOptions}
+          value={active}
           allowDeselect={false}
           onChange={(value) => {
             if (!value) return
-            setKind(value as ClientLookupKind)
+            setKind(value as LookupKind)
             add.reset()
           }}
         />
 
         <Stack gap="xs">
           <Text size="sm" fw={500}>
-            {LOOKUP_KIND_LABELS[kind]} values ({existing.length})
+            {LOOKUP_KIND_LABELS[active]} ({existing.length})
           </Text>
           {existing.length === 0 ? (
             <Text size="sm" c="dimmed">
@@ -103,7 +114,7 @@ export function ClientOptionsModal({
                         variant="transparent"
                         color="gray"
                         aria-label={`Retire ${value}`}
-                        onClick={() => retire.mutate({ kind, value })}
+                        onClick={() => retire.mutate({ kind: active, value })}
                       >
                         <IconX size={12} aria-hidden />
                       </ActionIcon>
@@ -119,9 +130,9 @@ export function ClientOptionsModal({
 
         <Textarea
           {...register('pasted')}
-          label={`Add ${LOOKUP_KIND_LABELS[kind].toLowerCase()} in bulk`}
+          label={`Add ${LOOKUP_KIND_LABELS[active].toLowerCase()} in bulk`}
           description="One per line, or separated by commas, semicolons or tabs — a spreadsheet column pastes straight in."
-          placeholder={'Hospital\nHospice\nPhysician group'}
+          placeholder={'Policy\nProcedure\nTraining'}
           autosize
           minRows={4}
           maxRows={10}

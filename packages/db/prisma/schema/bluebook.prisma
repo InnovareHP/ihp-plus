@@ -1,0 +1,36 @@
+// The company bluebook: the handbook every employee reads, in its own Postgres schema. It
+// stays out of auth.prisma because `pnpm db:auth-schema` rewrites that file wholesale.
+
+model BluebookDocument {
+  id             String @id @default(uuid())
+  organizationId String
+  // Null is the company-wide shelf every department reads; a value is that department's shelf.
+  teamId         String?
+  // Snapshot: a department renamed or deleted later must still label the document it holds.
+  teamName       String?
+
+  title       String
+  description String?
+  /// A value from the bluebookCategory lookup list, stored as plain text.
+  category    String?
+
+  /// Object storage key; the file itself never touches Postgres.
+  fileKey     String
+  fileName    String
+  contentType String
+  byteSize    Int
+
+  uploadedById   String?
+  uploadedByName String?
+
+  // Archiving rather than deleting: a document someone linked to stays accounted for, and the
+  // object is removed from storage only when an admin purges it.
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([organizationId, teamId, archivedAt])
+  @@index([organizationId, category])
+  @@map("bluebookDocument")
+  @@schema("bluebook")
+}

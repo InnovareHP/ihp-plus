@@ -2,17 +2,15 @@
 
 import { db } from '@ihp/db'
 import type { Client, Prisma } from '@ihp/db'
-import { addOptions, listManyFor, retireOption } from '@/features/lookups/service'
+import { listManyFor } from '@/features/lookups/service'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake, type SortDirection } from '@/lib/pagination'
 import {
-  addClientOptionsSchema,
   CLIENT_LOOKUP_KINDS,
   clientIdSchema,
   clientQuerySchema,
   createClientSchema,
   emptyOptionMap,
-  retireClientOptionSchema,
   updateClientSchema,
   type ClientDraftValues,
   type ClientFilterOptions,
@@ -191,34 +189,6 @@ export async function listClientFilterOptions(): Promise<Result<ClientFilterOpti
   for (const kind of CLIENT_LOOKUP_KINDS) options[kind] = lookups.get(kind) ?? []
 
   return { ok: true, data: { owners: members.map((member) => member.user), options } }
-}
-
-/** Bulk insert of dropdown values; the lookups service owns the option table. */
-export async function addClientOptions(
-  input: unknown,
-): Promise<Result<{ added: number; skipped: number }>> {
-  const { organizationId } = await requireOrganization()
-  if (!organizationId) return { ok: false, message: NO_ORGANIZATION }
-
-  const parsed = addClientOptionsSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, message: 'Paste at least one value to add.' }
-
-  const counts = await addOptions(organizationId, parsed.data.kind, parsed.data.values)
-  return { ok: true, data: counts }
-}
-
-/** Retiring an option keeps the clients already carrying its value readable. */
-export async function archiveClientOption(input: unknown): Promise<Result<null>> {
-  const { organizationId } = await requireOrganization()
-  if (!organizationId) return { ok: false, message: NO_ORGANIZATION }
-
-  const parsed = retireClientOptionSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, message: INVALID }
-
-  const retired = await retireOption(organizationId, parsed.data.kind, parsed.data.value)
-  if (!retired) return { ok: false, message: 'That option is already retired.' }
-
-  return { ok: true, data: null }
 }
 
 export async function createClient(input: unknown): Promise<Result<ClientRow>> {

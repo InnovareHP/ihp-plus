@@ -1,0 +1,21 @@
+// Organization structure the portal owns itself, in its own Postgres schema. It stays out of
+// auth.prisma because `pnpm db:auth-schema` rewrites that file wholesale.
+
+// Who leads a department. Separate from the organization and portal roles: a lead manages no
+// members and an admin need not lead anything, and separate from requests.requestApprover,
+// which is about deciding requests rather than running the department.
+model TeamLead {
+  id             String   @id @default(uuid())
+  // Plain columns, not relations: a relation field would have to be added to the generated
+  // Team, User and Organization models in auth.prisma.
+  organizationId String
+  teamId         String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("teamLead")
+  @@schema("org")
+}

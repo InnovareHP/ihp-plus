@@ -1,5 +1,6 @@
 import {
   IconAddressBook,
+  IconBook2,
   IconBuilding,
   IconChecklist,
   IconClipboardList,
@@ -56,6 +57,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Clients',
         description: 'Accounts and follow-ups',
         icon: IconAddressBook,
+      },
+      {
+        href: routes.bluebook,
+        label: 'Bluebook',
+        description: 'Policies and forms',
+        icon: IconBook2,
       },
     ],
   },

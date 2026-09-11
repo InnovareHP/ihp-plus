@@ -23,9 +23,7 @@ vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/auth-guard', () => guard)
 
 const {
-  addClientOptions,
   archiveClient,
-  archiveClientOption,
   createClient,
   listClientFilterOptions,
   listClients,
@@ -256,51 +254,6 @@ describe('listClientFilterOptions', () => {
           clientSource: [],
         },
       },
-    })
-  })
-})
-
-describe('addClientOptions', () => {
-  it('hands a pasted list to the lookup store and reports what it skipped', async () => {
-    const result = await addClientOptions({
-      kind: 'clientType',
-      values: ['Hospice', 'Payer', 'Broker'],
-    })
-
-    expect(prisma.lookupOption.createMany.mock.calls[0]?.[0]).toMatchObject({
-      skipDuplicates: true,
-    })
-    // createMany reported 2 of 3 written, so one was already in the list.
-    expect(result).toEqual({ ok: true, data: { added: 2, skipped: 1 } })
-  })
-
-  it('refuses an empty paste and a field that is not a client dropdown', async () => {
-    expect(await addClientOptions({ kind: 'clientType', values: [] })).toMatchObject({ ok: false })
-    expect(await addClientOptions({ kind: 'position', values: ['Nurse'] })).toMatchObject({
-      ok: false,
-    })
-    expect(prisma.lookupOption.createMany).not.toHaveBeenCalled()
-  })
-})
-
-describe('archiveClientOption', () => {
-  it('retires a value by name inside the organization rather than deleting it', async () => {
-    await archiveClientOption({ kind: 'clientType', value: 'Hospice' })
-
-    const args = prisma.lookupOption.updateMany.mock.calls[0]?.[0]
-    expect(args.where).toMatchObject({
-      organizationId: 'org-1',
-      kind: 'clientType',
-      value: 'Hospice',
-    })
-    expect(args.data.archivedAt).toBeInstanceOf(Date)
-  })
-
-  it('says so when the value was already retired', async () => {
-    prisma.lookupOption.updateMany.mockResolvedValue({ count: 0 })
-
-    expect(await archiveClientOption({ kind: 'clientType', value: 'Hospice' })).toMatchObject({
-      ok: false,
     })
   })
 })

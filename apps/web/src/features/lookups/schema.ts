@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 /**
  * The curated dropdowns. A kind belongs here when its values are the company's own data —
  * something People & Culture would edit without a release.
@@ -16,6 +18,7 @@ export const LOOKUP_KINDS = [
   'clientCity',
   'clientState',
   'clientTag',
+  'bluebookCategory',
 ] as const
 
 export type LookupKind = (typeof LOOKUP_KINDS)[number]
@@ -29,6 +32,7 @@ export const LOOKUP_KIND_LABELS: Record<LookupKind, string> = {
   clientCity: 'Cities',
   clientState: 'States',
   clientTag: 'Client tags',
+  bluebookCategory: 'Bluebook categories',
 }
 
 export function isLookupKind(value: string): value is LookupKind {
@@ -39,6 +43,9 @@ export interface LookupOptionRow {
   value: string
   sortOrder: number
 }
+
+/** The values of several lists at once, which is how a screen full of dropdowns reads them. */
+export type LookupOptionLists = Partial<Record<LookupKind, string[]>>
 
 const MAX_BULK_OPTIONS = 200
 const MAX_OPTION_LENGTH = 80
@@ -65,3 +72,16 @@ export function parseOptionList(text: string) {
 }
 
 export const OPTION_LIMITS = { maxBulk: MAX_BULK_OPTIONS, maxLength: MAX_OPTION_LENGTH } as const
+
+export const addLookupOptionsSchema = z.object({
+  kind: z.enum(LOOKUP_KINDS),
+  values: z.array(z.string().trim().min(1).max(MAX_OPTION_LENGTH)).min(1).max(MAX_BULK_OPTIONS),
+})
+
+export const retireLookupOptionSchema = z.object({
+  kind: z.enum(LOOKUP_KINDS),
+  value: z.string().trim().min(1).max(MAX_OPTION_LENGTH),
+})
+
+export type AddLookupOptionsValues = z.infer<typeof addLookupOptionsSchema>
+export type RetireLookupOptionValues = z.infer<typeof retireLookupOptionSchema>

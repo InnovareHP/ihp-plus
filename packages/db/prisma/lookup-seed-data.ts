@@ -64,4 +64,17 @@ export const LOOKUP_OPTION_SEED: Record<string, readonly string[]> = {
     'New York',
   ],
   clientTag: ['At risk', 'Expansion', 'Executive sponsor', 'Medicare', 'Medicaid', 'Renewal due'],
+
+  // The bluebook's shelves: what kind of document someone is filing.
+  bluebookCategory: [
+    'Policy',
+    'Procedure',
+    'Form',
+    'Training',
+    'Onboarding',
+    'Compliance',
+    'Org chart',
+    'Contact list',
+    'Reference',
+  ],
 }
