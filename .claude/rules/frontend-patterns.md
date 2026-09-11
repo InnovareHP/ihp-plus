@@ -340,8 +340,9 @@ Keep the data hook, the form, and the presentational component separate: a
 `useForm`, and a dumb component from `@ihp/ui`. `@ihp/ui` stays presentational —
 no queries, no `useForm`, no fetching inside it.
 
-- Feature folders in `apps/web/src`: hooks, schema, events, and feature components
-  live together; only genuinely shared, presentational pieces move to `@ihp/ui`.
+- Feature folders in `apps/web/src` group by concern — `components/`, `hooks/`,
+  `utils/`, then the flat modules (`.claude/rules/code-style.md`). Only genuinely
+  shared, presentational pieces move to `@ihp/ui`.
 - **The second use promotes it.** A button/badge/field styled ad hoc in two places
   becomes a `@ihp/ui` component following `button.tsx` exactly — variant maps, named
   export, re-export in `src/index.ts`.

@@ -18,7 +18,7 @@ carry create-next-app's semicolons and double quotes. Leave them; don't reformat
 **One sentence, maximum.** Existing comments in this repo are the model:
 `// Astro owns "/", Next is mounted under "/app" by the nginx proxy.`
 
-- Explain *why* — a constraint, a gotcha, a non-obvious coupling. Never restate what
+- Explain _why_ — a constraint, a gotcha, a non-obvious coupling. Never restate what
   the line does.
 - No multi-paragraph block comments, no JSDoc on obvious props, no commented-out
   code, no `// TODO` without an owner and a reason.
@@ -94,11 +94,44 @@ where a Mantine prop exists, and no arbitrary hex.
 - Route groups carry the structure: `(auth)/` is session-free, `(dashboard)/` requires
   one, and neither appears in the URL. Paths live in `src/lib/routes.ts` — never a
   literal `'/login'` in a component.
-- Feature code goes in `src/features/<feature>/` (schema, messages, components).
-  `src/lib` is cross-cutting singletons; `src/components` is app chrome.
+- Feature code goes in `src/features/<feature>/`, split by concern — see **File layout**
+  below.
 - A server component cannot pass `component={Link}` into a Mantine component — that
   ships a function across the RSC boundary and fails at build. Put the leaf in a
   `'use client'` file.
+
+## File layout: one concern per folder
+
+A file's folder names its **concern**, not the feature it happens to serve. Inside
+`src/features/<feature>/`:
+
+| Folder / file                               | Holds                                                                                          |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `components/`                               | React components and their tests                                                               |
+| `hooks/`                                    | `use-*.ts` — Query, mutation and form hooks                                                    |
+| `utils/`                                    | pure helpers, no React and no import from `components/` (`ihp-id.ts`, `photo.ts`, `guards.ts`) |
+| `schema.ts`                                 | zod schemas and the types inferred from them                                                   |
+| `service.ts`                                | server-side data access (Prisma, session)                                                      |
+| `rpc.ts` / `actions.ts`                     | the transport edge — Connect client, server actions                                            |
+| `events.ts`, `query-keys.ts`, `messages.ts` | one flat module each                                                                           |
+
+- A concern earns a folder on its **second** file: one `use-x.ts` stays flat, a second
+  one moves both into `hooks/`. Same for `utils/`.
+- Tests travel with their source — `<name>.test.ts(x)` lives in the concern folder
+  (`.claude/rules/testing.md`).
+- `src/lib` is cross-cutting singletons, one file per concern; `src/components` is app
+  chrome shared by more than one feature; `src/rpc` is transport wiring only.
+
+### Reusable UI is never inline
+
+- **One exported component per file.** A card, stat tile, badge, empty state, table cell
+  or toolbar declared inside a page or a big feature component gets pulled into its own
+  file under `components/` — a page composes, it does not declare UI.
+- Second feature to use it → move it to `src/components/`. Presentational and
+  app-agnostic → `@ihp/ui`, following `button.tsx` exactly ("the second use promotes
+  it", `.claude/rules/frontend-patterns.md`).
+- The extracted piece takes state as props and stays dumb: no query, no `useForm`, no
+  fetch inside it.
 
 ## Astro app (`apps/landing`)
 

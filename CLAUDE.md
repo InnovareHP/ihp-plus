@@ -42,6 +42,9 @@ Query them instead of recalling an API from training data:
 - **Commit at every major milestone.** Finish a coherent chunk → `git add` the files
   it touched and commit with a message saying what changed and why. Do not batch a
   whole session into one commit, and never `git push` (that's the user's call).
+- **Files sort by concern, not by feature alone**: `components/`, `hooks/`, `utils/`
+  inside `src/features/<feature>/`, and a reusable card/stat/badge never sits inline in
+  a page. See **File layout** in `.claude/rules/code-style.md`.
 - Match the surrounding style: no semicolons, single quotes, 100 cols (`.prettierrc`).
 - **Comments are one sentence, maximum.** Explain why, never what; delete rather than
   extend.
