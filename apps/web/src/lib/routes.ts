@@ -35,6 +35,15 @@ export const ORGANIZATION_TABS = [
 
 export type OrganizationTab = (typeof ORGANIZATION_TABS)[number]
 
+/** Clients splits the same way: the book of clients, what they signed, and what it costs. */
+export const CLIENT_TABS = ['clients', 'contracts', 'rates'] as const
+
+export type ClientTab = (typeof CLIENT_TABS)[number]
+
+export function clientTab(tab: ClientTab) {
+  return tab === 'clients' ? routes.clients : `${routes.clients}?tab=${tab}`
+}
+
 export function organizationTab(tab: OrganizationTab) {
   return tab === 'overview' ? routes.organization : `${routes.organization}?tab=${tab}`
 }

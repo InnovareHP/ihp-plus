@@ -2,23 +2,25 @@ import { Skeleton, Stack } from '@mantine/core'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { PageHeader, PageShell } from '@/components/page-shell'
-import { ClientsTable } from '@/features/clients/components/clients-table'
-import { requireOnboarded } from '@/lib/auth-guard'
+import { ClientTabs } from '@/features/clients/components/client-tabs'
+import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
 
 export const metadata: Metadata = { title: 'Clients' }
 
 export default async function ClientsPage() {
-  await requireOnboarded()
+  const { profile } = await requireOnboarded()
+  // Everyone reads contracts; writing one is a manager's job, same as the service enforces.
+  const canManage = canManageOrganization(membershipOf(profile))
 
   return (
     <PageShell>
       <PageHeader
         title="Clients"
-        description="Every client this organization works with, who owns the relationship, and when they were last contacted."
+        description="Every client this organization works with, what they have signed, and the rates it is all priced from."
       />
       {/* The table keeps its page, sort and filters in the URL, which needs a boundary. */}
       <Suspense fallback={<ClientsFallback />}>
-        <ClientsTable />
+        <ClientTabs canManage={canManage} />
       </Suspense>
     </PageShell>
   )

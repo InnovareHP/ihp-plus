@@ -59,15 +59,16 @@ export const BILLING_CYCLE_LABELS: Record<BillingCycle, string> = {
 export const CONTRACT_SORT_KEYS = ['reference', 'title', 'status', 'subtotal', 'createdAt'] as const
 
 // Cents in, cents out: a price crosses the wire and the database as a whole number, and is
-// only ever formatted for display.
-const cents = z.coerce.number().int().min(0).max(100_000_000)
+// only ever formatted for display. Not coerced — both the form and the proto hand over a
+// number already, and coercion would type the resolver's input as unknown.
+const cents = z.number().int().min(0).max(100_000_000)
 
 export const contractLineSchema = z.object({
   catalogItemId: z.string().optional(),
   name: z.string().trim().min(1, 'Name this line'),
   description: z.string().trim().max(500).default(''),
   unitPriceCents: cents,
-  quantity: z.coerce.number().int().min(1, 'At least one').max(999),
+  quantity: z.number().int().min(1, 'At least one').max(999),
   unit: z.enum(CATALOG_UNITS),
 })
 
@@ -94,7 +95,7 @@ export const catalogItemSchema = z
     priceMinCents: cents,
     priceMaxCents: cents,
     unit: z.enum(CATALOG_UNITS),
-    percentOfSpend: z.coerce.number().int().min(0).max(100).optional(),
+    percentOfSpend: z.number().int().min(0).max(100).optional(),
   })
   // A range that runs backwards would price every contract wrongly and read as a typo.
   .refine((values) => values.priceMaxCents >= values.priceMinCents, {
@@ -117,6 +118,8 @@ export type BillingCycle = (typeof BILLING_CYCLES)[number]
 export type ContractSortKey = (typeof CONTRACT_SORT_KEYS)[number]
 export type ContractLineValues = z.infer<typeof contractLineSchema>
 export type ContractDraftValues = z.infer<typeof contractDraftSchema>
+/** What the form holds before zod applies its defaults; the resolver produces the type above. */
+export type ContractDraftInput = z.input<typeof contractDraftSchema>
 export type CatalogItemValues = z.infer<typeof catalogItemSchema>
 export type ContractQuery = z.infer<typeof contractQuerySchema>
 

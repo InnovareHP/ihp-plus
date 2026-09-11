@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package ihp.contracts.v1;
+
+// Money is whole cents everywhere. A contract total has to reconcile with what Stripe charged
+// to the cent, which a float cannot promise.
+
+enum CatalogCategory {
+  CATALOG_CATEGORY_UNSPECIFIED = 0;
+  CATALOG_CATEGORY_CREATIVE = 1;
+  CATALOG_CATEGORY_SOCIAL = 2;
+  CATALOG_CATEGORY_BUNDLE = 3;
+  CATALOG_CATEGORY_ADDON = 4;
+}
+
+// What a price buys, rendered after the amount as "$2,500/month".
+enum CatalogUnit {
+  CATALOG_UNIT_UNSPECIFIED = 0;
+  CATALOG_UNIT_PROJECT = 1;
+  CATALOG_UNIT_MONTH = 2;
+  CATALOG_UNIT_CAMPAIGN = 3;
+  CATALOG_UNIT_DECK = 4;
+  CATALOG_UNIT_VIDEO = 5;
+  CATALOG_UNIT_ONCE = 6;
+}
+
+enum ContractStatus {
+  CONTRACT_STATUS_UNSPECIFIED = 0;
+  CONTRACT_STATUS_DRAFT = 1;
+  CONTRACT_STATUS_SENT = 2;
+  CONTRACT_STATUS_ACTIVE = 3;
+  CONTRACT_STATUS_PAUSED = 4;
+  CONTRACT_STATUS_CANCELLED = 5;
+  CONTRACT_STATUS_COMPLETED = 6;
+}
+
+enum BillingCycle {
+  BILLING_CYCLE_UNSPECIFIED = 0;
+  BILLING_CYCLE_MONTHLY = 1;
+  BILLING_CYCLE_PROJECT = 2;
+}
+
+enum ContractSortKey {
+  CONTRACT_SORT_KEY_UNSPECIFIED = 0;
+  CONTRACT_SORT_KEY_REFERENCE = 1;
+  CONTRACT_SORT_KEY_TITLE = 2;
+  CONTRACT_SORT_KEY_STATUS = 3;
+  CONTRACT_SORT_KEY_SUBTOTAL = 4;
+  CONTRACT_SORT_KEY_CREATED_AT = 5;
+}
+
+enum SortDirection {
+  SORT_DIRECTION_UNSPECIFIED = 0;
+  SORT_DIRECTION_ASC = 1;
+  SORT_DIRECTION_DESC = 2;
+}
+
+// One line of the published rate card.
+message CatalogItem {
+  string id = 1;
+  CatalogCategory category = 2;
+  string name = 3;
+  optional string description = 4;
+  // Inclusive bounds. A fixed price repeats as both, so there is no separate flag to keep in step.
+  int32 price_min_cents = 5;
+  int32 price_max_cents = 6;
+  CatalogUnit unit = 7;
+  // Set only where the card bills a share of ad spend instead of a flat fee.
+  optional int32 percent_of_spend = 8;
+}
+
+message ContractLine {
+  string id = 1;
+  // Which catalog row it came from, kept for reporting; absent once that row is gone.
+  optional string catalog_item_id = 2;
+  string name = 3;
+  optional string description = 4;
+  // The agreed price, which the catalog's range only bounded.
+  int32 unit_price_cents = 5;
+  int32 quantity = 6;
+  CatalogUnit unit = 7;
+}
+
+message Contract {
+  string id = 1;
+  string reference = 2;
+  string title = 3;
+  string client_id = 4;
+  string client_name = 5;
+  ContractStatus status = 6;
+  BillingCycle billing_cycle = 7;
+  int32 subtotal_cents = 8;
+  // ISO dates rather than Timestamps: whole calendar days off a date input, and a Timestamp
+  // would invent a time zone for them.
+  optional string start_date = 9;
+  optional string end_date = 10;
+  optional string signed_at = 11;
+  string created_at = 12;
+  // True once Stripe holds a subscription or a customer for this contract.
+  bool is_billed = 13;
+}
+
+message ContractDetail {
+  Contract contract = 1;
+  optional string terms = 2;
+  repeated ContractLine lines = 3;
+}
+
+// Already parsed: turning ?a=x into these fields is the caller's job, so a stale URL falls
+// back on the client rather than reaching the service.
+message ContractQuery {
+  string search = 1;
+  // Absent means every status.
+  optional ContractStatus status = 2;
+  optional string client_id = 3;
+  ContractSortKey sort_by = 4;
+  SortDirection sort_direction = 5;
+  int32 page = 6;
+  int32 page_size = 7;
+}
+
+message PageInfo {
+  int32 page = 1;
+  int32 page_size = 2;
+  int32 total = 3;
+  int32 page_count = 4;
+  bool has_previous = 5;
+  bool has_next = 6;
+}
+
+message ListContractsRequest {
+  ContractQuery query = 1;
+}
+
+message ListContractsResponse {
+  repeated Contract rows = 1;
+  PageInfo page_info = 2;
+}
+
+message GetContractRequest {
+  string contract_id = 1;
+}
+
+message GetContractResponse {
+  ContractDetail contract = 1;
+}
+
+message ContractDraftLine {
+  optional string catalog_item_id = 1;
+  string name = 2;
+  string description = 3;
+  int32 unit_price_cents = 4;
+  int32 quantity = 5;
+  CatalogUnit unit = 6;
+}
+
+message CreateContractRequest {
+  string client_id = 1;
+  string title = 2;
+  BillingCycle billing_cycle = 3;
+  string start_date = 4;
+  string end_date = 5;
+  string terms = 6;
+  repeated ContractDraftLine lines = 7;
+}
+
+message CreateContractResponse {
+  ContractDetail contract = 1;
+}
+
+message SetContractStatusRequest {
+  string contract_id = 1;
+  ContractStatus status = 2;
+}
+
+message SetContractStatusResponse {
+  ContractDetail contract = 1;
+}
+
+message ListCatalogRequest {}
+
+message ListCatalogResponse {
+  repeated CatalogItem items = 1;
+}
+
+message CreateCatalogItemRequest {
+  CatalogCategory category = 1;
+  string name = 2;
+  string description = 3;
+  int32 price_min_cents = 4;
+  int32 price_max_cents = 5;
+  CatalogUnit unit = 6;
+  optional int32 percent_of_spend = 7;
+}
+
+message CreateCatalogItemResponse {
+  CatalogItem item = 1;
+}
+
+service ContractsService {
+  rpc ListContracts(ListContractsRequest) returns (ListContractsResponse);
+  rpc GetContract(GetContractRequest) returns (GetContractResponse);
+  rpc CreateContract(CreateContractRequest) returns (CreateContractResponse);
+  rpc SetContractStatus(SetContractStatusRequest) returns (SetContractStatusResponse);
+  rpc ListCatalog(ListCatalogRequest) returns (ListCatalogResponse);
+  rpc CreateCatalogItem(CreateCatalogItemRequest) returns (CreateCatalogItemResponse);
+}
