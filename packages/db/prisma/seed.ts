@@ -17,18 +17,18 @@ const DEPARTMENTS = [
   'Executive',
 ] as const
 
-const ORG_NAME = process.env.ORG_NAME ?? 'Innovare Health Partners'
-const ORG_SLUG = process.env.ORG_SLUG ?? 'ihp'
+// Only used when the database holds no organization at all; an existing one is adopted, never
+// renamed, so a company that edited its own name on the Organization screen keeps it.
+const DEFAULT_ORG = { name: 'Innovare Health Partners', slug: 'ihp' }
+
+const ORG_NAME = process.env.ORG_NAME
+const ORG_SLUG = process.env.ORG_SLUG
 const OWNER_EMAIL = process.env.ORG_OWNER_EMAIL
 
 // Membership rows that carry a plugin-derived membershipKey or memberCount are written by
 // Better Auth's own API, never here — this seed only touches tables with plain columns.
 async function main() {
-  const organization = await db.organization.upsert({
-    where: { slug: ORG_SLUG },
-    update: { name: ORG_NAME },
-    create: { id: crypto.randomUUID(), name: ORG_NAME, slug: ORG_SLUG, createdAt: new Date() },
-  })
+  const organization = await currentOrganization()
   console.log(`organization ${organization.slug} (${organization.id})`)
 
   for (const name of DEPARTMENTS) {
@@ -87,6 +87,59 @@ async function main() {
   // Organization owner and portal admin are separate roles; the seeded owner gets both.
   await db.user.update({ where: { id: owner.id }, data: { role: 'admin' } })
   console.log(`owner + portal admin: ${OWNER_EMAIL}`)
+}
+
+/**
+ * One organization is the company: the plugin refuses to let anyone create a second. So the
+ * seed adopts the one that is already there rather than upserting on a slug, which quietly
+ * created a rival company whenever ORG_SLUG did not match and split departments, options and
+ * members across the two with no way to merge them.
+ */
+async function currentOrganization() {
+  const organizations = await db.organization.findMany({
+    select: { id: true, name: true, slug: true },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  if (organizations.length === 0) {
+    return db.organization.create({
+      data: {
+        id: crypto.randomUUID(),
+        name: ORG_NAME ?? DEFAULT_ORG.name,
+        slug: ORG_SLUG ?? DEFAULT_ORG.slug,
+        createdAt: new Date(),
+      },
+    })
+  }
+
+  // More than one is already a broken state; the seed says so rather than picking for you.
+  if (organizations.length > 1) {
+    const chosen = ORG_SLUG && organizations.find((candidate) => candidate.slug === ORG_SLUG)
+    if (!chosen) {
+      const slugs = organizations.map((candidate) => candidate.slug).join(', ')
+      throw new Error(
+        `This database holds ${organizations.length} organizations (${slugs}). Set ORG_SLUG to say which one to seed.`,
+      )
+    }
+    return chosen
+  }
+
+  const [organization] = organizations
+  if (!organization) throw new Error('No organization to seed.')
+
+  if (ORG_SLUG && ORG_SLUG !== organization.slug) {
+    throw new Error(
+      `ORG_SLUG is "${ORG_SLUG}" but the only organization is "${organization.slug}". Refusing to seed a different company.`,
+    )
+  }
+
+  // Renaming only on an explicit ORG_NAME, so a plain `pnpm db:seed` never undoes an edit.
+  if (ORG_NAME && ORG_NAME !== organization.name) {
+    await db.organization.update({ where: { id: organization.id }, data: { name: ORG_NAME } })
+    console.log(`  renamed to ${ORG_NAME}`)
+  }
+
+  return organization
 }
 
 // The portal's own dropdowns, seeded the same way and just as idempotent.

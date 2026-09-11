@@ -1,6 +1,7 @@
 import { db } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { getSession, membershipOf, readProfile } from '@/lib/auth-guard'
+import { soleOrganizationId } from '@/lib/organization'
 import { isLookupKind, type LookupKind, type LookupOptionRow } from './schema'
 
 // Deliberately not requireOnboarded(): that redirects, and a redirect thrown inside an RPC
@@ -14,14 +15,17 @@ async function requireOrganization() {
   if (!profile) throw new ConnectError('Sign in to continue.', Code.Unauthenticated)
 
   const organizationId = membershipOf(profile).organizationId
-  if (!organizationId) {
-    // Someone signing up before any membership exists still has to pick a position.
-    const fallback = await db.organization.findFirst({ select: { id: true } })
-    if (!fallback) throw new ConnectError('No organization exists yet.', Code.FailedPrecondition)
-    return fallback.id
-  }
+  if (organizationId) return organizationId
 
-  return organizationId
+  // Someone signing up has no membership yet and still has to pick a position.
+  const sole = await soleOrganizationId()
+  if (!sole) {
+    throw new ConnectError(
+      'No organization is set up for your account yet.',
+      Code.FailedPrecondition,
+    )
+  }
+  return sole
 }
 
 export async function loadOptions(kind: string): Promise<LookupOptionRow[]> {
