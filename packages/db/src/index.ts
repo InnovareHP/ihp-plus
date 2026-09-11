@@ -18,6 +18,8 @@ export type {
   RequestFormTeamModel as RequestFormTeam,
   RequestSubmissionModel as RequestSubmission,
   SessionModel as Session,
+  StripeEventModel as StripeEvent,
+  StripeInvoiceModel as StripeInvoice,
   TeamLeadModel as TeamLead,
   TeamMemberModel as TeamMember,
   TeamModel as Team,

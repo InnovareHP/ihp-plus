@@ -9,6 +9,8 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "src/generated/**"],
       "env": [
         "DATABASE_URL",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
         "REDIS_URL",
         "NEXT_PUBLIC_*",
         "BETTER_AUTH_URL",
@@ -26,6 +28,8 @@
       "persistent": true,
       "env": [
         "DATABASE_URL",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
         "REDIS_URL",
         "NEXT_PUBLIC_*",
         "BETTER_AUTH_URL",
@@ -45,6 +49,8 @@
       "dependsOn": ["^build"],
       "env": [
         "DATABASE_URL",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
         "REDIS_URL",
         "NEXT_PUBLIC_*",
         "BETTER_AUTH_URL",

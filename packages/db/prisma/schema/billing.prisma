@@ -1,0 +1,71 @@
+// Stripe's side of the money, in its own Postgres schema. It stays out of auth.prisma because
+// `pnpm db:auth-schema` rewrites that file wholesale.
+//
+// Stripe owns the amounts and the payment state; nothing here is a second ledger. These rows
+// exist so a webhook can be replayed safely and so a failure is visible in the portal without
+// opening the Stripe dashboard.
+
+/// One received webhook event. Stripe delivers at least once and retries for days, so the
+/// unique eventId is what makes handling idempotent: a redelivery finds the row and stops.
+model StripeEvent {
+  /// Stripe's own event id (evt_…), not a uuid: it is the idempotency key.
+  id   String @id
+  type String
+
+  /// Set once the handler has finished; a row with null is still in flight or gave up.
+  processedAt DateTime?
+  /// Why the handler failed, so a stuck event can be diagnosed without the dashboard.
+  failedAt    DateTime?
+  error       String?
+  /// Stripe retries, so one event can be attempted several times.
+  attempts    Int       @default(0)
+
+  /// The whole event as delivered, kept for replay and for reading what actually arrived.
+  payload Json
+
+  createdAt DateTime @default(now())
+
+  @@index([type, processedAt])
+  @@map("stripeEvent")
+  @@schema("billing")
+}
+
+/// A read model of Stripe's invoices, so the portal can show what was billed and what failed
+/// without a round trip to Stripe on every page. Stripe stays the source of truth: every
+/// column here is written from a webhook and never by the app.
+model StripeInvoice {
+  /// Stripe's own invoice id (in_…).
+  id String @id
+
+  /// Resolved from the subscription when the contract is known; null for an invoice raised
+  /// against a customer the portal has no contract for.
+  contractId     String?
+  customerId     String
+  subscriptionId String?
+
+  /// Stripe's own status: draft, open, paid, uncollectible or void.
+  status String
+  /// Cents, like every other amount in this database — never a float.
+  amountDueCents  Int
+  amountPaidCents Int    @default(0)
+  currency        String
+
+  /// Where a human goes to see or pay it.
+  hostedInvoiceUrl String?
+
+  paidAt        DateTime?
+  failedAt      DateTime?
+  /// Stripe's own wording for why the last attempt failed, shown as-is.
+  failureReason String?
+
+  periodStart DateTime?
+  periodEnd   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contractId])
+  @@index([customerId])
+  @@map("stripeInvoice")
+  @@schema("billing")
+}
