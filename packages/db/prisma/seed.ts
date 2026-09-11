@@ -1,7 +1,7 @@
 // Must come first: it sets DATABASE_URL before the client module reads it.
 import './load-env'
 import { db } from '../src/client'
-import { CATALOG_SEED } from './catalog'
+import { CATALOG_SEED, DEFAULT_CONTRACT_TERMS, DEFAULT_STANDARD_TERMS } from './catalog'
 import { DEMO_CLIENTS } from './client-seed-data'
 import { LOOKUP_OPTION_SEED } from './lookup-seed-data'
 import { REQUEST_FORM_SEED } from './request-seed-data'
@@ -57,6 +57,7 @@ async function main() {
   await seedRequestForms(organization.id)
   await seedDemoClients(organization.id)
   await seedCatalog(organization.id)
+  await seedContractTemplate(organization.id)
 
   if (!OWNER_EMAIL) {
     console.log('ORG_OWNER_EMAIL is unset, so no owner was assigned.')
@@ -262,11 +263,47 @@ async function seedCatalog(organizationId: string) {
       priceMaxCents: item.priceMaxCents,
       unit: item.unit,
       percentOfSpend: item.percentOfSpend ?? null,
+      defaultTerms: item.defaultTerms ?? null,
       sortOrder: index,
     })),
     skipDuplicates: true,
   })
   if (created.count > 0) console.log(`  + ${created.count} catalog items`)
+
+  // Rows seeded before defaultTerms existed hold null, which means "never set" rather than
+  // "deliberately blank" — an organization that clears the field leaves an empty string. Only
+  // the nulls are filled, so an edit is never undone.
+  let filled = 0
+  for (const item of CATALOG_SEED) {
+    if (!item.defaultTerms) continue
+    const updated = await db.catalogItem.updateMany({
+      where: { organizationId, category: item.category, name: item.name, defaultTerms: null },
+      data: { defaultTerms: item.defaultTerms },
+    })
+    filled += updated.count
+  }
+  if (filled > 0) console.log(`  + scope terms on ${filled} catalog items`)
+}
+
+/**
+ * The boilerplate a contract starts from. Written once and never again: an organization edits
+ * its own terms in the portal, and a second run must not undo that.
+ */
+async function seedContractTemplate(organizationId: string) {
+  const existing = await db.contractTemplate.findUnique({
+    where: { organizationId },
+    select: { id: true },
+  })
+  if (existing) return
+
+  await db.contractTemplate.create({
+    data: {
+      organizationId,
+      scopeTemplate: DEFAULT_CONTRACT_TERMS,
+      standardTerms: DEFAULT_STANDARD_TERMS,
+    },
+  })
+  console.log('  + contract terms template')
 }
 
 main()

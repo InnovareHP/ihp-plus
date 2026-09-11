@@ -16,6 +16,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { IconTrash } from '@tabler/icons-react'
+import { useEffect, useRef } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { DEFAULT_CLIENT_QUERY } from '@/features/clients/schema'
@@ -24,6 +25,7 @@ import {
   BILLING_CYCLES,
   BILLING_CYCLE_LABELS,
   CATALOG_CATEGORY_LABELS,
+  composeTerms,
   contractDraftSchema,
   formatCents,
   formatPriceRange,
@@ -33,7 +35,7 @@ import {
   type ContractDraftInput,
   type ContractDraftValues,
 } from '../schema'
-import { useCatalog, useCreateContract } from '../use-contracts'
+import { useCatalog, useContractTemplate, useCreateContract } from '../use-contracts'
 
 const EMPTY_DRAFT: ContractDraftInput = {
   clientId: '',
@@ -54,6 +56,7 @@ export interface ContractFormModalProps {
 
 export function ContractFormModal({ opened, onClose, clientId }: ContractFormModalProps) {
   const catalog = useCatalog()
+  const template = useContractTemplate()
   // One page of clients sorted by name, which the searchable Select filters. A book longer
   // than a page needs a search-backed picker rather than a bigger page.
   const clients = useClients({
@@ -78,7 +81,9 @@ export function ContractFormModal({ opened, onClose, clientId }: ContractFormMod
     handleSubmit,
     reset,
     setError,
+    setValue,
     watch,
+    getFieldState,
     formState: { errors, isSubmitting },
   } = form
   const lines = useFieldArray({ control, name: 'lines' })
@@ -86,6 +91,20 @@ export function ContractFormModal({ opened, onClose, clientId }: ContractFormMod
   // Watched rather than read on submit: the total has to move as prices are typed.
   const watchedLines = watch('lines')
   const subtotal = subtotalOf(watchedLines ?? [])
+
+  const suggestedTerms = composeTerms({
+    lines: watchedLines ?? [],
+    catalog: catalog.data ?? [],
+    template: template.data,
+  })
+
+  // Composition is a side effect of the picked services changing, which is external to this
+  // render. It stops as soon as the terms are edited: what somebody typed is never overwritten.
+  const termsEdited = useRef(false)
+  useEffect(() => {
+    if (termsEdited.current || getFieldState('terms').isDirty) return
+    setValue('terms', suggestedTerms)
+  }, [suggestedTerms, getFieldState, setValue])
 
   /** Adding from the card seeds the agreed price with the bottom of its range. */
   function addFromCatalog(item: CatalogItemRow) {
@@ -316,15 +335,36 @@ export function ContractFormModal({ opened, onClose, clientId }: ContractFormMod
             </Text>
           </Group>
 
-          <Textarea
-            {...register('terms')}
-            label="Scope and terms"
-            description="What is included, how many revisions, turnaround, and what is billed separately."
-            autosize
-            minRows={4}
-            maxRows={12}
-            error={errors.terms?.message}
-          />
+          <Stack gap={4}>
+            <Group justify="space-between" align="flex-end" wrap="wrap" gap="xs">
+              <Text size="sm" fw={500} component="label" htmlFor="contract-terms">
+                Scope and terms
+              </Text>
+              <Button
+                variant="subtle"
+                size="compact-xs"
+                type="button"
+                onClick={() => {
+                  termsEdited.current = false
+                  setValue('terms', suggestedTerms, { shouldDirty: false })
+                }}
+              >
+                Rebuild from services
+              </Button>
+            </Group>
+            <Text size="xs" c="dimmed">
+              Filled from the services you picked and your standard terms. Edit freely — it stops
+              rebuilding once you do.
+            </Text>
+            <Textarea
+              {...register('terms', { onChange: () => (termsEdited.current = true) })}
+              id="contract-terms"
+              autosize
+              minRows={6}
+              maxRows={16}
+              error={errors.terms?.message}
+            />
+          </Stack>
 
           <Group justify="flex-end">
             <Button variant="default" onClick={onClose} type="button">

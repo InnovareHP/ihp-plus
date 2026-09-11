@@ -20,6 +20,7 @@ import type {
   ContractQuery,
   ContractStatus,
   ContractsPage,
+  ContractTemplateValues,
 } from './schema'
 
 /**
@@ -96,6 +97,24 @@ export async function setContractStatus(values: {
   return detailFromProto(response.contract)
 }
 
+export async function getContractTemplate(): Promise<ContractTemplateValues> {
+  const response = await call(() => browserClients.contracts.getContractTemplate({}))
+  return {
+    scopeTemplate: response.template?.scopeTemplate ?? '',
+    standardTerms: response.template?.standardTerms ?? '',
+  }
+}
+
+export async function updateContractTemplate(
+  values: ContractTemplateValues,
+): Promise<ContractTemplateValues> {
+  const response = await call(() => browserClients.contracts.updateContractTemplate(values))
+  return {
+    scopeTemplate: response.template?.scopeTemplate ?? '',
+    standardTerms: response.template?.standardTerms ?? '',
+  }
+}
+
 export async function listCatalog(): Promise<CatalogItemRow[]> {
   const response = await call(() => browserClients.contracts.listCatalog({}))
   return response.items.map(catalogFromProto)
@@ -111,6 +130,7 @@ export async function createCatalogItem(values: CatalogItemValues): Promise<Cata
       priceMaxCents: values.priceMaxCents,
       unit: unitToProto(values.unit),
       percentOfSpend: values.percentOfSpend,
+      defaultTerms: values.defaultTerms,
     }),
   )
   if (!response.item) throw new Error('The server did not return the new service.')

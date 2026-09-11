@@ -9,15 +9,18 @@ import {
   createCatalogItem,
   createContract,
   getContract,
+  getContractTemplate,
   listCatalog,
   listContracts,
   setContractStatus,
+  updateContractTemplate,
 } from './rpc'
 import type {
   CatalogItemValues,
   ContractDraftValues,
   ContractQuery,
   ContractStatus,
+  ContractTemplateValues,
 } from './schema'
 
 export function useContracts(query: ContractQuery) {
@@ -43,6 +46,32 @@ export function useCatalog() {
     queryFn: listCatalog,
     // The rate card changes far less often than the contracts priced from it.
     staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useContractTemplate() {
+  return useQuery({
+    queryKey: contractKeys.template(),
+    queryFn: getContractTemplate,
+    // Boilerplate changes far less often than the contracts built from it.
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useUpdateContractTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (values: ContractTemplateValues) => updateContractTemplate(values),
+    onSuccess: (template) => {
+      track(contractEvents.templateSaved)
+      queryClient.setQueryData(contractKeys.template(), template)
+      announceSuccess('Standard terms saved.')
+    },
+    onError: (error: Error) => {
+      track(contractEvents.templateSaveFailed, { reason: error.message })
+      announceFailure(error.message)
+    },
   })
 }
 

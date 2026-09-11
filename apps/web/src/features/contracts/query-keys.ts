@@ -6,4 +6,5 @@ export const contractKeys = {
   list: (query: ContractQuery) => [...contractKeys.lists(), query] as const,
   detail: (contractId: string) => [...contractKeys.all, 'detail', contractId] as const,
   catalog: () => [...contractKeys.all, 'catalog'] as const,
+  template: () => [...contractKeys.all, 'template'] as const,
 }

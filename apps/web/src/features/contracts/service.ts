@@ -19,6 +19,7 @@ import {
   type ContractSortKey,
   type ContractStatus,
   type ContractsPage,
+  type ContractTemplateValues,
 } from './schema'
 
 // Contracts are company money, so reading them is open to every onboarded member the way
@@ -60,6 +61,7 @@ const CATALOG_SELECT = {
   priceMaxCents: true,
   unit: true,
   percentOfSpend: true,
+  defaultTerms: true,
 } satisfies Prisma.CatalogItemSelect
 
 function catalogRowOf(row: Prisma.CatalogItemGetPayload<{ select: typeof CATALOG_SELECT }>) {
@@ -72,6 +74,7 @@ function catalogRowOf(row: Prisma.CatalogItemGetPayload<{ select: typeof CATALOG
     priceMaxCents: row.priceMaxCents,
     unit: row.unit as CatalogUnit,
     percentOfSpend: row.percentOfSpend ?? undefined,
+    defaultTerms: row.defaultTerms ?? undefined,
   } satisfies CatalogItemRow
 }
 
@@ -116,11 +119,49 @@ export async function createCatalogItem(input: unknown): Promise<CatalogItemRow>
       priceMaxCents: values.priceMaxCents,
       unit: values.unit,
       percentOfSpend: values.percentOfSpend ?? null,
+      defaultTerms: values.defaultTerms || null,
     },
     select: CATALOG_SELECT,
   })
 
   return catalogRowOf(created)
+}
+
+// ---- Terms template ----
+
+/**
+ * The organization's boilerplate. A company that has never been seeded has no row, so empty
+ * strings stand in rather than the caller having to handle a missing template.
+ */
+export async function loadContractTemplate(): Promise<ContractTemplateValues> {
+  const { organizationId } = await caller()
+
+  const template = await db.contractTemplate.findUnique({
+    where: { organizationId },
+    select: { scopeTemplate: true, standardTerms: true },
+  })
+
+  return template ?? { scopeTemplate: '', standardTerms: '' }
+}
+
+export async function updateContractTemplate(input: {
+  scopeTemplate: string
+  standardTerms: string
+}): Promise<ContractTemplateValues> {
+  const { organizationId } = await requireManager()
+
+  const template = await db.contractTemplate.upsert({
+    where: { organizationId },
+    update: { scopeTemplate: input.scopeTemplate, standardTerms: input.standardTerms },
+    create: {
+      organizationId,
+      scopeTemplate: input.scopeTemplate,
+      standardTerms: input.standardTerms,
+    },
+    select: { scopeTemplate: true, standardTerms: true },
+  })
+
+  return template
 }
 
 // ---- Contracts ----

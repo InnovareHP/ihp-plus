@@ -7,4 +7,6 @@ export const contractEvents = {
   statusChangeFailed: 'contracts.contract.status_change_failed',
   catalogItemAdded: 'contracts.catalog_item.added',
   catalogItemAddFailed: 'contracts.catalog_item.add_failed',
+  templateSaved: 'contracts.template.saved',
+  templateSaveFailed: 'contracts.template.save_failed',
 } as const satisfies Record<string, EventName>

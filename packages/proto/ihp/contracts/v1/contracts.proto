@@ -67,6 +67,14 @@ message CatalogItem {
   CatalogUnit unit = 7;
   // Set only where the card bills a share of ad spend instead of a flat fee.
   optional int32 percent_of_spend = 8;
+  // What including this service commits the contract to, appended when it is picked.
+  optional string default_terms = 9;
+}
+
+// The boilerplate every contract starts from, one per organization.
+message ContractTemplate {
+  string scope_template = 1;
+  string standard_terms = 2;
 }
 
 message ContractLine {
@@ -191,6 +199,22 @@ message CreateCatalogItemRequest {
   int32 price_max_cents = 5;
   CatalogUnit unit = 6;
   optional int32 percent_of_spend = 7;
+  string default_terms = 8;
+}
+
+message GetContractTemplateRequest {}
+
+message GetContractTemplateResponse {
+  ContractTemplate template = 1;
+}
+
+message UpdateContractTemplateRequest {
+  string scope_template = 1;
+  string standard_terms = 2;
+}
+
+message UpdateContractTemplateResponse {
+  ContractTemplate template = 1;
 }
 
 message CreateCatalogItemResponse {
@@ -204,4 +228,6 @@ service ContractsService {
   rpc SetContractStatus(SetContractStatusRequest) returns (SetContractStatusResponse);
   rpc ListCatalog(ListCatalogRequest) returns (ListCatalogResponse);
   rpc CreateCatalogItem(CreateCatalogItemRequest) returns (CreateCatalogItemResponse);
+  rpc GetContractTemplate(GetContractTemplateRequest) returns (GetContractTemplateResponse);
+  rpc UpdateContractTemplate(UpdateContractTemplateRequest) returns (UpdateContractTemplateResponse);
 }

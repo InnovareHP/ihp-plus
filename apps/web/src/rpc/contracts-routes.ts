@@ -6,7 +6,9 @@ import {
   loadCatalog,
   loadContract,
   loadContractsPage,
+  loadContractTemplate,
   setContractStatus,
+  updateContractTemplate,
 } from '@/features/contracts/service'
 import {
   catalogCategoryFromProto,
@@ -66,6 +68,20 @@ export const contracts: ServiceImpl<typeof ContractsService> = {
 
   listCatalog: async () => ({ items: (await loadCatalog()).map(catalogToProto) }),
 
+  getContractTemplate: async () => ({
+    template: { $typeName: 'ihp.contracts.v1.ContractTemplate', ...(await loadContractTemplate()) },
+  }),
+
+  updateContractTemplate: async (request) => ({
+    template: {
+      $typeName: 'ihp.contracts.v1.ContractTemplate',
+      ...(await updateContractTemplate({
+        scopeTemplate: request.scopeTemplate,
+        standardTerms: request.standardTerms,
+      })),
+    },
+  }),
+
   createCatalogItem: async (request) => ({
     item: catalogToProto(
       await createCatalogItem({
@@ -76,6 +92,7 @@ export const contracts: ServiceImpl<typeof ContractsService> = {
         priceMaxCents: request.priceMaxCents,
         unit: catalogUnitFromProto(request.unit),
         percentOfSpend: request.percentOfSpend,
+        defaultTerms: request.defaultTerms,
       }),
     ),
   }),

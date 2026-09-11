@@ -248,6 +248,7 @@ export function catalogToProto(item: CatalogItemRow): CatalogItem {
     priceMaxCents: item.priceMaxCents,
     unit: UNIT_TO[item.unit],
     percentOfSpend: item.percentOfSpend,
+    defaultTerms: item.defaultTerms,
   }
 }
 
@@ -261,6 +262,7 @@ export function catalogFromProto(message: CatalogItem): CatalogItemRow {
     priceMaxCents: message.priceMaxCents,
     unit: UNIT_FROM[message.unit],
     percentOfSpend: message.percentOfSpend,
+    defaultTerms: message.defaultTerms,
   }
 }
 

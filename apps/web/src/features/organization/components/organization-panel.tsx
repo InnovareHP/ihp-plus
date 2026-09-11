@@ -17,6 +17,8 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-shell'
+// Contract boilerplate is company configuration, so it is edited where the company is.
+import { ContractTermsPanel } from '@/features/contracts/components/contract-terms-panel'
 import { announceSuccess } from '@/lib/announce'
 import { organizationProfileSchema, type OrganizationProfileValues } from '../schema'
 import { useOrganizationSummary, useUpdateOrganizationProfile } from '../use-organization'
@@ -43,7 +45,7 @@ export function OrganizationPanel() {
 
   return (
     <>
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md" mb="md">
         <StatCard label="People" value={summary.data.memberCount} hint="Members of this company" />
         <StatCard
           label="Departments"
@@ -70,6 +72,8 @@ export function OrganizationPanel() {
           logo: summary.data.logo,
         }}
       />
+
+      <ContractTermsPanel />
     </>
   )
 }

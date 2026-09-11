@@ -96,6 +96,7 @@ export const catalogItemSchema = z
     priceMaxCents: cents,
     unit: z.enum(CATALOG_UNITS),
     percentOfSpend: z.number().int().min(0).max(100).optional(),
+    defaultTerms: z.string().trim().max(2_000).default(''),
   })
   // A range that runs backwards would price every contract wrongly and read as a typo.
   .refine((values) => values.priceMaxCents >= values.priceMinCents, {
@@ -134,6 +135,14 @@ export interface CatalogItemRow {
   priceMaxCents: number
   unit: CatalogUnit
   percentOfSpend: number | undefined
+  /** What including this service commits the contract to. */
+  defaultTerms: string | undefined
+}
+
+/** The organization's boilerplate, which every contract starts from. */
+export interface ContractTemplateValues {
+  scopeTemplate: string
+  standardTerms: string
 }
 
 export interface ContractLineRow {
@@ -197,6 +206,40 @@ export function formatPriceRange(
   return item.priceMinCents === item.priceMaxCents
     ? `${formatCents(item.priceMinCents)}/${unit}`
     : `${formatCents(item.priceMinCents)}–${formatCents(item.priceMaxCents)}/${unit}`
+}
+
+/**
+ * The terms a contract starts with: what the chosen services commit to, then the scope
+ * checklist to fill in, then the company's standard conditions.
+ *
+ * Composed rather than stored so re-picking services re-composes it, and returned as plain
+ * text because it is read by a client and edited freely before it is agreed.
+ */
+export function composeTerms(options: {
+  lines: readonly { catalogItemId?: string | undefined }[]
+  catalog: readonly CatalogItemRow[]
+  template: ContractTemplateValues | undefined
+}) {
+  const byId = new Map(options.catalog.map((item) => [item.id, item]))
+
+  // Each service contributes once however many times it is on the contract, and the order
+  // follows the contract rather than the rate card.
+  const seen = new Set<string>()
+  const included: string[] = []
+  for (const line of options.lines) {
+    const terms = line.catalogItemId ? byId.get(line.catalogItemId)?.defaultTerms : undefined
+    if (!terms || seen.has(terms)) continue
+    seen.add(terms)
+    included.push(`- ${terms}`)
+  }
+
+  const sections = [
+    included.length > 0 ? ['What is included', ...included].join('\n') : '',
+    options.template?.scopeTemplate ?? '',
+    options.template?.standardTerms ?? '',
+  ]
+
+  return sections.filter((section) => section.trim() !== '').join('\n\n')
 }
 
 export function lineTotalCents(line: Pick<ContractLineRow, 'unitPriceCents' | 'quantity'>) {
