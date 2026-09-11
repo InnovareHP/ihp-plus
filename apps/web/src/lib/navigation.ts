@@ -1,5 +1,6 @@
 import {
   IconAddressBook,
+  IconUsers,
   IconBook2,
   IconBuilding,
   IconClipboardList,
@@ -47,6 +48,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Dashboard',
         description: 'Your day at a glance',
         icon: IconLayoutDashboard,
+      },
+      {
+        href: routes.directory,
+        label: 'Directory',
+        description: 'Who works here',
+        icon: IconUsers,
       },
       {
         href: routes.clients,
