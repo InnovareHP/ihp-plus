@@ -1,4 +1,5 @@
 import type { ConnectRouter, ServiceImpl } from '@ihp/rpc'
+import { LookupsService } from '@ihp/rpc/lookups'
 import { MembersService } from '@ihp/rpc/members'
 import { RequestsService } from '@ihp/rpc/requests'
 import {
@@ -14,6 +15,7 @@ import {
   portalRoleFromProto,
   queryFromProto,
 } from './members-codec'
+import { lookups } from './lookups-routes'
 import { requests } from './requests-routes'
 
 // Thin by design: every implementation converts at the wire boundary and delegates to the
@@ -65,4 +67,5 @@ const members: ServiceImpl<typeof MembersService> = {
 export function registerRoutes(router: ConnectRouter) {
   router.service(MembersService, members)
   router.service(RequestsService, requests)
+  router.service(LookupsService, lookups)
 }

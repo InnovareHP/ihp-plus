@@ -2,8 +2,8 @@ import { db } from '@ihp/db'
 import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { headers } from 'next/headers'
-import { EMPLOYMENT_TYPES } from '@/features/onboarding/options'
 import { auth } from '@/lib/auth'
+import { listFor } from '@/features/lookups/service'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake, type SortDirection } from '@/lib/pagination'
 import type {
@@ -155,11 +155,14 @@ export async function loadMembersPage(query: MemberQuery): Promise<MembersPage> 
 export async function loadFilterOptions(): Promise<MemberFilterOptions> {
   const { organizationId } = await requireManager()
 
-  const teams = await db.team.findMany({
-    where: { organizationId },
-    orderBy: { name: 'asc' },
-    select: { id: true, name: true, _count: { select: { teammembers: true } } },
-  })
+  const [teams, employmentTypes] = await Promise.all([
+    db.team.findMany({
+      where: { organizationId },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, _count: { select: { teammembers: true } } },
+    }),
+    listFor(organizationId, 'employmentType'),
+  ])
 
   return {
     teams: teams.map((team) => ({
@@ -167,7 +170,7 @@ export async function loadFilterOptions(): Promise<MemberFilterOptions> {
       name: team.name,
       memberCount: team._count.teammembers,
     })),
-    employmentTypes: EMPLOYMENT_TYPES,
+    employmentTypes: employmentTypes.map((option) => option.value),
   }
 }
 

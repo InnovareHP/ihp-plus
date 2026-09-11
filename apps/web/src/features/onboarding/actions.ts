@@ -3,6 +3,7 @@
 import { db } from '@ihp/db'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
+import { isKnownOption } from '@/features/lookups/service'
 import { requireSession } from '@/lib/auth-guard'
 import { deleteObject, objectUrl, putObject, S3NotConfiguredError } from '@/lib/s3'
 import { generateIhpId } from './ihp-id'
@@ -49,6 +50,19 @@ export async function completeOnboarding(values: unknown): Promise<CompleteOnboa
   })
   if (!team) {
     return { ok: false, message: 'That department no longer exists — pick another one.' }
+  }
+
+  // The dropdowns are database-backed now, so the values they produce are checked against the
+  // organization's own lists here rather than against a union compiled into the bundle.
+  const [knownPosition, knownEmployment] = await Promise.all([
+    isKnownOption(team.organizationId, 'position', profile.jobTitle),
+    isKnownOption(team.organizationId, 'employmentType', profile.employmentType),
+  ])
+  if (!knownPosition) {
+    return { ok: false, message: 'That position is not on the list — pick another one.' }
+  }
+  if (!knownEmployment) {
+    return { ok: false, message: 'That employment type is not on the list — pick another one.' }
   }
 
   // Joining first: if this fails, onboardingCompletedAt is never set and the user can retry.

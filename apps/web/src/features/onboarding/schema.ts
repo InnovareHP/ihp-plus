@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { EMPLOYMENT_TYPES, POSITIONS } from './options'
 
 const MIN_AGE = 16
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -56,10 +55,12 @@ const personalFields = {
 }
 
 const employmentFields = {
-  jobTitle: z.enum(POSITIONS, 'Select your current position'),
+  // The values are curated per organization now, so the client only checks that one was
+  // picked; completeOnboarding checks it against the organization's own list.
+  jobTitle: z.string().trim().min(1, 'Select your current position').max(120),
   // A team id, checked against the organization server-side; the client cannot be trusted.
   teamId: z.string().min(1, 'Select your department'),
-  employmentType: z.enum(EMPLOYMENT_TYPES, 'Select your employment type'),
+  employmentType: z.string().trim().min(1, 'Select your employment type').max(120),
   startDate: z
     .string()
     .trim()

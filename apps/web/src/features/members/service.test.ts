@@ -5,6 +5,7 @@ import { memberQuerySchema } from './schema'
 const prisma = vi.hoisted(() => ({
   member: { count: vi.fn(), findMany: vi.fn() },
   team: { findMany: vi.fn() },
+  lookupOption: { findMany: vi.fn() },
 }))
 
 const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
@@ -180,6 +181,19 @@ describe('loadFilterOptions', () => {
     prisma.team.findMany.mockResolvedValue([
       { id: 'team-1', name: 'Executive', _count: { teammembers: 3 } },
     ])
+    prisma.lookupOption.findMany.mockResolvedValue([
+      { value: 'Full-time', sortOrder: 0 },
+      { value: 'Contract', sortOrder: 1 },
+    ])
+  })
+
+  it('serves employment types from the organization list, not a compiled-in one', async () => {
+    const result = await listMemberFilterOptions()
+
+    expect(result.employmentTypes).toEqual(['Full-time', 'Contract'])
+    expect(prisma.lookupOption.findMany.mock.calls[0]?.[0]).toMatchObject({
+      where: { organizationId: 'org-1', kind: 'employmentType', archivedAt: null },
+    })
   })
 
   it('returns the departments of this organization with their sizes', async () => {

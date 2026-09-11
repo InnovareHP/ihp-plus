@@ -65,10 +65,14 @@ describe('employmentStepSchema', () => {
     expect(employmentError({})).toBeUndefined()
   })
 
-  it('rejects a position outside the seeded list', () => {
-    expect(employmentError({ jobTitle: 'Chief Vibes Officer' })).toBe(
-      'Select your current position',
-    )
+  it('requires a position to be chosen', () => {
+    // The positions are curated per organization now, so membership of the list is checked in
+    // completeOnboarding rather than against a union compiled into the bundle.
+    expect(employmentError({ jobTitle: '' })).toBe('Select your current position')
+  })
+
+  it('requires an employment type to be chosen', () => {
+    expect(employmentError({ employmentType: '' })).toBe('Select your employment type')
   })
 
   it('requires a department to be chosen', () => {

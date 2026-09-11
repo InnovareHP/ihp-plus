@@ -2,7 +2,7 @@
 
 import { Select, Stack, TextInput } from '@mantine/core'
 import { Controller, type UseFormReturn } from 'react-hook-form'
-import { EMPLOYMENT_TYPES, POSITIONS } from '../options'
+import { LookupSelect } from '@/components/lookup-select'
 import { NARROW_INPUT } from '../field-styles'
 import type { OnboardingValues } from '../schema'
 
@@ -29,10 +29,11 @@ export function EmploymentStep({ form, teams }: EmploymentStepProps) {
         control={control}
         name="jobTitle"
         render={({ field }) => (
-          <Select
+          <LookupSelect
+            kind="position"
             label="Current position"
             placeholder="Choose a position"
-            data={POSITIONS}
+            searchable
             allowDeselect={false}
             required
             aria-required="true"
@@ -73,10 +74,10 @@ export function EmploymentStep({ form, teams }: EmploymentStepProps) {
         control={control}
         name="employmentType"
         render={({ field }) => (
-          <Select
+          <LookupSelect
+            kind="employmentType"
             label="Employment type"
             placeholder="Choose an employment type"
-            data={EMPLOYMENT_TYPES}
             allowDeselect={false}
             required
             aria-required="true"

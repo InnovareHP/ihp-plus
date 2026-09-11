@@ -1,0 +1,29 @@
+// Curated dropdown values for the portal, per organization, so a company edits its own lists
+// instead of waiting on a deploy. Its own Postgres schema because `pnpm db:auth-schema`
+// rewrites auth.prisma wholesale.
+//
+// Only lists that are genuinely data live here. A value the code branches on — an
+// organization role, a request status, a form field type — stays in code and in the proto
+// contract, because offering a value nothing implements is worse than a deploy.
+
+model LookupOption {
+  id String @id @default(uuid())
+  // A plain column, not a relation: a relation field would have to be added to the generated
+  // Organization model in auth.prisma.
+  organizationId String
+
+  /// One of the kinds in features/lookups/schema.ts, e.g. "position".
+  kind      String
+  /// Stored on the answering row as plain text, so retiring an option never rewrites history.
+  value     String
+  sortOrder Int    @default(0)
+
+  // Archiving rather than deleting: rows already answered with this value stay readable.
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([organizationId, kind, value])
+  @@index([organizationId, kind, archivedAt])
+  @@map("lookupOption")
+  @@schema("lookups")
+}

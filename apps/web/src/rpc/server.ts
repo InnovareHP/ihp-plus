@@ -1,4 +1,5 @@
 import { createClient, createRouterTransport } from '@ihp/rpc'
+import { LookupsService } from '@ihp/rpc/lookups'
 import { MembersService } from '@ihp/rpc/members'
 import { RequestsService } from '@ihp/rpc/requests'
 import { registerRoutes } from './routes'
@@ -10,6 +11,7 @@ const transport = createRouterTransport(registerRoutes)
 // Server-only: this module reaches the service implementations, and through them Prisma and
 // next/headers. Client components import ./browser instead.
 export const serverClients = {
+  lookups: createClient(LookupsService, transport),
   members: createClient(MembersService, transport),
   requests: createClient(RequestsService, transport),
 }

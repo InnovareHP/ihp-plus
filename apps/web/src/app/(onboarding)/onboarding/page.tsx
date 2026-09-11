@@ -1,7 +1,6 @@
 import { Paper, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import { OnboardingStepper } from '@/features/onboarding/components/onboarding-stepper'
-import { EMPLOYMENT_TYPES, POSITIONS } from '@/features/onboarding/options'
 import { db } from '@ihp/db'
 import { membershipOf, requireOnboarding } from '@/lib/auth-guard'
 import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
@@ -10,11 +9,6 @@ export const metadata: Metadata = { title: 'Finish your profile' }
 
 function isoDate(value: Date | null) {
   return value ? value.toISOString().slice(0, 10) : ''
-}
-
-// A stored value that has since left the option list must not preselect a dead choice.
-function option<T extends string>(options: readonly T[], value: string | null) {
-  return options.find((candidate) => candidate === value)
 }
 
 export default async function OnboardingPage() {
@@ -57,8 +51,8 @@ export default async function OnboardingPage() {
             preferredName: profile.preferredName ?? '',
             phone: profile.phone ?? '',
             dateOfBirth: isoDate(profile.dateOfBirth),
-            jobTitle: option(POSITIONS, profile.jobTitle),
-            employmentType: option(EMPLOYMENT_TYPES, profile.employmentType),
+            jobTitle: profile.jobTitle ?? '',
+            employmentType: profile.employmentType ?? '',
             teamId: membership.team?.id ?? '',
             startDate: isoDate(profile.startDate),
             photoKey: profile.photoKey ?? '',

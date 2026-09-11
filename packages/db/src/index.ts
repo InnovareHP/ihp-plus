@@ -8,7 +8,9 @@ export { Prisma } from './generated/prisma/client'
 export type {
   AccountModel as Account,
   ClientModel as Client,
+  ClientOptionModel as ClientOption,
   InvitationModel as Invitation,
+  LookupOptionModel as LookupOption,
   MemberModel as Member,
   OrganizationModel as Organization,
   RequestApproverModel as RequestApprover,

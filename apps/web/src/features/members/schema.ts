@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { EMPLOYMENT_TYPES } from '@/features/onboarding/options'
 import { paginationSchema, sortDirectionSchema, type PageInfo } from '@/lib/pagination'
 
 // Mirrors the roles configured on the plugins in lib/auth.ts.
@@ -32,6 +31,18 @@ function csvOf<const T extends readonly [string, ...string[]]>(values: T) {
     )
 }
 
+/** Same shape as csvIds, for a filter whose values are rows rather than ids. */
+const csvValues = z
+  .union([z.string(), z.array(z.string())])
+  .optional()
+  .transform((raw) => (typeof raw === 'string' ? raw.split(',') : (raw ?? [])))
+  .transform((list) =>
+    list
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 50),
+  )
+
 const csvIds = z
   .union([z.string(), z.array(z.string())])
   .optional()
@@ -48,7 +59,8 @@ export const memberQuerySchema = paginationSchema.extend({
   search: z.string().trim().max(100).catch('').default(''),
   organizationRoles: csvOf(ORGANIZATION_ROLES),
   portalRoles: csvOf(PORTAL_ROLES),
-  employmentTypes: csvOf(EMPLOYMENT_TYPES),
+  // Curated per organization, so the filter carries free text capped like the id lists.
+  employmentTypes: csvValues,
   teamIds: csvIds,
   status: z.enum(MEMBER_STATUSES).catch('all'),
   startDateFrom: z.iso.date().optional().catch(undefined),
