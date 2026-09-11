@@ -57,3 +57,53 @@ export async function isKnownOption(organizationId: string, kind: LookupKind, va
   })
   return Boolean(row)
 }
+
+/** One query for several dropdowns, so a screen full of them costs a single round trip. */
+export async function listManyFor(organizationId: string, kinds: readonly LookupKind[]) {
+  const rows = await db.lookupOption.findMany({
+    where: { organizationId, kind: { in: [...kinds] }, archivedAt: null },
+    orderBy: [{ sortOrder: 'asc' }, { value: 'asc' }],
+    select: { kind: true, value: true },
+  })
+
+  const grouped = new Map<LookupKind, string[]>(kinds.map((kind) => [kind, []]))
+  for (const row of rows) grouped.get(row.kind as LookupKind)?.push(row.value)
+  return grouped
+}
+
+/**
+ * Bulk insert. skipDuplicates means re-adding a value the organization already has is a no-op
+ * rather than an error, so a pasted list can safely overlap the existing one.
+ */
+export async function addOptions(
+  organizationId: string,
+  kind: LookupKind,
+  values: readonly string[],
+) {
+  const last = await db.lookupOption.findFirst({
+    where: { organizationId, kind },
+    orderBy: { sortOrder: 'desc' },
+    select: { sortOrder: true },
+  })
+
+  const created = await db.lookupOption.createMany({
+    data: values.map((value, index) => ({
+      organizationId,
+      kind,
+      value,
+      sortOrder: (last?.sortOrder ?? -1) + 1 + index,
+    })),
+    skipDuplicates: true,
+  })
+
+  return { added: created.count, skipped: values.length - created.count }
+}
+
+/** Retiring by value, not id: the caller is looking at a dropdown, which shows values. */
+export async function retireOption(organizationId: string, kind: LookupKind, value: string) {
+  const changed = await db.lookupOption.updateMany({
+    where: { organizationId, kind, value, archivedAt: null },
+    data: { archivedAt: new Date() },
+  })
+  return changed.count > 0
+}
