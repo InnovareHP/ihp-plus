@@ -1,12 +1,12 @@
 'use client'
 
 import { Alert, Button, SimpleGrid, Stack, Text } from '@mantine/core'
+import { StatCard } from '@/components/stat-card'
 // Contract boilerplate is company configuration, so it is edited where the company is.
 import { ContractTermsPanel } from '@/features/contracts/components/contract-terms-panel'
 import { useOrganizationSummary } from '../hooks/use-organization'
 import { OrganizationProfileForm } from './organization-profile-form'
 import { OrganizationSkeleton } from './organization-skeleton'
-import { StatCard } from './stat-card'
 
 export function OrganizationPanel() {
   const summary = useOrganizationSummary()
