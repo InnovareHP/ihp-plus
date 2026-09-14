@@ -20,6 +20,7 @@
         "MICROSOFT_TENANT_ID",
         "EMAIL_*",
         "SES_*",
+        "AWS_REGION",
         "S3_*",
         "ORG_*"
       ]
@@ -40,6 +41,7 @@
         "MICROSOFT_TENANT_ID",
         "EMAIL_*",
         "SES_*",
+        "AWS_REGION",
         "S3_*",
         "ORG_*"
       ]
@@ -62,6 +64,7 @@
         "MICROSOFT_TENANT_ID",
         "EMAIL_*",
         "SES_*",
+        "AWS_REGION",
         "S3_*",
         "ORG_*"
       ]
