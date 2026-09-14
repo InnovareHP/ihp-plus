@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { PageShell } from '@/components/page-shell'
 import { PageHeader } from '@/components/page-header'
+import { ContactDetailsForm } from '@/features/settings/components/contact-details-form'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 
@@ -28,7 +29,7 @@ export default async function SettingsPage() {
     <PageShell>
       <PageHeader
         title="Settings"
-        description="The profile you completed at setup. Email People & Culture to correct anything here."
+        description="Keep how colleagues reach you up to date. Your legal name, role and department come from People & Culture."
       />
 
       <Card padding="lg">
@@ -51,30 +52,48 @@ export default async function SettingsPage() {
       </Card>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-        <Card component="section" padding="lg">
-          <Title order={2} size="h5" mb="sm">
-            About you
+        <Card component="section" padding="lg" aria-labelledby="contact-heading">
+          <Title order={2} size="h5" mb="sm" id="contact-heading">
+            Contact details
           </Title>
-          <Stack component="dl" gap="xs" m={0}>
-            <Row label="Legal name" value={user.name} />
-            <Row label="Preferred name" value={text(profile.preferredName)} />
-            <Row label="Email" value={user.email} />
-            <Row label="Phone" value={text(profile.phone)} />
-            <Row label="Date of birth" value={date(profile.dateOfBirth)} />
-          </Stack>
+          <ContactDetailsForm
+            defaultValues={{
+              preferredName: profile.preferredName ?? '',
+              phone: profile.phone ?? '',
+              photoKey: profile.photoKey ?? '',
+            }}
+            initialPhotoUrl={photoUrl}
+            initials={initials(user.name)}
+          />
         </Card>
 
-        <Card component="section" padding="lg">
-          <Title order={2} size="h5" mb="sm">
-            Your role
-          </Title>
-          <Stack component="dl" gap="xs" m={0}>
-            <Row label="Position" value={text(profile.jobTitle)} />
-            <Row label="Department" value={membership.team?.name ?? 'Not provided'} />
-            <Row label="Employment type" value={text(profile.employmentType)} />
-            <Row label="Start date" value={date(profile.startDate)} />
-          </Stack>
-        </Card>
+        <Stack gap="md">
+          <Card component="section" padding="lg">
+            <Title order={2} size="h5" mb="sm">
+              About you
+            </Title>
+            <Stack component="dl" gap="xs" m={0}>
+              <Row label="Legal name" value={user.name} />
+              <Row label="Email" value={user.email} />
+              <Row label="Date of birth" value={date(profile.dateOfBirth)} />
+            </Stack>
+          </Card>
+
+          <Card component="section" padding="lg">
+            <Title order={2} size="h5" mb="sm">
+              Your role
+            </Title>
+            <Stack component="dl" gap="xs" m={0}>
+              <Row label="Position" value={text(profile.jobTitle)} />
+              <Row label="Department" value={membership.team?.name ?? 'Not provided'} />
+              <Row label="Employment type" value={text(profile.employmentType)} />
+              <Row label="Start date" value={date(profile.startDate)} />
+            </Stack>
+            <Text size="xs" c="dimmed" mt="sm">
+              Email People &amp; Culture to correct anything in this section.
+            </Text>
+          </Card>
+        </Stack>
       </SimpleGrid>
     </PageShell>
   )
