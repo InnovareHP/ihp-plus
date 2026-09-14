@@ -1,4 +1,6 @@
-// No analytics vendor is wired yet, so every event funnels through here and the vendor stays swappable.
+import posthog from 'posthog-js'
+
+// PostHog receives the events, but every call funnels through here so the vendor stays swappable.
 export type EventName = `${string}.${string}.${string}`
 
 export type EventProperties = Record<string, string | number | boolean | null>
@@ -7,5 +9,10 @@ export type EventProperties = Record<string, string | number | boolean | null>
 export function track(event: EventName, properties: EventProperties = {}) {
   if (process.env.NODE_ENV === 'development') {
     console.debug(`[track] ${event}`, properties)
+  }
+
+  // PostHog is initialised only in a browser with a key, so a server render sends nothing.
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    posthog.capture(event, properties)
   }
 }

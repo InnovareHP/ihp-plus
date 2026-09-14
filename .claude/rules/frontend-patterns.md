@@ -327,8 +327,9 @@ Microcopy is UI. Write it with the component, not after.
 - Never put PII in event properties — ids, not emails or names.
 - Client errors escape to an error boundary that reports; a swallowed `catch` is a
   defect.
-- No analytics package is installed. Propose one before wiring it, and keep calls
-  behind a thin `track()` so the vendor stays swappable.
+- PostHog (`posthog-js`) is the vendor, initialised in `src/instrumentation-client.ts` only when
+  `NEXT_PUBLIC_POSTHOG_KEY` is set, with autocapture and session recording off. Every call still
+  goes through `track()` in `src/lib/analytics.ts` so the vendor stays swappable.
 - `apps/landing` is the conversion surface: one clear primary CTA per page, a real
   `title`/`description` per page (`Layout.astro` takes both), and **zero JS by
   default** — a `client:*` directive needs a reason (`.claude/rules/code-style.md`).
