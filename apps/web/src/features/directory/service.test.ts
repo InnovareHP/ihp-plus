@@ -5,6 +5,8 @@ const prisma = vi.hoisted(() => ({
   member: { count: vi.fn(), findMany: vi.fn() },
   team: { findMany: vi.fn() },
   teamLead: { findMany: vi.fn() },
+  organization: { findUnique: vi.fn() },
+  user: { findMany: vi.fn() },
 }))
 
 const guard = vi.hoisted(() => ({
@@ -21,7 +23,77 @@ vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/auth-guard', () => guard)
 vi.mock('@/lib/s3', () => storage)
 
-const { loadDepartments, loadDirectoryPage } = await import('./service')
+const { loadDepartments, loadDirectoryPage, loadOrgChart } = await import('./service')
+
+function chartMember(id: string, name: string, jobTitle: string, onboarded = true) {
+  return {
+    user: {
+      id,
+      name,
+      preferredName: null,
+      jobTitle,
+      onboardingCompletedAt: onboarded ? new Date('2026-03-04T00:00:00.000Z') : null,
+    },
+  }
+}
+
+describe('loadOrgChart', () => {
+  beforeEach(() => {
+    prisma.organization.findUnique
+      .mockReset()
+      .mockResolvedValue({ name: 'Innovare Health Partners' })
+    prisma.team.findMany.mockReset().mockResolvedValue([
+      {
+        id: 'team-1',
+        name: 'Revenue Cycle',
+        teammembers: [
+          chartMember('user-2', 'Grace Hopper', 'Billing Specialist'),
+          chartMember('user-1', 'Ada Lovelace', 'Revenue Cycle Director'),
+          chartMember('user-3', 'Mid Onboarding', '', false),
+        ],
+      },
+    ])
+    prisma.teamLead.findMany.mockReset().mockResolvedValue([{ teamId: 'team-1', userId: 'user-1' }])
+    prisma.member.count.mockReset().mockResolvedValue(2)
+    prisma.user.findMany.mockReset().mockResolvedValue([])
+    guard.requireOnboarded.mockReset().mockResolvedValue({ profile: {} })
+  })
+
+  it('puts each department under its leads, leaving out anyone still onboarding', async () => {
+    const chart = await loadOrgChart()
+
+    expect(chart).toEqual({
+      organizationName: 'Innovare Health Partners',
+      unassignedCount: 2,
+      departments: [
+        {
+          teamId: 'team-1',
+          name: 'Revenue Cycle',
+          leads: [{ userId: 'user-1', name: 'Ada Lovelace', jobTitle: 'Revenue Cycle Director' }],
+          members: [{ userId: 'user-2', name: 'Grace Hopper', jobTitle: 'Billing Specialist' }],
+        },
+      ],
+    })
+    expect(prisma.user.findMany).not.toHaveBeenCalled()
+  })
+
+  it('still names a lead who is not a member of the department they lead', async () => {
+    prisma.teamLead.findMany.mockResolvedValue([{ teamId: 'team-1', userId: 'user-9' }])
+    prisma.user.findMany.mockResolvedValue([
+      { id: 'user-9', name: 'Katherine Johnson', preferredName: 'Kate', jobTitle: 'COO' },
+    ])
+
+    const chart = await loadOrgChart()
+
+    expect(chart.departments[0]?.leads).toEqual([
+      { userId: 'user-9', name: 'Kate', jobTitle: 'COO' },
+    ])
+    expect(chart.departments[0]?.members.map((person) => person.name)).toEqual([
+      'Ada Lovelace',
+      'Grace Hopper',
+    ])
+  })
+})
 
 const ADA = {
   user: {

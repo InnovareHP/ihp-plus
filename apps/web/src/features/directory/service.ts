@@ -7,9 +7,11 @@ import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 import {
   directoryQuerySchema,
   UNASSIGNED,
+  type ChartPerson,
   type DirectoryDepartments,
   type DirectoryPage,
   type DirectoryQuery,
+  type OrgChart,
   type PersonRow,
 } from './schema'
 
@@ -156,5 +158,93 @@ export async function loadDepartments(): Promise<DirectoryDepartments> {
       memberCount: team._count.teammembers,
     })),
     unassignedCount,
+  }
+}
+
+const CHART_PERSON_SELECT = {
+  id: true,
+  name: true,
+  preferredName: true,
+  jobTitle: true,
+} satisfies Prisma.UserSelect
+
+function chartPersonOf(user: {
+  id: string
+  name: string
+  preferredName: string | null
+  jobTitle: string | null
+}): ChartPerson {
+  return { userId: user.id, name: user.preferredName ?? user.name, jobTitle: user.jobTitle ?? '' }
+}
+
+function byName(a: ChartPerson, b: ChartPerson) {
+  return a.name.localeCompare(b.name)
+}
+
+/** Every department with its leads above the people in it, for the org chart page. */
+export async function loadOrgChart(): Promise<OrgChart> {
+  const { organizationId } = await caller()
+
+  const [organization, teams, leads, unassignedCount] = await Promise.all([
+    db.organization.findUnique({ where: { id: organizationId }, select: { name: true } }),
+    db.team.findMany({
+      where: { organizationId },
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        teammembers: {
+          select: { user: { select: { ...CHART_PERSON_SELECT, onboardingCompletedAt: true } } },
+        },
+      },
+    }),
+    db.teamLead.findMany({ where: { organizationId }, select: { teamId: true, userId: true } }),
+    db.member.count({
+      where: {
+        organizationId,
+        user: { onboardingCompletedAt: { not: null }, teammembers: { none: {} } },
+      },
+    }),
+  ])
+
+  // A lead is appointed per department but need not be a member of it, so those are read apart.
+  const memberIds = new Set(teams.flatMap((team) => team.teammembers.map((row) => row.user.id)))
+  const outsideLeadIds = [...new Set(leads.map((lead) => lead.userId))].filter(
+    (userId) => !memberIds.has(userId),
+  )
+  const outsideLeads =
+    outsideLeadIds.length > 0
+      ? await db.user.findMany({
+          where: { id: { in: outsideLeadIds } },
+          select: CHART_PERSON_SELECT,
+        })
+      : []
+  const outsiders = new Map(outsideLeads.map((user) => [user.id, chartPersonOf(user)]))
+
+  return {
+    organizationName: organization?.name ?? 'The company',
+    unassignedCount,
+    departments: teams.map((team) => {
+      const leadIds = new Set(
+        leads.filter((lead) => lead.teamId === team.id).map((lead) => lead.userId),
+      )
+      // Someone still onboarding has no job title or department yet, as in the directory.
+      const people = team.teammembers
+        .map((row) => row.user)
+        .filter((user) => user.onboardingCompletedAt !== null)
+        .map(chartPersonOf)
+
+      const inTeamLeads = people.filter((person) => leadIds.has(person.userId))
+      const extraLeads = [...leadIds]
+        .map((userId) => outsiders.get(userId))
+        .filter((person): person is ChartPerson => person !== undefined)
+
+      return {
+        teamId: team.id,
+        name: team.name,
+        leads: [...inTeamLeads, ...extraLeads].sort(byName),
+        members: people.filter((person) => !leadIds.has(person.userId)).sort(byName),
+      }
+    }),
   }
 }

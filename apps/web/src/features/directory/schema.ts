@@ -56,6 +56,26 @@ export interface DepartmentOption {
   memberCount: number
 }
 
+export interface ChartPerson {
+  userId: string
+  name: string
+  jobTitle: string
+}
+
+export interface ChartDepartment {
+  teamId: string
+  name: string
+  leads: ChartPerson[]
+  /** Everyone in the department who does not lead it. */
+  members: ChartPerson[]
+}
+
+export interface OrgChart {
+  organizationName: string
+  departments: ChartDepartment[]
+  unassignedCount: number
+}
+
 export interface DirectoryDepartments {
   departments: DepartmentOption[]
   unassignedCount: number
