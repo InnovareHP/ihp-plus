@@ -40,7 +40,13 @@ const FILTERS: readonly FilterControl[] = [
   },
 ]
 
-export function ContractsTable({ canManage }: { canManage: boolean }) {
+export function ContractsTable({
+  canManage,
+  billingEnabled,
+}: {
+  canManage: boolean
+  billingEnabled: boolean
+}) {
   const { query, setQuery, clearFilters } = useUrlQuery(parseContractQuery, DEFAULT_CONTRACT_QUERY)
   const contracts = useContracts(query)
   const [createOpened, createModal] = useDisclosure(false)
@@ -197,6 +203,7 @@ export function ContractsTable({ canManage }: { canManage: boolean }) {
         contractId={openContractId}
         onClose={() => setOpenContractId(null)}
         canManage={canManage}
+        billingEnabled={billingEnabled}
         onEdit={(contract) => {
           // One overlay at a time: the drawer closes so the form is not stacked on it.
           setOpenContractId(null)

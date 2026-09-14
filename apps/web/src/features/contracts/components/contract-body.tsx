@@ -1,7 +1,8 @@
 'use client'
 
 import { Badge, Button, Group, Stack, Table, Text, Title } from '@mantine/core'
-import { IconPencil } from '@tabler/icons-react'
+import { useDisclosure } from '@mantine/hooks'
+import { IconPencil, IconReceipt } from '@tabler/icons-react'
 import {
   BILLING_CYCLE_LABELS,
   CATALOG_UNIT_LABELS,
@@ -13,23 +14,39 @@ import {
   isEditable,
   lineTotalCents,
   type ContractDetail,
+  type ContractStatus,
 } from '../schema'
 import { useSetContractStatus } from '../use-contracts'
+import { AgreeContractModal } from './agree-contract-modal'
 
 const date = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' })
 
 export function ContractBody({
   contract,
   canManage,
+  billingEnabled,
   onEdit,
 }: {
   contract: ContractDetail
   canManage: boolean
+  /** Whether agreeing sends the client an invoice, which is what earns a confirmation. */
+  billingEnabled: boolean
   onEdit: (contract: ContractDetail) => void
 }) {
   const setStatus = useSetContractStatus()
+  const [agreeing, agreeModal] = useDisclosure(false)
   const editable = isEditable(contract.status)
   const next = CONTRACT_TRANSITIONS[contract.status]
+  const agreed = contract.status === 'active' || contract.status === 'paused'
+  const pendingStatus = setStatus.isPending ? setStatus.variables?.status : undefined
+
+  function change(status: ContractStatus) {
+    if (billingEnabled && contract.status === 'sent' && status === 'active') {
+      agreeModal.open()
+      return
+    }
+    setStatus.mutate({ contractId: contract.id, status })
+  }
 
   return (
     <Stack gap="lg">
@@ -37,10 +54,28 @@ export function ContractBody({
         <Badge color={CONTRACT_STATUS_COLORS[contract.status]} variant="light" size="lg">
           {CONTRACT_STATUS_LABELS[contract.status]}
         </Badge>
+        {contract.isBilled ? (
+          <Badge
+            color="brand"
+            variant="outline"
+            size="lg"
+            leftSection={<IconReceipt size={14} aria-hidden />}
+          >
+            Billed in Stripe
+          </Badge>
+        ) : null}
         <Text size="sm" c="dimmed">
           {contract.clientName} · {BILLING_CYCLE_LABELS[contract.billingCycle]}
         </Text>
       </Group>
+
+      {agreed && !contract.isBilled ? (
+        <Text size="sm" c="dimmed">
+          {billingEnabled
+            ? 'Agreed before billing was set up, so Stripe is not invoicing this contract.'
+            : 'Billing is not set up for this portal, so this contract is not invoiced.'}
+        </Text>
+      ) : null}
 
       {canManage ? (
         <Group gap="xs" wrap="wrap">
@@ -59,8 +94,10 @@ export function ContractBody({
               key={status}
               variant={status === 'sent' || status === 'active' ? 'filled' : 'default'}
               color={status === 'cancelled' ? 'red' : undefined}
-              loading={setStatus.isPending}
-              onClick={() => setStatus.mutate({ contractId: contract.id, status })}
+              loading={pendingStatus === status}
+              // A second transition racing the first would reach Stripe out of order.
+              disabled={pendingStatus !== undefined && pendingStatus !== status}
+              onClick={() => change(status)}
             >
               {CONTRACT_TRANSITION_LABELS[status]}
             </Button>
@@ -81,6 +118,13 @@ export function ContractBody({
           A contract the client has seen is not editable. Return it to draft to change what it says.
         </Text>
       ) : null}
+
+      <AgreeContractModal
+        contract={contract}
+        opened={agreeing}
+        onClose={agreeModal.close}
+        onConfirm={() => setStatus.mutate({ contractId: contract.id, status: 'active' })}
+      />
 
       <Stack gap="xs">
         <Title order={3} size="h6">

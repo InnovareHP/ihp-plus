@@ -19,7 +19,13 @@ function tabOf(value: string | null): ClientTab {
   return (CLIENT_TABS as readonly string[]).includes(value ?? '') ? (value as ClientTab) : 'clients'
 }
 
-export function ClientTabs({ canManage }: { canManage: boolean }) {
+export function ClientTabs({
+  canManage,
+  billingEnabled,
+}: {
+  canManage: boolean
+  billingEnabled: boolean
+}) {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
@@ -48,7 +54,7 @@ export function ClientTabs({ canManage }: { canManage: boolean }) {
         <ClientsTable />
       </Tabs.Panel>
       <Tabs.Panel value="contracts">
-        <ContractsTable canManage={canManage} />
+        <ContractsTable canManage={canManage} billingEnabled={billingEnabled} />
       </Tabs.Panel>
       <Tabs.Panel value="rates">
         <RateCard />

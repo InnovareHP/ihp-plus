@@ -8,12 +8,19 @@ export interface ContractDrawerProps {
   contractId: string | null
   onClose: () => void
   canManage: boolean
+  billingEnabled: boolean
   /** The edit form is a sibling of this drawer, not a child: nesting two overlays leaves
       which one paints on top to mount order, since both default to the same z-index. */
   onEdit: (contract: ContractDetail) => void
 }
 
-export function ContractDrawer({ contractId, onClose, canManage, onEdit }: ContractDrawerProps) {
+export function ContractDrawer({
+  contractId,
+  onClose,
+  canManage,
+  billingEnabled,
+  onEdit,
+}: ContractDrawerProps) {
   const contract = useContract(contractId ?? '')
 
   return (
@@ -40,7 +47,12 @@ export function ContractDrawer({ contractId, onClose, canManage, onEdit }: Contr
           </Button>
         </Stack>
       ) : (
-        <ContractBody contract={contract.data} canManage={canManage} onEdit={onEdit} />
+        <ContractBody
+          contract={contract.data}
+          canManage={canManage}
+          billingEnabled={billingEnabled}
+          onEdit={onEdit}
+        />
       )}
     </Drawer>
   )
