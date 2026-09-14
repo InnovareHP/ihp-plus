@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ihp/contracts/v1/contracts.proto.
  */
 export const file_ihp_contracts_v1_contracts: GenFile = /*@__PURE__*/
-  fileDesc("CiBpaHAvY29udHJhY3RzL3YxL2NvbnRyYWN0cy5wcm90bxIQaWhwLmNvbnRyYWN0cy52MSLHAgoLQ2F0YWxvZ0l0ZW0SCgoCaWQYASABKAkSMwoIY2F0ZWdvcnkYAiABKA4yIS5paHAuY29udHJhY3RzLnYxLkNhdGFsb2dDYXRlZ29yeRIMCgRuYW1lGAMgASgJEhgKC2Rlc2NyaXB0aW9uGAQgASgJSACIAQESFwoPcHJpY2VfbWluX2NlbnRzGAUgASgFEhcKD3ByaWNlX21heF9jZW50cxgGIAEoBRIrCgR1bml0GAcgASgOMh0uaWhwLmNvbnRyYWN0cy52MS5DYXRhbG9nVW5pdBIdChBwZXJjZW50X29mX3NwZW5kGAggASgFSAGIAQESGgoNZGVmYXVsdF90ZXJtcxgJIAEoCUgCiAEBQg4KDF9kZXNjcmlwdGlvbkITChFfcGVyY2VudF9vZl9zcGVuZEIQCg5fZGVmYXVsdF90ZXJtcyJCChBDb250cmFjdFRlbXBsYXRlEhYKDnNjb3BlX3RlbXBsYXRlGAEgASgJEhYKDnN0YW5kYXJkX3Rlcm1zGAIgASgJIt0BCgxDb250cmFjdExpbmUSCgoCaWQYASABKAkSHAoPY2F0YWxvZ19pdGVtX2lkGAIgASgJSACIAQESDAoEbmFtZRgDIAEoCRIYCgtkZXNjcmlwdGlvbhgEIAEoCUgBiAEBEhgKEHVuaXRfcHJpY2VfY2VudHMYBSABKAUSEAoIcXVhbnRpdHkYBiABKAUSKwoEdW5pdBgHIAEoDjIdLmlocC5jb250cmFjdHMudjEuQ2F0YWxvZ1VuaXRCEgoQX2NhdGFsb2dfaXRlbV9pZEIOCgxfZGVzY3JpcHRpb24i+gIKCENvbnRyYWN0EgoKAmlkGAEgASgJEhEKCXJlZmVyZW5jZRgCIAEoCRINCgV0aXRsZRgDIAEoCRIRCgljbGllbnRfaWQYBCABKAkSEwoLY2xpZW50X25hbWUYBSABKAkSMAoGc3RhdHVzGAYgASgOMiAuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdFN0YXR1cxI1Cg1iaWxsaW5nX2N5Y2xlGAcgASgOMh4uaWhwLmNvbnRyYWN0cy52MS5CaWxsaW5nQ3ljbGUSFgoOc3VidG90YWxfY2VudHMYCCABKAUSFwoKc3RhcnRfZGF0ZRgJIAEoCUgAiAEBEhUKCGVuZF9kYXRlGAogASgJSAGIAQESFgoJc2lnbmVkX2F0GAsgASgJSAKIAQESEgoKY3JlYXRlZF9hdBgMIAEoCRIRCglpc19iaWxsZWQYDSABKAhCDQoLX3N0YXJ0X2RhdGVCCwoJX2VuZF9kYXRlQgwKCl9zaWduZWRfYXQiiwEKDkNvbnRyYWN0RGV0YWlsEiwKCGNvbnRyYWN0GAEgASgLMhouaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdBISCgV0ZXJtcxgCIAEoCUgAiAEBEi0KBWxpbmVzGAMgAygLMh4uaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdExpbmVCCAoGX3Rlcm1zIpUCCg1Db250cmFjdFF1ZXJ5Eg4KBnNlYXJjaBgBIAEoCRI1CgZzdGF0dXMYAiABKA4yIC5paHAuY29udHJhY3RzLnYxLkNvbnRyYWN0U3RhdHVzSACIAQESFgoJY2xpZW50X2lkGAMgASgJSAGIAQESMgoHc29ydF9ieRgEIAEoDjIhLmlocC5jb250cmFjdHMudjEuQ29udHJhY3RTb3J0S2V5EjcKDnNvcnRfZGlyZWN0aW9uGAUgASgOMh8uaWhwLmNvbnRyYWN0cy52MS5Tb3J0RGlyZWN0aW9uEgwKBHBhZ2UYBiABKAUSEQoJcGFnZV9zaXplGAcgASgFQgkKB19zdGF0dXNCDAoKX2NsaWVudF9pZCJ2CghQYWdlSW5mbxIMCgRwYWdlGAEgASgFEhEKCXBhZ2Vfc2l6ZRgCIAEoBRINCgV0b3RhbBgDIAEoBRISCgpwYWdlX2NvdW50GAQgASgFEhQKDGhhc19wcmV2aW91cxgFIAEoCBIQCghoYXNfbmV4dBgGIAEoCCJGChRMaXN0Q29udHJhY3RzUmVxdWVzdBIuCgVxdWVyeRgBIAEoCzIfLmlocC5jb250cmFjdHMudjEuQ29udHJhY3RRdWVyeSJwChVMaXN0Q29udHJhY3RzUmVzcG9uc2USKAoEcm93cxgBIAMoCzIaLmlocC5jb250cmFjdHMudjEuQ29udHJhY3QSLQoJcGFnZV9pbmZvGAIgASgLMhouaWhwLmNvbnRyYWN0cy52MS5QYWdlSW5mbyIpChJHZXRDb250cmFjdFJlcXVlc3QSEwoLY29udHJhY3RfaWQYASABKAkiSQoTR2V0Q29udHJhY3RSZXNwb25zZRIyCghjb250cmFjdBgBIAEoCzIgLmlocC5jb250cmFjdHMudjEuQ29udHJhY3REZXRhaWwiwQEKEUNvbnRyYWN0RHJhZnRMaW5lEhwKD2NhdGFsb2dfaXRlbV9pZBgBIAEoCUgAiAEBEgwKBG5hbWUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSGAoQdW5pdF9wcmljZV9jZW50cxgEIAEoBRIQCghxdWFudGl0eRgFIAEoBRIrCgR1bml0GAYgASgOMh0uaWhwLmNvbnRyYWN0cy52MS5DYXRhbG9nVW5pdEISChBfY2F0YWxvZ19pdGVtX2lkItkBChVDcmVhdGVDb250cmFjdFJlcXVlc3QSEQoJY2xpZW50X2lkGAEgASgJEg0KBXRpdGxlGAIgASgJEjUKDWJpbGxpbmdfY3ljbGUYAyABKA4yHi5paHAuY29udHJhY3RzLnYxLkJpbGxpbmdDeWNsZRISCgpzdGFydF9kYXRlGAQgASgJEhAKCGVuZF9kYXRlGAUgASgJEg0KBXRlcm1zGAYgASgJEjIKBWxpbmVzGAcgAygLMiMuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdERyYWZ0TGluZSJMChZDcmVhdGVDb250cmFjdFJlc3BvbnNlEjIKCGNvbnRyYWN0GAEgASgLMiAuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdERldGFpbCLuAQoVVXBkYXRlQ29udHJhY3RSZXF1ZXN0EhMKC2NvbnRyYWN0X2lkGAEgASgJEhEKCWNsaWVudF9pZBgCIAEoCRINCgV0aXRsZRgDIAEoCRI1Cg1iaWxsaW5nX2N5Y2xlGAQgASgOMh4uaWhwLmNvbnRyYWN0cy52MS5CaWxsaW5nQ3ljbGUSEgoKc3RhcnRfZGF0ZRgFIAEoCRIQCghlbmRfZGF0ZRgGIAEoCRINCgV0ZXJtcxgHIAEoCRIyCgVsaW5lcxgIIAMoCzIjLmlocC5jb250cmFjdHMudjEuQ29udHJhY3REcmFmdExpbmUiTAoWVXBkYXRlQ29udHJhY3RSZXNwb25zZRIyCghjb250cmFjdBgBIAEoCzIgLmlocC5jb250cmFjdHMudjEuQ29udHJhY3REZXRhaWwiYQoYU2V0Q29udHJhY3RTdGF0dXNSZXF1ZXN0EhMKC2NvbnRyYWN0X2lkGAEgASgJEjAKBnN0YXR1cxgCIAEoDjIgLmlocC5jb250cmFjdHMudjEuQ29udHJhY3RTdGF0dXMiTwoZU2V0Q29udHJhY3RTdGF0dXNSZXNwb25zZRIyCghjb250cmFjdBgBIAEoCzIgLmlocC5jb250cmFjdHMudjEuQ29udHJhY3REZXRhaWwiFAoSTGlzdENhdGFsb2dSZXF1ZXN0IkMKE0xpc3RDYXRhbG9nUmVzcG9uc2USLAoFaXRlbXMYASADKAsyHS5paHAuY29udHJhY3RzLnYxLkNhdGFsb2dJdGVtIpwCChhDcmVhdGVDYXRhbG9nSXRlbVJlcXVlc3QSMwoIY2F0ZWdvcnkYASABKA4yIS5paHAuY29udHJhY3RzLnYxLkNhdGFsb2dDYXRlZ29yeRIMCgRuYW1lGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJEhcKD3ByaWNlX21pbl9jZW50cxgEIAEoBRIXCg9wcmljZV9tYXhfY2VudHMYBSABKAUSKwoEdW5pdBgGIAEoDjIdLmlocC5jb250cmFjdHMudjEuQ2F0YWxvZ1VuaXQSHQoQcGVyY2VudF9vZl9zcGVuZBgHIAEoBUgAiAEBEhUKDWRlZmF1bHRfdGVybXMYCCABKAlCEwoRX3BlcmNlbnRfb2Zfc3BlbmQiHAoaR2V0Q29udHJhY3RUZW1wbGF0ZVJlcXVlc3QiUwobR2V0Q29udHJhY3RUZW1wbGF0ZVJlc3BvbnNlEjQKCHRlbXBsYXRlGAEgASgLMiIuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdFRlbXBsYXRlIk8KHVVwZGF0ZUNvbnRyYWN0VGVtcGxhdGVSZXF1ZXN0EhYKDnNjb3BlX3RlbXBsYXRlGAEgASgJEhYKDnN0YW5kYXJkX3Rlcm1zGAIgASgJIlYKHlVwZGF0ZUNvbnRyYWN0VGVtcGxhdGVSZXNwb25zZRI0Cgh0ZW1wbGF0ZRgBIAEoCzIiLmlocC5jb250cmFjdHMudjEuQ29udHJhY3RUZW1wbGF0ZSJIChlDcmVhdGVDYXRhbG9nSXRlbVJlc3BvbnNlEisKBGl0ZW0YASABKAsyHS5paHAuY29udHJhY3RzLnYxLkNhdGFsb2dJdGVtKqgBCg9DYXRhbG9nQ2F0ZWdvcnkSIAocQ0FUQUxPR19DQVRFR09SWV9VTlNQRUNJRklFRBAAEh0KGUNBVEFMT0dfQ0FURUdPUllfQ1JFQVRJVkUQARIbChdDQVRBTE9HX0NBVEVHT1JZX1NPQ0lBTBACEhsKF0NBVEFMT0dfQ0FURUdPUllfQlVORExFEAMSGgoWQ0FUQUxPR19DQVRFR09SWV9BRERPThAEKr4BCgtDYXRhbG9nVW5pdBIcChhDQVRBTE9HX1VOSVRfVU5TUEVDSUZJRUQQABIYChRDQVRBTE9HX1VOSVRfUFJPSkVDVBABEhYKEkNBVEFMT0dfVU5JVF9NT05USBACEhkKFUNBVEFMT0dfVU5JVF9DQU1QQUlHThADEhUKEUNBVEFMT0dfVU5JVF9ERUNLEAQSFgoSQ0FUQUxPR19VTklUX1ZJREVPEAUSFQoRQ0FUQUxPR19VTklUX09OQ0UQBircAQoOQ29udHJhY3RTdGF0dXMSHwobQ09OVFJBQ1RfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVQ09OVFJBQ1RfU1RBVFVTX0RSQUZUEAESGAoUQ09OVFJBQ1RfU1RBVFVTX1NFTlQQAhIaChZDT05UUkFDVF9TVEFUVVNfQUNUSVZFEAMSGgoWQ09OVFJBQ1RfU1RBVFVTX1BBVVNFRBAEEh0KGUNPTlRSQUNUX1NUQVRVU19DQU5DRUxMRUQQBRIdChlDT05UUkFDVF9TVEFUVVNfQ09NUExFVEVEEAYqYwoMQmlsbGluZ0N5Y2xlEh0KGUJJTExJTkdfQ1lDTEVfVU5TUEVDSUZJRUQQABIZChVCSUxMSU5HX0NZQ0xFX01PTlRITFkQARIZChVCSUxMSU5HX0NZQ0xFX1BST0pFQ1QQAirSAQoPQ29udHJhY3RTb3J0S2V5EiEKHUNPTlRSQUNUX1NPUlRfS0VZX1VOU1BFQ0lGSUVEEAASHwobQ09OVFJBQ1RfU09SVF9LRVlfUkVGRVJFTkNFEAESGwoXQ09OVFJBQ1RfU09SVF9LRVlfVElUTEUQAhIcChhDT05UUkFDVF9TT1JUX0tFWV9TVEFUVVMQAxIeChpDT05UUkFDVF9TT1JUX0tFWV9TVUJUT1RBTBAEEiAKHENPTlRSQUNUX1NPUlRfS0VZX0NSRUFURURfQVQQBSpgCg1Tb3J0RGlyZWN0aW9uEh4KGlNPUlRfRElSRUNUSU9OX1VOU1BFQ0lGSUVEEAASFgoSU09SVF9ESVJFQ1RJT05fQVNDEAESFwoTU09SVF9ESVJFQ1RJT05fREVTQxACMsMHChBDb250cmFjdHNTZXJ2aWNlEmAKDUxpc3RDb250cmFjdHMSJi5paHAuY29udHJhY3RzLnYxLkxpc3RDb250cmFjdHNSZXF1ZXN0GicuaWhwLmNvbnRyYWN0cy52MS5MaXN0Q29udHJhY3RzUmVzcG9uc2USWgoLR2V0Q29udHJhY3QSJC5paHAuY29udHJhY3RzLnYxLkdldENvbnRyYWN0UmVxdWVzdBolLmlocC5jb250cmFjdHMudjEuR2V0Q29udHJhY3RSZXNwb25zZRJjCg5DcmVhdGVDb250cmFjdBInLmlocC5jb250cmFjdHMudjEuQ3JlYXRlQ29udHJhY3RSZXF1ZXN0GiguaWhwLmNvbnRyYWN0cy52MS5DcmVhdGVDb250cmFjdFJlc3BvbnNlEmMKDlVwZGF0ZUNvbnRyYWN0EicuaWhwLmNvbnRyYWN0cy52MS5VcGRhdGVDb250cmFjdFJlcXVlc3QaKC5paHAuY29udHJhY3RzLnYxLlVwZGF0ZUNvbnRyYWN0UmVzcG9uc2USbAoRU2V0Q29udHJhY3RTdGF0dXMSKi5paHAuY29udHJhY3RzLnYxLlNldENvbnRyYWN0U3RhdHVzUmVxdWVzdBorLmlocC5jb250cmFjdHMudjEuU2V0Q29udHJhY3RTdGF0dXNSZXNwb25zZRJaCgtMaXN0Q2F0YWxvZxIkLmlocC5jb250cmFjdHMudjEuTGlzdENhdGFsb2dSZXF1ZXN0GiUuaWhwLmNvbnRyYWN0cy52MS5MaXN0Q2F0YWxvZ1Jlc3BvbnNlEmwKEUNyZWF0ZUNhdGFsb2dJdGVtEiouaWhwLmNvbnRyYWN0cy52MS5DcmVhdGVDYXRhbG9nSXRlbVJlcXVlc3QaKy5paHAuY29udHJhY3RzLnYxLkNyZWF0ZUNhdGFsb2dJdGVtUmVzcG9uc2UScgoTR2V0Q29udHJhY3RUZW1wbGF0ZRIsLmlocC5jb250cmFjdHMudjEuR2V0Q29udHJhY3RUZW1wbGF0ZVJlcXVlc3QaLS5paHAuY29udHJhY3RzLnYxLkdldENvbnRyYWN0VGVtcGxhdGVSZXNwb25zZRJ7ChZVcGRhdGVDb250cmFjdFRlbXBsYXRlEi8uaWhwLmNvbnRyYWN0cy52MS5VcGRhdGVDb250cmFjdFRlbXBsYXRlUmVxdWVzdBowLmlocC5jb250cmFjdHMudjEuVXBkYXRlQ29udHJhY3RUZW1wbGF0ZVJlc3BvbnNlYgZwcm90bzM");
+  fileDesc("CiBpaHAvY29udHJhY3RzL3YxL2NvbnRyYWN0cy5wcm90bxIQaWhwLmNvbnRyYWN0cy52MSLHAgoLQ2F0YWxvZ0l0ZW0SCgoCaWQYASABKAkSMwoIY2F0ZWdvcnkYAiABKA4yIS5paHAuY29udHJhY3RzLnYxLkNhdGFsb2dDYXRlZ29yeRIMCgRuYW1lGAMgASgJEhgKC2Rlc2NyaXB0aW9uGAQgASgJSACIAQESFwoPcHJpY2VfbWluX2NlbnRzGAUgASgFEhcKD3ByaWNlX21heF9jZW50cxgGIAEoBRIrCgR1bml0GAcgASgOMh0uaWhwLmNvbnRyYWN0cy52MS5DYXRhbG9nVW5pdBIdChBwZXJjZW50X29mX3NwZW5kGAggASgFSAGIAQESGgoNZGVmYXVsdF90ZXJtcxgJIAEoCUgCiAEBQg4KDF9kZXNjcmlwdGlvbkITChFfcGVyY2VudF9vZl9zcGVuZEIQCg5fZGVmYXVsdF90ZXJtcyJCChBDb250cmFjdFRlbXBsYXRlEhYKDnNjb3BlX3RlbXBsYXRlGAEgASgJEhYKDnN0YW5kYXJkX3Rlcm1zGAIgASgJIt0BCgxDb250cmFjdExpbmUSCgoCaWQYASABKAkSHAoPY2F0YWxvZ19pdGVtX2lkGAIgASgJSACIAQESDAoEbmFtZRgDIAEoCRIYCgtkZXNjcmlwdGlvbhgEIAEoCUgBiAEBEhgKEHVuaXRfcHJpY2VfY2VudHMYBSABKAUSEAoIcXVhbnRpdHkYBiABKAUSKwoEdW5pdBgHIAEoDjIdLmlocC5jb250cmFjdHMudjEuQ2F0YWxvZ1VuaXRCEgoQX2NhdGFsb2dfaXRlbV9pZEIOCgxfZGVzY3JpcHRpb24i+gIKCENvbnRyYWN0EgoKAmlkGAEgASgJEhEKCXJlZmVyZW5jZRgCIAEoCRINCgV0aXRsZRgDIAEoCRIRCgljbGllbnRfaWQYBCABKAkSEwoLY2xpZW50X25hbWUYBSABKAkSMAoGc3RhdHVzGAYgASgOMiAuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdFN0YXR1cxI1Cg1iaWxsaW5nX2N5Y2xlGAcgASgOMh4uaWhwLmNvbnRyYWN0cy52MS5CaWxsaW5nQ3ljbGUSFgoOc3VidG90YWxfY2VudHMYCCABKAUSFwoKc3RhcnRfZGF0ZRgJIAEoCUgAiAEBEhUKCGVuZF9kYXRlGAogASgJSAGIAQESFgoJc2lnbmVkX2F0GAsgASgJSAKIAQESEgoKY3JlYXRlZF9hdBgMIAEoCRIRCglpc19iaWxsZWQYDSABKAhCDQoLX3N0YXJ0X2RhdGVCCwoJX2VuZF9kYXRlQgwKCl9zaWduZWRfYXQijwIKDkNvbnRyYWN0RGV0YWlsEiwKCGNvbnRyYWN0GAEgASgLMhouaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdBISCgV0ZXJtcxgCIAEoCUgAiAEBEi0KBWxpbmVzGAMgAygLMh4uaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdExpbmUSGAoLY2xpZW50X2xpbmsYBCABKAlIAYgBARIWCgl2aWV3ZWRfYXQYBSABKAlIAogBARIdChBhY2NlcHRlZF9ieV9uYW1lGAYgASgJSAOIAQFCCAoGX3Rlcm1zQg4KDF9jbGllbnRfbGlua0IMCgpfdmlld2VkX2F0QhMKEV9hY2NlcHRlZF9ieV9uYW1lIowDCg9Db250cmFjdEludm9pY2USCgoCaWQYASABKAkSDgoGc3RhdHVzGAIgASgJEhgKEGFtb3VudF9kdWVfY2VudHMYAyABKAUSGQoRYW1vdW50X3BhaWRfY2VudHMYBCABKAUSEAoIY3VycmVuY3kYBSABKAkSHwoSaG9zdGVkX2ludm9pY2VfdXJsGAYgASgJSACIAQESFAoHcGFpZF9hdBgHIAEoCUgBiAEBEhYKCWZhaWxlZF9hdBgIIAEoCUgCiAEBEhsKDmZhaWx1cmVfcmVhc29uGAkgASgJSAOIAQESGQoMcGVyaW9kX3N0YXJ0GAogASgJSASIAQESFwoKcGVyaW9kX2VuZBgLIAEoCUgFiAEBEhIKCmNyZWF0ZWRfYXQYDCABKAlCFQoTX2hvc3RlZF9pbnZvaWNlX3VybEIKCghfcGFpZF9hdEIMCgpfZmFpbGVkX2F0QhEKD19mYWlsdXJlX3JlYXNvbkIPCg1fcGVyaW9kX3N0YXJ0Qg0KC19wZXJpb2RfZW5kIjIKG0xpc3RDb250cmFjdEludm9pY2VzUmVxdWVzdBITCgtjb250cmFjdF9pZBgBIAEoCSJTChxMaXN0Q29udHJhY3RJbnZvaWNlc1Jlc3BvbnNlEjMKCGludm9pY2VzGAEgAygLMiEuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdEludm9pY2UilQIKDUNvbnRyYWN0UXVlcnkSDgoGc2VhcmNoGAEgASgJEjUKBnN0YXR1cxgCIAEoDjIgLmlocC5jb250cmFjdHMudjEuQ29udHJhY3RTdGF0dXNIAIgBARIWCgljbGllbnRfaWQYAyABKAlIAYgBARIyCgdzb3J0X2J5GAQgASgOMiEuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdFNvcnRLZXkSNwoOc29ydF9kaXJlY3Rpb24YBSABKA4yHy5paHAuY29udHJhY3RzLnYxLlNvcnREaXJlY3Rpb24SDAoEcGFnZRgGIAEoBRIRCglwYWdlX3NpemUYByABKAVCCQoHX3N0YXR1c0IMCgpfY2xpZW50X2lkInYKCFBhZ2VJbmZvEgwKBHBhZ2UYASABKAUSEQoJcGFnZV9zaXplGAIgASgFEg0KBXRvdGFsGAMgASgFEhIKCnBhZ2VfY291bnQYBCABKAUSFAoMaGFzX3ByZXZpb3VzGAUgASgIEhAKCGhhc19uZXh0GAYgASgIIkYKFExpc3RDb250cmFjdHNSZXF1ZXN0Ei4KBXF1ZXJ5GAEgASgLMh8uaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdFF1ZXJ5InAKFUxpc3RDb250cmFjdHNSZXNwb25zZRIoCgRyb3dzGAEgAygLMhouaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdBItCglwYWdlX2luZm8YAiABKAsyGi5paHAuY29udHJhY3RzLnYxLlBhZ2VJbmZvIikKEkdldENvbnRyYWN0UmVxdWVzdBITCgtjb250cmFjdF9pZBgBIAEoCSJJChNHZXRDb250cmFjdFJlc3BvbnNlEjIKCGNvbnRyYWN0GAEgASgLMiAuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdERldGFpbCLBAQoRQ29udHJhY3REcmFmdExpbmUSHAoPY2F0YWxvZ19pdGVtX2lkGAEgASgJSACIAQESDAoEbmFtZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIYChB1bml0X3ByaWNlX2NlbnRzGAQgASgFEhAKCHF1YW50aXR5GAUgASgFEisKBHVuaXQYBiABKA4yHS5paHAuY29udHJhY3RzLnYxLkNhdGFsb2dVbml0QhIKEF9jYXRhbG9nX2l0ZW1faWQi2QEKFUNyZWF0ZUNvbnRyYWN0UmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkSDQoFdGl0bGUYAiABKAkSNQoNYmlsbGluZ19jeWNsZRgDIAEoDjIeLmlocC5jb250cmFjdHMudjEuQmlsbGluZ0N5Y2xlEhIKCnN0YXJ0X2RhdGUYBCABKAkSEAoIZW5kX2RhdGUYBSABKAkSDQoFdGVybXMYBiABKAkSMgoFbGluZXMYByADKAsyIy5paHAuY29udHJhY3RzLnYxLkNvbnRyYWN0RHJhZnRMaW5lIkwKFkNyZWF0ZUNvbnRyYWN0UmVzcG9uc2USMgoIY29udHJhY3QYASABKAsyIC5paHAuY29udHJhY3RzLnYxLkNvbnRyYWN0RGV0YWlsIu4BChVVcGRhdGVDb250cmFjdFJlcXVlc3QSEwoLY29udHJhY3RfaWQYASABKAkSEQoJY2xpZW50X2lkGAIgASgJEg0KBXRpdGxlGAMgASgJEjUKDWJpbGxpbmdfY3ljbGUYBCABKA4yHi5paHAuY29udHJhY3RzLnYxLkJpbGxpbmdDeWNsZRISCgpzdGFydF9kYXRlGAUgASgJEhAKCGVuZF9kYXRlGAYgASgJEg0KBXRlcm1zGAcgASgJEjIKBWxpbmVzGAggAygLMiMuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdERyYWZ0TGluZSJMChZVcGRhdGVDb250cmFjdFJlc3BvbnNlEjIKCGNvbnRyYWN0GAEgASgLMiAuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdERldGFpbCJhChhTZXRDb250cmFjdFN0YXR1c1JlcXVlc3QSEwoLY29udHJhY3RfaWQYASABKAkSMAoGc3RhdHVzGAIgASgOMiAuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdFN0YXR1cyJPChlTZXRDb250cmFjdFN0YXR1c1Jlc3BvbnNlEjIKCGNvbnRyYWN0GAEgASgLMiAuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdERldGFpbCIUChJMaXN0Q2F0YWxvZ1JlcXVlc3QiQwoTTGlzdENhdGFsb2dSZXNwb25zZRIsCgVpdGVtcxgBIAMoCzIdLmlocC5jb250cmFjdHMudjEuQ2F0YWxvZ0l0ZW0inAIKGENyZWF0ZUNhdGFsb2dJdGVtUmVxdWVzdBIzCghjYXRlZ29yeRgBIAEoDjIhLmlocC5jb250cmFjdHMudjEuQ2F0YWxvZ0NhdGVnb3J5EgwKBG5hbWUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSFwoPcHJpY2VfbWluX2NlbnRzGAQgASgFEhcKD3ByaWNlX21heF9jZW50cxgFIAEoBRIrCgR1bml0GAYgASgOMh0uaWhwLmNvbnRyYWN0cy52MS5DYXRhbG9nVW5pdBIdChBwZXJjZW50X29mX3NwZW5kGAcgASgFSACIAQESFQoNZGVmYXVsdF90ZXJtcxgIIAEoCUITChFfcGVyY2VudF9vZl9zcGVuZCIcChpHZXRDb250cmFjdFRlbXBsYXRlUmVxdWVzdCJTChtHZXRDb250cmFjdFRlbXBsYXRlUmVzcG9uc2USNAoIdGVtcGxhdGUYASABKAsyIi5paHAuY29udHJhY3RzLnYxLkNvbnRyYWN0VGVtcGxhdGUiTwodVXBkYXRlQ29udHJhY3RUZW1wbGF0ZVJlcXVlc3QSFgoOc2NvcGVfdGVtcGxhdGUYASABKAkSFgoOc3RhbmRhcmRfdGVybXMYAiABKAkiVgoeVXBkYXRlQ29udHJhY3RUZW1wbGF0ZVJlc3BvbnNlEjQKCHRlbXBsYXRlGAEgASgLMiIuaWhwLmNvbnRyYWN0cy52MS5Db250cmFjdFRlbXBsYXRlIkgKGUNyZWF0ZUNhdGFsb2dJdGVtUmVzcG9uc2USKwoEaXRlbRgBIAEoCzIdLmlocC5jb250cmFjdHMudjEuQ2F0YWxvZ0l0ZW0qqAEKD0NhdGFsb2dDYXRlZ29yeRIgChxDQVRBTE9HX0NBVEVHT1JZX1VOU1BFQ0lGSUVEEAASHQoZQ0FUQUxPR19DQVRFR09SWV9DUkVBVElWRRABEhsKF0NBVEFMT0dfQ0FURUdPUllfU09DSUFMEAISGwoXQ0FUQUxPR19DQVRFR09SWV9CVU5ETEUQAxIaChZDQVRBTE9HX0NBVEVHT1JZX0FERE9OEAQqvgEKC0NhdGFsb2dVbml0EhwKGENBVEFMT0dfVU5JVF9VTlNQRUNJRklFRBAAEhgKFENBVEFMT0dfVU5JVF9QUk9KRUNUEAESFgoSQ0FUQUxPR19VTklUX01PTlRIEAISGQoVQ0FUQUxPR19VTklUX0NBTVBBSUdOEAMSFQoRQ0FUQUxPR19VTklUX0RFQ0sQBBIWChJDQVRBTE9HX1VOSVRfVklERU8QBRIVChFDQVRBTE9HX1VOSVRfT05DRRAGKtwBCg5Db250cmFjdFN0YXR1cxIfChtDT05UUkFDVF9TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVDT05UUkFDVF9TVEFUVVNfRFJBRlQQARIYChRDT05UUkFDVF9TVEFUVVNfU0VOVBACEhoKFkNPTlRSQUNUX1NUQVRVU19BQ1RJVkUQAxIaChZDT05UUkFDVF9TVEFUVVNfUEFVU0VEEAQSHQoZQ09OVFJBQ1RfU1RBVFVTX0NBTkNFTExFRBAFEh0KGUNPTlRSQUNUX1NUQVRVU19DT01QTEVURUQQBipjCgxCaWxsaW5nQ3ljbGUSHQoZQklMTElOR19DWUNMRV9VTlNQRUNJRklFRBAAEhkKFUJJTExJTkdfQ1lDTEVfTU9OVEhMWRABEhkKFUJJTExJTkdfQ1lDTEVfUFJPSkVDVBACKtIBCg9Db250cmFjdFNvcnRLZXkSIQodQ09OVFJBQ1RfU09SVF9LRVlfVU5TUEVDSUZJRUQQABIfChtDT05UUkFDVF9TT1JUX0tFWV9SRUZFUkVOQ0UQARIbChdDT05UUkFDVF9TT1JUX0tFWV9USVRMRRACEhwKGENPTlRSQUNUX1NPUlRfS0VZX1NUQVRVUxADEh4KGkNPTlRSQUNUX1NPUlRfS0VZX1NVQlRPVEFMEAQSIAocQ09OVFJBQ1RfU09SVF9LRVlfQ1JFQVRFRF9BVBAFKmAKDVNvcnREaXJlY3Rpb24SHgoaU09SVF9ESVJFQ1RJT05fVU5TUEVDSUZJRUQQABIWChJTT1JUX0RJUkVDVElPTl9BU0MQARIXChNTT1JUX0RJUkVDVElPTl9ERVNDEAIyuggKEENvbnRyYWN0c1NlcnZpY2USYAoNTGlzdENvbnRyYWN0cxImLmlocC5jb250cmFjdHMudjEuTGlzdENvbnRyYWN0c1JlcXVlc3QaJy5paHAuY29udHJhY3RzLnYxLkxpc3RDb250cmFjdHNSZXNwb25zZRJaCgtHZXRDb250cmFjdBIkLmlocC5jb250cmFjdHMudjEuR2V0Q29udHJhY3RSZXF1ZXN0GiUuaWhwLmNvbnRyYWN0cy52MS5HZXRDb250cmFjdFJlc3BvbnNlEmMKDkNyZWF0ZUNvbnRyYWN0EicuaWhwLmNvbnRyYWN0cy52MS5DcmVhdGVDb250cmFjdFJlcXVlc3QaKC5paHAuY29udHJhY3RzLnYxLkNyZWF0ZUNvbnRyYWN0UmVzcG9uc2USYwoOVXBkYXRlQ29udHJhY3QSJy5paHAuY29udHJhY3RzLnYxLlVwZGF0ZUNvbnRyYWN0UmVxdWVzdBooLmlocC5jb250cmFjdHMudjEuVXBkYXRlQ29udHJhY3RSZXNwb25zZRJsChFTZXRDb250cmFjdFN0YXR1cxIqLmlocC5jb250cmFjdHMudjEuU2V0Q29udHJhY3RTdGF0dXNSZXF1ZXN0GisuaWhwLmNvbnRyYWN0cy52MS5TZXRDb250cmFjdFN0YXR1c1Jlc3BvbnNlEloKC0xpc3RDYXRhbG9nEiQuaWhwLmNvbnRyYWN0cy52MS5MaXN0Q2F0YWxvZ1JlcXVlc3QaJS5paHAuY29udHJhY3RzLnYxLkxpc3RDYXRhbG9nUmVzcG9uc2USbAoRQ3JlYXRlQ2F0YWxvZ0l0ZW0SKi5paHAuY29udHJhY3RzLnYxLkNyZWF0ZUNhdGFsb2dJdGVtUmVxdWVzdBorLmlocC5jb250cmFjdHMudjEuQ3JlYXRlQ2F0YWxvZ0l0ZW1SZXNwb25zZRJyChNHZXRDb250cmFjdFRlbXBsYXRlEiwuaWhwLmNvbnRyYWN0cy52MS5HZXRDb250cmFjdFRlbXBsYXRlUmVxdWVzdBotLmlocC5jb250cmFjdHMudjEuR2V0Q29udHJhY3RUZW1wbGF0ZVJlc3BvbnNlEnsKFlVwZGF0ZUNvbnRyYWN0VGVtcGxhdGUSLy5paHAuY29udHJhY3RzLnYxLlVwZGF0ZUNvbnRyYWN0VGVtcGxhdGVSZXF1ZXN0GjAuaWhwLmNvbnRyYWN0cy52MS5VcGRhdGVDb250cmFjdFRlbXBsYXRlUmVzcG9uc2USdQoUTGlzdENvbnRyYWN0SW52b2ljZXMSLS5paHAuY29udHJhY3RzLnYxLkxpc3RDb250cmFjdEludm9pY2VzUmVxdWVzdBouLmlocC5jb250cmFjdHMudjEuTGlzdENvbnRyYWN0SW52b2ljZXNSZXNwb25zZWIGcHJvdG8z");
 
 /**
  * One line of the published rate card.
@@ -252,6 +252,25 @@ export type ContractDetail = Message<"ihp.contracts.v1.ContractDetail"> & {
    * @generated from field: repeated ihp.contracts.v1.ContractLine lines = 3;
    */
   lines: ContractLine[];
+
+  /**
+   * Present only while the contract is published and open, so a manager can send it by hand.
+   *
+   * @generated from field: optional string client_link = 4;
+   */
+  clientLink?: string | undefined;
+
+  /**
+   * @generated from field: optional string viewed_at = 5;
+   */
+  viewedAt?: string | undefined;
+
+  /**
+   * The name the client typed when accepting online.
+   *
+   * @generated from field: optional string accepted_by_name = 6;
+   */
+  acceptedByName?: string | undefined;
 };
 
 /**
@@ -260,6 +279,116 @@ export type ContractDetail = Message<"ihp.contracts.v1.ContractDetail"> & {
  */
 export const ContractDetailSchema: GenMessage<ContractDetail> = /*@__PURE__*/
   messageDesc(file_ihp_contracts_v1_contracts, 4);
+
+/**
+ * What Stripe billed for a contract, mirrored from the webhook. Amounts are cents.
+ *
+ * @generated from message ihp.contracts.v1.ContractInvoice
+ */
+export type ContractInvoice = Message<"ihp.contracts.v1.ContractInvoice"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * Stripe's own status: draft, open, paid, uncollectible or void.
+   *
+   * @generated from field: string status = 2;
+   */
+  status: string;
+
+  /**
+   * @generated from field: int32 amount_due_cents = 3;
+   */
+  amountDueCents: number;
+
+  /**
+   * @generated from field: int32 amount_paid_cents = 4;
+   */
+  amountPaidCents: number;
+
+  /**
+   * @generated from field: string currency = 5;
+   */
+  currency: string;
+
+  /**
+   * @generated from field: optional string hosted_invoice_url = 6;
+   */
+  hostedInvoiceUrl?: string | undefined;
+
+  /**
+   * @generated from field: optional string paid_at = 7;
+   */
+  paidAt?: string | undefined;
+
+  /**
+   * @generated from field: optional string failed_at = 8;
+   */
+  failedAt?: string | undefined;
+
+  /**
+   * @generated from field: optional string failure_reason = 9;
+   */
+  failureReason?: string | undefined;
+
+  /**
+   * @generated from field: optional string period_start = 10;
+   */
+  periodStart?: string | undefined;
+
+  /**
+   * @generated from field: optional string period_end = 11;
+   */
+  periodEnd?: string | undefined;
+
+  /**
+   * @generated from field: string created_at = 12;
+   */
+  createdAt: string;
+};
+
+/**
+ * Describes the message ihp.contracts.v1.ContractInvoice.
+ * Use `create(ContractInvoiceSchema)` to create a new message.
+ */
+export const ContractInvoiceSchema: GenMessage<ContractInvoice> = /*@__PURE__*/
+  messageDesc(file_ihp_contracts_v1_contracts, 5);
+
+/**
+ * @generated from message ihp.contracts.v1.ListContractInvoicesRequest
+ */
+export type ListContractInvoicesRequest = Message<"ihp.contracts.v1.ListContractInvoicesRequest"> & {
+  /**
+   * @generated from field: string contract_id = 1;
+   */
+  contractId: string;
+};
+
+/**
+ * Describes the message ihp.contracts.v1.ListContractInvoicesRequest.
+ * Use `create(ListContractInvoicesRequestSchema)` to create a new message.
+ */
+export const ListContractInvoicesRequestSchema: GenMessage<ListContractInvoicesRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_contracts_v1_contracts, 6);
+
+/**
+ * @generated from message ihp.contracts.v1.ListContractInvoicesResponse
+ */
+export type ListContractInvoicesResponse = Message<"ihp.contracts.v1.ListContractInvoicesResponse"> & {
+  /**
+   * @generated from field: repeated ihp.contracts.v1.ContractInvoice invoices = 1;
+   */
+  invoices: ContractInvoice[];
+};
+
+/**
+ * Describes the message ihp.contracts.v1.ListContractInvoicesResponse.
+ * Use `create(ListContractInvoicesResponseSchema)` to create a new message.
+ */
+export const ListContractInvoicesResponseSchema: GenMessage<ListContractInvoicesResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_contracts_v1_contracts, 7);
 
 /**
  * Already parsed: turning ?a=x into these fields is the caller's job, so a stale URL falls
@@ -311,7 +440,7 @@ export type ContractQuery = Message<"ihp.contracts.v1.ContractQuery"> & {
  * Use `create(ContractQuerySchema)` to create a new message.
  */
 export const ContractQuerySchema: GenMessage<ContractQuery> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 5);
+  messageDesc(file_ihp_contracts_v1_contracts, 8);
 
 /**
  * @generated from message ihp.contracts.v1.PageInfo
@@ -353,7 +482,7 @@ export type PageInfo = Message<"ihp.contracts.v1.PageInfo"> & {
  * Use `create(PageInfoSchema)` to create a new message.
  */
 export const PageInfoSchema: GenMessage<PageInfo> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 6);
+  messageDesc(file_ihp_contracts_v1_contracts, 9);
 
 /**
  * @generated from message ihp.contracts.v1.ListContractsRequest
@@ -370,7 +499,7 @@ export type ListContractsRequest = Message<"ihp.contracts.v1.ListContractsReques
  * Use `create(ListContractsRequestSchema)` to create a new message.
  */
 export const ListContractsRequestSchema: GenMessage<ListContractsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 7);
+  messageDesc(file_ihp_contracts_v1_contracts, 10);
 
 /**
  * @generated from message ihp.contracts.v1.ListContractsResponse
@@ -392,7 +521,7 @@ export type ListContractsResponse = Message<"ihp.contracts.v1.ListContractsRespo
  * Use `create(ListContractsResponseSchema)` to create a new message.
  */
 export const ListContractsResponseSchema: GenMessage<ListContractsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 8);
+  messageDesc(file_ihp_contracts_v1_contracts, 11);
 
 /**
  * @generated from message ihp.contracts.v1.GetContractRequest
@@ -409,7 +538,7 @@ export type GetContractRequest = Message<"ihp.contracts.v1.GetContractRequest"> 
  * Use `create(GetContractRequestSchema)` to create a new message.
  */
 export const GetContractRequestSchema: GenMessage<GetContractRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 9);
+  messageDesc(file_ihp_contracts_v1_contracts, 12);
 
 /**
  * @generated from message ihp.contracts.v1.GetContractResponse
@@ -426,7 +555,7 @@ export type GetContractResponse = Message<"ihp.contracts.v1.GetContractResponse"
  * Use `create(GetContractResponseSchema)` to create a new message.
  */
 export const GetContractResponseSchema: GenMessage<GetContractResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 10);
+  messageDesc(file_ihp_contracts_v1_contracts, 13);
 
 /**
  * @generated from message ihp.contracts.v1.ContractDraftLine
@@ -468,7 +597,7 @@ export type ContractDraftLine = Message<"ihp.contracts.v1.ContractDraftLine"> & 
  * Use `create(ContractDraftLineSchema)` to create a new message.
  */
 export const ContractDraftLineSchema: GenMessage<ContractDraftLine> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 11);
+  messageDesc(file_ihp_contracts_v1_contracts, 14);
 
 /**
  * @generated from message ihp.contracts.v1.CreateContractRequest
@@ -515,7 +644,7 @@ export type CreateContractRequest = Message<"ihp.contracts.v1.CreateContractRequ
  * Use `create(CreateContractRequestSchema)` to create a new message.
  */
 export const CreateContractRequestSchema: GenMessage<CreateContractRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 12);
+  messageDesc(file_ihp_contracts_v1_contracts, 15);
 
 /**
  * @generated from message ihp.contracts.v1.CreateContractResponse
@@ -532,7 +661,7 @@ export type CreateContractResponse = Message<"ihp.contracts.v1.CreateContractRes
  * Use `create(CreateContractResponseSchema)` to create a new message.
  */
 export const CreateContractResponseSchema: GenMessage<CreateContractResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 13);
+  messageDesc(file_ihp_contracts_v1_contracts, 16);
 
 /**
  * @generated from message ihp.contracts.v1.UpdateContractRequest
@@ -584,7 +713,7 @@ export type UpdateContractRequest = Message<"ihp.contracts.v1.UpdateContractRequ
  * Use `create(UpdateContractRequestSchema)` to create a new message.
  */
 export const UpdateContractRequestSchema: GenMessage<UpdateContractRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 14);
+  messageDesc(file_ihp_contracts_v1_contracts, 17);
 
 /**
  * @generated from message ihp.contracts.v1.UpdateContractResponse
@@ -601,7 +730,7 @@ export type UpdateContractResponse = Message<"ihp.contracts.v1.UpdateContractRes
  * Use `create(UpdateContractResponseSchema)` to create a new message.
  */
 export const UpdateContractResponseSchema: GenMessage<UpdateContractResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 15);
+  messageDesc(file_ihp_contracts_v1_contracts, 18);
 
 /**
  * @generated from message ihp.contracts.v1.SetContractStatusRequest
@@ -623,7 +752,7 @@ export type SetContractStatusRequest = Message<"ihp.contracts.v1.SetContractStat
  * Use `create(SetContractStatusRequestSchema)` to create a new message.
  */
 export const SetContractStatusRequestSchema: GenMessage<SetContractStatusRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 16);
+  messageDesc(file_ihp_contracts_v1_contracts, 19);
 
 /**
  * @generated from message ihp.contracts.v1.SetContractStatusResponse
@@ -640,7 +769,7 @@ export type SetContractStatusResponse = Message<"ihp.contracts.v1.SetContractSta
  * Use `create(SetContractStatusResponseSchema)` to create a new message.
  */
 export const SetContractStatusResponseSchema: GenMessage<SetContractStatusResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 17);
+  messageDesc(file_ihp_contracts_v1_contracts, 20);
 
 /**
  * @generated from message ihp.contracts.v1.ListCatalogRequest
@@ -653,7 +782,7 @@ export type ListCatalogRequest = Message<"ihp.contracts.v1.ListCatalogRequest"> 
  * Use `create(ListCatalogRequestSchema)` to create a new message.
  */
 export const ListCatalogRequestSchema: GenMessage<ListCatalogRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 18);
+  messageDesc(file_ihp_contracts_v1_contracts, 21);
 
 /**
  * @generated from message ihp.contracts.v1.ListCatalogResponse
@@ -670,7 +799,7 @@ export type ListCatalogResponse = Message<"ihp.contracts.v1.ListCatalogResponse"
  * Use `create(ListCatalogResponseSchema)` to create a new message.
  */
 export const ListCatalogResponseSchema: GenMessage<ListCatalogResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 19);
+  messageDesc(file_ihp_contracts_v1_contracts, 22);
 
 /**
  * @generated from message ihp.contracts.v1.CreateCatalogItemRequest
@@ -722,7 +851,7 @@ export type CreateCatalogItemRequest = Message<"ihp.contracts.v1.CreateCatalogIt
  * Use `create(CreateCatalogItemRequestSchema)` to create a new message.
  */
 export const CreateCatalogItemRequestSchema: GenMessage<CreateCatalogItemRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 20);
+  messageDesc(file_ihp_contracts_v1_contracts, 23);
 
 /**
  * @generated from message ihp.contracts.v1.GetContractTemplateRequest
@@ -735,7 +864,7 @@ export type GetContractTemplateRequest = Message<"ihp.contracts.v1.GetContractTe
  * Use `create(GetContractTemplateRequestSchema)` to create a new message.
  */
 export const GetContractTemplateRequestSchema: GenMessage<GetContractTemplateRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 21);
+  messageDesc(file_ihp_contracts_v1_contracts, 24);
 
 /**
  * @generated from message ihp.contracts.v1.GetContractTemplateResponse
@@ -752,7 +881,7 @@ export type GetContractTemplateResponse = Message<"ihp.contracts.v1.GetContractT
  * Use `create(GetContractTemplateResponseSchema)` to create a new message.
  */
 export const GetContractTemplateResponseSchema: GenMessage<GetContractTemplateResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 22);
+  messageDesc(file_ihp_contracts_v1_contracts, 25);
 
 /**
  * @generated from message ihp.contracts.v1.UpdateContractTemplateRequest
@@ -774,7 +903,7 @@ export type UpdateContractTemplateRequest = Message<"ihp.contracts.v1.UpdateCont
  * Use `create(UpdateContractTemplateRequestSchema)` to create a new message.
  */
 export const UpdateContractTemplateRequestSchema: GenMessage<UpdateContractTemplateRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 23);
+  messageDesc(file_ihp_contracts_v1_contracts, 26);
 
 /**
  * @generated from message ihp.contracts.v1.UpdateContractTemplateResponse
@@ -791,7 +920,7 @@ export type UpdateContractTemplateResponse = Message<"ihp.contracts.v1.UpdateCon
  * Use `create(UpdateContractTemplateResponseSchema)` to create a new message.
  */
 export const UpdateContractTemplateResponseSchema: GenMessage<UpdateContractTemplateResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 24);
+  messageDesc(file_ihp_contracts_v1_contracts, 27);
 
 /**
  * @generated from message ihp.contracts.v1.CreateCatalogItemResponse
@@ -808,7 +937,7 @@ export type CreateCatalogItemResponse = Message<"ihp.contracts.v1.CreateCatalogI
  * Use `create(CreateCatalogItemResponseSchema)` to create a new message.
  */
 export const CreateCatalogItemResponseSchema: GenMessage<CreateCatalogItemResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_contracts_v1_contracts, 25);
+  messageDesc(file_ihp_contracts_v1_contracts, 28);
 
 /**
  * @generated from enum ihp.contracts.v1.CatalogCategory
@@ -1108,6 +1237,14 @@ export const ContractsService: GenService<{
     methodKind: "unary";
     input: typeof UpdateContractTemplateRequestSchema;
     output: typeof UpdateContractTemplateResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.contracts.v1.ContractsService.ListContractInvoices
+   */
+  listContractInvoices: {
+    methodKind: "unary";
+    input: typeof ListContractInvoicesRequestSchema;
+    output: typeof ListContractInvoicesResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_ihp_contracts_v1_contracts, 0);

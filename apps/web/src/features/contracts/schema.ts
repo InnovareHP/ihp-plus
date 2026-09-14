@@ -210,7 +210,40 @@ export interface ContractRow {
 export interface ContractDetail extends ContractRow {
   terms: string | undefined
   lines: ContractLineRow[]
+  /** Present only while the contract is published and waiting on the client. */
+  clientLink: string | undefined
+  viewedAt: string | undefined
+  acceptedByName: string | undefined
 }
+
+/** What Stripe billed for a contract, as the webhook mirrored it. */
+export interface ContractInvoiceRow {
+  id: string
+  status: string
+  amountDueCents: number
+  amountPaidCents: number
+  currency: string
+  hostedInvoiceUrl: string | undefined
+  paidAt: string | undefined
+  failedAt: string | undefined
+  failureReason: string | undefined
+  periodStart: string | undefined
+  periodEnd: string | undefined
+  createdAt: string
+}
+
+export const contractAcceptanceFormSchema = z.object({
+  fullName: z.string().trim().min(2, 'Type your full name to accept').max(120),
+  agree: z.boolean().refine((value) => value, { message: 'Tick the box to confirm you agree' }),
+})
+
+// The link parts travel with the form, because the signed link is the client's only credential.
+export const contractAcceptanceSchema = contractAcceptanceFormSchema.extend({
+  contractId: z.string().min(1),
+  signature: z.string().min(1),
+})
+
+export type ContractAcceptanceFormValues = z.infer<typeof contractAcceptanceFormSchema>
 
 export interface ContractsPage {
   rows: ContractRow[]

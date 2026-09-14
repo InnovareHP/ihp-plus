@@ -12,14 +12,22 @@ const prisma = vi.hoisted(() => ({
     update: vi.fn(),
   },
   client: { findMany: vi.fn(), findFirst: vi.fn() },
+  organization: { findUnique: vi.fn() },
+  stripeInvoice: { findMany: vi.fn() },
 }))
 
 const guard = vi.hoisted(() => ({ requireOnboarded: vi.fn() }))
 
 const billing = vi.hoisted(() => ({ syncBilling: vi.fn() }))
+const email = vi.hoisted(() => ({ sendEmail: vi.fn(), contractPublishedTemplate: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/features/billing/contract-billing', () => billing)
+vi.mock('@/lib/email', () => email)
+vi.mock('./client-link', () => ({
+  clientContractUrl: (contractId: string) =>
+    `https://portal.ihp.test/app/contract/${contractId}/sig`,
+}))
 // membershipOf and canManageOrganization are pure, so the real ones are kept: the manager rule
 // has one definition and this test exercises it rather than a copy.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
@@ -31,6 +39,7 @@ const {
   createCatalogItem,
   createContract,
   loadContract,
+  loadContractInvoices,
   loadContractsPage,
   setContractStatus,
   updateContract,
@@ -226,6 +235,64 @@ describe('setContractStatus', () => {
     prisma.client.findMany.mockResolvedValue([{ id: 'client-1', name: 'Atlantic Home Health' }])
     prisma.contract.update.mockResolvedValue({})
     billing.syncBilling.mockResolvedValue(null)
+    prisma.client.findFirst.mockResolvedValue({
+      name: 'Atlantic Home Health',
+      email: 'billing@atlantic.test',
+    })
+    prisma.organization.findUnique.mockResolvedValue({ name: 'Innovare Health Partners' })
+    email.contractPublishedTemplate.mockReturnValue({ subject: 'Ready', html: '<p/>', text: '' })
+  })
+
+  it('emails the client a freshly signed link when a draft is published', async () => {
+    queueWriteThenReload({
+      id: 'contract-1',
+      signedAt: null,
+      status: 'draft',
+      clientId: 'client-1',
+      reference: 'IHP-C-0007',
+      title: 'Growth retainer',
+    })
+
+    await setContractStatus({ contractId: 'contract-1', status: 'sent' })
+
+    expect(prisma.contract.update.mock.calls[0]?.[0].data.sharedAt).toBeInstanceOf(Date)
+    expect(email.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'billing@atlantic.test' }),
+    )
+    expect(email.contractPublishedTemplate).toHaveBeenCalledWith({
+      organizationName: 'Innovare Health Partners',
+      reference: 'IHP-C-0007',
+      title: 'Growth retainer',
+      url: 'https://portal.ihp.test/app/contract/contract-1/sig',
+    })
+  })
+
+  it('refuses to publish to a client with no email, before anything changes', async () => {
+    prisma.client.findFirst.mockResolvedValue({ name: 'Atlantic Home Health', email: null })
+    queueWriteThenReload({
+      id: 'contract-1',
+      signedAt: null,
+      status: 'draft',
+      clientId: 'client-1',
+    })
+
+    expect(
+      await codeOf(() => setContractStatus({ contractId: 'contract-1', status: 'sent' })),
+    ).toBe(Code.FailedPrecondition)
+    expect(prisma.contract.update).not.toHaveBeenCalled()
+    expect(email.sendEmail).not.toHaveBeenCalled()
+  })
+
+  it('retires the client link when a contract returns to draft', async () => {
+    queueWriteThenReload({ id: 'contract-1', signedAt: null, status: 'sent' })
+
+    await setContractStatus({ contractId: 'contract-1', status: 'draft' })
+
+    expect(prisma.contract.update.mock.calls[0]?.[0].data).toMatchObject({
+      sharedAt: null,
+      viewedAt: null,
+    })
+    expect(email.sendEmail).not.toHaveBeenCalled()
   })
 
   it('points an agreed contract at the Stripe objects billing created', async () => {
@@ -315,6 +382,63 @@ describe('setContractStatus', () => {
     await setContractStatus({ contractId: 'contract-1', status: 'sent' })
 
     expect(prisma.contract.update.mock.calls[0]?.[0].data.signedAt).toBeNull()
+  })
+})
+
+describe('loadContractInvoices', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    signedInAs()
+  })
+
+  it('lists what Stripe billed for the contract, newest first, in cents', async () => {
+    prisma.contract.findFirst.mockResolvedValue({ id: 'contract-1' })
+    prisma.stripeInvoice.findMany.mockResolvedValue([
+      {
+        id: 'in_1',
+        status: 'paid',
+        amountDueCents: 250_000,
+        amountPaidCents: 250_000,
+        currency: 'usd',
+        hostedInvoiceUrl: 'https://invoice.stripe.com/i/1',
+        paidAt: new Date('2026-09-02T00:00:00.000Z'),
+        failedAt: null,
+        failureReason: null,
+        periodStart: null,
+        periodEnd: null,
+        createdAt: new Date('2026-09-01T00:00:00.000Z'),
+      },
+    ])
+
+    const invoices = await loadContractInvoices('contract-1')
+
+    expect(prisma.stripeInvoice.findMany.mock.calls[0]?.[0]).toMatchObject({
+      where: { contractId: 'contract-1' },
+      orderBy: { createdAt: 'desc' },
+    })
+    expect(invoices).toEqual([
+      {
+        id: 'in_1',
+        status: 'paid',
+        amountDueCents: 250_000,
+        amountPaidCents: 250_000,
+        currency: 'usd',
+        hostedInvoiceUrl: 'https://invoice.stripe.com/i/1',
+        paidAt: '2026-09-02T00:00:00.000Z',
+        failedAt: undefined,
+        failureReason: undefined,
+        periodStart: undefined,
+        periodEnd: undefined,
+        createdAt: '2026-09-01T00:00:00.000Z',
+      },
+    ])
+  })
+
+  it('never reads invoices for a contract outside the caller organization', async () => {
+    prisma.contract.findFirst.mockResolvedValue(null)
+
+    expect(await codeOf(() => loadContractInvoices('contract-9'))).toBe(Code.NotFound)
+    expect(prisma.stripeInvoice.findMany).not.toHaveBeenCalled()
   })
 })
 

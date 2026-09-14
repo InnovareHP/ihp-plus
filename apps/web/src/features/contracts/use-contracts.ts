@@ -11,6 +11,7 @@ import {
   getContract,
   getContractTemplate,
   listCatalog,
+  listContractInvoices,
   listContracts,
   setContractStatus,
   updateContract,
@@ -147,5 +148,15 @@ export function useCreateCatalogItem() {
       announceFailure(error.message)
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: contractKeys.catalog() }),
+  })
+}
+
+export function useContractInvoices(contractId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: contractKeys.invoices(contractId),
+    queryFn: () => listContractInvoices(contractId),
+    enabled,
+    // Invoices change on Stripe's schedule, not while someone is reading the drawer.
+    staleTime: 60 * 1000,
   })
 }

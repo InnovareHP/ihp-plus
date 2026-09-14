@@ -112,6 +112,36 @@ message ContractDetail {
   Contract contract = 1;
   optional string terms = 2;
   repeated ContractLine lines = 3;
+  // Present only while the contract is published and open, so a manager can send it by hand.
+  optional string client_link = 4;
+  optional string viewed_at = 5;
+  // The name the client typed when accepting online.
+  optional string accepted_by_name = 6;
+}
+
+// What Stripe billed for a contract, mirrored from the webhook. Amounts are cents.
+message ContractInvoice {
+  string id = 1;
+  // Stripe's own status: draft, open, paid, uncollectible or void.
+  string status = 2;
+  int32 amount_due_cents = 3;
+  int32 amount_paid_cents = 4;
+  string currency = 5;
+  optional string hosted_invoice_url = 6;
+  optional string paid_at = 7;
+  optional string failed_at = 8;
+  optional string failure_reason = 9;
+  optional string period_start = 10;
+  optional string period_end = 11;
+  string created_at = 12;
+}
+
+message ListContractInvoicesRequest {
+  string contract_id = 1;
+}
+
+message ListContractInvoicesResponse {
+  repeated ContractInvoice invoices = 1;
 }
 
 // Already parsed: turning ?a=x into these fields is the caller's job, so a stale URL falls
@@ -246,4 +276,5 @@ service ContractsService {
   rpc CreateCatalogItem(CreateCatalogItemRequest) returns (CreateCatalogItemResponse);
   rpc GetContractTemplate(GetContractTemplateRequest) returns (GetContractTemplateResponse);
   rpc UpdateContractTemplate(UpdateContractTemplateRequest) returns (UpdateContractTemplateResponse);
+  rpc ListContractInvoices(ListContractInvoicesRequest) returns (ListContractInvoicesResponse);
 }

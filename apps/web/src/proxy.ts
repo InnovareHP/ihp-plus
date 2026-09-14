@@ -1,10 +1,12 @@
 import { getSessionCookie } from 'better-auth/cookies'
 import { NextResponse, type NextRequest } from 'next/server'
-import { isPublicRoute, routes } from '@/lib/routes'
+import { isPublicRoute, isSharedRoute, routes } from '@/lib/routes'
 
 // Cookie presence only — it proves nothing, so requireSession() revalidates in every layout.
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+  if (isSharedRoute(pathname)) return NextResponse.next()
+
   const isPublic = isPublicRoute(pathname)
   const hasSessionCookie = Boolean(getSessionCookie(request))
 

@@ -3,7 +3,9 @@ import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { syncBilling } from '@/features/billing/contract-billing'
 import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
+import { contractPublishedTemplate, sendEmail } from '@/lib/email'
 import { pageInfoOf, skipTake, type SortDirection } from '@/lib/pagination'
+import { clientContractUrl } from './client-link'
 import {
   catalogItemSchema,
   contractDraftSchema,
@@ -17,6 +19,7 @@ import {
   type CatalogItemRow,
   type CatalogUnit,
   type ContractDetail,
+  type ContractInvoiceRow,
   type ContractDraftValues,
   type ContractQuery,
   type ContractRow,
@@ -276,6 +279,9 @@ export async function loadContract(contractId: string): Promise<ContractDetail> 
     select: {
       ...CONTRACT_SELECT,
       terms: true,
+      sharedAt: true,
+      viewedAt: true,
+      acceptedByName: true,
       lines: {
         orderBy: { sortOrder: 'asc' },
         select: {
@@ -306,7 +312,47 @@ export async function loadContract(contractId: string): Promise<ContractDetail> 
       quantity: line.quantity,
       unit: line.unit as CatalogUnit,
     })),
+    // Only while it waits on the client: once answered, the link is a record, not an action.
+    clientLink:
+      contract.status === 'sent' && contract.sharedAt
+        ? clientContractUrl(contract.id, contract.sharedAt)
+        : undefined,
+    viewedAt: isoDate(contract.viewedAt),
+    acceptedByName: contract.acceptedByName ?? undefined,
   }
+}
+
+/** What Stripe billed for one contract, newest first, as the webhook recorded it. */
+export async function loadContractInvoices(contractId: string): Promise<ContractInvoiceRow[]> {
+  const { organizationId } = await caller()
+
+  // Checked first: an invoice row carries no organization, so the contract is what scopes it.
+  const contract = await db.contract.findFirst({
+    where: { id: contractId, organizationId },
+    select: { id: true },
+  })
+  if (!contract) throw new ConnectError('That contract no longer exists.', Code.NotFound)
+
+  const invoices = await db.stripeInvoice.findMany({
+    where: { contractId: contract.id },
+    orderBy: { createdAt: 'desc' },
+    take: 24,
+  })
+
+  return invoices.map((invoice) => ({
+    id: invoice.id,
+    status: invoice.status,
+    amountDueCents: invoice.amountDueCents,
+    amountPaidCents: invoice.amountPaidCents,
+    currency: invoice.currency,
+    hostedInvoiceUrl: invoice.hostedInvoiceUrl ?? undefined,
+    paidAt: isoDate(invoice.paidAt),
+    failedAt: isoDate(invoice.failedAt),
+    failureReason: invoice.failureReason ?? undefined,
+    periodStart: isoDate(invoice.periodStart),
+    periodEnd: isoDate(invoice.periodEnd),
+    createdAt: invoice.createdAt.toISOString(),
+  }))
 }
 
 /**
@@ -487,20 +533,57 @@ export async function setContractStatus(input: unknown): Promise<ContractDetail>
     )
   }
 
+  const to = parsed.data.status
+  const recipient = to === 'sent' ? await publishRecipient(contract.clientId, organizationId) : null
+
   // Stripe first: if it refuses, this throws and the contract is never marked as changed.
-  const attachment = await syncBilling({ ...contract, organizationId }, parsed.data.status)
+  const attachment = await syncBilling({ ...contract, organizationId }, to)
+  // A fresh publication signs a fresh link, and returning to draft retires the old one.
+  const sharedAt = to === 'sent' ? new Date() : to === 'draft' ? null : undefined
 
   await db.contract.update({
     where: { id: contract.id },
     data: {
       ...attachment,
-      status: parsed.data.status,
+      status: to,
       // Going active is what agreement means, and the timestamp is what billing will key on.
       // Set once: a contract that is paused and resumed keeps the date it was first agreed.
-      signedAt:
-        parsed.data.status === 'active' && !contract.signedAt ? new Date() : contract.signedAt,
+      signedAt: to === 'active' && !contract.signedAt ? new Date() : contract.signedAt,
+      ...(sharedAt === undefined ? {} : { sharedAt, viewedAt: null }),
     },
   })
 
+  if (recipient && sharedAt) {
+    // Not awaited, and sendEmail never throws: a slow mail provider must not hold up publishing.
+    void sendEmail({
+      to: recipient.email,
+      ...contractPublishedTemplate({
+        organizationName: recipient.organizationName,
+        reference: contract.reference,
+        title: contract.title,
+        url: clientContractUrl(contract.id, sharedAt),
+      }),
+    })
+  }
+
   return loadContract(contract.id)
+}
+
+// Publishing emails the client their link, so a client with no address cannot be published to.
+async function publishRecipient(clientId: string, organizationId: string) {
+  const [client, organization] = await Promise.all([
+    db.client.findFirst({
+      where: { id: clientId, organizationId },
+      select: { name: true, email: true },
+    }),
+    db.organization.findUnique({ where: { id: organizationId }, select: { name: true } }),
+  ])
+  if (!client) throw new ConnectError('That client no longer exists.', Code.NotFound)
+  if (!client.email) {
+    throw new ConnectError(
+      `Add an email for ${client.name} before publishing. The contract link and invoices go there.`,
+      Code.FailedPrecondition,
+    )
+  }
+  return { email: client.email, organizationName: organization?.name ?? 'IHP Plus' }
 }

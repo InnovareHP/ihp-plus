@@ -8,6 +8,7 @@ import {
   contractFromProto,
   cycleToProto,
   detailFromProto,
+  invoiceFromProto,
   queryToProto,
   statusToProto,
   unitToProto,
@@ -17,6 +18,7 @@ import type {
   CatalogItemValues,
   ContractDetail,
   ContractDraftValues,
+  ContractInvoiceRow,
   ContractQuery,
   ContractStatus,
   ContractsPage,
@@ -160,4 +162,9 @@ export async function createCatalogItem(values: CatalogItemValues): Promise<Cata
   )
   if (!response.item) throw new Error('The server did not return the new service.')
   return catalogFromProto(response.item)
+}
+
+export async function listContractInvoices(contractId: string): Promise<ContractInvoiceRow[]> {
+  const response = await call(() => browserClients.contracts.listContractInvoices({ contractId }))
+  return response.invoices.map(invoiceFromProto)
 }

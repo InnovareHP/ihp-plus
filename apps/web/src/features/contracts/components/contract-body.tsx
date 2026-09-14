@@ -1,23 +1,24 @@
 'use client'
 
-import { Badge, Button, Group, Stack, Table, Text, Title } from '@mantine/core'
+import { Badge, Button, CopyButton, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconPencil, IconReceipt } from '@tabler/icons-react'
+import { track } from '@/lib/analytics'
+import { contractEvents } from '../events'
 import {
   BILLING_CYCLE_LABELS,
-  CATALOG_UNIT_LABELS,
   CONTRACT_STATUS_COLORS,
   CONTRACT_STATUS_LABELS,
   CONTRACT_TRANSITIONS,
   CONTRACT_TRANSITION_LABELS,
-  formatCents,
   isEditable,
-  lineTotalCents,
   type ContractDetail,
   type ContractStatus,
 } from '../schema'
-import { useSetContractStatus } from '../use-contracts'
+import { useContractInvoices, useSetContractStatus } from '../use-contracts'
 import { AgreeContractModal } from './agree-contract-modal'
+import { ContractInvoicesTable } from './contract-invoices-table'
+import { ContractLinesTable } from './contract-lines-table'
 
 const date = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' })
 
@@ -34,6 +35,7 @@ export function ContractBody({
   onEdit: (contract: ContractDetail) => void
 }) {
   const setStatus = useSetContractStatus()
+  const invoices = useContractInvoices(contract.id, contract.isBilled)
   const [agreeing, agreeModal] = useDisclosure(false)
   const editable = isEditable(contract.status)
   const next = CONTRACT_TRANSITIONS[contract.status]
@@ -126,57 +128,62 @@ export function ContractBody({
         onConfirm={() => setStatus.mutate({ contractId: contract.id, status: 'active' })}
       />
 
+      {contract.clientLink ? (
+        <Stack gap="xs">
+          <Title order={3} size="h6">
+            Client link
+          </Title>
+          <Text size="sm" c="dimmed">
+            Emailed to the client when it was published.{' '}
+            {contract.viewedAt
+              ? `They opened it on ${date.format(new Date(contract.viewedAt))}.`
+              : 'They have not opened it yet.'}
+          </Text>
+          <Group gap="xs" wrap="nowrap" align="flex-end">
+            <TextInput
+              label="Link to send by hand"
+              value={contract.clientLink}
+              readOnly
+              flex={1}
+              onFocus={(event) => event.currentTarget.select()}
+            />
+            <CopyButton value={contract.clientLink}>
+              {({ copied, copy }) => (
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    copy()
+                    track(contractEvents.clientLinkCopied)
+                  }}
+                >
+                  {copied ? 'Copied' : 'Copy link'}
+                </Button>
+              )}
+            </CopyButton>
+          </Group>
+        </Stack>
+      ) : null}
+
       <Stack gap="xs">
         <Title order={3} size="h6">
           Services
         </Title>
-        <Table withTableBorder withColumnBorders verticalSpacing="xs">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th scope="col">Service</Table.Th>
-              <Table.Th scope="col" w={120}>
-                Price
-              </Table.Th>
-              <Table.Th scope="col" w={80}>
-                Qty
-              </Table.Th>
-              <Table.Th scope="col" w={120}>
-                Total
-              </Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {contract.lines.map((line) => (
-              <Table.Tr key={line.id}>
-                <Table.Th scope="row" fw={400}>
-                  <Text size="sm">{line.name}</Text>
-                </Table.Th>
-                <Table.Td>
-                  <Text size="sm">
-                    {formatCents(line.unitPriceCents)}/{CATALOG_UNIT_LABELS[line.unit]}
-                  </Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm">{line.quantity}</Text>
-                </Table.Td>
-                <Table.Td>
-                  <Text size="sm" fw={500}>
-                    {formatCents(lineTotalCents(line))}
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-        <Group justify="flex-end" gap="sm">
-          <Text size="sm" c="dimmed">
-            Subtotal
-          </Text>
-          <Text fw={700} fz="lg">
-            {formatCents(contract.subtotalCents)}
-          </Text>
-        </Group>
+        <ContractLinesTable lines={contract.lines} subtotalCents={contract.subtotalCents} />
       </Stack>
+
+      {contract.isBilled ? (
+        <Stack gap="xs">
+          <Title order={3} size="h6">
+            Invoices
+          </Title>
+          <ContractInvoicesTable
+            invoices={invoices.data}
+            isPending={invoices.isPending}
+            errorMessage={invoices.error?.message}
+            onRetry={() => invoices.refetch()}
+          />
+        </Stack>
+      ) : null}
 
       <Stack gap={4}>
         <Title order={3} size="h6">
@@ -186,6 +193,7 @@ export function ContractBody({
           Starts {contract.startDate ? date.format(new Date(contract.startDate)) : 'not set'} · Ends{' '}
           {contract.endDate ? date.format(new Date(contract.endDate)) : 'open-ended'}
           {contract.signedAt ? ` · Agreed ${date.format(new Date(contract.signedAt))}` : ''}
+          {contract.acceptedByName ? ` online by ${contract.acceptedByName}` : ''}
         </Text>
       </Stack>
 

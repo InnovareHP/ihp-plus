@@ -60,3 +60,45 @@ export function invitationTemplate(options: {
     }),
   }
 }
+
+export function contractPublishedTemplate(options: {
+  organizationName: string
+  reference: string
+  title: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.reference}: your contract from ${options.organizationName} is ready`,
+    ...renderEmail({
+      preheader: `Review ${options.title} and accept it online.`,
+      heading: `Review ${options.title}`,
+      body: [
+        `${options.organizationName} has sent you contract ${options.reference}, ${options.title}, to review.`,
+        'It lists the services, the dates and the terms. Accept it online by typing your name; nothing is billed until you do.',
+      ],
+      action: { label: 'Review the contract', url: options.url },
+      footnote:
+        'The link works until the contract changes. If it stops working, ask your contact for a new one.',
+    }),
+  }
+}
+
+export function contractAcceptedTemplate(options: {
+  clientName: string
+  reference: string
+  acceptedByName: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.clientName} accepted ${options.reference}`,
+    ...renderEmail({
+      preheader: `${options.acceptedByName} accepted ${options.reference} online.`,
+      heading: `${options.reference} was accepted`,
+      body: [
+        `${options.acceptedByName} accepted ${options.reference} on behalf of ${options.clientName}.`,
+        'The contract is now active. If billing is set up, Stripe has started invoicing them.',
+      ],
+      action: { label: 'Open contracts', url: options.url },
+    }),
+  }
+}

@@ -4,7 +4,7 @@ import { render, screen, userEvent, waitFor } from '@/test/render'
 import type { ContractDetail } from '../schema'
 import { ContractBody } from './contract-body'
 
-const rpc = vi.hoisted(() => ({ setContractStatus: vi.fn() }))
+const rpc = vi.hoisted(() => ({ setContractStatus: vi.fn(), listContractInvoices: vi.fn() }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
@@ -25,6 +25,9 @@ const SENT: ContractDetail = {
   createdAt: '2026-09-01T00:00:00.000Z',
   isBilled: false,
   terms: undefined,
+  clientLink: undefined,
+  viewedAt: undefined,
+  acceptedByName: undefined,
   lines: [
     {
       id: 'line-1',
@@ -48,6 +51,64 @@ describe('ContractBody', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     rpc.setContractStatus.mockResolvedValue({ ...SENT, status: 'active', isBilled: true })
+    rpc.listContractInvoices.mockResolvedValue([])
+  })
+
+  it('offers the client link to copy while the contract waits on the client', () => {
+    renderBody({
+      ...SENT,
+      clientLink: 'https://portal.ihp.test/app/contract/contract-1/sig',
+      viewedAt: '2026-09-12T00:00:00.000Z',
+    })
+
+    expect(screen.getByRole('textbox', { name: 'Link to send by hand' })).toHaveValue(
+      'https://portal.ihp.test/app/contract/contract-1/sig',
+    )
+    expect(screen.getByRole('button', { name: 'Copy link' })).toBeInTheDocument()
+    expect(screen.getByText(/They opened it on September 12, 2026/)).toBeInTheDocument()
+  })
+
+  it('lists the invoices of a billed contract and flags a failed payment', async () => {
+    rpc.listContractInvoices.mockResolvedValue([
+      {
+        id: 'in_2',
+        status: 'open',
+        amountDueCents: 250_000,
+        amountPaidCents: 0,
+        currency: 'usd',
+        hostedInvoiceUrl: 'https://invoice.stripe.com/i/2',
+        paidAt: undefined,
+        failedAt: '2026-10-03T00:00:00.000Z',
+        failureReason: 'Your card was declined.',
+        periodStart: undefined,
+        periodEnd: undefined,
+        createdAt: '2026-10-01T00:00:00.000Z',
+      },
+    ])
+    renderBody({ ...SENT, status: 'active', isBilled: true })
+
+    expect(await screen.findByText('Payment failed')).toBeInTheDocument()
+    expect(screen.getByText('Your card was declined.')).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', {
+        name: 'View the invoice issued Oct 1, 2026 (opens in a new tab)',
+      }),
+    ).toHaveAttribute('href', 'https://invoice.stripe.com/i/2')
+    expect(rpc.listContractInvoices).toHaveBeenCalledWith('contract-1')
+  })
+
+  it('does not ask for invoices on a contract that is not billed', () => {
+    renderBody()
+
+    expect(rpc.listContractInvoices).not.toHaveBeenCalled()
+  })
+
+  it('offers a retry when the invoices cannot be loaded', async () => {
+    rpc.listContractInvoices.mockRejectedValue(new Error('The portal could not be reached.'))
+    renderBody({ ...SENT, status: 'active', isBilled: true })
+
+    expect(await screen.findByText('The portal could not be reached.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
   it('asks before an agreement that starts billing, naming the client it invoices', async () => {

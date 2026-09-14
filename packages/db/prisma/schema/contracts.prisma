@@ -96,6 +96,15 @@ model Contract {
   /// Set once the client agrees, which is what makes the contract billable.
   signedAt DateTime?
 
+  /// When it was last published; the client link is signed with it, so republishing retires old links.
+  sharedAt          DateTime?
+  /// First time the client opened the published link.
+  viewedAt          DateTime?
+  /// The name the client typed to accept, kept with where it came from as the signature record.
+  acceptedByName    String?
+  acceptedIp        String?
+  acceptedUserAgent String?
+
   // Stripe owns the money; these only point at it. Nullable until billing is attached.
   stripeCustomerId     String?
   stripeSubscriptionId String?

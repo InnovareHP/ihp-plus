@@ -11,4 +11,8 @@ export const contractEvents = {
   catalogItemAddFailed: 'contracts.catalog_item.add_failed',
   templateSaved: 'contracts.template.saved',
   templateSaveFailed: 'contracts.template.save_failed',
+  clientLinkCopied: 'contracts.client_link.copied',
+  clientAcceptStarted: 'contracts.contract.client_accept_started',
+  clientAccepted: 'contracts.contract.client_accepted',
+  clientAcceptFailed: 'contracts.contract.client_accept_failed',
 } as const satisfies Record<string, EventName>

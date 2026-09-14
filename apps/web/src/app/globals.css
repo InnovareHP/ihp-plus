@@ -19,6 +19,13 @@
   transform: translateY(0.5rem);
 }
 
+/* A client prints the contract itself, and the browser's Save as PDF makes the file. */
+@media print {
+  [data-print-hidden] {
+    display: none !important;
+  }
+}
+
 /* Mantine honours reduced motion itself; this covers plain CSS transitions in this app. */
 @media (prefers-reduced-motion: reduce) {
   *,

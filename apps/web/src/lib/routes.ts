@@ -17,6 +17,7 @@ export const routes = {
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
   acceptInvitation: '/accept-invitation',
+  clientContract: '/contract',
 } as const
 
 export type Route = (typeof routes)[keyof typeof routes]
@@ -72,6 +73,17 @@ export const NEW_REQUEST_FORM_ROUTE = `${routes.requestForms}/new`
 
 export function invitationRoute(invitationId: string) {
   return `${routes.acceptInvitation}/${invitationId}`
+}
+
+export function clientContractRoute(contractId: string, signature: string) {
+  return `${routes.clientContract}/${contractId}/${signature}`
+}
+
+// Open with or without a session, so a manager opening a client link sees what the client sees.
+export const SHARED_ROUTES: readonly Route[] = [routes.clientContract]
+
+export function isSharedRoute(pathname: string) {
+  return SHARED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
 }
 
 // The (auth) route group is invisible in the URL, so the guard matches these prefixes instead.

@@ -8,6 +8,7 @@ import {
   type CatalogItem,
   type Contract,
   type ContractDetail as ContractDetailMessage,
+  type ContractInvoice as ContractInvoiceMessage,
   type ContractLine,
   type ContractQuery as ContractQueryMessage,
 } from '@ihp/rpc/contracts'
@@ -18,6 +19,7 @@ import type {
   CatalogItemRow,
   CatalogUnit as Unit,
   ContractDetail,
+  ContractInvoiceRow,
   ContractLineRow,
   ContractQuery,
   ContractRow,
@@ -224,6 +226,9 @@ export function detailToProto(detail: ContractDetail): ContractDetailMessage {
     contract: contractToProto(detail),
     terms: detail.terms,
     lines: detail.lines.map(lineToProto),
+    clientLink: detail.clientLink,
+    viewedAt: detail.viewedAt,
+    acceptedByName: detail.acceptedByName,
   }
 }
 
@@ -234,6 +239,30 @@ export function detailFromProto(message: ContractDetailMessage | undefined): Con
     ...contractFromProto(message.contract),
     terms: message.terms,
     lines: message.lines.map(lineFromProto),
+    clientLink: message.clientLink,
+    viewedAt: message.viewedAt,
+    acceptedByName: message.acceptedByName,
+  }
+}
+
+export function invoiceToProto(invoice: ContractInvoiceRow): ContractInvoiceMessage {
+  return { $typeName: 'ihp.contracts.v1.ContractInvoice', ...invoice }
+}
+
+export function invoiceFromProto(message: ContractInvoiceMessage): ContractInvoiceRow {
+  return {
+    id: message.id,
+    status: message.status,
+    amountDueCents: message.amountDueCents,
+    amountPaidCents: message.amountPaidCents,
+    currency: message.currency,
+    hostedInvoiceUrl: message.hostedInvoiceUrl,
+    paidAt: message.paidAt,
+    failedAt: message.failedAt,
+    failureReason: message.failureReason,
+    periodStart: message.periodStart,
+    periodEnd: message.periodEnd,
+    createdAt: message.createdAt,
   }
 }
 

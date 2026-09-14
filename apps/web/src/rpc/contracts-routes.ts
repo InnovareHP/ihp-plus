@@ -5,6 +5,7 @@ import {
   createContract,
   loadCatalog,
   loadContract,
+  loadContractInvoices,
   loadContractsPage,
   loadContractTemplate,
   setContractStatus,
@@ -18,6 +19,7 @@ import {
   contractToProto,
   cycleFromProto,
   detailToProto,
+  invoiceToProto,
   queryFromProto,
   statusFromProto,
 } from './contracts-codec'
@@ -118,5 +120,9 @@ export const contracts: ServiceImpl<typeof ContractsService> = {
         defaultTerms: request.defaultTerms,
       }),
     ),
+  }),
+
+  listContractInvoices: async (request) => ({
+    invoices: (await loadContractInvoices(request.contractId)).map(invoiceToProto),
   }),
 }
