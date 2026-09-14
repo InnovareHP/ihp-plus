@@ -27,8 +27,8 @@ export function OrganizationPanel() {
   }
 
   return (
-    <>
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md" mb="md">
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
         <StatCard label="People" value={summary.data.memberCount} hint="Members of this company" />
         <StatCard
           label="Departments"
@@ -57,6 +57,6 @@ export function OrganizationPanel() {
       />
 
       <ContractTermsPanel />
-    </>
+    </Stack>
   )
 }
