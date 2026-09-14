@@ -16,7 +16,10 @@ const prisma = vi.hoisted(() => ({
 
 const guard = vi.hoisted(() => ({ requireOnboarded: vi.fn() }))
 
+const billing = vi.hoisted(() => ({ syncBilling: vi.fn() }))
+
 vi.mock('@ihp/db', () => ({ db: prisma }))
+vi.mock('@/features/billing/contract-billing', () => billing)
 // membershipOf and canManageOrganization are pure, so the real ones are kept: the manager rule
 // has one definition and this test exercises it rather than a copy.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
@@ -222,6 +225,45 @@ describe('setContractStatus', () => {
     signedInAs()
     prisma.client.findMany.mockResolvedValue([{ id: 'client-1', name: 'Atlantic Home Health' }])
     prisma.contract.update.mockResolvedValue({})
+    billing.syncBilling.mockResolvedValue(null)
+  })
+
+  it('points an agreed contract at the Stripe objects billing created', async () => {
+    billing.syncBilling.mockResolvedValue({
+      stripeCustomerId: 'cus_1',
+      stripeSubscriptionId: 'sub_1',
+    })
+    queueWriteThenReload({ id: 'contract-1', signedAt: null, status: 'sent' })
+
+    await setContractStatus({ contractId: 'contract-1', status: 'active' })
+
+    expect(billing.syncBilling).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'contract-1', organizationId: 'org-1' }),
+      'active',
+    )
+    expect(prisma.contract.update.mock.calls[0]?.[0].data).toMatchObject({
+      status: 'active',
+      stripeCustomerId: 'cus_1',
+      stripeSubscriptionId: 'sub_1',
+    })
+  })
+
+  it('leaves the contract as it was when Stripe refuses the change', async () => {
+    billing.syncBilling.mockRejectedValue(new ConnectError('Stripe is down', Code.Unavailable))
+    queueWriteThenReload({ id: 'contract-1', signedAt: null, status: 'sent' })
+
+    expect(
+      await codeOf(() => setContractStatus({ contractId: 'contract-1', status: 'active' })),
+    ).toBe(Code.Unavailable)
+    expect(prisma.contract.update).not.toHaveBeenCalled()
+  })
+
+  it('checks the transition before anything reaches Stripe', async () => {
+    queueWriteThenReload({ id: 'contract-1', signedAt: null, status: 'draft' })
+
+    await codeOf(() => setContractStatus({ contractId: 'contract-1', status: 'active' }))
+
+    expect(billing.syncBilling).not.toHaveBeenCalled()
   })
 
   it('stamps signedAt the first time a contract goes active', async () => {

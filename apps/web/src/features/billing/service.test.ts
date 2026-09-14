@@ -163,6 +163,79 @@ describe('handleEvent', () => {
     expect(data.status).toBeUndefined()
   })
 
+  it('links an invoice by the contract id the portal tagged it with', async () => {
+    await handleEvent(
+      event('invoice.finalized', {
+        ...INVOICE,
+        parent: null,
+        metadata: { contractId: 'contract-9' },
+      }),
+    )
+
+    expect(prisma.contract.findFirst.mock.calls[0]?.[0].where).toEqual({ id: 'contract-9' })
+  })
+
+  it('reads the contract id a subscription passes down to its invoices', async () => {
+    const parent = {
+      subscription_details: { subscription: 'sub_1', metadata: { contractId: 'contract-3' } },
+    }
+
+    await handleEvent(event('invoice.paid', { ...INVOICE, parent }))
+
+    expect(prisma.contract.findFirst.mock.calls[0]?.[0].where).toEqual({ id: 'contract-3' })
+  })
+
+  it('never picks a contract by customer alone, since one client can hold several', async () => {
+    await handleEvent(event('invoice.paid', { ...INVOICE, parent: null }))
+
+    expect(prisma.contract.findFirst).not.toHaveBeenCalled()
+    expect(prisma.stripeInvoice.upsert.mock.calls[0]?.[0].create.contractId).toBeNull()
+  })
+
+  it('finds the contract by its tag before the portal has stored the subscription id', async () => {
+    await handleEvent(
+      event('customer.subscription.created', {
+        id: 'sub_new',
+        customer: 'cus_1',
+        status: 'active',
+        metadata: { contractId: 'contract-1' },
+      }),
+    )
+
+    expect(prisma.contract.findFirst.mock.calls[0]?.[0].where).toEqual({ id: 'contract-1' })
+    expect(prisma.contract.update.mock.calls[0]?.[0].data).toMatchObject({
+      stripeSubscriptionId: 'sub_new',
+      status: 'active',
+    })
+  })
+
+  it('reads paused collection as a paused contract, though Stripe still says active', async () => {
+    await handleEvent(
+      event('customer.subscription.updated', {
+        id: 'sub_1',
+        customer: 'cus_1',
+        status: 'active',
+        pause_collection: { behavior: 'void' },
+      }),
+    )
+
+    expect(prisma.contract.update.mock.calls[0]?.[0].data).toMatchObject({ status: 'paused' })
+  })
+
+  it('keeps a completed contract completed when its last period runs out', async () => {
+    prisma.contract.findFirst.mockResolvedValue({ id: 'contract-1', status: 'completed' })
+
+    await handleEvent(
+      event('customer.subscription.deleted', {
+        id: 'sub_1',
+        customer: 'cus_1',
+        status: 'canceled',
+      }),
+    )
+
+    expect(prisma.contract.update.mock.calls[0]?.[0].data.status).toBeUndefined()
+  })
+
   it('ignores a subscription this portal has no contract for', async () => {
     prisma.contract.findFirst.mockResolvedValue(null)
 

@@ -70,6 +70,11 @@ function idOf(value: string | { id: string } | null | undefined) {
   return typeof value === 'string' ? value : value.id
 }
 
+// Stripe has moved the subscription an invoice belongs to between API versions.
+type InvoiceParent = {
+  subscription_details?: { subscription?: unknown; metadata?: Record<string, string> | null }
+} | null
+
 /**
  * Mirrors one invoice. Written from the event rather than re-fetched: the payload is already
  * signed, and a fetch would race a newer state onto an older event.
@@ -86,7 +91,7 @@ async function recordInvoice(invoice: Stripe.Invoice) {
   const fields = {
     customerId,
     subscriptionId,
-    contractId: subscriptionId ? await contractIdFor(subscriptionId, customerId) : null,
+    contractId: await contractIdFor(invoice, subscriptionId),
     status: invoice.status ?? 'draft',
     amountDueCents: invoice.amount_due,
     amountPaidCents: invoice.amount_paid,
@@ -106,10 +111,8 @@ async function recordInvoice(invoice: Stripe.Invoice) {
   })
 }
 
-/** The subscription an invoice belongs to, which Stripe has moved around between versions. */
 function subscriptionIdOf(invoice: Stripe.Invoice) {
-  const parent = invoice.parent as { subscription_details?: { subscription?: unknown } } | null
-  const fromParent = parent?.subscription_details?.subscription
+  const fromParent = (invoice.parent as InvoiceParent)?.subscription_details?.subscription
   if (fromParent) return idOf(fromParent as string | { id: string })
 
   const legacy = (invoice as unknown as { subscription?: string | { id: string } }).subscription
@@ -124,6 +127,26 @@ function failureReasonOf(invoice: Stripe.Invoice) {
 }
 
 /**
+ * The contract an invoice bills. The portal tags what it creates with the contract id, and a
+ * customer alone never decides it: one client can hold several contracts on the same customer.
+ */
+async function contractIdFor(invoice: Stripe.Invoice, subscriptionId: string | null) {
+  const tagged =
+    invoice.metadata?.contractId ??
+    (invoice.parent as InvoiceParent)?.subscription_details?.metadata?.contractId
+
+  const where = tagged
+    ? { id: tagged }
+    : subscriptionId
+      ? { stripeSubscriptionId: subscriptionId }
+      : null
+  if (!where) return null
+
+  const contract = await db.contract.findFirst({ where, select: { id: true } })
+  return contract?.id ?? null
+}
+
+/**
  * Applies a subscription's lifecycle to the contract it bills. A subscription the portal has
  * no contract for is ignored rather than treated as an error: Stripe accounts hold objects
  * this portal never created.
@@ -132,19 +155,18 @@ async function applySubscription(subscription: Stripe.Subscription) {
   const customerId = idOf(subscription.customer)
   if (!customerId) return
 
+  // The tag is read first because the created event can arrive before the portal stores the id.
+  const contractId = subscription.metadata?.contractId
   const contract = await db.contract.findFirst({
-    where: {
-      OR: [
-        { stripeSubscriptionId: subscription.id },
-        // First event for a subscription the portal attached by customer alone.
-        { stripeCustomerId: customerId, stripeSubscriptionId: null },
-      ],
-    },
+    where: contractId ? { id: contractId } : { stripeSubscriptionId: subscription.id },
     select: { id: true, status: true },
   })
   if (!contract) return
 
-  const status = contractStatusFor(subscription.status)
+  // Paused collection leaves Stripe's status at active, so it is what marks the contract paused.
+  const status = subscription.pause_collection ? 'paused' : contractStatusFor(subscription.status)
+  // A completed contract's last period running out must not read as a cancellation.
+  const settled = contract.status === 'cancelled' || contract.status === 'completed'
 
   await db.contract.update({
     where: { id: contract.id },
@@ -152,15 +174,7 @@ async function applySubscription(subscription: Stripe.Subscription) {
       stripeSubscriptionId: subscription.id,
       stripeCustomerId: customerId,
       // Left alone for past_due and unpaid: a late invoice does not change what was agreed.
-      ...(status ? { status } : {}),
+      ...(status && !settled ? { status } : {}),
     },
   })
-}
-
-async function contractIdFor(subscriptionId: string, customerId: string) {
-  const contract = await db.contract.findFirst({
-    where: { OR: [{ stripeSubscriptionId: subscriptionId }, { stripeCustomerId: customerId }] },
-    select: { id: true },
-  })
-  return contract?.id ?? null
 }

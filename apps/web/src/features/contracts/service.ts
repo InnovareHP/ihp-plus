@@ -1,6 +1,7 @@
 import { db } from '@ihp/db'
 import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
+import { syncBilling } from '@/features/billing/contract-billing'
 import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake, type SortDirection } from '@/lib/pagination'
 import {
@@ -450,7 +451,31 @@ export async function setContractStatus(input: unknown): Promise<ContractDetail>
 
   const contract = await db.contract.findFirst({
     where: { id: parsed.data.contractId, organizationId },
-    select: { id: true, signedAt: true, status: true },
+    select: {
+      id: true,
+      signedAt: true,
+      status: true,
+      clientId: true,
+      reference: true,
+      title: true,
+      billingCycle: true,
+      startDate: true,
+      endDate: true,
+      updatedAt: true,
+      stripeCustomerId: true,
+      stripeSubscriptionId: true,
+      lines: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          unitPriceCents: true,
+          quantity: true,
+          unit: true,
+        },
+      },
+    },
   })
   if (!contract) throw new ConnectError('That contract no longer exists.', Code.NotFound)
 
@@ -462,9 +487,13 @@ export async function setContractStatus(input: unknown): Promise<ContractDetail>
     )
   }
 
+  // Stripe first: if it refuses, this throws and the contract is never marked as changed.
+  const attachment = await syncBilling({ ...contract, organizationId }, parsed.data.status)
+
   await db.contract.update({
     where: { id: contract.id },
     data: {
+      ...attachment,
       status: parsed.data.status,
       // Going active is what agreement means, and the timestamp is what billing will key on.
       // Set once: a contract that is paused and resumed keeps the date it was first agreed.
