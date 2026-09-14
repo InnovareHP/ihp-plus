@@ -5,6 +5,7 @@ import { track } from '@/lib/analytics'
 import { announceFailure } from '@/lib/announce'
 import {} from '@/features/teams/actions'
 import {
+  acknowledgeDocument,
   archiveDocument,
   documentLink,
   listBluebookOptions,
@@ -167,6 +168,31 @@ export function usePurgeDocument(query: BluebookQuery) {
     }),
     successEvent: bluebookEvents.purged,
     failureEvent: bluebookEvents.purgeFailed,
+  })
+}
+
+export function useAcknowledgeDocument(query: BluebookQuery) {
+  return useDocumentMutation<{ id: string }, { acknowledgedAt: string }>(query, {
+    mutationFn: async ({ id }) => {
+      const result = await acknowledgeDocument({ id })
+      if (!result.ok) throw new Error(result.message)
+      return result.data
+    },
+    // Marked read at once; the server's own timestamp replaces this one when the list refetches.
+    apply: (page, { id }) => ({
+      ...page,
+      rows: page.rows.map((row) =>
+        row.id === id
+          ? {
+              ...row,
+              acknowledgedAt: new Date().toISOString(),
+              readCount: row.readCount === undefined ? undefined : row.readCount + 1,
+            }
+          : row,
+      ),
+    }),
+    successEvent: bluebookEvents.acknowledged,
+    failureEvent: bluebookEvents.acknowledgeFailed,
   })
 }
 

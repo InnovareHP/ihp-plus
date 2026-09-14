@@ -122,8 +122,18 @@ const WITH_TEAMS = {
 
 type DocumentRecord = Prisma.BluebookDocumentGetPayload<{ include: typeof WITH_TEAMS }>
 
-function rowOf(document: DocumentRecord, who: Caller): DocumentRow {
+interface ReadState {
+  acknowledgedAt: Date | undefined
+  readCount: number
+  audienceCount: number
+}
+
+function rowOf(document: DocumentRecord, who: Caller, reads?: ReadState): DocumentRow {
   const teams = document.teams.map((team) => ({ id: team.teamId, name: team.teamName }))
+  const canManage = canManageDocument(
+    who,
+    teams.map((team) => team.id),
+  )
 
   return {
     id: document.id,
@@ -137,10 +147,11 @@ function rowOf(document: DocumentRecord, who: Caller): DocumentRow {
     uploadedByName: document.uploadedByName ?? '',
     createdAt: document.createdAt.toISOString(),
     archivedAt: document.archivedAt?.toISOString(),
-    canManage: canManageDocument(
-      who,
-      teams.map((team) => team.id),
-    ),
+    canManage,
+    acknowledgedAt: reads?.acknowledgedAt?.toISOString(),
+    // Read progress is the curator's view; everyone else only sees whether they read it.
+    readCount: canManage ? reads?.readCount : undefined,
+    audienceCount: canManage ? reads?.audienceCount : undefined,
   }
 }
 
@@ -163,7 +174,61 @@ export async function listDocuments(input?: unknown): Promise<DocumentsResult> {
     ...skipTake(pageInfo),
   })
 
-  return { ok: true, pageInfo, rows: documents.map((document) => rowOf(document, who)) }
+  const reads = await readStates(who.userId, who.organizationId, documents)
+
+  return {
+    ok: true,
+    pageInfo,
+    rows: documents.map((document) => rowOf(document, who, reads.get(document.id))),
+  }
+}
+
+/** The viewer's own reads and each document's read progress, in four queries for the page. */
+async function readStates(
+  userId: string,
+  organizationId: string,
+  documents: readonly DocumentRecord[],
+): Promise<Map<string, ReadState>> {
+  const ids = documents.map((document) => document.id)
+  if (ids.length === 0) return new Map()
+
+  const [mine, counts, companySize, teams] = await Promise.all([
+    db.bluebookAcknowledgement.findMany({
+      where: { documentId: { in: ids }, userId },
+      select: { documentId: true, acknowledgedAt: true },
+    }),
+    db.bluebookAcknowledgement.groupBy({
+      by: ['documentId'],
+      where: { documentId: { in: ids } },
+      _count: { _all: true },
+    }),
+    db.member.count({
+      where: { organizationId, user: { onboardingCompletedAt: { not: null } } },
+    }),
+    db.team.findMany({
+      where: { organizationId },
+      select: { id: true, _count: { select: { teammembers: true } } },
+    }),
+  ])
+
+  const readAt = new Map(mine.map((row) => [row.documentId, row.acknowledgedAt]))
+  const readCounts = new Map(counts.map((row) => [row.documentId, row._count._all]))
+  const teamSizes = new Map(teams.map((team) => [team.id, team._count.teammembers]))
+
+  return new Map(
+    documents.map((document): [string, ReadState] => [
+      document.id,
+      {
+        acknowledgedAt: readAt.get(document.id),
+        readCount: readCounts.get(document.id) ?? 0,
+        // The company shelf is everyone's reading; a department shelf is its members'.
+        audienceCount:
+          document.teams.length === 0
+            ? companySize
+            : document.teams.reduce((total, team) => total + (teamSizes.get(team.teamId) ?? 0), 0),
+      },
+    ]),
+  )
 }
 
 /** The shelves this viewer can see and file on, plus the category list. */
@@ -350,6 +415,33 @@ export async function archiveDocument(input: unknown): Promise<Result<null>> {
 
 export async function restoreDocument(input: unknown): Promise<Result<null>> {
   return setArchived(input, null)
+}
+
+/** The viewer confirms they have read a document; confirming twice still records one read. */
+export async function acknowledgeDocument(
+  input: unknown,
+): Promise<Result<{ acknowledgedAt: string }>> {
+  const who = await caller()
+  if (!who.organizationId) return { ok: false, message: NO_ORGANIZATION }
+
+  const parsed = documentIdSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, message: GONE }
+
+  // Everyone reads the whole bluebook, so the only check is that it is live and in this company.
+  const document = await db.bluebookDocument.findFirst({
+    where: { id: parsed.data.id, organizationId: who.organizationId, archivedAt: null },
+    select: { id: true },
+  })
+  if (!document) return { ok: false, message: GONE }
+
+  const acknowledgement = await db.bluebookAcknowledgement.upsert({
+    where: { documentId_userId: { documentId: document.id, userId: who.userId } },
+    update: {},
+    create: { documentId: document.id, userId: who.userId },
+    select: { acknowledgedAt: true },
+  })
+
+  return { ok: true, data: { acknowledgedAt: acknowledgement.acknowledgedAt.toISOString() } }
 }
 
 async function setArchived(input: unknown, archivedAt: Date | null): Promise<Result<null>> {

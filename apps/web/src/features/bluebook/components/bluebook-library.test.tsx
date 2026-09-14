@@ -12,6 +12,7 @@ const actions = vi.hoisted(() => ({
   restoreDocument: vi.fn(),
   purgeDocument: vi.fn(),
   documentLink: vi.fn(),
+  acknowledgeDocument: vi.fn(),
 }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
@@ -301,6 +302,47 @@ describe('BluebookLibrary', () => {
     nav.search = 'search=nothing'
     render(<BluebookLibrary />)
     expect(await screen.findByText('No documents match these filters')).toBeInTheDocument()
+  })
+
+  it('marks a document read at once and moves the curator count with it', async () => {
+    actions.listDocuments.mockResolvedValue(
+      page([{ ...CHECKLIST, acknowledgedAt: undefined, readCount: 2, audienceCount: 5 }]),
+    )
+    // Never resolves, so what shows is the optimistic row and not a refetch.
+    actions.acknowledgeDocument.mockReturnValue(new Promise(() => {}))
+    const person = user()
+    render(<BluebookLibrary />)
+
+    expect(await screen.findByText('2 of 5 read')).toBeInTheDocument()
+    await person.click(
+      screen.getByRole('button', { name: 'Mark as read: Claim scrubbing checklist' }),
+    )
+
+    expect(await screen.findByText('3 of 5 read')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Mark as read/ })).not.toBeInTheDocument()
+    expect(actions.acknowledgeDocument).toHaveBeenCalledWith({ id: 'doc-1' })
+  })
+
+  it('puts the button back and says why when the read cannot be recorded', async () => {
+    actions.acknowledgeDocument.mockResolvedValue({
+      ok: false,
+      message: 'That document is no longer in the bluebook.',
+    })
+    const person = user()
+    render(<BluebookLibrary />)
+
+    await person.click(
+      await screen.findByRole('button', { name: 'Mark as read: Claim scrubbing checklist' }),
+    )
+
+    await waitFor(() =>
+      expect(toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'That document is no longer in the bluebook.' }),
+      ),
+    )
+    expect(
+      await screen.findByRole('button', { name: 'Mark as read: Claim scrubbing checklist' }),
+    ).toBeInTheDocument()
   })
 
   it('has no axe violations', async () => {

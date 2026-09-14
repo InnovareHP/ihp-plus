@@ -13,4 +13,6 @@ export const bluebookEvents = {
   purgeFailed: 'bluebook.document.purge_failed',
   opened: 'bluebook.document.opened',
   openFailed: 'bluebook.document.open_failed',
+  acknowledged: 'bluebook.document.acknowledged',
+  acknowledgeFailed: 'bluebook.document.acknowledge_failed',
 } as const satisfies Record<string, EventName>

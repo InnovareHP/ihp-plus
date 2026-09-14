@@ -11,6 +11,13 @@ const prisma = vi.hoisted(() => ({
     delete: vi.fn(),
   },
   bluebookDocumentTeam: { groupBy: vi.fn(), deleteMany: vi.fn() },
+  // Defaults rather than per-test values: clearAllMocks keeps them, and most tests read no progress.
+  bluebookAcknowledgement: {
+    findMany: vi.fn(async (): Promise<unknown[]> => []),
+    groupBy: vi.fn(async (): Promise<unknown[]> => []),
+    upsert: vi.fn(),
+  },
+  member: { count: vi.fn(async (): Promise<number> => 0) },
   team: { findMany: vi.fn(), findFirst: vi.fn() },
   // The update replaces a document's shelves and rewrites it in one transaction.
   $transaction: vi.fn(async (run: (tx: unknown) => unknown) => run(prisma)),
@@ -40,6 +47,7 @@ vi.mock('@/lib/s3', () => ({
 }))
 
 const {
+  acknowledgeDocument,
   archiveDocument,
   documentLink,
   listBluebookOptions,
@@ -79,8 +87,8 @@ function signedIn(options: { isAdmin?: boolean; leads?: string[] } = {}) {
 }
 
 const TEAMS = [
-  { id: 'team-1', name: 'Revenue Cycle' },
-  { id: 'team-2', name: 'Care Management' },
+  { id: 'team-1', name: 'Revenue Cycle', _count: { teammembers: 3 } },
+  { id: 'team-2', name: 'Care Management', _count: { teammembers: 4 } },
 ]
 
 function formDataFor(shelves: readonly string[] = ['company'], file?: File) {
@@ -110,6 +118,84 @@ beforeEach(() => {
   })
   prisma.team.findFirst.mockResolvedValue({ id: 'team-1', name: 'Revenue Cycle' })
   lookups.listManyFor.mockResolvedValue(new Map([['bluebookCategory', ['Policy', 'Procedure']]]))
+})
+
+describe('reading progress', () => {
+  it('tells a reader whether they confirmed a document, without the curator counts', async () => {
+    prisma.bluebookAcknowledgement.findMany.mockResolvedValueOnce([
+      { documentId: 'doc-1', acknowledgedAt: new Date('2026-05-02T00:00:00.000Z') },
+    ])
+    prisma.bluebookAcknowledgement.groupBy.mockResolvedValueOnce([
+      { documentId: 'doc-1', _count: { _all: 2 } },
+    ])
+
+    const result = await listDocuments({})
+    if (!result.ok) throw new Error(result.message)
+
+    expect(result.rows[0]).toMatchObject({
+      acknowledgedAt: '2026-05-02T00:00:00.000Z',
+      readCount: undefined,
+      audienceCount: undefined,
+    })
+  })
+
+  it('shows the shelf lead how many of the department have read it', async () => {
+    signedIn({ leads: ['team-1'] })
+    prisma.bluebookAcknowledgement.groupBy.mockResolvedValueOnce([
+      { documentId: 'doc-1', _count: { _all: 2 } },
+    ])
+
+    const result = await listDocuments({})
+    if (!result.ok) throw new Error(result.message)
+
+    expect(result.rows[0]).toMatchObject({
+      acknowledgedAt: undefined,
+      readCount: 2,
+      audienceCount: 3,
+    })
+  })
+
+  it('counts the whole company for a document on the all-departments shelf', async () => {
+    signedIn({ isAdmin: true })
+    prisma.bluebookDocument.findMany.mockResolvedValueOnce([{ ...DOCUMENT, teams: [] }])
+    prisma.member.count.mockResolvedValueOnce(40)
+
+    const result = await listDocuments({})
+    if (!result.ok) throw new Error(result.message)
+
+    expect(result.rows[0]).toMatchObject({ readCount: 0, audienceCount: 40 })
+  })
+})
+
+describe('acknowledgeDocument', () => {
+  it('records one read however many times it is confirmed', async () => {
+    prisma.bluebookAcknowledgement.upsert.mockResolvedValue({
+      acknowledgedAt: new Date('2026-05-02T00:00:00.000Z'),
+    })
+
+    expect(await acknowledgeDocument({ id: 'doc-1' })).toEqual({
+      ok: true,
+      data: { acknowledgedAt: '2026-05-02T00:00:00.000Z' },
+    })
+    expect(prisma.bluebookAcknowledgement.upsert).toHaveBeenCalledWith({
+      where: { documentId_userId: { documentId: 'doc-1', userId: 'user-1' } },
+      update: {},
+      create: { documentId: 'doc-1', userId: 'user-1' },
+      select: { acknowledgedAt: true },
+    })
+  })
+
+  it('refuses a document that is archived or in another organization', async () => {
+    prisma.bluebookDocument.findFirst.mockResolvedValueOnce(null)
+
+    expect(await acknowledgeDocument({ id: 'doc-9' })).toMatchObject({ ok: false })
+    expect(prisma.bluebookDocument.findFirst.mock.calls.at(-1)?.[0].where).toEqual({
+      id: 'doc-9',
+      organizationId: 'org-1',
+      archivedAt: null,
+    })
+    expect(prisma.bluebookAcknowledgement.upsert).not.toHaveBeenCalled()
+  })
 })
 
 describe('listDocuments', () => {

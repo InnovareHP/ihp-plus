@@ -38,6 +38,7 @@ import {
 } from '../schema'
 import { useBluebookQuery } from '../hooks/use-bluebook-query'
 import {
+  useAcknowledgeDocument,
   useArchiveDocument,
   useBluebookOptions,
   useDocuments,
@@ -64,6 +65,7 @@ export function BluebookLibrary() {
   const restore = useRestoreDocument(query)
   const purge = usePurgeDocument(query)
   const open = useOpenDocument()
+  const acknowledge = useAcknowledgeDocument(query)
 
   const [uploadOpened, uploadModal] = useDisclosure(false)
   const [categoriesOpened, categoriesModal] = useDisclosure(false)
@@ -189,6 +191,40 @@ export function BluebookLibrary() {
           </Text>
         </Stack>
       ),
+    },
+    {
+      key: 'read',
+      header: 'Read',
+      width: 150,
+      render: (row) =>
+        row.archivedAt ? (
+          <Text size="xs" c="dimmed">
+            Archived
+          </Text>
+        ) : (
+          <Stack gap={4} align="flex-start">
+            {row.acknowledgedAt ? (
+              <Badge color="green" variant="light">
+                Read
+              </Badge>
+            ) : (
+              <Button
+                size="compact-sm"
+                variant="default"
+                // Starts with the visible words, so a voice user saying "Mark as read" reaches it.
+                aria-label={`Mark as read: ${row.title}`}
+                onClick={() => acknowledge.mutate({ id: row.id })}
+              >
+                Mark as read
+              </Button>
+            )}
+            {row.readCount !== undefined && row.audienceCount !== undefined ? (
+              <Text size="xs" c="dimmed">
+                {row.readCount} of {row.audienceCount} read
+              </Text>
+            ) : null}
+          </Stack>
+        ),
     },
     {
       key: 'actions',

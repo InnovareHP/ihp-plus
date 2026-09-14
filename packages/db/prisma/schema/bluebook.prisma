@@ -7,6 +7,7 @@ model BluebookDocument {
   // A document sits on as many department shelves as it applies to. No rows is the
   // company-wide shelf every department reads, which is what a null teamId used to mean.
   teams          BluebookDocumentTeam[]
+  acknowledgements BluebookAcknowledgement[]
 
   title       String
   description String?
@@ -46,5 +47,20 @@ model BluebookDocumentTeam {
   @@unique([documentId, teamId])
   @@index([teamId])
   @@map("bluebookDocumentTeam")
+  @@schema("bluebook")
+}
+
+/// One person confirming they have read one document; unique per pair, so confirming twice is a no-op.
+model BluebookAcknowledgement {
+  id             String           @id @default(uuid())
+  documentId     String
+  document       BluebookDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  // A plain column, not a relation: a relation field would have to be added to the generated User model.
+  userId         String
+  acknowledgedAt DateTime         @default(now())
+
+  @@unique([documentId, userId])
+  @@index([userId])
+  @@map("bluebookAcknowledgement")
   @@schema("bluebook")
 }

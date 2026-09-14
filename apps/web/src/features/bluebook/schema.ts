@@ -139,6 +139,12 @@ export interface DocumentRow {
   archivedAt: string | undefined
   /** Whether this viewer may edit, archive or restore this row — an admin, or the shelf's lead. */
   canManage: boolean
+  /** When this viewer confirmed reading it; absent until they do. */
+  acknowledgedAt: string | undefined
+  /** Confirmed reads, filled only on a row the viewer manages. */
+  readCount: number | undefined
+  /** The people it is filed for, filled only on a row the viewer manages. */
+  audienceCount: number | undefined
 }
 
 export interface DocumentsPage {
