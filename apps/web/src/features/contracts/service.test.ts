@@ -24,6 +24,9 @@ const email = vi.hoisted(() => ({ sendEmail: vi.fn(), contractPublishedTemplate:
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/features/billing/contract-billing', () => billing)
 vi.mock('@/lib/email', () => email)
+vi.mock('@/lib/activity', () => activity)
+
+const activity = vi.hoisted(() => ({ recordActivity: vi.fn(), loadActivity: vi.fn() }))
 vi.mock('./client-link', () => ({
   clientContractUrl: (contractId: string) =>
     `https://portal.ihp.test/app/contract/${contractId}/sig`,
@@ -39,6 +42,7 @@ const {
   createCatalogItem,
   createContract,
   loadContract,
+  loadContractActivity,
   loadContractInvoices,
   loadContractsPage,
   setContractStatus,
@@ -382,6 +386,53 @@ describe('setContractStatus', () => {
     await setContractStatus({ contractId: 'contract-1', status: 'sent' })
 
     expect(prisma.contract.update.mock.calls[0]?.[0].data.signedAt).toBeNull()
+  })
+})
+
+describe('contract history', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    guard.requireOnboarded.mockResolvedValue({
+      user: { id: 'user-9', name: 'Ada Lovelace' },
+      profile: {
+        role: 'admin',
+        members: [{ role: 'admin', organizationId: 'org-1' }],
+        teammembers: [],
+      },
+    })
+    prisma.client.findMany.mockResolvedValue([{ id: 'client-1', name: 'Atlantic Home Health' }])
+    prisma.contract.update.mockResolvedValue({})
+    billing.syncBilling.mockResolvedValue(null)
+  })
+
+  it('records who changed a status, told apart from a first agreement', async () => {
+    queueWriteThenReload({ id: 'contract-1', signedAt: new Date(), status: 'paused' })
+
+    await setContractStatus({ contractId: 'contract-1', status: 'active' })
+
+    expect(activity.recordActivity).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      subjectType: 'contract',
+      subjectId: 'contract-1',
+      action: 'contract.resumed',
+      actorId: 'user-9',
+      actorName: 'Ada Lovelace',
+    })
+  })
+
+  it('records nothing when the change is refused', async () => {
+    queueWriteThenReload({ id: 'contract-1', signedAt: null, status: 'cancelled' })
+
+    await codeOf(() => setContractStatus({ contractId: 'contract-1', status: 'active' }))
+
+    expect(activity.recordActivity).not.toHaveBeenCalled()
+  })
+
+  it('reads history only for a contract inside the caller organization', async () => {
+    prisma.contract.findFirst.mockResolvedValue(null)
+
+    expect(await codeOf(() => loadContractActivity('contract-9'))).toBe(Code.NotFound)
+    expect(activity.loadActivity).not.toHaveBeenCalled()
   })
 })
 

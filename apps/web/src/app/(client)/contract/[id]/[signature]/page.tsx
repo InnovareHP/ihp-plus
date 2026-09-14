@@ -44,7 +44,7 @@ export default async function SharedContractPage({
 
   // A signed-in manager previewing the link is not the client opening it.
   if (view.state === 'open' && !(await getSession())) {
-    after(() => markSharedContractViewed(contract.id))
+    after(() => markSharedContractViewed(contract))
   }
 
   return (

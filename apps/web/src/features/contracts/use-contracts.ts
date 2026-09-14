@@ -11,6 +11,7 @@ import {
   getContract,
   getContractTemplate,
   listCatalog,
+  listContractActivity,
   listContractInvoices,
   listContracts,
   setContractStatus,
@@ -111,7 +112,10 @@ export function useUpdateContract() {
       track(contractEvents.updateFailed, { reason: error.message })
       announceFailure(error.message)
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: contractKeys.lists() }),
+    onSettled: (_data, _error, values) => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: contractKeys.activity(values.contractId) })
+    },
   })
 }
 
@@ -130,7 +134,10 @@ export function useSetContractStatus() {
       track(contractEvents.statusChangeFailed, { reason: error.message })
       announceFailure(error.message)
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: contractKeys.lists() }),
+    onSettled: (_data, _error, values) => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: contractKeys.activity(values.contractId) })
+    },
   })
 }
 
@@ -158,5 +165,12 @@ export function useContractInvoices(contractId: string, enabled: boolean) {
     enabled,
     // Invoices change on Stripe's schedule, not while someone is reading the drawer.
     staleTime: 60 * 1000,
+  })
+}
+
+export function useContractActivity(contractId: string) {
+  return useQuery({
+    queryKey: contractKeys.activity(contractId),
+    queryFn: () => listContractActivity(contractId),
   })
 }

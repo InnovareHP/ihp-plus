@@ -144,6 +144,24 @@ message ListContractInvoicesResponse {
   repeated ContractInvoice invoices = 1;
 }
 
+// One entry in a contract's history, oldest first.
+message ContractActivity {
+  string id = 1;
+  // Already in words, e.g. "Published to the client".
+  string label = 2;
+  string actor_name = 3;
+  optional string detail = 4;
+  string created_at = 5;
+}
+
+message ListContractActivityRequest {
+  string contract_id = 1;
+}
+
+message ListContractActivityResponse {
+  repeated ContractActivity entries = 1;
+}
+
 // Already parsed: turning ?a=x into these fields is the caller's job, so a stale URL falls
 // back on the client rather than reaching the service.
 message ContractQuery {
@@ -277,4 +295,5 @@ service ContractsService {
   rpc GetContractTemplate(GetContractTemplateRequest) returns (GetContractTemplateResponse);
   rpc UpdateContractTemplate(UpdateContractTemplateRequest) returns (UpdateContractTemplateResponse);
   rpc ListContractInvoices(ListContractInvoicesRequest) returns (ListContractInvoicesResponse);
+  rpc ListContractActivity(ListContractActivityRequest) returns (ListContractActivityResponse);
 }

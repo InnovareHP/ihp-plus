@@ -4,7 +4,11 @@ import { render, screen, userEvent, waitFor } from '@/test/render'
 import type { ContractDetail } from '../schema'
 import { ContractBody } from './contract-body'
 
-const rpc = vi.hoisted(() => ({ setContractStatus: vi.fn(), listContractInvoices: vi.fn() }))
+const rpc = vi.hoisted(() => ({
+  setContractStatus: vi.fn(),
+  listContractInvoices: vi.fn(),
+  listContractActivity: vi.fn(),
+}))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
@@ -52,6 +56,7 @@ describe('ContractBody', () => {
     vi.resetAllMocks()
     rpc.setContractStatus.mockResolvedValue({ ...SENT, status: 'active', isBilled: true })
     rpc.listContractInvoices.mockResolvedValue([])
+    rpc.listContractActivity.mockResolvedValue([])
   })
 
   it('offers the client link to copy while the contract waits on the client', () => {

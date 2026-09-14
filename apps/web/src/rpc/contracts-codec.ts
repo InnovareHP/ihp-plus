@@ -302,3 +302,31 @@ export function catalogCategoryFromProto(value: CatalogCategory) {
 export function catalogUnitFromProto(value: CatalogUnit) {
   return UNIT_FROM[value]
 }
+
+interface ActivityEntry {
+  id: string
+  label: string
+  actorName: string
+  detail: string | undefined
+  createdAt: string
+}
+
+export function activityToProto(entry: ActivityEntry) {
+  return { $typeName: 'ihp.contracts.v1.ContractActivity' as const, ...entry }
+}
+
+export function activityFromProto(message: {
+  id: string
+  label: string
+  actorName: string
+  detail?: string | undefined
+  createdAt: string
+}): ActivityEntry {
+  return {
+    id: message.id,
+    label: message.label,
+    actorName: message.actorName,
+    detail: message.detail,
+    createdAt: message.createdAt,
+  }
+}

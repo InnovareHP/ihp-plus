@@ -4,6 +4,7 @@ import { Code, ConnectError } from '@ihp/rpc'
 import { z } from 'zod'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake } from '@/lib/pagination'
+import { recordActivity } from '@/lib/activity'
 import { notifyApprovers, notifyRequester } from './notifications'
 import {
   answerSchemaOf,
@@ -308,6 +309,15 @@ export async function submitRequest(input: {
     requesterName: caller.name,
   })
 
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'request',
+    subjectId: submission.id,
+    action: 'request.submitted',
+    actorId: caller.userId,
+    actorName: caller.name,
+  })
+
   return toRequestRow(submission, caller.name, caller)
 }
 
@@ -394,6 +404,16 @@ export async function withdrawRequest(submissionId: string): Promise<RequestRow>
     where: { id: submission.id },
     data: { status: 'withdrawn' },
   })
+
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'request',
+    subjectId: updated.id,
+    action: 'request.withdrawn',
+    actorId: caller.userId,
+    actorName: caller.name,
+  })
+
   return toRequestRow(updated, caller.name, caller)
 }
 
@@ -511,6 +531,16 @@ export async function decideRequest(input: DecisionValues): Promise<RequestRow> 
     decision: parsed.data.decision,
     deciderName: caller.name,
     note: parsed.data.note || undefined,
+  })
+
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'request',
+    subjectId: updated.id,
+    action: parsed.data.decision === 'approved' ? 'request.approved' : 'request.rejected',
+    actorId: caller.userId,
+    actorName: caller.name,
+    detail: parsed.data.note || undefined,
   })
 
   const names = await requesterNames([updated])

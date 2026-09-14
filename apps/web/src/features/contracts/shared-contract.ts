@@ -1,5 +1,6 @@
 import { db } from '@ihp/db'
 import { syncBilling } from '@/features/billing/contract-billing'
+import { recordActivity } from '@/lib/activity'
 import { contractAcceptedTemplate, portalUrl, sendEmail } from '@/lib/email'
 import { clientTab } from '@/lib/routes'
 import { verifyContractLink } from './client-link'
@@ -13,6 +14,8 @@ import {
 /** What a client sees through their link, which is deliberately less than a manager sees. */
 export interface SharedContract {
   id: string
+  /** Server-side only: it scopes the history entries a client's visit records. */
+  organizationId: string
   reference: string
   title: string
   status: ContractStatus
@@ -108,6 +111,7 @@ export async function loadSharedContract(
       status === 'sent' ? 'open' : ACCEPTED_STATUSES.includes(status) ? 'accepted' : 'withdrawn',
     contract: {
       id: contract.id,
+      organizationId: contract.organizationId,
       reference: contract.reference,
       title: contract.title,
       status,
@@ -130,11 +134,25 @@ export async function loadSharedContract(
 }
 
 /** Records the first time the client opened their link, for the manager's drawer. */
-export async function markSharedContractViewed(contractId: string) {
-  await db.contract.updateMany({
-    where: { id: contractId, status: 'sent', viewedAt: null },
+export async function markSharedContractViewed(
+  contract: Pick<SharedContract, 'id' | 'organizationId' | 'clientName'>,
+) {
+  const first = await db.contract.updateMany({
+    where: { id: contract.id, status: 'sent', viewedAt: null },
     data: { viewedAt: new Date() },
   })
+
+  // Only the first open is history; a client rereading the link would otherwise fill it.
+  if (first.count === 1) {
+    await recordActivity({
+      organizationId: contract.organizationId,
+      subjectType: 'contract',
+      subjectId: contract.id,
+      action: 'contract.viewed',
+      actorId: null,
+      actorName: contract.clientName,
+    })
+  }
 }
 
 export async function acceptSharedContract(
@@ -221,6 +239,15 @@ export async function acceptSharedContract(
         'This contract changed while you were accepting it. Reload the page to see where it stands.',
     }
   }
+
+  await recordActivity({
+    organizationId: contract.organizationId,
+    subjectType: 'contract',
+    subjectId: contract.id,
+    action: 'contract.accepted',
+    actorId: null,
+    actorName: values.fullName,
+  })
 
   await notifyOwner(contract, values.fullName)
   return { ok: true }

@@ -24,6 +24,9 @@ const notifications = vi.hoisted(() => ({ notifyApprovers: vi.fn(), notifyReques
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./notifications', () => notifications)
+vi.mock('@/lib/activity', () => activity)
+
+const activity = vi.hoisted(() => ({ recordActivity: vi.fn() }))
 // membershipOf is pure, so the real one is kept: how a membership resolves has one definition.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/auth-guard')>()),
@@ -260,6 +263,52 @@ describe('notifications', () => {
     await codeOf(() => decideRequest({ submissionId: 'sub-1', decision: 'approved', note: '' }))
 
     expect(notifications.notifyRequester).not.toHaveBeenCalled()
+  })
+})
+
+describe('request history', () => {
+  it('records the decision with the note that explains it', async () => {
+    signedIn({ isAdmin: true })
+
+    await decideRequest({
+      submissionId: 'sub-1',
+      decision: 'rejected',
+      note: 'Those dates overlap the audit.',
+    })
+
+    expect(activity.recordActivity).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      subjectType: 'request',
+      subjectId: 'sub-1',
+      action: 'request.rejected',
+      actorId: 'user-1',
+      actorName: 'Ada Lovelace',
+      detail: 'Those dates overlap the audit.',
+    })
+  })
+
+  it('records a raised request under the person who raised it', async () => {
+    prisma.requestForm.findFirst.mockResolvedValue({
+      id: 'form-1',
+      name: 'Time off',
+      fields: [],
+      status: 'published',
+    })
+    prisma.requestSubmission.create.mockResolvedValue({
+      ...PENDING,
+      id: 'sub-2',
+      requesterId: 'user-1',
+    })
+
+    await submitRequest({ formId: 'form-1', values: {} })
+
+    expect(activity.recordActivity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subjectId: 'sub-2',
+        action: 'request.submitted',
+        actorName: 'Ada Lovelace',
+      }),
+    )
   })
 })
 

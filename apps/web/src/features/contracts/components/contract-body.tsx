@@ -1,8 +1,19 @@
 'use client'
 
-import { Badge, Button, CopyButton, Group, Stack, Text, TextInput, Title } from '@mantine/core'
+import {
+  Badge,
+  Button,
+  CopyButton,
+  Group,
+  Skeleton,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconPencil, IconReceipt } from '@tabler/icons-react'
+import { ActivityTimeline } from '@/components/activity-timeline'
 import { track } from '@/lib/analytics'
 import { contractEvents } from '../events'
 import {
@@ -15,7 +26,7 @@ import {
   type ContractDetail,
   type ContractStatus,
 } from '../schema'
-import { useContractInvoices, useSetContractStatus } from '../use-contracts'
+import { useContractActivity, useContractInvoices, useSetContractStatus } from '../use-contracts'
 import { AgreeContractModal } from './agree-contract-modal'
 import { ContractInvoicesTable } from './contract-invoices-table'
 import { ContractLinesTable } from './contract-lines-table'
@@ -36,6 +47,7 @@ export function ContractBody({
 }) {
   const setStatus = useSetContractStatus()
   const invoices = useContractInvoices(contract.id, contract.isBilled)
+  const activity = useContractActivity(contract.id)
   const [agreeing, agreeModal] = useDisclosure(false)
   const editable = isEditable(contract.status)
   const next = CONTRACT_TRANSITIONS[contract.status]
@@ -210,6 +222,26 @@ export function ContractBody({
           <Text size="sm" c="dimmed">
             No terms recorded on this contract.
           </Text>
+        )}
+      </Stack>
+
+      <Stack gap="xs">
+        <Title order={3} size="h6">
+          History
+        </Title>
+        {activity.isPending ? (
+          <Skeleton height={72} aria-busy="true" />
+        ) : activity.isError ? (
+          <Group gap="sm">
+            <Text size="sm" c="dimmed" role="alert">
+              Could not load the history.
+            </Text>
+            <Button variant="subtle" size="compact-sm" onClick={() => activity.refetch()}>
+              Try again
+            </Button>
+          </Group>
+        ) : (
+          <ActivityTimeline items={activity.data} label={`History of ${contract.reference}`} />
         )}
       </Stack>
     </Stack>

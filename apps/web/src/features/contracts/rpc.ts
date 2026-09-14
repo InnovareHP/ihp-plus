@@ -1,8 +1,10 @@
 'use client'
 
 import { ConnectError } from '@ihp/rpc'
+import type { ActivityTimelineItem } from '@/components/activity-timeline'
 import { browserClients } from '@/rpc/browser'
 import {
+  activityFromProto,
   catalogFromProto,
   categoryToProto,
   contractFromProto,
@@ -167,4 +169,9 @@ export async function createCatalogItem(values: CatalogItemValues): Promise<Cata
 export async function listContractInvoices(contractId: string): Promise<ContractInvoiceRow[]> {
   const response = await call(() => browserClients.contracts.listContractInvoices({ contractId }))
   return response.invoices.map(invoiceFromProto)
+}
+
+export async function listContractActivity(contractId: string): Promise<ActivityTimelineItem[]> {
+  const response = await call(() => browserClients.contracts.listContractActivity({ contractId }))
+  return response.entries.map(activityFromProto)
 }

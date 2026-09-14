@@ -2,6 +2,12 @@ import { db } from '@ihp/db'
 import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { syncBilling } from '@/features/billing/contract-billing'
+import {
+  loadActivity,
+  recordActivity,
+  type ActivityAction,
+  type ActivityItem,
+} from '@/lib/activity'
 import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { contractPublishedTemplate, sendEmail } from '@/lib/email'
 import { pageInfoOf, skipTake, type SortDirection } from '@/lib/pagination'
@@ -44,6 +50,8 @@ async function caller() {
 
   return {
     userId: user.id,
+    // The name history shows, snapshotted per entry so a later rename does not rewrite it.
+    userName: profile.preferredName ?? user.name,
     organizationId: membership.organizationId,
     canManage: canManageOrganization(membership),
   }
@@ -386,8 +394,31 @@ function dateOrNull(value: string) {
   return value === '' ? null : new Date(`${value}T00:00:00.000Z`)
 }
 
+function statusActionOf(from: ContractStatus, to: ContractStatus): ActivityAction {
+  if (to === 'sent') return 'contract.published'
+  if (to === 'draft') return 'contract.returned_to_draft'
+  if (to === 'active') return from === 'paused' ? 'contract.resumed' : 'contract.agreed'
+  if (to === 'paused') return 'contract.paused'
+  if (to === 'cancelled') return 'contract.cancelled'
+  return 'contract.completed'
+}
+
+/** A contract's history, oldest first, for its drawer. */
+export async function loadContractActivity(contractId: string): Promise<ActivityItem[]> {
+  const { organizationId } = await caller()
+
+  // Checked first: history rows carry no contract relation, so the contract is what scopes them.
+  const contract = await db.contract.findFirst({
+    where: { id: contractId, organizationId },
+    select: { id: true },
+  })
+  if (!contract) throw new ConnectError('That contract no longer exists.', Code.NotFound)
+
+  return loadActivity(organizationId, 'contract', contract.id)
+}
+
 export async function createContract(input: unknown): Promise<ContractDetail> {
-  const { organizationId, userId } = await requireManager()
+  const { organizationId, userId, userName } = await requireManager()
   const values = parseDraft(input)
 
   const client = await db.client.findFirst({
@@ -425,11 +456,20 @@ export async function createContract(input: unknown): Promise<ContractDetail> {
     select: { id: true },
   })
 
+  await recordActivity({
+    organizationId,
+    subjectType: 'contract',
+    subjectId: contract.id,
+    action: 'contract.created',
+    actorId: userId,
+    actorName: userName,
+  })
+
   return loadContract(contract.id)
 }
 
 export async function updateContract(input: unknown): Promise<ContractDetail> {
-  const { organizationId } = await requireManager()
+  const { organizationId, userId, userName } = await requireManager()
   const parsed = contractUpdateSchema.safeParse(input)
   if (!parsed.success) {
     throw new ConnectError(
@@ -487,11 +527,20 @@ export async function updateContract(input: unknown): Promise<ContractDetail> {
     },
   })
 
+  await recordActivity({
+    organizationId,
+    subjectType: 'contract',
+    subjectId: existing.id,
+    action: 'contract.edited',
+    actorId: userId,
+    actorName: userName,
+  })
+
   return loadContract(existing.id)
 }
 
 export async function setContractStatus(input: unknown): Promise<ContractDetail> {
-  const { organizationId } = await requireManager()
+  const { organizationId, userId, userName } = await requireManager()
   const parsed = contractStatusSchema.safeParse(input)
   if (!parsed.success) throw new ConnectError('That status is not valid.', Code.InvalidArgument)
 
@@ -551,6 +600,15 @@ export async function setContractStatus(input: unknown): Promise<ContractDetail>
       signedAt: to === 'active' && !contract.signedAt ? new Date() : contract.signedAt,
       ...(sharedAt === undefined ? {} : { sharedAt, viewedAt: null }),
     },
+  })
+
+  await recordActivity({
+    organizationId,
+    subjectType: 'contract',
+    subjectId: contract.id,
+    action: statusActionOf(from, to),
+    actorId: userId,
+    actorName: userName,
   })
 
   if (recipient && sharedAt) {

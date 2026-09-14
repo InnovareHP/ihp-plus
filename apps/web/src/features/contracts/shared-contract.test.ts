@@ -14,11 +14,13 @@ const email = vi.hoisted(() => ({
   portalUrl: vi.fn(),
 }))
 const link = vi.hoisted(() => ({ verifyContractLink: vi.fn() }))
+const activity = vi.hoisted(() => ({ recordActivity: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/features/billing/contract-billing', () => billing)
 vi.mock('@/lib/email', () => email)
 vi.mock('./client-link', () => link)
+vi.mock('@/lib/activity', () => activity)
 
 const { acceptSharedContract, loadSharedContract } = await import('./shared-contract')
 
@@ -198,6 +200,19 @@ describe('acceptSharedContract', () => {
     expect(result.ok).toBe(false)
     expect(result.ok ? '' : result.message).not.toContain('Stripe')
     expect(prisma.contract.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('puts the acceptance in the contract history under the name the client typed', async () => {
+    await acceptSharedContract(ACCEPTANCE, REQUEST, NOW)
+
+    expect(activity.recordActivity).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      subjectType: 'contract',
+      subjectId: 'contract-1',
+      action: 'contract.accepted',
+      actorId: null,
+      actorName: 'Dana Reyes',
+    })
   })
 
   it('does not accept twice when two submissions race', async () => {

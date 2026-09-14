@@ -5,6 +5,7 @@ import {
   createContract,
   loadCatalog,
   loadContract,
+  loadContractActivity,
   loadContractInvoices,
   loadContractsPage,
   loadContractTemplate,
@@ -13,6 +14,7 @@ import {
   updateContractTemplate,
 } from '@/features/contracts/service'
 import {
+  activityToProto,
   catalogCategoryFromProto,
   catalogToProto,
   catalogUnitFromProto,
@@ -124,5 +126,9 @@ export const contracts: ServiceImpl<typeof ContractsService> = {
 
   listContractInvoices: async (request) => ({
     invoices: (await loadContractInvoices(request.contractId)).map(invoiceToProto),
+  }),
+
+  listContractActivity: async (request) => ({
+    entries: (await loadContractActivity(request.contractId)).map(activityToProto),
   }),
 }
