@@ -43,7 +43,8 @@ pnpm db:seed           # the org and its department teams
 pnpm dev               # both apps via turbo
 ```
 
-Nothing reads `REDIS_URL` yet, so `pnpm infra:pg` plus `pnpm infra:s3` is enough for
+Redis only holds the sign-in rate limiter's counters and fails open without them, so
+`pnpm infra:pg` plus `pnpm infra:s3` is enough for
 day-to-day work — Postgres for everything, MinIO for the onboarding photo upload.
 `pnpm infra:redis` starts Redis alone; `pnpm infra:pg:stop` /
 `pnpm infra:redis:stop` / `pnpm infra:s3:stop` stop one without touching the others. Same compose file and
@@ -181,5 +182,5 @@ Outlook.com accounts.
 ## Not yet wired
 
 No transactional email provider: password-reset and verification links are written
-to the server log instead of sent. No Redis client either — `REDIS_URL` is set but
-nothing reads it.
+to the server log instead of sent. Redis holds only the sign-in rate limiter's
+counters.

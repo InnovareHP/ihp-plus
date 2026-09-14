@@ -16,8 +16,8 @@ const nextConfig: NextConfig = {
   // has to compile them rather than consume a build output.
   transpilePackages: ['@ihp/db', '@ihp/rpc'],
 
-  // The pg driver opens real sockets; bundling it breaks the standalone server.
-  serverExternalPackages: ['@prisma/adapter-pg', 'pg'],
+  // The pg driver and the Redis client open real sockets; bundling them breaks the standalone server.
+  serverExternalPackages: ['@prisma/adapter-pg', 'pg', 'redis', '@redis/client'],
 
   // Bluebook uploads travel through a server action, whose body cap is 1MB by default; nginx
   // allows 25m, so the two limits are kept in step.

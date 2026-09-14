@@ -4,8 +4,8 @@ pnpm workspace monorepo: Astro 7 static marketing site (`/`) + Next.js 16 App Ro
 app (`/app`) behind one nginx origin. `apps/web` is **Mantine v9**; `apps/landing` is
 **Tailwind v4 + `@ihp/ui`**. Shared tsconfig/Tailwind tokens in `@ihp/config`.
 Postgres is reached through `@ihp/db` (Prisma 7 + the `@prisma/adapter-pg` driver
-adapter, migrations in `packages/db/prisma/migrations`). Redis runs but **nothing reads `REDIS_URL` yet** — propose
-a client before assuming one.
+adapter, migrations in `packages/db/prisma/migrations`). Redis backs **only** Better Auth's rate limiter
+(`apps/web/src/lib/redis.ts`, fail-open) — propose any other use before assuming it.
 
 Read `README.md` for the layout table and the dev/stack commands.
 

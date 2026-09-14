@@ -4,6 +4,7 @@ import { betterAuth } from 'better-auth/minimal'
 import { nextCookies } from 'better-auth/next-js'
 import { admin, organization } from 'better-auth/plugins'
 import { invitationTemplate, resetPasswordTemplate, sendEmail, verifyEmailTemplate } from './email'
+import { isRedisConfigured, redisRateLimitStorage } from './redis'
 import { AUTH_BASE_PATH, invitationRoute, withBasePath } from './routes'
 
 // The invitation link is a real browser URL, so it needs the origin as well as the basePath.
@@ -71,6 +72,15 @@ export const auth = betterAuth({
 
   session: {
     cookieCache: { enabled: true, maxAge: 5 * 60 },
+  },
+
+  // Only the rate limiter uses Redis; a global secondaryStorage would move sessions there too.
+  rateLimit: {
+    ...(isRedisConfigured() ? { customStorage: redisRateLimitStorage } : {}),
+    customRules: {
+      '/sign-in/email': { window: 60, max: 5 },
+      '/sign-up/email': { window: 60, max: 5 },
+    },
   },
 
   // The generated Prisma schema ships relations, so /get-session can join instead of fanning out.
