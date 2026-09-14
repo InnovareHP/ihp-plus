@@ -1,17 +1,10 @@
 'use client'
 
 import { Tabs } from '@mantine/core'
-import {
-  IconBuilding,
-  IconGavel,
-  IconMailForward,
-  IconUserCog,
-  IconUsersGroup,
-} from '@tabler/icons-react'
+import { IconBuilding, IconMailForward, IconUserCog, IconUsersGroup } from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { MembersTable } from '@/features/members/components/members-table'
-import { ApproversPanel } from '@/features/requests/components/approvers-panel'
 import { ORGANIZATION_TABS, type OrganizationTab } from '@/lib/routes'
 import { InvitationsPanel } from './invitations-panel'
 import { OrganizationPanel } from './organization-panel'
@@ -22,10 +15,11 @@ const TABS: { value: OrganizationTab; label: string; icon: ReactNode }[] = [
   { value: 'members', label: 'Members', icon: <IconUserCog size={16} aria-hidden /> },
   { value: 'departments', label: 'Departments', icon: <IconUsersGroup size={16} aria-hidden /> },
   { value: 'invitations', label: 'Invitations', icon: <IconMailForward size={16} aria-hidden /> },
-  { value: 'approvers', label: 'Approvers', icon: <IconGavel size={16} aria-hidden /> },
 ]
 
 function tabOf(value: string | null): OrganizationTab {
+  // Approvers moved into each department, so an old link to their tab lands where they are set.
+  if (value === 'approvers') return 'departments'
   return (ORGANIZATION_TABS as readonly string[]).includes(value ?? '')
     ? (value as OrganizationTab)
     : 'overview'
@@ -67,9 +61,6 @@ export function OrganizationTabs({ invitedBy }: { invitedBy: string }) {
       </Tabs.Panel>
       <Tabs.Panel value="invitations">
         <InvitationsPanel invitedBy={invitedBy} />
-      </Tabs.Panel>
-      <Tabs.Panel value="approvers">
-        <ApproversPanel />
       </Tabs.Panel>
     </Tabs>
   )

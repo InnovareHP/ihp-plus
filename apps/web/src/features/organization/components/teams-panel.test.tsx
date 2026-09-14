@@ -81,6 +81,16 @@ describe('TeamsPanel', () => {
     expect(within(row).getByText('Admins only')).toBeInTheDocument()
   })
 
+  it('narrows to departments with no approver, the filter the approvers tab used to hold', async () => {
+    nav.searchParams = new URLSearchParams('unapprovedOnly=true')
+    render(<TeamsPanel />)
+
+    expect(await screen.findByRole('row', { name: /Information Technology/ })).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByRole('row', { name: /Finance/ })).not.toBeInTheDocument(),
+    )
+  })
+
   it('lists each department with how many people are in it', async () => {
     render(<TeamsPanel />)
 

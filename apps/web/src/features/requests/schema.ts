@@ -289,11 +289,3 @@ export const FORM_STATUS_OPTIONS = FORM_STATUSES.map((status) => ({
   value: status,
   label: FORM_STATUS_LABELS[status],
 }))
-
-export const approverQuerySchema = z.object({
-  search: z.string().trim().max(100).catch('').default(''),
-  unstaffedOnly: flag,
-})
-
-export type ApproverQuery = z.infer<typeof approverQuerySchema>
-export const DEFAULT_APPROVER_QUERY: ApproverQuery = approverQuerySchema.parse({})

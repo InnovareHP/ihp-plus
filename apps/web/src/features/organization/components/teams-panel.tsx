@@ -35,6 +35,12 @@ const TEAM_FILTERS: readonly FilterControl[] = [
     label: 'Only departments with no lead',
     help: 'Nobody files their handbook documents or speaks for them.',
   },
+  {
+    kind: 'toggle',
+    key: 'unapprovedOnly',
+    label: 'Only departments with no approver',
+    help: 'Their requests reach admins and nobody else.',
+  },
 ]
 
 export function TeamsPanel() {
@@ -80,11 +86,20 @@ export function TeamsPanel() {
         (team) =>
           team.name.toLowerCase().includes(term) &&
           (!query.emptyOnly || team.memberCount === 0) &&
-          (!query.unledOnly || (leadNames.get(team.id) ?? []).length === 0),
+          (!query.unledOnly || (leadNames.get(team.id) ?? []).length === 0) &&
+          (!query.unapprovedOnly || (approverNames.get(team.id) ?? []).length === 0),
       ),
-    [teams.data, term, query.emptyOnly, query.unledOnly, leadNames],
+    [
+      teams.data,
+      term,
+      query.emptyOnly,
+      query.unledOnly,
+      query.unapprovedOnly,
+      leadNames,
+      approverNames,
+    ],
   )
-  const isFiltered = term.length > 0 || query.emptyOnly || query.unledOnly
+  const isFiltered = term.length > 0 || query.emptyOnly || query.unledOnly || query.unapprovedOnly
   const selected = teams.data?.find((team) => team.id === query.team)
 
   const columns: DataTableColumn<TeamRow>[] = [
@@ -182,7 +197,7 @@ export function TeamsPanel() {
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Item onClick={() => setQuery({ team: team.id })}>
-              Manage people and leads
+              Manage people, leads and approvers
             </Menu.Item>
             <Menu.Item onClick={() => setRenaming(team)}>Rename</Menu.Item>
             <Menu.Item color="red" onClick={() => setDeleting(team)}>

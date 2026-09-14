@@ -25,16 +25,10 @@ export type Route = (typeof routes)[keyof typeof routes]
 
 /**
  * The organization screen is one page of tabs rather than four routes: overview, members,
- * departments, invitations and approvers are all the same subject, and splitting them meant
- * four page loads to do one job. The tab is a query param so each is still a deep link.
+ * departments and invitations are all the same subject, and splitting them meant four page
+ * loads to do one job. The tab is a query param so each is still a deep link.
  */
-export const ORGANIZATION_TABS = [
-  'overview',
-  'members',
-  'departments',
-  'invitations',
-  'approvers',
-] as const
+export const ORGANIZATION_TABS = ['overview', 'members', 'departments', 'invitations'] as const
 
 export type OrganizationTab = (typeof ORGANIZATION_TABS)[number]
 

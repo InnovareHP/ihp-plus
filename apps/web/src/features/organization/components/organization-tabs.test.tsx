@@ -17,9 +17,6 @@ vi.mock('./invitations-panel', () => ({ InvitationsPanel: () => <p>invitations p
 vi.mock('@/features/members/components/members-table', () => ({
   MembersTable: () => <p>members panel</p>,
 }))
-vi.mock('@/features/requests/components/approvers-panel', () => ({
-  ApproversPanel: () => <p>approvers panel</p>,
-}))
 
 const user = () => userEvent.setup()
 
@@ -32,9 +29,11 @@ describe('OrganizationTabs', () => {
   it('gathers the whole organization into one page of tabs', () => {
     render(<OrganizationTabs invitedBy="Grace Hopper" />)
 
-    for (const label of ['Overview', 'Members', 'Departments', 'Invitations', 'Approvers']) {
+    for (const label of ['Overview', 'Members', 'Departments', 'Invitations']) {
       expect(screen.getByRole('tab', { name: label })).toBeInTheDocument()
     }
+    // Approvers are set inside each department now, not on a tab of their own.
+    expect(screen.queryByRole('tab', { name: 'Approvers' })).not.toBeInTheDocument()
   })
 
   it('opens on the overview when the URL names no tab', () => {
@@ -45,10 +44,17 @@ describe('OrganizationTabs', () => {
   })
 
   it('renders the tab the URL asks for, so each one is a deep link', () => {
+    nav.searchParams = new URLSearchParams('tab=members')
+    render(<OrganizationTabs invitedBy="Grace Hopper" />)
+
+    expect(screen.getByText('members panel')).toBeInTheDocument()
+  })
+
+  it('sends an old link to the approvers tab to the departments, where approvers are set', () => {
     nav.searchParams = new URLSearchParams('tab=approvers')
     render(<OrganizationTabs invitedBy="Grace Hopper" />)
 
-    expect(screen.getByText('approvers panel')).toBeInTheDocument()
+    expect(screen.getByText('departments panel')).toBeInTheDocument()
   })
 
   it('falls back to the overview for a tab that does not exist', () => {
@@ -86,6 +92,5 @@ describe('OrganizationTabs', () => {
 
     expect(screen.queryByText('departments panel')).not.toBeInTheDocument()
     expect(screen.queryByText('invitations panel')).not.toBeInTheDocument()
-    expect(screen.queryByText('approvers panel')).not.toBeInTheDocument()
   })
 })

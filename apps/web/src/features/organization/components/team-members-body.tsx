@@ -4,6 +4,8 @@ import { Button, Divider, Group, Select, Stack, Text } from '@mantine/core'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
+// Approvers belong to requests, but they are set per department, so they are set here.
+import { DepartmentApprovers } from '@/features/requests/components/department-approvers'
 import {
   useAssignableUsers,
   useAssignDepartment,
@@ -61,6 +63,10 @@ export function TeamMembersBody({ team }: { team: TeamRow }) {
   return (
     <Stack gap="lg">
       <DepartmentLeads teamId={team.id} teamName={team.name} canEdit />
+
+      <Divider />
+
+      <DepartmentApprovers teamId={team.id} teamName={team.name} />
 
       <Divider />
 
