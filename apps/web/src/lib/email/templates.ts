@@ -83,6 +83,57 @@ export function contractPublishedTemplate(options: {
   }
 }
 
+export function requestSubmittedTemplate(options: {
+  requesterName: string
+  formName: string
+  teamName: string
+  /** True when no approver is appointed, so the admins are being asked instead. */
+  asAdmin: boolean
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.requesterName} raised a ${options.formName} request`,
+    ...renderEmail({
+      preheader: `A ${options.formName} request from ${options.teamName} is waiting for a decision.`,
+      heading: `New ${options.formName} request`,
+      body: [
+        `${options.requesterName} raised a ${options.formName} request in ${options.teamName}.`,
+        options.asAdmin
+          ? `${options.teamName} has no approver appointed, so it is waiting for an admin to decide.`
+          : `You approve requests for ${options.teamName}, so it is waiting in your queue.`,
+      ],
+      action: { label: 'Review the request', url: options.url },
+    }),
+  }
+}
+
+export function requestDecidedTemplate(options: {
+  formName: string
+  decision: 'approved' | 'rejected'
+  deciderName: string
+  note: string | undefined
+  url: string
+}): PreparedEmail {
+  const approved = options.decision === 'approved'
+  const outcome = approved ? 'approved' : 'not approved'
+
+  return {
+    subject: `Your ${options.formName} request was ${outcome}`,
+    ...renderEmail({
+      preheader: `${options.deciderName} decided your ${options.formName} request.`,
+      heading: `Your ${options.formName} request was ${outcome}`,
+      body: [
+        `${options.deciderName} ${approved ? 'approved' : 'turned down'} your ${options.formName} request.`,
+        ...(options.note ? [`Their note: ${options.note}`] : []),
+      ],
+      action: { label: 'Open the request', url: options.url },
+      footnote: approved
+        ? undefined
+        : 'If something needs changing, raise the request again with what they asked for.',
+    }),
+  }
+}
+
 export function contractAcceptedTemplate(options: {
   clientName: string
   reference: string

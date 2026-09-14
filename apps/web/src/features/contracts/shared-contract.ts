@@ -1,8 +1,8 @@
 import { db } from '@ihp/db'
 import { syncBilling } from '@/features/billing/contract-billing'
-import { contractAcceptedTemplate, sendEmail } from '@/lib/email'
+import { contractAcceptedTemplate, portalUrl, sendEmail } from '@/lib/email'
 import { clientTab } from '@/lib/routes'
-import { portalUrl, verifyContractLink } from './client-link'
+import { verifyContractLink } from './client-link'
 import {
   contractAcceptanceSchema,
   type BillingCycle,

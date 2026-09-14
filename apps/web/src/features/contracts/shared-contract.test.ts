@@ -8,8 +8,12 @@ const prisma = vi.hoisted(() => ({
 }))
 
 const billing = vi.hoisted(() => ({ syncBilling: vi.fn() }))
-const email = vi.hoisted(() => ({ sendEmail: vi.fn(), contractAcceptedTemplate: vi.fn() }))
-const link = vi.hoisted(() => ({ verifyContractLink: vi.fn(), portalUrl: vi.fn() }))
+const email = vi.hoisted(() => ({
+  sendEmail: vi.fn(),
+  contractAcceptedTemplate: vi.fn(),
+  portalUrl: vi.fn(),
+}))
+const link = vi.hoisted(() => ({ verifyContractLink: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/features/billing/contract-billing', () => billing)
@@ -68,7 +72,7 @@ beforeEach(() => {
   prisma.organization.findUnique.mockResolvedValue({ name: 'Innovare Health Partners' })
   prisma.user.findUnique.mockResolvedValue({ email: 'owner@ihp.test' })
   link.verifyContractLink.mockReturnValue(true)
-  link.portalUrl.mockImplementation((route: string) => `https://portal.ihp.test/app${route}`)
+  email.portalUrl.mockImplementation((route: string) => `https://portal.ihp.test/app${route}`)
   billing.syncBilling.mockResolvedValue({
     stripeCustomerId: 'cus_1',
     stripeSubscriptionId: 'sub_1',

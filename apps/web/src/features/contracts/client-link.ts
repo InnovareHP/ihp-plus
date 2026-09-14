@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { clientContractRoute, withBasePath } from '@/lib/routes'
+import { portalUrl } from '@/lib/email'
+import { clientContractRoute } from '@/lib/routes'
 
 // Prefixed so a contract signature can never double as anything Better Auth signs with the same secret.
 function secret() {
@@ -24,12 +25,6 @@ export function verifyContractLink(contractId: string, sharedAt: Date | null, si
   const given = Buffer.from(signature)
   // Compared in constant time, so response timing cannot reveal how much of a guess was right.
   return expected.length === given.length && timingSafeEqual(expected, given)
-}
-
-/** An absolute portal URL for an email, origin and basePath included. */
-export function portalUrl(route: string) {
-  const origin = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
-  return `${origin}${withBasePath(route)}`
 }
 
 export function clientContractUrl(contractId: string, sharedAt: Date) {

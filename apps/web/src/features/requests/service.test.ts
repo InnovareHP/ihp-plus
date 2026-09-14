@@ -2,7 +2,14 @@ import { Code, ConnectError } from '@ihp/rpc'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const prisma = vi.hoisted(() => ({
-  requestSubmission: { count: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+  requestSubmission: {
+    count: vi.fn(),
+    findMany: vi.fn(),
+    findFirst: vi.fn(),
+    update: vi.fn(),
+    create: vi.fn(),
+  },
+  requestForm: { findFirst: vi.fn() },
   requestApprover: { findMany: vi.fn() },
   user: { findMany: vi.fn() },
 }))
@@ -13,14 +20,17 @@ const guard = vi.hoisted(() => ({
   canManageOrganization: vi.fn(() => false),
 }))
 
+const notifications = vi.hoisted(() => ({ notifyApprovers: vi.fn(), notifyRequester: vi.fn() }))
+
 vi.mock('@ihp/db', () => ({ db: prisma }))
+vi.mock('./notifications', () => notifications)
 // membershipOf is pure, so the real one is kept: how a membership resolves has one definition.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/auth-guard')>()),
   ...guard,
 }))
 
-const { decideRequest, loadRequest, loadRequestsPage } = await import('./service')
+const { decideRequest, loadRequest, loadRequestsPage, submitRequest } = await import('./service')
 
 const PENDING = {
   id: 'sub-1',
@@ -196,6 +206,60 @@ describe('deciding a request', () => {
     expect(
       await codeOf(() => decideRequest({ submissionId: 'sub-x', decision: 'approved', note: '' })),
     ).toBe(Code.NotFound)
+  })
+})
+
+describe('notifications', () => {
+  it('asks the department approvers once a request is raised', async () => {
+    prisma.requestForm.findFirst.mockResolvedValue({
+      id: 'form-1',
+      name: 'Time off',
+      fields: [],
+      status: 'published',
+    })
+    prisma.requestSubmission.create.mockResolvedValue({
+      ...PENDING,
+      id: 'sub-2',
+      requesterId: 'user-1',
+      teamId: 'team-2',
+      teamName: 'Care Management',
+    })
+
+    await submitRequest({ formId: 'form-1', values: {} })
+
+    expect(notifications.notifyApprovers).toHaveBeenCalledWith({
+      submissionId: 'sub-2',
+      organizationId: 'org-1',
+      teamId: 'team-2',
+      teamName: 'Care Management',
+      formName: 'Time off',
+      requesterId: 'user-1',
+      requesterName: 'Ada Lovelace',
+    })
+  })
+
+  it('tells the requester once their request is decided, with the note', async () => {
+    signedIn({ isAdmin: true })
+
+    await decideRequest({ submissionId: 'sub-1', decision: 'approved', note: 'Enjoy the break.' })
+
+    expect(notifications.notifyRequester).toHaveBeenCalledWith({
+      submissionId: 'sub-1',
+      requesterId: 'user-9',
+      formName: 'Time off',
+      decision: 'approved',
+      deciderName: 'Ada Lovelace',
+      note: 'Enjoy the break.',
+    })
+  })
+
+  it('sends nothing when the decision is refused', async () => {
+    signedIn({ isAdmin: true })
+    prisma.requestSubmission.findFirst.mockResolvedValue({ ...PENDING, status: 'approved' })
+
+    await codeOf(() => decideRequest({ submissionId: 'sub-1', decision: 'approved', note: '' }))
+
+    expect(notifications.notifyRequester).not.toHaveBeenCalled()
   })
 })
 

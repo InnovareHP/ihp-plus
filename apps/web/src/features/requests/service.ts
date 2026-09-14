@@ -4,6 +4,7 @@ import { Code, ConnectError } from '@ihp/rpc'
 import { z } from 'zod'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake } from '@/lib/pagination'
+import { notifyApprovers, notifyRequester } from './notifications'
 import {
   answerSchemaOf,
   decisionSchema,
@@ -296,6 +297,17 @@ export async function submitRequest(input: {
     },
   })
 
+  // Not awaited: a slow mail provider must not hold up raising the request.
+  void notifyApprovers({
+    submissionId: submission.id,
+    organizationId: caller.organizationId,
+    teamId: caller.team.id,
+    teamName: caller.team.name,
+    formName: form.name,
+    requesterId: caller.userId,
+    requesterName: caller.name,
+  })
+
   return toRequestRow(submission, caller.name, caller)
 }
 
@@ -489,6 +501,16 @@ export async function decideRequest(input: DecisionValues): Promise<RequestRow> 
       decidedAt: new Date(),
       decisionNote: parsed.data.note || null,
     },
+  })
+
+  // Not awaited: the decision is saved whether or not the mail provider answers promptly.
+  void notifyRequester({
+    submissionId: updated.id,
+    requesterId: updated.requesterId,
+    formName: updated.formName,
+    decision: parsed.data.decision,
+    deciderName: caller.name,
+    note: parsed.data.note || undefined,
   })
 
   const names = await requesterNames([updated])

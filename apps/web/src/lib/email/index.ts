@@ -3,8 +3,11 @@ export {
   contractAcceptedTemplate,
   contractPublishedTemplate,
   invitationTemplate,
+  requestDecidedTemplate,
+  requestSubmittedTemplate,
   resetPasswordTemplate,
   verifyEmailTemplate,
   type PreparedEmail,
 } from './templates'
 export { renderEmail, type EmailLayout } from './layout'
+export { portalUrl } from './portal-url'

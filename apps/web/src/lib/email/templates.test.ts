@@ -1,6 +1,42 @@
 import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
-import { invitationTemplate, resetPasswordTemplate, verifyEmailTemplate } from './templates'
+import {
+  invitationTemplate,
+  requestDecidedTemplate,
+  requestSubmittedTemplate,
+  resetPasswordTemplate,
+  verifyEmailTemplate,
+} from './templates'
+
+describe('request emails', () => {
+  it('tells an admin why a request reached them instead of an approver', () => {
+    const email = requestSubmittedTemplate({
+      requesterName: 'Grace Hopper',
+      formName: 'Time off',
+      teamName: 'Revenue Cycle',
+      asAdmin: true,
+      url: 'https://ihp.test/app/requests/view/sub-1',
+    })
+
+    expect(email.subject).toBe('Grace Hopper raised a Time off request')
+    expect(email.text).toContain('has no approver appointed')
+    expect(email.text).toContain('https://ihp.test/app/requests/view/sub-1')
+  })
+
+  it('carries the reason for a rejection and what to do next', () => {
+    const email = requestDecidedTemplate({
+      formName: 'Time off',
+      decision: 'rejected',
+      deciderName: 'Ada Lovelace',
+      note: 'Those dates overlap the audit.',
+      url: 'https://ihp.test/app/requests/view/sub-1',
+    })
+
+    expect(email.subject).toBe('Your Time off request was not approved')
+    expect(email.text).toContain('Their note: Those dates overlap the audit.')
+    expect(email.text).toContain('raise the request again')
+  })
+})
 
 describe('renderEmail', () => {
   it('carries both parts, since HTML alone is a spam signal and unreadable in a text client', () => {
