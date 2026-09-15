@@ -14,8 +14,10 @@ model BluebookDocument {
   /// A value from the bluebookCategory lookup list, stored as plain text.
   category    String?
 
-  /// Object storage key; the file itself never touches Postgres.
-  fileKey     String
+  /// Object storage key, kept for documents filed before the SharePoint library existed.
+  fileKey     String?
+  /// Graph driveItem id in the internal library — where new documents go.
+  driveItemId String?
   fileName    String
   contentType String
   byteSize    Int

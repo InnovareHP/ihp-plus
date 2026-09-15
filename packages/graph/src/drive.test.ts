@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { deltaSweep, ensureFolder, startCopy, waitForCopy } from './drive'
+import { deltaSweep, ensureFolder, startCopy, uploadFile, waitForCopy } from './drive'
 import { getAccessToken, resetTokenCache } from './token'
 
 function jsonResponse(body: unknown, init: ResponseInit = {}) {
@@ -132,5 +132,62 @@ describe('copy', () => {
     await expect(
       waitForCopy('https://monitor.example/1', { attempts: 3, intervalMs: 0 }),
     ).rejects.toThrow('did not finish in time')
+  })
+})
+
+describe('uploadFile', () => {
+  it('PUTs a small file straight to the content endpoint', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ id: 'item-1', name: 'a.pdf' }))
+
+    const item = await uploadFile(
+      'drive-1',
+      'folder-1',
+      'a.pdf',
+      new Uint8Array(16),
+      'application/pdf',
+    )
+
+    expect(item.id).toBe('item-1')
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/items/folder-1:/a.pdf:/content')
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('PUT')
+  })
+
+  it('opens an upload session past 4 MB and sends it in ranges', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ uploadUrl: 'https://upload.example/1' }))
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 202 }))
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ id: 'item-2', name: 'big.pdf' }, { status: 201 }),
+    )
+
+    const size = 5 * 1024 * 1024
+    const item = await uploadFile(
+      'drive-1',
+      'folder-1',
+      'big.pdf',
+      new Uint8Array(size),
+      'application/pdf',
+    )
+
+    expect(item.id).toBe('item-2')
+    const ranges = fetchMock.mock.calls
+      .slice(1)
+      .map((call) => (call[1] as RequestInit).headers as Record<string, string>)
+      .map((headers) => headers['content-range'])
+    expect(ranges).toEqual([`bytes 0-3276799/${size}`, `bytes 3276800-${size - 1}/${size}`])
+  })
+
+  it('fails loudly when a range is refused', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ uploadUrl: 'https://upload.example/1' }))
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 507 }))
+
+    await expect(
+      uploadFile(
+        'drive-1',
+        'folder-1',
+        'big.pdf',
+        new Uint8Array(5 * 1024 * 1024),
+        'application/pdf',
+      ),
+    ).rejects.toThrow('HTTP 507')
   })
 })

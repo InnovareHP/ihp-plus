@@ -11,6 +11,7 @@ const graph = vi.hoisted(() => ({
     webUrl: `https://sharepoint.test/${name}`,
   })),
   requireClientDriveId: vi.fn(() => 'client-drive'),
+  rootItem: vi.fn(async () => ({ id: 'client-root', name: 'root' })),
 }))
 
 const service = vi.hoisted(() => ({

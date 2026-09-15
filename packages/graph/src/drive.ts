@@ -42,6 +42,11 @@ export async function deltaSweep(driveId: string, link?: string) {
   return { items, deltaLink: page.deltaLink }
 }
 
+/** The drive's root item; `root` is a path segment of its own, never an item id. */
+export function rootItem(driveId: string) {
+  return graphJson<DriveItem>(`/drives/${driveId}/root`)
+}
+
 export function getItem(driveId: string, itemId: string) {
   return graphJson<DriveItem>(`/drives/${driveId}/items/${itemId}`)
 }
@@ -167,10 +172,57 @@ export async function uploadSmallFile(
   return (await response.json()) as DriveItem
 }
 
+/** Graph requires every chunk but the last to be a multiple of 320 KiB. */
+const CHUNK_BYTES = 10 * 320 * 1024
+
 /** The resumable path for anything past 4 MB; the caller PUTs ranges to uploadUrl. */
 export function createUploadSession(driveId: string, parentItemId: string, name: string) {
   return graphJson<{ uploadUrl: string; expirationDateTime: string }>(
     `/drives/${driveId}/items/${parentItemId}:/${encodeURIComponent(name)}:/createUploadSession`,
     { method: 'POST', body: { item: { '@microsoft.graph.conflictBehavior': 'replace' } } },
   )
+}
+
+/** Uploads the bytes to a session, one range at a time; the last response carries the item. */
+export async function uploadInSession(uploadUrl: string, body: Uint8Array) {
+  let item: DriveItem | undefined
+
+  for (let start = 0; start < body.byteLength; start += CHUNK_BYTES) {
+    const end = Math.min(start + CHUNK_BYTES, body.byteLength)
+    // The session URL is pre-authenticated, so these PUTs carry no Graph token.
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'content-length': String(end - start),
+        'content-range': `bytes ${start}-${end - 1}/${body.byteLength}`,
+      },
+      body: body.slice(start, end) as unknown as BodyInit,
+    })
+
+    if (!response.ok) {
+      throw new Error(`The upload failed at byte ${start} with HTTP ${response.status}.`)
+    }
+    if (response.status === 200 || response.status === 201) {
+      item = (await response.json()) as DriveItem
+    }
+  }
+
+  if (!item) throw new Error('The upload finished without Graph returning the item.')
+  return item
+}
+
+/** One call for any size: a simple PUT under 4 MB, a resumable session above it. */
+export async function uploadFile(
+  driveId: string,
+  parentItemId: string,
+  name: string,
+  body: Uint8Array,
+  contentType: string,
+) {
+  if (body.byteLength <= SIMPLE_UPLOAD_LIMIT_BYTES) {
+    return uploadSmallFile(driveId, parentItemId, name, body, contentType)
+  }
+
+  const session = await createUploadSession(driveId, parentItemId, name)
+  return uploadInSession(session.uploadUrl, body)
 }

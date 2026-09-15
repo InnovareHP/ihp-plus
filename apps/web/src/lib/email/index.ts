@@ -1,5 +1,6 @@
 export { isEmailConfigured, sendEmail, type OutboundEmail } from './send'
 export {
+  clientFolderSharedTemplate,
   contractAcceptedTemplate,
   contractPublishedTemplate,
   invitationTemplate,

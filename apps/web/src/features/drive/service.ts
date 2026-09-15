@@ -94,3 +94,58 @@ export function markMirrorRemoved(id: string) {
     data: { state: 'removed', removedAt: new Date(), targetItemId: null },
   })
 }
+
+export function clientForAccess(organizationId: string, clientId: string) {
+  return db.client.findFirst({
+    where: { id: clientId, organizationId, archivedAt: null },
+    select: { id: true, name: true },
+  })
+}
+
+export function guestFor(clientId: string, email: string) {
+  return db.clientDriveGuest.findUnique({ where: { clientId_email: { clientId, email } } })
+}
+
+export function guestsFor(clientId: string) {
+  return db.clientDriveGuest.findMany({ where: { clientId }, orderBy: { invitedAt: 'desc' } })
+}
+
+export function guestById(id: string) {
+  return db.clientDriveGuest.findUnique({ where: { id } })
+}
+
+export function saveGuest(input: {
+  clientId: string
+  email: string
+  invitedUserId: string | undefined
+  permissionId: string | undefined
+  role: string
+}) {
+  const { clientId, email, ...rest } = input
+  const data = {
+    invitedUserId: rest.invitedUserId ?? null,
+    permissionId: rest.permissionId ?? null,
+    role: rest.role,
+  }
+  return db.clientDriveGuest.upsert({
+    where: { clientId_email: { clientId, email } },
+    create: { clientId, email, ...data },
+    // Re-sharing a revoked guest is a new grant, so the revocation is cleared.
+    update: { ...data, revokedAt: null, invitedAt: new Date() },
+  })
+}
+
+export function markGuestRevoked(id: string) {
+  return db.clientDriveGuest.update({
+    where: { id },
+    data: { revokedAt: new Date(), permissionId: null },
+  })
+}
+
+export async function organizationName(organizationId: string) {
+  const organization = await db.organization.findUnique({
+    where: { id: organizationId },
+    select: { name: true },
+  })
+  return organization?.name ?? 'IHP Plus'
+}

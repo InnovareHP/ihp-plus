@@ -2,6 +2,13 @@
 
 import { db } from '@ihp/db'
 import type { Prisma } from '@ihp/db'
+import { GraphNotConfiguredError, isGraphConfigured } from '@ihp/graph'
+import {
+  BLUEBOOK_ROOT,
+  fileInLibrary,
+  libraryLink,
+  removeFromLibrary,
+} from '@/features/drive/library'
 import { listManyFor } from '@/features/lookups/service'
 import { ledTeamIds } from '@/features/teams/leads'
 import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
@@ -28,7 +35,8 @@ export type DocumentsResult = ({ ok: true } & DocumentsPage) | { ok: false; mess
 const NO_ORGANIZATION = 'Your account is not part of an organization yet.'
 const FORBIDDEN = 'Only an admin or that department’s lead can file documents there.'
 const GONE = 'That document is no longer in the bluebook.'
-const NO_STORAGE = 'File storage is not configured yet — tell an admin to set the S3 variables.'
+const NO_STORAGE =
+  'File storage is not configured yet — tell an admin to set the S3 or GRAPH variables.'
 
 /**
  * Everyone in the company reads the whole bluebook; filing is what is restricted. An admin may
@@ -314,12 +322,30 @@ export async function uploadDocument(formData: FormData): Promise<Result<Documen
   const teams = await teamsFor(who.organizationId, parsed.data.shelves)
   if (!teams) return { ok: false, message: 'One of those departments no longer exists.' }
 
-  const key = keyFor(who.organizationId, parsed.data.shelves[0] ?? COMPANY_SHELF, file.name)
+  const shelf = parsed.data.shelves[0] ?? COMPANY_SHELF
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  let stored: { fileKey: string | null; driveItemId: string | null }
 
   try {
-    await putObject(key, new Uint8Array(await file.arrayBuffer()), file.type)
+    // The library is where staff-authored documents live now; S3 stays for the older ones.
+    if (isGraphConfigured()) {
+      const shelfName = teams[0]?.name ?? 'All departments'
+      const item = await fileInLibrary({
+        segments: [BLUEBOOK_ROOT, shelfName],
+        fileName: file.name,
+        body: bytes,
+        contentType: file.type,
+      })
+      stored = { fileKey: null, driveItemId: item.itemId }
+    } else {
+      const key = keyFor(who.organizationId, shelf, file.name)
+      await putObject(key, bytes, file.type)
+      stored = { fileKey: key, driveItemId: null }
+    }
   } catch (error) {
-    if (error instanceof S3NotConfiguredError) return { ok: false, message: NO_STORAGE }
+    if (error instanceof S3NotConfiguredError || error instanceof GraphNotConfiguredError) {
+      return { ok: false, message: NO_STORAGE }
+    }
     return { ok: false, message: 'Could not store that file — try again.' }
   }
 
@@ -329,7 +355,7 @@ export async function uploadDocument(formData: FormData): Promise<Result<Documen
       title: parsed.data.title,
       description: parsed.data.description || null,
       category: parsed.data.category || null,
-      fileKey: key,
+      ...stored,
       fileName: file.name,
       contentType: file.type,
       byteSize: file.size,
@@ -475,7 +501,7 @@ export async function purgeDocument(input: unknown): Promise<Result<null>> {
 
   const current = await db.bluebookDocument.findFirst({
     where: { id: parsed.data.id, organizationId: who.organizationId },
-    select: { id: true, fileKey: true, archivedAt: true },
+    select: { id: true, fileKey: true, driveItemId: true, archivedAt: true },
   })
   if (!current) return { ok: false, message: GONE }
   if (!current.archivedAt) {
@@ -483,9 +509,10 @@ export async function purgeDocument(input: unknown): Promise<Result<null>> {
   }
 
   try {
-    await deleteObject(current.fileKey)
+    if (current.driveItemId) await removeFromLibrary(current.driveItemId)
+    else if (current.fileKey) await deleteObject(current.fileKey)
   } catch (error) {
-    if (!(error instanceof S3NotConfiguredError)) {
+    if (!(error instanceof S3NotConfiguredError) && !(error instanceof GraphNotConfiguredError)) {
       return { ok: false, message: 'Could not remove the stored file — try again.' }
     }
   }
@@ -504,14 +531,19 @@ export async function documentLink(input: unknown): Promise<Result<{ url: string
 
   const document = await db.bluebookDocument.findFirst({
     where: { id: parsed.data.id, organizationId: who.organizationId },
-    select: { fileKey: true },
+    select: { fileKey: true, driveItemId: true },
   })
   if (!document) return { ok: false, message: GONE }
 
   try {
-    return { ok: true, data: { url: await objectUrl(document.fileKey) } }
+    const url = document.driveItemId
+      ? await libraryLink(document.driveItemId)
+      : await objectUrl(document.fileKey ?? '')
+    return { ok: true, data: { url } }
   } catch (error) {
-    if (error instanceof S3NotConfiguredError) return { ok: false, message: NO_STORAGE }
+    if (error instanceof S3NotConfiguredError || error instanceof GraphNotConfiguredError) {
+      return { ok: false, message: NO_STORAGE }
+    }
     return { ok: false, message: 'Could not open that file — try again.' }
   }
 }

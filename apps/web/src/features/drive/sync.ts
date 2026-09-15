@@ -5,6 +5,7 @@ import {
   ensureFolder,
   GraphError,
   requireClientDriveId,
+  rootItem,
   type DriveItem,
 } from '@ihp/graph'
 import { track } from '@/lib/analytics'
@@ -29,6 +30,12 @@ interface SyncContext {
   targetDriveId: string
   /** Folder ids already resolved this run, keyed by client id and path. */
   folders: Map<string, string>
+  targetRootId?: string
+}
+
+async function targetRoot(context: SyncContext) {
+  context.targetRootId ??= (await rootItem(context.targetDriveId)).id
+  return context.targetRootId
 }
 
 async function clientRootFolder(context: SyncContext, clientId: string, clientName: string) {
@@ -42,7 +49,7 @@ async function clientRootFolder(context: SyncContext, clientId: string, clientNa
     return known.itemId
   }
 
-  const folder = await ensureFolder(context.targetDriveId, 'root', clientName)
+  const folder = await ensureFolder(context.targetDriveId, await targetRoot(context), clientName)
   await saveClientDriveFolder({
     organizationId: context.organizationId,
     clientId,

@@ -83,6 +83,27 @@ export function contractPublishedTemplate(options: {
   }
 }
 
+export function clientFolderSharedTemplate(options: {
+  organizationName: string
+  clientName: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.organizationName} shared a document folder with you`,
+    ...renderEmail({
+      preheader: `Open the folder ${options.organizationName} keeps for ${options.clientName}.`,
+      heading: 'Your document folder is ready',
+      body: [
+        `${options.organizationName} has given you access to the folder it keeps for ${options.clientName}.`,
+        'Everything your team files for you appears there, and stays up to date as it changes.',
+      ],
+      action: { label: 'Open the folder', url: options.url },
+      footnote:
+        'Sign in with this email address to open it. If the link does not work, ask your contact to share the folder again.',
+    }),
+  }
+}
+
 export function requestSubmittedTemplate(options: {
   requesterName: string
   formName: string

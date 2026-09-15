@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const prisma = vi.hoisted(() => ({
   bluebookDocument: {
@@ -41,6 +41,21 @@ vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/auth-guard', () => guard)
 vi.mock('@/features/teams/leads', () => leads)
 vi.mock('@/features/lookups/service', () => lookups)
+// Bluebook files into SharePoint when Graph is configured; these tests cover the S3 path.
+const library = vi.hoisted(() => ({
+  fileInLibrary: vi.fn(),
+  libraryLink: vi.fn(),
+  removeFromLibrary: vi.fn(),
+  BLUEBOOK_ROOT: 'Bluebook',
+}))
+
+const graph = vi.hoisted(() => ({ isGraphConfigured: vi.fn(() => false) }))
+
+vi.mock('@ihp/graph', () => ({
+  ...graph,
+  GraphNotConfiguredError: class GraphNotConfiguredError extends Error {},
+}))
+vi.mock('@/features/drive/library', () => library)
 vi.mock('@/lib/s3', () => ({
   ...storage,
   S3NotConfiguredError: class S3NotConfiguredError extends Error {},
@@ -527,5 +542,61 @@ describe('documentLink', () => {
 
     expect(await documentLink({ id: 'doc-x' })).toMatchObject({ ok: false })
     expect(storage.objectUrl).not.toHaveBeenCalled()
+  })
+})
+
+describe('uploadDocument, once the SharePoint library is configured', () => {
+  beforeEach(() => {
+    graph.isGraphConfigured.mockReturnValue(true)
+    library.fileInLibrary.mockResolvedValue({
+      driveId: 'internal-drive',
+      itemId: 'drive-item-1',
+      webUrl: 'https://sharepoint.test/Bluebook/policy.pdf',
+    })
+  })
+
+  afterEach(() => {
+    graph.isGraphConfigured.mockReturnValue(false)
+  })
+
+  it('files the document in the library instead of S3 and stores the item id', async () => {
+    signedIn({ leads: ['team-1'] })
+
+    const result = await uploadDocument(formDataFor(['team-1']))
+
+    expect(storage.putObject).not.toHaveBeenCalled()
+    expect(library.fileInLibrary).toHaveBeenCalledWith(
+      expect.objectContaining({ fileName: 'policy.pdf', contentType: 'application/pdf' }),
+    )
+    expect(prisma.bluebookDocument.create.mock.calls[0]?.[0].data).toMatchObject({
+      driveItemId: 'drive-item-1',
+      fileKey: null,
+    })
+    expect(result).toMatchObject({ ok: true })
+  })
+
+  it('files it under Bluebook, which sits outside the folders clients see', async () => {
+    signedIn({ leads: ['team-1'] })
+
+    await uploadDocument(formDataFor(['team-1']))
+
+    expect(library.fileInLibrary.mock.calls[0]?.[0].segments[0]).toBe('Bluebook')
+  })
+})
+
+describe('documentLink, for a document in the library', () => {
+  it('mints a Graph download URL rather than an S3 one', async () => {
+    signedIn({})
+    prisma.bluebookDocument.findFirst.mockResolvedValue({
+      fileKey: null,
+      driveItemId: 'drive-item-1',
+    })
+    library.libraryLink.mockResolvedValue('https://graph.example/download')
+
+    const result = await documentLink({ id: 'doc-1' })
+
+    expect(library.libraryLink).toHaveBeenCalledWith('drive-item-1')
+    expect(storage.objectUrl).not.toHaveBeenCalled()
+    expect(result).toEqual({ ok: true, data: { url: 'https://graph.example/download' } })
   })
 })

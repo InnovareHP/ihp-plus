@@ -38,3 +38,22 @@ export const EMPTY_OUTCOME: SyncOutcome = {
   skipped: 0,
   failed: 0,
 }
+
+export const clientAccessSchema = z.object({
+  clientId: z.uuid(),
+  email: z.email(),
+  name: z.string().trim().max(120).optional(),
+})
+
+export type ClientAccessInput = z.infer<typeof clientAccessSchema>
+
+export const clientIdSchema = z.uuid()
+export const guestIdSchema = z.uuid()
+
+export interface ClientAccessRow {
+  id: string
+  email: string
+  role: string
+  invitedAt: string
+  revokedAt: string | undefined
+}
