@@ -12,6 +12,7 @@ export const routes = {
   requestApprovals: '/requests/approvals',
   requestForms: '/requests/forms',
   organization: '/organization',
+  folderAccess: '/folder-access',
   settings: '/settings',
   login: '/login',
   signup: '/signup',

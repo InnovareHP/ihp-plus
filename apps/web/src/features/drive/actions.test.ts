@@ -28,11 +28,13 @@ const service = vi.hoisted(() => ({
   saveGuest: vi.fn(),
   markGuestRevoked: vi.fn(),
   organizationName: vi.fn(async () => 'Innovare Health Partners'),
+  organizationAccess: vi.fn(),
 }))
 
 const guard = vi.hoisted(() => ({
   requireOnboarded: vi.fn(async () => ({ user: { id: 'user-1', name: 'Sam' }, profile: {} })),
   membershipOf: vi.fn((): { organizationId: string | undefined } => ({ organizationId: 'org-1' })),
+  canManageOrganization: vi.fn(() => true),
 }))
 
 const mail = vi.hoisted(() => ({ sendEmail: vi.fn() }))
@@ -49,7 +51,8 @@ vi.mock('@/lib/email', async (importOriginal) => ({
   sendEmail: mail.sendEmail,
 }))
 
-const { listClientAccess, revokeClientFolderAccess, shareClientFolder } = await import('./actions')
+const { listClientAccess, listOrganizationAccess, revokeClientFolderAccess, shareClientFolder } =
+  await import('./actions')
 
 const CLIENT_ID = '11111111-1111-4111-8111-111111111111'
 const GUEST_ID = '22222222-2222-4222-8222-222222222222'
@@ -68,6 +71,7 @@ const GUEST_ROW = {
 beforeEach(() => {
   vi.clearAllMocks()
   guard.membershipOf.mockReturnValue({ organizationId: 'org-1' })
+  guard.canManageOrganization.mockReturnValue(true)
   service.clientForAccess.mockResolvedValue({ id: CLIENT_ID, name: 'Acme' })
   service.clientDriveFolder.mockResolvedValue(null)
   service.saveClientDriveFolder.mockResolvedValue({
@@ -237,5 +241,51 @@ describe('listClientAccess', () => {
       ok: false,
       message: 'Your account is not part of an organization yet.',
     })
+  })
+})
+
+describe('listOrganizationAccess', () => {
+  const PAGE_INFO = {
+    page: 1,
+    pageSize: 25,
+    total: 1,
+    pageCount: 1,
+    hasPrevious: false,
+    hasNext: false,
+  }
+
+  it('lists every grant the organization has handed out', async () => {
+    service.organizationAccess.mockResolvedValue({
+      rows: [{ id: GUEST_ID, email: 'buyer@acme.test', clientName: 'Acme' }],
+      pageInfo: PAGE_INFO,
+    })
+
+    const result = await listOrganizationAccess({ view: 'all' })
+
+    expect(service.organizationAccess).toHaveBeenCalledWith(
+      'org-1',
+      expect.objectContaining({ view: 'all' }),
+    )
+    expect(result).toMatchObject({ ok: true, pageInfo: PAGE_INFO })
+  })
+
+  it('refuses a member who cannot manage the organization', async () => {
+    guard.canManageOrganization.mockReturnValue(false)
+
+    const result = await listOrganizationAccess()
+
+    expect(result).toEqual({ ok: false, message: 'Only an admin can see every folder grant.' })
+    expect(service.organizationAccess).not.toHaveBeenCalled()
+  })
+
+  it('falls back to the default view rather than throwing on a hand-edited URL', async () => {
+    service.organizationAccess.mockResolvedValue({ rows: [], pageInfo: PAGE_INFO })
+
+    await listOrganizationAccess({ view: 'nonsense', page: 0 })
+
+    expect(service.organizationAccess).toHaveBeenCalledWith(
+      'org-1',
+      expect.objectContaining({ view: 'active', page: 1 }),
+    )
   })
 })

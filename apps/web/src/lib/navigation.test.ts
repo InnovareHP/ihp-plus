@@ -21,10 +21,10 @@ describe('navigation', () => {
     expect(ids).toEqual(['workspace', 'requests', 'account'])
   })
 
-  it('shows the organization section to a manager as one entry', () => {
-    // Overview, members, departments, invitations and approvers are tabs on one page now,
-    // so the sidebar carries one link rather than five.
-    expect(hrefsIn(ADMIN, 'organization')).toEqual([routes.organization])
+  it('shows a manager the organization page and folder access, nothing more', () => {
+    // Overview, members, departments, invitations and approvers are tabs on one page, so they
+    // are one link; folder access is a page of its own and earns the second.
+    expect(hrefsIn(ADMIN, 'organization')).toEqual([routes.organization, routes.folderAccess])
   })
 
   it('offers an ordinary member their own requests and nothing else under them', () => {

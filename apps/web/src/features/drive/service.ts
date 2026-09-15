@@ -1,5 +1,7 @@
 import { db } from '@ihp/db'
-import type { MirrorState } from './schema'
+import type { Prisma } from '@ihp/db'
+import { pageInfoOf, skipTake } from '@/lib/pagination'
+import type { MirrorState, OrganizationAccessQuery } from './schema'
 
 export function subscriptionForDrive(driveId: string) {
   return db.driveSubscription.findUnique({ where: { driveId } })
@@ -148,4 +150,67 @@ export async function organizationName(organizationId: string) {
     select: { name: true },
   })
   return organization?.name ?? 'IHP Plus'
+}
+
+/**
+ * Guests are keyed by client, not by organization, so the organization's clients are what
+ * scopes the list — and what a search by client name resolves against.
+ */
+export async function organizationAccess(organizationId: string, query: OrganizationAccessQuery) {
+  const clients = await db.client.findMany({
+    where: { organizationId },
+    select: { id: true, name: true },
+  })
+  if (clients.length === 0) {
+    return { rows: [], pageInfo: pageInfoOf({ ...query, total: 0 }) }
+  }
+
+  const byId = new Map(clients.map((client) => [client.id, client.name]))
+  const search = query.search.toLowerCase()
+  const matchedClientIds = search
+    ? clients.filter((client) => client.name.toLowerCase().includes(search)).map((c) => c.id)
+    : []
+
+  const where: Prisma.ClientDriveGuestWhereInput = {
+    clientId: { in: clients.map((client) => client.id) },
+    ...(query.view === 'active' ? { revokedAt: null } : {}),
+    ...(query.view === 'removed' ? { revokedAt: { not: null } } : {}),
+    ...(search
+      ? {
+          OR: [
+            { email: { contains: search, mode: 'insensitive' } },
+            { clientId: { in: matchedClientIds } },
+          ],
+        }
+      : {}),
+  }
+
+  const total = await db.clientDriveGuest.count({ where })
+  // Paged off the clamped page, so a stale ?page= past the end still reads rows.
+  const pageInfo = pageInfoOf({ ...query, total })
+  const guests = await db.clientDriveGuest.findMany({
+    where,
+    orderBy: { [query.sortBy]: query.sortDirection },
+    ...skipTake(pageInfo),
+  })
+
+  const folders = await db.clientDriveFolder.findMany({
+    where: { clientId: { in: guests.map((guest) => guest.clientId) } },
+    select: { clientId: true, webUrl: true },
+  })
+  const folderByClient = new Map(folders.map((folder) => [folder.clientId, folder.webUrl]))
+
+  return {
+    pageInfo,
+    rows: guests.map((guest) => ({
+      id: guest.id,
+      email: guest.email,
+      role: guest.role,
+      clientId: guest.clientId,
+      clientName: byId.get(guest.clientId) ?? 'Unknown client',
+      folderUrl: folderByClient.get(guest.clientId) ?? undefined,
+      invitedAt: guest.invitedAt.toISOString(),
+      revokedAt: guest.revokedAt?.toISOString(),
+    })),
+  }
 }

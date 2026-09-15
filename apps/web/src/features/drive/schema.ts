@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { paginationSchema, sortDirectionSchema, type PageInfo } from '@/lib/pagination'
 
 /** The folder staff drop a client's documents into; everything else stays internal. */
 export const CLIENTS_ROOT = 'Clients'
@@ -63,4 +64,34 @@ export interface ClientAccessRow {
   role: string
   invitedAt: string
   revokedAt: string | undefined
+}
+
+export const ACCESS_VIEWS = ['active', 'removed', 'all'] as const
+export const ACCESS_SORT_KEYS = ['email', 'invitedAt'] as const
+
+export type AccessView = (typeof ACCESS_VIEWS)[number]
+export type AccessSortKey = (typeof ACCESS_SORT_KEYS)[number]
+
+/** Every filter the folder access page offers lives in the URL, so a view can be linked. */
+export const organizationAccessQuerySchema = paginationSchema.extend({
+  search: z.string().trim().max(120).catch(''),
+  view: z.enum(ACCESS_VIEWS).catch('active'),
+  sortBy: z.enum(ACCESS_SORT_KEYS).catch('invitedAt'),
+  sortDirection: sortDirectionSchema.catch('desc'),
+})
+
+export type OrganizationAccessQuery = z.infer<typeof organizationAccessQuerySchema>
+
+export const DEFAULT_ORGANIZATION_ACCESS_QUERY = organizationAccessQuerySchema.parse({})
+
+export interface OrganizationAccessRow extends ClientAccessRow {
+  clientId: string
+  clientName: string
+  /** The SharePoint folder this grant is on, when the portal has recorded it. */
+  folderUrl: string | undefined
+}
+
+export interface OrganizationAccessPage {
+  rows: OrganizationAccessRow[]
+  pageInfo: PageInfo
 }

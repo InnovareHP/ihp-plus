@@ -10,7 +10,7 @@ import {
   shareItem,
 } from '@ihp/graph'
 import { track } from '@/lib/analytics'
-import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
+import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { clientFolderSharedTemplate, portalUrl, sendEmail } from '@/lib/email'
 import { routes } from '@/lib/routes'
 import { driveEvents } from './events'
@@ -18,12 +18,15 @@ import {
   clientAccessSchema,
   clientIdSchema,
   guestIdSchema,
+  organizationAccessQuerySchema,
   type ClientAccessInput,
   type ClientAccessRow,
+  type OrganizationAccessPage,
 } from './schema'
 import {
   clientDriveFolder,
   clientForAccess,
+  organizationAccess,
   guestById,
   guestFor,
   guestsFor,
@@ -34,6 +37,8 @@ import {
 } from './service'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
+export type OrganizationAccessResult =
+  ({ ok: true } & OrganizationAccessPage) | { ok: false; message: string }
 
 const NO_ORGANIZATION = 'Your account is not part of an organization yet.'
 const INVALID = 'Check the highlighted fields and try again.'
@@ -179,4 +184,22 @@ export async function revokeClientFolderAccess(guestId: string): Promise<Result<
     track(driveEvents.accessRevokeFailed, { clientId: guest.clientId })
     return { ok: false, message: 'Could not remove that access — try again.' }
   }
+}
+
+/**
+ * Every grant the organization has handed out, in one place. Sharing is a per-client job, but
+ * "who outside the company can see anything?" is a question only this page answers.
+ */
+export async function listOrganizationAccess(input?: unknown): Promise<OrganizationAccessResult> {
+  const { profile } = await requireOnboarded()
+  const membership = membershipOf(profile)
+  if (!membership.organizationId) return { ok: false, message: NO_ORGANIZATION }
+  if (!canManageOrganization(membership)) {
+    return { ok: false, message: 'Only an admin can see every folder grant.' }
+  }
+
+  const query = organizationAccessQuerySchema.parse(input ?? {})
+  const { rows, pageInfo } = await organizationAccess(membership.organizationId, query)
+
+  return { ok: true, rows, pageInfo }
 }
