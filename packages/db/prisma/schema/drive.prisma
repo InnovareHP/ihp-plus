@@ -4,8 +4,10 @@
 
 /// One Graph change-notification subscription, plus the delta link its sweeps resume from.
 model DriveSubscription {
-  id      String @id @default(uuid())
-  driveId String @unique
+  id String @id @default(uuid())
+  /// A webhook carries no session, so the drive is what says whose documents these are.
+  organizationId String
+  driveId        String @unique
 
   subscriptionId String
   /// Echoed back in every notification, so a forged POST to the webhook is rejected.
@@ -22,6 +24,7 @@ model DriveSubscription {
   updatedAt DateTime @updatedAt
 
   @@index([expiresAt])
+  @@index([organizationId])
   @@map("driveSubscription")
   @@schema("drive")
 }
