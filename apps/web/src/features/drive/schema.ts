@@ -47,6 +47,13 @@ export const clientAccessSchema = z.object({
 
 export type ClientAccessInput = z.infer<typeof clientAccessSchema>
 
+/** The form asks for the person, not the client — the modal already knows which folder. */
+export const shareFolderSchema = clientAccessSchema.omit({ clientId: true })
+
+export type ShareFolderValues = z.infer<typeof shareFolderSchema>
+
+export const EMPTY_SHARE_FOLDER: ShareFolderValues = { email: '', name: '' }
+
 export const clientIdSchema = z.uuid()
 export const guestIdSchema = z.uuid()
 

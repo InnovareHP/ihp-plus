@@ -17,6 +17,7 @@ import { IconAdjustments, IconDotsVertical, IconPlus } from '@tabler/icons-react
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LookupOptionsModal } from '@/components/lookup-options-modal'
+import { ClientAccessModal } from '@/features/drive/components/client-access-modal'
 import { EmptyState } from '@/components/empty-state'
 import { SearchField } from '@/components/search-field'
 import {
@@ -73,6 +74,7 @@ export function ClientsTable() {
   const [createOpened, createModal] = useDisclosure(false)
   const [editing, setEditing] = useState<ClientRow | null>(null)
   const [managing, setManaging] = useState<ClientLookupKind | null>(null)
+  const [sharing, setSharing] = useState<ClientRow | null>(null)
 
   const ownerOptions = [
     { value: 'unassigned', label: 'Unassigned' },
@@ -206,6 +208,7 @@ export function ClientsTable() {
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Item onClick={() => setEditing(row)}>Edit</Menu.Item>
+            <Menu.Item onClick={() => setSharing(row)}>Folder access</Menu.Item>
             {row.archivedAt ? (
               <Menu.Item onClick={() => restore.mutate({ id: row.id })}>Restore</Menu.Item>
             ) : (
@@ -385,6 +388,12 @@ export function ClientsTable() {
           if (!editing) return
           await update.mutateAsync({ ...values, id: editing.id })
         }}
+      />
+
+      <ClientAccessModal
+        opened={Boolean(sharing)}
+        onClose={() => setSharing(null)}
+        client={sharing}
       />
 
       <LookupOptionsModal
