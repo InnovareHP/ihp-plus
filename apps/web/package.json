@@ -20,6 +20,7 @@
     "@connectrpc/connect-query": "^2.3.1",
     "@hookform/resolvers": "^5.9.1",
     "@ihp/db": "workspace:*",
+    "@ihp/graph": "workspace:*",
     "@ihp/rpc": "workspace:*",
     "@mantine/core": "^9.6.1",
     "@mantine/hooks": "^9.6.1",

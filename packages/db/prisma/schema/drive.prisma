@@ -1,0 +1,102 @@
+// The SharePoint mirror: staff write in the internal library, this records what was copied into
+// the client library and who it was shared with. It stays out of auth.prisma because
+// `pnpm db:auth-schema` rewrites that file wholesale.
+
+/// One Graph change-notification subscription, plus the delta link its sweeps resume from.
+model DriveSubscription {
+  id      String @id @default(uuid())
+  driveId String @unique
+
+  subscriptionId String
+  /// Echoed back in every notification, so a forged POST to the webhook is rejected.
+  clientState    String
+  /// Graph caps a driveItem subscription at 4230 minutes, so a daily run renews it.
+  expiresAt      DateTime
+
+  /// Absolute Graph URL; null means the next sweep starts from the drive root.
+  deltaLink    String?
+  lastSweptAt  DateTime?
+  lastError    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([expiresAt])
+  @@map("driveSubscription")
+  @@schema("drive")
+}
+
+/// One internal item and the copy of it that exists in the client library.
+model DriveMirror {
+  id             String @id @default(uuid())
+  organizationId String
+  /// Plain column, not a relation: Client lives in the clients schema and owns no drive fields.
+  clientId       String
+
+  sourceDriveId String
+  sourceItemId  String
+  /// Compared per sweep: an unchanged eTag means the copy is still current.
+  sourceEtag    String?
+  /// Path under the internal library, kept for the audit trail a renamed item would lose.
+  sourcePath    String
+
+  targetDriveId String
+  targetItemId  String?
+
+  /// pending | copying | synced | failed | removed
+  state      String @default("pending")
+  attempts   Int    @default(0)
+  lastError  String?
+
+  syncedAt   DateTime?
+  /// Set when the source disappears; the copy is deleted on the next run, not immediately.
+  removedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([sourceDriveId, sourceItemId])
+  @@index([organizationId, state])
+  @@index([clientId])
+  @@map("driveMirror")
+  @@schema("drive")
+}
+
+/// The folder in the client library that one client's documents are mirrored into.
+model ClientDriveFolder {
+  id             String @id @default(uuid())
+  organizationId String
+  clientId       String @unique
+
+  driveId String
+  itemId  String
+  /// The SharePoint URL a client opens; stored so the portal need not call Graph to link out.
+  webUrl  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@map("clientDriveFolder")
+  @@schema("drive")
+}
+
+/// A guest who can open one client's folder, and the permission id that revokes it.
+model ClientDriveGuest {
+  id       String @id @default(uuid())
+  clientId String
+  email    String
+
+  /// The Entra guest object; app-only access can only share with a guest that already exists.
+  invitedUserId String?
+  /// DELETE .../permissions/{id} is the whole revoke, so losing this strands the access.
+  permissionId  String?
+  role          String  @default("read")
+
+  invitedAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  @@unique([clientId, email])
+  @@index([email])
+  @@map("clientDriveGuest")
+  @@schema("drive")
+}

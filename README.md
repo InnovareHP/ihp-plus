@@ -12,6 +12,7 @@ packages/
   ui/         shared React components, source-only TSX (@ihp/ui) — landing only
   config/     shared tsconfig presets + Tailwind v4 theme tokens (@ihp/config)
   db/         Prisma 7 client + Better Auth schema and migrations (@ihp/db)
+  graph/      Microsoft Graph client — SharePoint drive sync and sharing (@ihp/graph)
 infra/
   compose.yml       full containerized stack (postgres, redis, web, landing, proxy)
   compose.dev.yml   dev infra only (postgres, redis)
@@ -73,7 +74,7 @@ Change the entry port with `PROXY_PORT` in `.env`.
 | Script                | Does                                          |
 | --------------------- | --------------------------------------------- |
 | `pnpm build`          | turbo build both apps                         |
-| `pnpm test`           | vitest (web)                                  |
+| `pnpm test`           | vitest (web, graph)                           |
 | `pnpm lint`           | eslint (web)                                  |
 | `pnpm typecheck`      | `tsc --noEmit` + `astro check`                |
 | `pnpm format`         | prettier, incl. `.astro`                      |

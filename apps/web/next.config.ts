@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
 
   // Both ship raw TS — Prisma's generated client and buf's generated messages — so Next
   // has to compile them rather than consume a build output.
-  transpilePackages: ['@ihp/db', '@ihp/rpc'],
+  transpilePackages: ['@ihp/db', '@ihp/rpc', '@ihp/graph'],
 
   // The pg driver and the Redis client open real sockets; bundling them breaks the standalone server.
   serverExternalPackages: ['@prisma/adapter-pg', 'pg', 'redis', '@redis/client'],
