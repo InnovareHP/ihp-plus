@@ -8,6 +8,7 @@
   },
   "scripts": {
     "check": "tsx scripts/check.ts",
+    "grant": "tsx scripts/grant.ts",
     "sites": "tsx scripts/sites.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

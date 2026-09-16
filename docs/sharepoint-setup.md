@@ -5,7 +5,12 @@ library and shares client folders with guests. Nothing in `apps/web` reads a Sha
 from the database: the app is configured by `GRAPH_*` in `.env` (see `.env.example`).
 
 Run `pnpm graph:check` at any point. It prints which step fails and why, so a wrong value and a
-missing grant never look alike.
+missing grant never look alike. A 401 means no permission is consented; a 403 means consent
+landed but the site grant has not.
+
+Verified against a live tenant on 2026-09-17: `Sites.Selected` **does** carry sharing calls,
+which Microsoft's own reference does not say — `createLink` succeeds under it. The guest
+`invite` path is still unproven until a real address is shared with.
 
 ## What a developer can do
 
@@ -40,17 +45,18 @@ the first of these that is missing.
    Grant nothing broader. `Sites.ReadWrite.All` or a `Files.*.All` beside it makes the per-site
    grant meaningless.
 
-3. **Grant the app write on each site.** The call needs `Sites.FullControl.All`, which the app
-   deliberately lacks, so an admin runs it:
+3. **Grant the app write on each site.** `Sites.Selected` grants nothing by itself. The grant
+   call needs `Sites.FullControl.All`, which the daemon deliberately lacks, so it runs as an
+   admin instead:
 
-   ```powershell
-   Install-Module PnP.PowerShell -Scope CurrentUser
-   Connect-PnPOnline -Url https://<tenant>.sharepoint.com/sites/<site> -Interactive
-   Grant-PnPAzureADAppSitePermission -AppId <GRAPH_CLIENT_ID> -DisplayName "ihp-plus-graph" -Permissions Write
+   ```bash
+   pnpm graph:grant
    ```
 
-   Once per site. The Graph equivalent is `POST /sites/{siteId}/permissions` with
-   `roles: ["write"]`.
+   It prints a device code, an admin signs in once in a browser, and it then reads each
+   library's site from the drive id in `.env` and grants `write` on both. PnP PowerShell does
+   the same thing (`Grant-PnPAzureADAppSitePermission`) but needs PowerShell 7 and its own
+   `-ClientId` since Microsoft retired the shared PnP app.
 
 4. **External sharing on the client site**: SharePoint admin centre → Sites → Active sites →
    the client site → Sharing → **New and existing guests**. Without it every invite fails per

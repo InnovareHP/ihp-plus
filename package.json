@@ -19,6 +19,7 @@
     "db:generate": "pnpm --filter @ihp/db db:generate",
     "db:migrate": "pnpm --filter @ihp/db db:migrate",
     "graph:check": "dotenv -e .env -- pnpm --filter @ihp/graph check",
+    "graph:grant": "dotenv -e .env -- pnpm --filter @ihp/graph grant",
     "graph:sites": "dotenv -e .env -- pnpm --filter @ihp/graph sites",
     "rpc:generate": "pnpm --filter @ihp/proto generate",
     "rpc:lint": "pnpm --filter @ihp/proto lint",
