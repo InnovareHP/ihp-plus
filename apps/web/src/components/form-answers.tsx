@@ -1,14 +1,14 @@
 'use client'
 
 import { Group, Stack, Text } from '@mantine/core'
-import type { FormField, RequestValues } from '../schema'
+import type { FormField, RequestValues } from '@/features/requests/schema'
 
 const dateOnly = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' })
 const number = new Intl.NumberFormat('en-US')
 
-// The answers are shown against the fields the request was submitted with, not the form's
-// current ones, so a later edit never rewrites history.
-export function RequestAnswers({
+// The answers are shown against the fields the form was submitted with, not the form's current
+// ones, so a later edit never rewrites history.
+export function FormAnswers({
   fields,
   values,
 }: {
@@ -18,7 +18,7 @@ export function RequestAnswers({
   if (fields.length === 0) {
     return (
       <Text size="sm" c="dimmed">
-        This request carries no answers.
+        This form carries no answers.
       </Text>
     )
   }

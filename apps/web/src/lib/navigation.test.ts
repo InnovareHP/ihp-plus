@@ -18,7 +18,16 @@ describe('navigation', () => {
   it('hides the organization section from someone who cannot manage it', () => {
     const ids = visibleSections(NOBODY).map((section) => section.id)
 
-    expect(ids).toEqual(['workspace', 'requests', 'account'])
+    expect(ids).toEqual(['workspace', 'requests', 'evaluations', 'account'])
+  })
+
+  it('offers an ordinary member only the evaluations they have to fill in', () => {
+    expect(hrefsIn(NOBODY, 'evaluations')).toEqual([routes.evaluations])
+    expect(hrefsIn(ADMIN, 'evaluations')).toEqual([
+      routes.evaluations,
+      routes.evaluationTracker,
+      routes.evaluationForms,
+    ])
   })
 
   it('shows a manager the organization page and folder access, nothing more', () => {

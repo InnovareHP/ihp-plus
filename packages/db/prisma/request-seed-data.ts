@@ -19,6 +19,12 @@ export interface SeedFormField {
   max?: number
 }
 
+export interface SeedEvaluationForm {
+  name: string
+  description: string
+  fields: SeedFormField[]
+}
+
 export interface SeedRequestForm {
   name: string
   description: string
@@ -282,6 +288,43 @@ export const REQUEST_FORM_SEED: readonly SeedRequestForm[] = [
         help: 'The workload it covers, and what happens if it stays unfilled.',
       }),
       field('budgeted', 'checkbox', 'This is already in the department budget'),
+    ],
+  },
+]
+
+/**
+ * Evaluation forms: the same questions machinery, filled in by a supervisor about one person
+ * rather than raised by the person themselves, so they carry no departments.
+ */
+export const EVALUATION_FORM_SEED: readonly SeedEvaluationForm[] = [
+  {
+    name: 'Probationary review',
+    description: 'How a new hire has settled in, and whether they should be made regular.',
+    fields: [
+      field('rating', 'number', 'Overall rating', {
+        required: true,
+        help: 'One is well below what the role needs, five is well above it.',
+        min: 1,
+        max: 5,
+      }),
+      field('strengths', 'textarea', 'What they do well', { required: true }),
+      field('gaps', 'textarea', 'Where they still need support', { required: true }),
+      field('recommendation', 'select', 'Recommendation', {
+        required: true,
+        options: ['Make regular', 'Extend probation', 'End employment'],
+      }),
+      field('discussed', 'checkbox', 'I have gone through this with them'),
+    ],
+  },
+  {
+    name: 'Annual performance review',
+    description: 'The yearly conversation, written down: what happened and what comes next.',
+    fields: [
+      field('rating', 'number', 'Overall rating', { required: true, min: 1, max: 5 }),
+      field('achievements', 'textarea', 'What they delivered this year', { required: true }),
+      field('development', 'textarea', 'What they should work on next year', { required: true }),
+      field('goals', 'textarea', 'Goals agreed for next year'),
+      field('discussed', 'checkbox', 'I have gone through this with them'),
     ],
   },
 ]

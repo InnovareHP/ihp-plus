@@ -1,5 +1,7 @@
 import {
   IconAddressBook,
+  IconChecklist,
+  IconClipboardCheck,
   IconUsers,
   IconBook2,
   IconBuilding,
@@ -92,6 +94,33 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: routes.requestForms,
         label: 'Forms',
         description: 'Build what can be asked',
+        icon: IconForms,
+        manageOnly: true,
+      },
+    ],
+  },
+  {
+    id: 'evaluations',
+    label: 'Evaluations',
+    breadcrumbLabel: 'Evaluations',
+    items: [
+      {
+        href: routes.evaluations,
+        label: 'My evaluations',
+        description: 'People you have to evaluate',
+        icon: IconClipboardCheck,
+      },
+      {
+        href: routes.evaluationTracker,
+        label: 'Assigned',
+        description: 'Who has and has not answered',
+        icon: IconChecklist,
+        manageOnly: true,
+      },
+      {
+        href: routes.evaluationForms,
+        label: 'Forms',
+        description: 'Build what is asked about someone',
         icon: IconForms,
         manageOnly: true,
       },

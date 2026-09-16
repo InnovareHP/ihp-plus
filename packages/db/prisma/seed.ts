@@ -4,7 +4,7 @@ import { db } from '../src/client'
 import { CATALOG_SEED, DEFAULT_CONTRACT_TERMS, DEFAULT_STANDARD_TERMS } from './catalog'
 import { DEMO_CLIENTS } from './client-seed-data'
 import { LOOKUP_OPTION_SEED } from './lookup-seed-data'
-import { REQUEST_FORM_SEED } from './request-seed-data'
+import { EVALUATION_FORM_SEED, REQUEST_FORM_SEED } from './request-seed-data'
 
 // The company's own departments. Team membership is the single source of truth for them,
 // so this list exists here and nowhere else.
@@ -212,6 +212,22 @@ async function seedRequestForms(organizationId: string) {
         ? `  + form ${form.name} (${teamIds.length} departments)`
         : `  + form ${form.name} (draft: none of its departments exist)`,
     )
+  }
+
+  // An evaluation form reaches people by assignment, so it is publishable with no department.
+  for (const form of EVALUATION_FORM_SEED) {
+    await db.requestForm.create({
+      data: {
+        organizationId,
+        kind: 'evaluation',
+        name: form.name,
+        description: form.description,
+        status: 'published',
+        fields: form.fields,
+      },
+    })
+
+    console.log(`  + evaluation form ${form.name}`)
   }
 }
 

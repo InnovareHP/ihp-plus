@@ -21,7 +21,7 @@ import {
 } from '../schema'
 import { useDecideRequest, useRequestQueue } from '../hooks/use-requests'
 import { DecisionFields } from './decision-fields'
-import { RequestAnswers } from './request-answers'
+import { FormAnswers } from '@/components/form-answers'
 
 const submitted = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 const PAGE_SIZE = 25
@@ -184,7 +184,7 @@ export function ApprovalsPanel() {
           <Text fw={600} size="sm">
             {openRow.formName} · {openRow.requesterName}
           </Text>
-          <RequestAnswers fields={openRow.fields} values={openRow.values} />
+          <FormAnswers fields={openRow.fields} values={openRow.values} />
         </Stack>
       ) : null}
 
@@ -196,7 +196,7 @@ export function ApprovalsPanel() {
       >
         {deciding ? (
           <Stack gap="md">
-            <RequestAnswers fields={deciding.fields} values={deciding.values} />
+            <FormAnswers fields={deciding.fields} values={deciding.values} />
             <DecisionFields
               label="request"
               isPending={decide.isPending}

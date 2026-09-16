@@ -2,7 +2,7 @@
 
 import { Checkbox, NumberInput, Select, Textarea, TextInput } from '@mantine/core'
 import { Controller, type Control, type FieldValues } from 'react-hook-form'
-import type { FormField } from '../schema'
+import type { FormField } from '@/features/requests/schema'
 
 export interface FieldInputProps {
   field: FormField
@@ -10,8 +10,9 @@ export interface FieldInputProps {
   error: string | undefined
 }
 
-// One admin-defined question, rendered as the Mantine control its type calls for. Every arm
-// goes through Controller because the control owns its own value.
+// One admin-defined question, rendered as the Mantine control its type calls for — a request
+// form and an evaluation form both ask through it. Every arm goes through Controller because
+// the control owns its own value.
 export function FieldInput({ field, control, error }: FieldInputProps) {
   const shared = {
     label: field.label,

@@ -5,7 +5,7 @@ import { PageSection } from '@/components/page-section'
 import { REQUEST_STATUS_COLORS, REQUEST_STATUS_LABELS, type RequestRow } from '../schema'
 import { useRequest } from '../hooks/use-requests'
 import { DecisionPanel } from './decision-panel'
-import { RequestAnswers } from './request-answers'
+import { FormAnswers } from '@/components/form-answers'
 
 const stamp = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -43,7 +43,7 @@ export function RequestDetail({ initial }: { initial: RequestRow }) {
       ) : null}
 
       <PageSection title="Answers" description="Shown against the questions as they were asked.">
-        <RequestAnswers fields={row.fields} values={row.values} />
+        <FormAnswers fields={row.fields} values={row.values} />
       </PageSection>
 
       {row.canDecide ? <DecisionPanel row={row} /> : null}

@@ -11,7 +11,7 @@ import { announceSuccess } from '@/lib/announce'
 import { requestRoute, routes } from '@/lib/routes'
 import { answerSchemaOf, defaultAnswersOf, type FormRow, type RequestValues } from '../schema'
 import { useSubmitRequest } from '../hooks/use-requests'
-import { FieldInput } from './field-input'
+import { FieldInput } from '@/components/field-input'
 
 export function RequestForm({ form }: { form: FormRow }) {
   const router = useRouter()
