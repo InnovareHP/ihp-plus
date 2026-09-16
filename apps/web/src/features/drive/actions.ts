@@ -2,6 +2,7 @@
 
 import {
   ensureFolder,
+  GraphError,
   GraphNotConfiguredError,
   inviteGuest,
   requireClientDriveId,
@@ -35,6 +36,7 @@ import {
   saveClientDriveFolder,
   saveGuest,
 } from './service'
+import { inviteRedirectUrl } from './utils/invite-redirect'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
 export type OrganizationAccessResult =
@@ -64,6 +66,18 @@ function rowOf(guest: {
     invitedAt: guest.invitedAt.toISOString(),
     revokedAt: guest.revokedAt?.toISOString(),
   }
+}
+
+/**
+ * Microsoft's own code is the only useful part of a sharing failure — "try again" sends an
+ * admin hunting through Entra for a setting the response already named.
+ */
+function graphMessage(error: unknown, fallback: string) {
+  if (!(error instanceof GraphError)) return fallback
+  if (error.status === 403) {
+    return `Microsoft refused that (${error.code}) — check external sharing is on for the client site.`
+  }
+  return `Microsoft refused that (${error.code}) — ${error.message}`
 }
 
 /** The client's folder in the shared library, created the first time someone shares it. */
@@ -153,7 +167,8 @@ export async function shareClientFolder(
   } catch (error) {
     if (error instanceof GraphNotConfiguredError) return { ok: false, message: NO_STORAGE }
     track(driveEvents.accessShareFailed, { clientId: client.id })
-    return { ok: false, message: 'Could not share that folder — try again.' }
+    console.error('drive.shareClientFolder failed', error)
+    return { ok: false, message: graphMessage(error, 'Could not share that folder — try again.') }
   }
 }
 
@@ -182,7 +197,8 @@ export async function revokeClientFolderAccess(guestId: string): Promise<Result<
   } catch (error) {
     if (error instanceof GraphNotConfiguredError) return { ok: false, message: NO_STORAGE }
     track(driveEvents.accessRevokeFailed, { clientId: guest.clientId })
-    return { ok: false, message: 'Could not remove that access — try again.' }
+    console.error('drive.revokeClientFolderAccess failed', error)
+    return { ok: false, message: graphMessage(error, 'Could not remove that access — try again.') }
   }
 }
 

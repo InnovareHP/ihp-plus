@@ -39,9 +39,20 @@ const guard = vi.hoisted(() => ({
 
 const mail = vi.hoisted(() => ({ sendEmail: vi.fn() }))
 
+class TestGraphError extends Error {
+  readonly status: number
+  readonly code: string
+  constructor(status: number, code: string, message: string) {
+    super(message)
+    this.status = status
+    this.code = code
+  }
+}
+
 vi.mock('@ihp/graph', () => ({
   ...graph,
   GraphNotConfiguredError: class GraphNotConfiguredError extends Error {},
+  GraphError: TestGraphError,
 }))
 vi.mock('./service', () => service)
 vi.mock('@/lib/auth-guard', () => guard)
@@ -172,6 +183,26 @@ describe('shareClientFolder', () => {
 
     expect(result).toEqual({ ok: false, message: 'That client no longer exists.' })
     expect(graph.shareItem).not.toHaveBeenCalled()
+  })
+
+  it('repeats the code Microsoft gave rather than a generic retry line', async () => {
+    graph.shareItem.mockRejectedValueOnce(new TestGraphError(403, 'accessDenied', 'Access denied.'))
+
+    const result = await shareClientFolder({ clientId: CLIENT_ID, email: 'buyer@acme.test' })
+
+    expect(result).toEqual({
+      ok: false,
+      message:
+        'Microsoft refused that (accessDenied) — check external sharing is on for the client site.',
+    })
+  })
+
+  it('falls back to a plain message when the failure is not Graph’s', async () => {
+    graph.shareItem.mockRejectedValueOnce(new Error('socket hang up'))
+
+    const result = await shareClientFolder({ clientId: CLIENT_ID, email: 'buyer@acme.test' })
+
+    expect(result).toEqual({ ok: false, message: 'Could not share that folder — try again.' })
   })
 
   it('says what to do when Graph is not configured yet', async () => {
