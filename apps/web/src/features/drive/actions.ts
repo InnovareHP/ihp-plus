@@ -133,8 +133,13 @@ export async function shareClientFolder(
 
     const invitedUserId =
       known?.invitedUserId ??
-      (await inviteGuest(email, parsed.data.name ?? email, portalUrl(routes.dashboard))).invitedUser
-        ?.id
+      (
+        await inviteGuest(
+          email,
+          parsed.data.name ?? email,
+          inviteRedirectUrl(process.env.GRAPH_INVITE_REDIRECT_URL ?? portalUrl(routes.dashboard)),
+        )
+      ).invitedUser?.id
 
     const shared = await shareItem(folder.driveId, folder.itemId, [email], 'read')
     const failure = shared.failed[0]
