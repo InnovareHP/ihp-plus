@@ -6,13 +6,13 @@
  * a table attribute and anything visual has to be on the element itself.
  */
 
-// The theme's brand ramp converted to sRGB — no email client resolves the OKLCH in theme.ts.
-const BRAND = '#0063c4'
-const BRAND_DARK = '#004c9f'
-const INK = '#1a1b1e'
+// The brand palette as sRGB hex — no email client resolves the OKLCH ramps in theme.ts.
+const BRAND = '#1346c5'
+const BRAND_DARK = '#0b286b'
+const INK = '#222222'
 const MUTED = '#616161'
 const BORDER = '#e3e3e3'
-const CANVAS = '#f5f6f8'
+const CANVAS = '#f7f9fc'
 
 export interface EmailLayout {
   /** Shown in the inbox preview line, so a reader knows what it is before opening it. */

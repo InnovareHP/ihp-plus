@@ -137,6 +137,10 @@ and leaves the populated one behind.
   `packages/config/tailwind/theme.css`, and the landing global CSS needs
   `@source '../../../../packages/ui/src'` so Tailwind scans the shared package.
   `apps/web/src/theme.ts` mirrors the same OKLCH ramp as Mantine shades.
+- **The palette, type scale and logo are the IHP+ brand guidelines**, wired once and
+  documented in `.claude/rules/brand.md`: brand blue `#1346C5`, navy `#0B286B`, mint
+  `#95E5DC`, Poppins self-hosted through `@fontsource/poppins`, and the logo inline in
+  `apps/web/src/components/app-logo.tsx` / `apps/landing/public/brand/`.
 - **Docker builds use the repo root as context** (`context: ..`) — the lockfile and
   workspace links live there. Dockerfiles copy every workspace `package.json` before
   the source so `pnpm install` stays cached.

@@ -138,7 +138,7 @@ describe('templates', () => {
     ]) {
       expect(email.html).toContain('IHP Plus')
       // The brand hex is the sRGB form of the theme's shade 6.
-      expect(email.html).toContain('#0063c4')
+      expect(email.html).toContain('#1346c5')
       expect(email.text).toContain('Innovare Health Partners')
     }
   })

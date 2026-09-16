@@ -6,7 +6,7 @@ interface Props {
   description?: string
 }
 
-const { title, description = 'IHP Plus' } = Astro.props
+const { title, description = 'IHP Plus — powered by possibility' } = Astro.props
 ---
 
 <!doctype html>
@@ -14,22 +14,28 @@ const { title, description = 'IHP Plus' } = Astro.props
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#1346c5" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
   </head>
-  <body class="font-sans flex min-h-full flex-col bg-white text-neutral-900">
+  <body class="font-sans text-ink flex min-h-full flex-col bg-white">
     <!-- First focusable element, hidden until a keyboard user reaches it. -->
     <a
       href="#main"
-      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-card focus:bg-white focus:px-4 focus:py-2 focus:text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+      class="focus:rounded-card sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
     >
       Skip to main content
     </a>
     <header class="border-b border-black/5">
       <nav class="mx-auto flex w-full max-w-5xl items-center justify-between p-4">
-        <a href="/" class="font-semibold tracking-tight">IHP Plus</a>
+        <a href="/" class="inline-flex items-center">
+          <img src="/brand/logo.svg" alt="IHP+" width="66" height="40" class="h-10 w-auto" />
+        </a>
         <a href="/app" class="text-brand-700 text-sm font-medium hover:underline">Open app →</a>
       </nav>
     </header>
@@ -37,7 +43,7 @@ const { title, description = 'IHP Plus' } = Astro.props
       <slot />
     </main>
     <footer class="border-t border-black/5 p-4 text-center text-xs opacity-60">
-      © {new Date().getFullYear()} IHP Plus
+      © {new Date().getFullYear()} Innovare Health Partners
     </footer>
   </body>
 </html>

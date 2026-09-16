@@ -72,7 +72,7 @@ export function DashboardShell({
               aria-expanded={navOpened}
               aria-controls="primary-navigation"
             />
-            <AppLogo size={28} />
+            <AppLogo height={28} />
             <Divider orientation="vertical" my="sm" visibleFrom="sm" />
             <Text size="sm" c="dimmed" truncate visibleFrom="sm">
               {organization.name}

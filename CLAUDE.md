@@ -70,6 +70,7 @@ Query them instead of recalling an API from training data:
 
 ## Rules
 
+@.claude/rules/brand.md
 @.claude/rules/code-style.md
 @.claude/rules/frontend-patterns.md
 @.claude/rules/accessibility.md
