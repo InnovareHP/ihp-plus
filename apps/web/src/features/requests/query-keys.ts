@@ -1,8 +1,8 @@
-import type { RequestQuery, RequestStatusFilter } from './schema'
+import type { FormKind, RequestQuery, RequestStatusFilter } from './schema'
 
 export const requestKeys = {
   all: ['requests'] as const,
-  forms: () => [...requestKeys.all, 'forms'] as const,
+  forms: (kind: FormKind = 'request') => [...requestKeys.all, 'forms', kind] as const,
   form: (formId: string) => [...requestKeys.all, 'forms', formId] as const,
   available: () => [...requestKeys.all, 'available'] as const,
   mine: (status: RequestStatusFilter) => [...requestKeys.all, 'mine', status] as const,

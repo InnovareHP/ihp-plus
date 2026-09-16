@@ -2,12 +2,15 @@ import { z } from 'zod'
 
 export const FIELD_TYPES = ['text', 'textarea', 'number', 'date', 'select', 'checkbox'] as const
 export const FORM_STATUSES = ['draft', 'published', 'archived'] as const
+// A request form runs the approval queue; an evaluation form is assigned to a supervisor.
+export const FORM_KINDS = ['request', 'evaluation'] as const
 export const REQUEST_STATUSES = ['pending', 'approved', 'rejected', 'withdrawn'] as const
 export const REQUEST_STATUS_FILTERS = ['all', ...REQUEST_STATUSES] as const
 export const DECISIONS = ['approved', 'rejected'] as const
 
 export type FieldType = (typeof FIELD_TYPES)[number]
 export type FormStatus = (typeof FORM_STATUSES)[number]
+export type FormKind = (typeof FORM_KINDS)[number]
 export type RequestStatus = (typeof REQUEST_STATUSES)[number]
 export type RequestStatusFilter = (typeof REQUEST_STATUS_FILTERS)[number]
 export type Decision = (typeof DECISIONS)[number]
@@ -63,6 +66,7 @@ export const formFieldSchema = z
 
 export const formDraftSchema = z.object({
   formId: z.string().optional(),
+  kind: z.enum(FORM_KINDS).default('request'),
   name: z.string().trim().min(2, 'Give the form a name.').max(120),
   description: z.string().trim().max(400).default(''),
   fields: z.array(formFieldSchema).max(40, 'A form can hold at most 40 questions.'),
@@ -115,6 +119,7 @@ export interface TeamRef {
 
 export interface FormRow {
   id: string
+  kind: FormKind
   name: string
   description: string
   status: FormStatus
@@ -170,10 +175,17 @@ export interface RequestQuery {
 
 // A published form must be answerable and reachable, or it is a dead entry in the catalogue.
 // Only the counts matter, so a half-typed draft is as answerable a question as a saved form.
-export function publishBlockers(form: { fields: readonly unknown[]; teams: readonly unknown[] }) {
+export function publishBlockers(form: {
+  kind: FormKind
+  fields: readonly unknown[]
+  teams: readonly unknown[]
+}) {
   const blockers: string[] = []
   if (form.fields.length === 0) blockers.push('Add at least one question.')
-  if (form.teams.length === 0) blockers.push('Pick at least one department.')
+  // An evaluation reaches people by assignment, so it is never offered to a department.
+  if (form.kind === 'request' && form.teams.length === 0) {
+    blockers.push('Pick at least one department.')
+  }
   return blockers
 }
 

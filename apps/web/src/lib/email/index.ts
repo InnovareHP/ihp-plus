@@ -3,6 +3,7 @@ export {
   clientFolderSharedTemplate,
   contractAcceptedTemplate,
   contractPublishedTemplate,
+  evaluationAssignedTemplate,
   invitationTemplate,
   requestDecidedTemplate,
   requestSubmittedTemplate,

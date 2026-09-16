@@ -8,7 +8,12 @@ import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LinkButton } from '@/components/link-button'
 import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
-import { NEW_REQUEST_FORM_ROUTE, requestFormRoute } from '@/lib/routes'
+import {
+  evaluationFormRoute,
+  NEW_EVALUATION_FORM_ROUTE,
+  NEW_REQUEST_FORM_ROUTE,
+  requestFormRoute,
+} from '@/lib/routes'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 // Departments are organization data; the requests feature is a consumer of them.
 import { useTeams } from '@/features/organization/hooks/use-teams'
@@ -17,6 +22,7 @@ import {
   FORM_STATUS_LABELS,
   FORM_STATUS_OPTIONS,
   formQuerySchema,
+  type FormKind,
   type FormRow,
 } from '../schema'
 import { useDeleteForm, useForms, useSetFormStatus } from '../hooks/use-forms'
@@ -31,29 +37,60 @@ const STATUS_COLORS: Record<FormRow['status'], string> = {
   archived: 'yellow',
 }
 
-export function FormsTable() {
-  const forms = useForms()
+const departmentsColumn: DataTableColumn<FormRow> = {
+  key: 'departments',
+  header: 'Departments',
+  render: (form) =>
+    form.teams.length === 0 ? (
+      <Text size="sm" c="dimmed">
+        None yet
+      </Text>
+    ) : (
+      <Group gap={4} wrap="wrap">
+        {form.teams.map((team) => (
+          <Badge key={team.id} variant="light" size="sm">
+            {team.name}
+          </Badge>
+        ))}
+      </Group>
+    ),
+}
+
+export interface FormsTableProps {
+  /** Which catalogue to list: the request forms or the evaluation forms. */
+  kind?: FormKind
+}
+
+// One table for both kinds: an evaluation form has no department, so that column and filter
+// are the only difference.
+export function FormsTable({ kind = 'request' }: FormsTableProps) {
+  const isEvaluation = kind === 'evaluation'
+  const newFormRoute = isEvaluation ? NEW_EVALUATION_FORM_ROUTE : NEW_REQUEST_FORM_ROUTE
+  const editRoute = isEvaluation ? evaluationFormRoute : requestFormRoute
+  const forms = useForms(kind)
   const teams = useTeams()
-  const setStatus = useSetFormStatus()
-  const deleteForm = useDeleteForm()
+  const setStatus = useSetFormStatus(kind)
+  const deleteForm = useDeleteForm(kind)
   const [deleting, setDeleting] = useState<FormRow | null>(null)
   const { query, setQuery, clearFilters } = useUrlQuery(parseFormQuery, DEFAULT_FORM_QUERY)
 
-  const filters: readonly FilterControl[] = [
-    { kind: 'select', key: 'status', label: 'Status', options: FORM_STATUS_OPTIONS },
-    {
-      kind: 'multi',
-      key: 'teamIds',
-      label: 'Offered to',
-      options: (teams.data ?? []).map((team) => ({ value: team.id, label: team.name })),
-    },
-    {
-      kind: 'toggle',
-      key: 'unplacedOnly',
-      label: 'Only forms with no department',
-      help: 'A published form offered to nobody reaches nobody.',
-    },
-  ]
+  const filters: readonly FilterControl[] = isEvaluation
+    ? [{ kind: 'select', key: 'status', label: 'Status', options: FORM_STATUS_OPTIONS }]
+    : [
+        { kind: 'select', key: 'status', label: 'Status', options: FORM_STATUS_OPTIONS },
+        {
+          kind: 'multi',
+          key: 'teamIds',
+          label: 'Offered to',
+          options: (teams.data ?? []).map((team) => ({ value: team.id, label: team.name })),
+        },
+        {
+          kind: 'toggle',
+          key: 'unplacedOnly',
+          label: 'Only forms with no department',
+          help: 'A published form offered to nobody reaches nobody.',
+        },
+      ]
 
   const term = query.search.trim().toLowerCase()
   const rows = useMemo(
@@ -79,7 +116,7 @@ export function FormsTable() {
       rowHeader: true,
       render: (form) => (
         <Stack gap={0}>
-          <Link href={requestFormRoute(form.id)}>{form.name}</Link>
+          <Link href={editRoute(form.id)}>{form.name}</Link>
           <Text size="xs" c="dimmed">
             {form.fields.length} {form.fields.length === 1 ? 'question' : 'questions'} · updated{' '}
             {updated.format(new Date(form.updatedAt))}
@@ -87,24 +124,7 @@ export function FormsTable() {
         </Stack>
       ),
     },
-    {
-      key: 'departments',
-      header: 'Departments',
-      render: (form) =>
-        form.teams.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            None yet
-          </Text>
-        ) : (
-          <Group gap={4} wrap="wrap">
-            {form.teams.map((team) => (
-              <Badge key={team.id} variant="light" size="sm">
-                {team.name}
-              </Badge>
-            ))}
-          </Group>
-        ),
-    },
+    ...(isEvaluation ? [] : [departmentsColumn]),
     {
       key: 'status',
       header: 'Status',
@@ -116,8 +136,8 @@ export function FormsTable() {
       ),
     },
     {
-      key: 'requests',
-      header: 'Requests',
+      key: 'submissions',
+      header: isEvaluation ? 'Evaluations' : 'Requests',
       width: 110,
       render: (form) => <Text size="sm">{form.submissionCount}</Text>,
     },
@@ -134,7 +154,7 @@ export function FormsTable() {
             </ActionIcon>
           </Menu.Target>
           <Menu.Dropdown>
-            <Menu.Item component={Link} href={requestFormRoute(form.id)}>
+            <Menu.Item component={Link} href={editRoute(form.id)}>
               Edit
             </Menu.Item>
             {form.status === 'published' ? (
@@ -169,17 +189,14 @@ export function FormsTable() {
         clearFilters={clearFilters}
         filters={filters}
         action={
-          <LinkButton
-            href={NEW_REQUEST_FORM_ROUTE}
-            leftSection={<IconPlus size={16} aria-hidden />}
-          >
+          <LinkButton href={newFormRoute} leftSection={<IconPlus size={16} aria-hidden />}>
             New form
           </LinkButton>
         }
       />
 
       <DataTable
-        label="Request forms"
+        label={isEvaluation ? 'Evaluation forms' : 'Request forms'}
         columns={columns}
         rows={rows}
         rowKey={(form) => form.id}
@@ -203,9 +220,13 @@ export function FormsTable() {
         }
         empty={
           <EmptyState
-            title="No request forms yet"
-            description="Build the first one and pick which departments it is offered to."
-            action={<LinkButton href={NEW_REQUEST_FORM_ROUTE}>New form</LinkButton>}
+            title={isEvaluation ? 'No evaluation forms yet' : 'No request forms yet'}
+            description={
+              isEvaluation
+                ? 'Build the first one and you can assign it to a supervisor.'
+                : 'Build the first one and pick which departments it is offered to.'
+            }
+            action={<LinkButton href={newFormRoute}>New form</LinkButton>}
           />
         }
       />
@@ -218,8 +239,8 @@ export function FormsTable() {
       >
         <Stack gap="md">
           <Text size="sm">
-            Deleting {deleting?.name} cannot be undone. A form that already has requests against it
-            can only be archived, which keeps those requests readable.
+            Deleting {deleting?.name} cannot be undone. A form that has already been filled in can
+            only be archived, which keeps those answers readable.
           </Text>
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setDeleting(null)}>

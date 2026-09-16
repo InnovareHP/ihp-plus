@@ -1,5 +1,6 @@
 import {
   FieldType,
+  FormKind,
   FormStatus,
   RequestStatus,
   RequestStatusFilter,
@@ -14,6 +15,7 @@ import type {
   FieldType as Type,
   FieldValue,
   FormField,
+  FormKind as Kind,
   FormRow,
   FormStatus as Status,
   RequestRow,
@@ -54,6 +56,18 @@ const FORM_STATUS_FROM_PROTO: Record<FormStatus, Status> = {
   [FormStatus.DRAFT]: 'draft',
   [FormStatus.PUBLISHED]: 'published',
   [FormStatus.ARCHIVED]: 'archived',
+}
+
+const FORM_KIND_TO_PROTO: Record<Kind, FormKind> = {
+  request: FormKind.REQUEST,
+  evaluation: FormKind.EVALUATION,
+}
+
+// UNSPECIFIED reads as REQUEST: every form predating evaluations is one.
+const FORM_KIND_FROM_PROTO: Record<FormKind, Kind> = {
+  [FormKind.UNSPECIFIED]: 'request',
+  [FormKind.REQUEST]: 'request',
+  [FormKind.EVALUATION]: 'evaluation',
 }
 
 const REQUEST_STATUS_TO_PROTO: Record<SubmissionStatus, RequestStatus> = {
@@ -98,6 +112,14 @@ export function formStatusToProto(status: Status) {
 
 export function formStatusFromProto(status: FormStatus) {
   return FORM_STATUS_FROM_PROTO[status]
+}
+
+export function formKindToProto(kind: Kind) {
+  return FORM_KIND_TO_PROTO[kind]
+}
+
+export function formKindFromProto(kind: FormKind) {
+  return FORM_KIND_FROM_PROTO[kind]
 }
 
 export function requestStatusToProto(status: SubmissionStatus) {
@@ -195,6 +217,7 @@ export function formToProto(form: FormRow): RequestFormMessage {
   return {
     $typeName: 'ihp.requests.v1.RequestForm',
     id: form.id,
+    kind: FORM_KIND_TO_PROTO[form.kind],
     name: form.name,
     description: form.description,
     status: FORM_STATUS_TO_PROTO[form.status],
@@ -212,6 +235,7 @@ export function formToProto(form: FormRow): RequestFormMessage {
 export function formFromProto(form: RequestFormMessage): FormRow {
   return {
     id: form.id,
+    kind: FORM_KIND_FROM_PROTO[form.kind],
     name: form.name,
     description: form.description,
     status: FORM_STATUS_FROM_PROTO[form.status],

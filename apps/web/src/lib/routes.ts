@@ -11,6 +11,9 @@ export const routes = {
   requests: '/requests',
   requestApprovals: '/requests/approvals',
   requestForms: '/requests/forms',
+  evaluations: '/evaluations',
+  evaluationTracker: '/evaluations/assigned',
+  evaluationForms: '/evaluations/forms',
   organization: '/organization',
   folderAccess: '/folder-access',
   settings: '/settings',
@@ -66,6 +69,20 @@ export function requestFormRoute(formId: string) {
 }
 
 export const NEW_REQUEST_FORM_ROUTE = `${routes.requestForms}/new`
+
+export function evaluationRoute(evaluationId: string) {
+  return `${routes.evaluations}/view/${evaluationId}`
+}
+
+export function fillEvaluationRoute(evaluationId: string) {
+  return `${routes.evaluations}/fill/${evaluationId}`
+}
+
+export function evaluationFormRoute(formId: string) {
+  return `${routes.evaluationForms}/${formId}`
+}
+
+export const NEW_EVALUATION_FORM_ROUTE = `${routes.evaluationForms}/new`
 
 export function invitationRoute(invitationId: string) {
   return `${routes.acceptInvitation}/${invitationId}`

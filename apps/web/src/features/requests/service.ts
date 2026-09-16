@@ -17,6 +17,7 @@ import {
   type FieldValue,
   type FormDraftValues,
   type FormField,
+  type FormKind,
   type FormRow,
   type FormStatus,
   type RequestQuery,
@@ -85,12 +86,13 @@ function valuesOf(value: Prisma.JsonValue): RequestValues {
 }
 
 type FormRecord = Prisma.RequestFormGetPayload<{
-  include: { teams: true; _count: { select: { submissions: true } } }
+  include: { teams: true; _count: { select: { submissions: true; evaluations: true } } }
 }>
 
 async function toFormRow(form: FormRecord, teamNames: Map<string, string>): Promise<FormRow> {
   return {
     id: form.id,
+    kind: form.kind as FormKind,
     name: form.name,
     description: form.description ?? '',
     status: form.status as FormStatus,
@@ -99,7 +101,8 @@ async function toFormRow(form: FormRecord, teamNames: Map<string, string>): Prom
       id: link.teamId,
       name: teamNames.get(link.teamId) ?? 'Removed department',
     })),
-    submissionCount: form._count.submissions,
+    // One count, whichever kind the form is: what has been filled in against it.
+    submissionCount: form.kind === 'evaluation' ? form._count.evaluations : form._count.submissions,
     updatedAt: form.updatedAt.toISOString(),
   }
 }
@@ -114,14 +117,14 @@ async function teamNameMap(organizationId: string) {
 
 const FORM_INCLUDE = {
   teams: true,
-  _count: { select: { submissions: true } },
+  _count: { select: { submissions: true, evaluations: true } },
 } satisfies Prisma.RequestFormInclude
 
-export async function loadForms(): Promise<FormRow[]> {
+export async function loadForms(kind: FormKind = 'request'): Promise<FormRow[]> {
   const caller = await requireAdmin()
   const [forms, names] = await Promise.all([
     db.requestForm.findMany({
-      where: { organizationId: caller.organizationId },
+      where: { organizationId: caller.organizationId, kind },
       orderBy: [{ status: 'asc' }, { name: 'asc' }],
       include: FORM_INCLUDE,
     }),
@@ -148,18 +151,23 @@ export async function saveForm(input: FormDraftValues): Promise<FormRow> {
   }
   const draft = parsed.data
 
-  const teamIds = await validTeamIds(caller.organizationId, draft.teamIds)
+  // An evaluation is assigned to a person, never offered to a department.
+  const teamIds =
+    draft.kind === 'evaluation' ? [] : await validTeamIds(caller.organizationId, draft.teamIds)
 
   const form = await db.$transaction(async (tx) => {
     const saved = draft.formId
       ? await tx.requestForm.update({
           where: { id: draft.formId },
+          // The kind is settled when the form is created; changing it later would strand the
+          // submissions or evaluations already made against it.
           data: { name: draft.name, description: draft.description, fields: draft.fields },
         })
       : await tx.requestForm.create({
           data: {
             organizationId: caller.organizationId,
             createdById: caller.userId,
+            kind: draft.kind,
             name: draft.name,
             description: draft.description,
             fields: draft.fields,
@@ -218,14 +226,14 @@ export async function deleteForm(formId: string): Promise<void> {
   const caller = await requireAdmin()
   const form = await db.requestForm.findFirst({
     where: { id: formId, organizationId: caller.organizationId },
-    include: { _count: { select: { submissions: true } } },
+    include: { _count: { select: { submissions: true, evaluations: true } } },
   })
   if (!form) throw new ConnectError('That form no longer exists.', Code.NotFound)
 
   // The requests raised against it stay readable, so a used form is archived, never deleted.
-  if (form._count.submissions > 0) {
+  if (form._count.submissions > 0 || form._count.evaluations > 0) {
     throw new ConnectError(
-      'Requests have been raised on this form, so it can only be archived.',
+      'This form has already been filled in, so it can only be archived.',
       Code.FailedPrecondition,
     )
   }
@@ -241,6 +249,7 @@ export async function loadAvailableForms(): Promise<FormRow[]> {
     db.requestForm.findMany({
       where: {
         organizationId: caller.organizationId,
+        kind: 'request',
         status: 'published',
         teams: { some: { teamId: caller.team.id } },
       },
@@ -269,6 +278,7 @@ export async function submitRequest(input: {
     where: {
       id: input.formId,
       organizationId: caller.organizationId,
+      kind: 'request',
       status: 'published',
       teams: { some: { teamId: caller.team.id } },
     },

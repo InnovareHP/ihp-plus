@@ -19,7 +19,7 @@ import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { EmptyState } from '@/components/empty-state'
 import { announceSuccess } from '@/lib/announce'
-import { requestFormRoute } from '@/lib/routes'
+import { evaluationFormRoute, requestFormRoute } from '@/lib/routes'
 // Departments are organization data; the requests feature is a consumer of them.
 import { useTeams } from '@/features/organization/hooks/use-teams'
 import {
@@ -27,14 +27,16 @@ import {
   publishBlockers,
   type FormDraftInput,
   type FormDraftValues,
+  type FormKind,
   type FormRow,
 } from '../schema'
 import { useSaveForm, useSetFormStatus } from '../hooks/use-forms'
 import { QuestionCard } from './question-card'
 
-function draftOf(form: FormRow | undefined): FormDraftValues {
+function draftOf(form: FormRow | undefined, kind: FormKind): FormDraftValues {
   return {
     formId: form?.id,
+    kind: form?.kind ?? kind,
     name: form?.name ?? '',
     description: form?.description ?? '',
     fields: form?.fields ?? [],
@@ -42,11 +44,25 @@ function draftOf(form: FormRow | undefined): FormDraftValues {
   }
 }
 
-export function FormBuilder({ form }: { form?: FormRow }) {
+function editRoute(form: FormRow) {
+  return form.kind === 'evaluation' ? evaluationFormRoute(form.id) : requestFormRoute(form.id)
+}
+
+export interface FormBuilderProps {
+  form?: FormRow
+  /** Which catalogue the form belongs to; it is settled on the first save. */
+  kind?: FormKind
+}
+
+// One builder for both kinds: an evaluation form asks the same questions, it just reaches
+// people by assignment rather than by department.
+export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
   const router = useRouter()
   const teams = useTeams()
   const save = useSaveForm()
-  const setStatus = useSetFormStatus()
+  const formKind = form?.kind ?? kind
+  const isEvaluation = formKind === 'evaluation'
+  const setStatus = useSetFormStatus(formKind)
 
   const {
     control,
@@ -59,7 +75,7 @@ export function FormBuilder({ form }: { form?: FormRow }) {
     resolver: zodResolver(formDraftSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: draftOf(form),
+    defaultValues: draftOf(form, formKind),
   })
 
   const fields = useFieldArray({ control, name: 'fields' })
@@ -69,6 +85,7 @@ export function FormBuilder({ form }: { form?: FormRow }) {
   const watchedTeamIds = useWatch({ control, name: 'teamIds' })
 
   const blockers = publishBlockers({
+    kind: formKind,
     fields: watchedFields ?? [],
     teams: watchedTeamIds ?? [],
   })
@@ -76,10 +93,10 @@ export function FormBuilder({ form }: { form?: FormRow }) {
   async function onSubmit(values: FormDraftValues) {
     try {
       const saved = await save.mutateAsync(values)
-      reset(draftOf(saved))
+      reset(draftOf(saved, formKind))
       announceSuccess(`${saved.name} saved.`)
       // A new form has a real id now, so the URL stops saying "new".
-      if (!values.formId) router.replace(requestFormRoute(saved.id))
+      if (!values.formId) router.replace(editRoute(saved))
     } catch (error) {
       setError('root', {
         message: error instanceof Error ? error.message : 'Could not save that form.',
@@ -91,9 +108,13 @@ export function FormBuilder({ form }: { form?: FormRow }) {
     try {
       const saved = await save.mutateAsync(values)
       await setStatus.mutateAsync({ formId: saved.id, status: 'published' })
-      reset(draftOf({ ...saved, status: 'published' }))
-      announceSuccess(`${saved.name} is live for the departments you picked.`)
-      if (!values.formId) router.replace(requestFormRoute(saved.id))
+      reset(draftOf({ ...saved, status: 'published' }, formKind))
+      announceSuccess(
+        isEvaluation
+          ? `${saved.name} is ready to assign.`
+          : `${saved.name} is live for the departments you picked.`,
+      )
+      if (!values.formId) router.replace(editRoute(saved))
     } catch (error) {
       setError('root', {
         message: error instanceof Error ? error.message : 'Could not publish that form.',
@@ -106,7 +127,11 @@ export function FormBuilder({ form }: { form?: FormRow }) {
       <Stack gap="xl">
         <PageSection
           title="About this form"
-          description="What requesters see in the catalogue before they open it."
+          description={
+            isEvaluation
+              ? 'What the supervisor sees before they open it.'
+              : 'What requesters see in the catalogue before they open it.'
+          }
           actions={
             form ? (
               <Badge variant="light" tt="capitalize">
@@ -137,30 +162,36 @@ export function FormBuilder({ form }: { form?: FormRow }) {
               error={errors.description?.message}
             />
 
-            <Controller
-              control={control}
-              name="teamIds"
-              render={({ field }) => (
-                <MultiSelect
-                  label="Departments"
-                  description="Only these departments are offered the form."
-                  placeholder={teams.isPending ? 'Loading…' : 'Pick departments'}
-                  searchable
-                  disabled={teams.isPending}
-                  data={(teams.data ?? []).map((team) => ({ value: team.id, label: team.name }))}
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  error={errors.teamIds?.message}
-                />
-              )}
-            />
+            {isEvaluation ? null : (
+              <Controller
+                control={control}
+                name="teamIds"
+                render={({ field }) => (
+                  <MultiSelect
+                    label="Departments"
+                    description="Only these departments are offered the form."
+                    placeholder={teams.isPending ? 'Loading…' : 'Pick departments'}
+                    searchable
+                    disabled={teams.isPending}
+                    data={(teams.data ?? []).map((team) => ({ value: team.id, label: team.name }))}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={errors.teamIds?.message}
+                  />
+                )}
+              />
+            )}
           </Stack>
         </PageSection>
 
         <PageSection
           title="Questions"
-          description="What the requester fills in. They are asked in this order."
+          description={
+            isEvaluation
+              ? 'What the supervisor answers about the employee, in this order.'
+              : 'What the requester fills in. They are asked in this order.'
+          }
           actions={
             <Button
               variant="default"

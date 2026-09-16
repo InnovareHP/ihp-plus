@@ -27,6 +27,7 @@ const TEAM = { id: 'team-1', name: 'Finance', memberCount: 3, createdAt: '2026-0
 
 const SAVED: FormRow = {
   id: 'form-1',
+  kind: 'request',
   name: 'Equipment request',
   description: '',
   status: 'draft',

@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package ihp.evaluations.v1;
+
+// The questions are a requests form of kind EVALUATION, so the field and answer messages are
+// the ones the form builder already speaks.
+import "ihp/requests/v1/requests.proto";
+
+// An evaluation is assigned, then filled in once. There is no approver: submitting ends it,
+// and cancelling retires one nobody should fill.
+enum EvaluationStatus {
+  EVALUATION_STATUS_UNSPECIFIED = 0;
+  EVALUATION_STATUS_PENDING = 1;
+  EVALUATION_STATUS_SUBMITTED = 2;
+  EVALUATION_STATUS_CANCELLED = 3;
+}
+
+// Filter value: ALL is a list's default, and has no stored counterpart.
+enum EvaluationStatusFilter {
+  EVALUATION_STATUS_FILTER_UNSPECIFIED = 0;
+  EVALUATION_STATUS_FILTER_ALL = 1;
+  EVALUATION_STATUS_FILTER_PENDING = 2;
+  EVALUATION_STATUS_FILTER_SUBMITTED = 3;
+  EVALUATION_STATUS_FILTER_CANCELLED = 4;
+}
+
+message Evaluation {
+  string id = 1;
+  string form_id = 2;
+  // Snapshots taken when it was assigned: the live form may have moved on since.
+  string form_name = 3;
+  repeated ihp.requests.v1.FormField fields = 4;
+  repeated ihp.requests.v1.FieldValue values = 5;
+
+  // Who is being evaluated.
+  string employee_id = 6;
+  string employee_name = 7;
+  optional string employee_team = 8;
+  optional string employee_employment_status = 9;
+
+  // Who fills it in.
+  string evaluator_id = 10;
+  string evaluator_name = 11;
+
+  EvaluationStatus status = 12;
+  optional string due_at = 13;
+  optional string submitted_at = 14;
+  string created_at = 15;
+
+  // Resolved for the caller: the evaluator of a pending evaluation may fill it in.
+  bool can_fill = 16;
+  bool is_mine = 17;
+}
+
+message EvaluationCandidate {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+  optional string team = 4;
+  optional string employment_status = 5;
+}
+
+message ListMyEvaluationsRequest {
+  EvaluationStatusFilter status = 1;
+}
+
+message ListMyEvaluationsResponse {
+  repeated Evaluation rows = 1;
+}
+
+message ListEvaluationsRequest {
+  EvaluationStatusFilter status = 1;
+  string search = 2;
+  // The employee's department.
+  repeated string team_ids = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+message ListEvaluationsResponse {
+  repeated Evaluation rows = 1;
+  ihp.requests.v1.PageInfo page_info = 2;
+}
+
+message GetEvaluationRequest {
+  string evaluation_id = 1;
+}
+
+message GetEvaluationResponse {
+  Evaluation evaluation = 1;
+}
+
+// One supervisor, many employees: a batch is what People & Culture actually assigns, and a
+// different supervisor is a second call.
+message AssignEvaluationsRequest {
+  string form_id = 1;
+  string evaluator_id = 2;
+  repeated string employee_ids = 3;
+  // An ISO date; absent means the supervisor is asked to get to it, with no deadline.
+  optional string due_at = 4;
+}
+
+message AssignEvaluationsResponse {
+  repeated Evaluation rows = 1;
+}
+
+message SubmitEvaluationRequest {
+  string evaluation_id = 1;
+  repeated ihp.requests.v1.FieldValue values = 2;
+}
+
+message SubmitEvaluationResponse {
+  Evaluation evaluation = 1;
+}
+
+message CancelEvaluationRequest {
+  string evaluation_id = 1;
+}
+
+message CancelEvaluationResponse {
+  Evaluation evaluation = 1;
+}
+
+message ListCandidatesRequest {}
+
+message ListCandidatesResponse {
+  repeated EvaluationCandidate people = 1;
+}
+
+service EvaluationsService {
+  // A supervisor reads and fills in the evaluations assigned to them.
+  rpc ListMyEvaluations(ListMyEvaluationsRequest) returns (ListMyEvaluationsResponse);
+  rpc GetEvaluation(GetEvaluationRequest) returns (GetEvaluationResponse);
+  rpc SubmitEvaluation(SubmitEvaluationRequest) returns (SubmitEvaluationResponse);
+
+  // Admins assign them, track who has not answered, and retire the ones no longer wanted.
+  rpc ListEvaluations(ListEvaluationsRequest) returns (ListEvaluationsResponse);
+  rpc AssignEvaluations(AssignEvaluationsRequest) returns (AssignEvaluationsResponse);
+  rpc CancelEvaluation(CancelEvaluationRequest) returns (CancelEvaluationResponse);
+  rpc ListCandidates(ListCandidatesRequest) returns (ListCandidatesResponse);
+}

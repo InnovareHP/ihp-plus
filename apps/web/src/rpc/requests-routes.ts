@@ -19,6 +19,7 @@ import {
 import {
   approversToProto,
   fieldFromProto,
+  formKindFromProto,
   formStatusFromProto,
   formToProto,
   requestStatusFromProto,
@@ -31,7 +32,9 @@ import type { Decision } from '@/features/requests/schema'
 // Thin by design: every implementation converts at the wire boundary and delegates to the
 // feature's service, so the business rules stay testable without a transport.
 export const requests: ServiceImpl<typeof RequestsService> = {
-  listForms: async () => ({ forms: (await loadForms()).map(formToProto) }),
+  listForms: async (request) => ({
+    forms: (await loadForms(formKindFromProto(request.kind))).map(formToProto),
+  }),
 
   getForm: async (request) => ({ form: formToProto(await loadForm(request.formId)) }),
 
@@ -39,6 +42,7 @@ export const requests: ServiceImpl<typeof RequestsService> = {
     form: formToProto(
       await saveForm({
         formId: request.formId,
+        kind: formKindFromProto(request.kind),
         name: request.name,
         description: request.description,
         fields: request.fields.map(fieldFromProto),

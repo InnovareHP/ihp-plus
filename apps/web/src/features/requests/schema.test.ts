@@ -62,23 +62,30 @@ describe('answerSchemaOf', () => {
 
 describe('publishBlockers', () => {
   it('refuses a form nobody can answer or reach', () => {
-    expect(publishBlockers({ fields: [], teams: [] })).toEqual([
+    expect(publishBlockers({ kind: 'request', fields: [], teams: [] })).toEqual([
       'Add at least one question.',
       'Pick at least one department.',
     ])
   })
 
   it('names only the half that is missing', () => {
-    expect(publishBlockers({ fields: [REASON], teams: [] })).toEqual([
+    expect(publishBlockers({ kind: 'request', fields: [REASON], teams: [] })).toEqual([
       'Pick at least one department.',
     ])
-    expect(publishBlockers({ fields: [], teams: ['team-1'] })).toEqual([
+    expect(publishBlockers({ kind: 'request', fields: [], teams: ['team-1'] })).toEqual([
       'Add at least one question.',
     ])
   })
 
   it('passes a form with both', () => {
-    expect(publishBlockers({ fields: [REASON], teams: ['team-1'] })).toEqual([])
+    expect(publishBlockers({ kind: 'request', fields: [REASON], teams: ['team-1'] })).toEqual([])
+  })
+
+  it('asks an evaluation form for questions only, since it reaches people by assignment', () => {
+    expect(publishBlockers({ kind: 'evaluation', fields: [REASON], teams: [] })).toEqual([])
+    expect(publishBlockers({ kind: 'evaluation', fields: [], teams: [] })).toEqual([
+      'Add at least one question.',
+    ])
   })
 })
 

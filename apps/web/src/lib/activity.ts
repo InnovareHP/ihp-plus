@@ -17,11 +17,14 @@ export const ACTIVITY_LABELS = {
   'request.approved': 'Approved',
   'request.rejected': 'Turned down',
   'request.withdrawn': 'Withdrawn',
+  'evaluation.assigned': 'Evaluation assigned',
+  'evaluation.submitted': 'Evaluation submitted',
+  'evaluation.cancelled': 'Evaluation cancelled',
 } as const
 
 export type ActivityAction = keyof typeof ACTIVITY_LABELS
 
-export type ActivitySubject = 'contract' | 'request'
+export type ActivitySubject = 'contract' | 'request' | 'evaluation'
 
 export interface ActivityInput {
   organizationId: string

@@ -6,12 +6,12 @@ import { useOptimisticListMutation } from '@/lib/optimistic'
 import { requestEvents } from '../events'
 import { requestKeys } from '../query-keys'
 import { deleteForm, getForm, listForms, saveForm, setFormStatus } from '../rpc'
-import type { FormDraftValues, FormRow, FormStatus } from '../schema'
+import type { FormDraftValues, FormKind, FormRow, FormStatus } from '../schema'
 
-export function useForms() {
+export function useForms(kind: FormKind = 'request') {
   return useQuery({
-    queryKey: requestKeys.forms(),
-    queryFn: listForms,
+    queryKey: requestKeys.forms(kind),
+    queryFn: () => listForms(kind),
   })
 }
 
@@ -33,7 +33,7 @@ export function useSaveForm() {
     onSuccess: (form) => {
       track(requestEvents.formSaved)
       queryClient.setQueryData(requestKeys.form(form.id), form)
-      queryClient.invalidateQueries({ queryKey: requestKeys.forms() })
+      queryClient.invalidateQueries({ queryKey: requestKeys.forms(form.kind) })
     },
     onError: (error: Error) => {
       track(requestEvents.formSaveFailed, { reason: error.message })
@@ -41,9 +41,9 @@ export function useSaveForm() {
   })
 }
 
-export function useSetFormStatus() {
+export function useSetFormStatus(kind: FormKind = 'request') {
   return useOptimisticListMutation<FormRow, { formId: string; status: FormStatus }>({
-    queryKey: requestKeys.forms(),
+    queryKey: requestKeys.forms(kind),
     mutationFn: async (values) => {
       await setFormStatus(values)
     },
@@ -55,9 +55,9 @@ export function useSetFormStatus() {
   })
 }
 
-export function useDeleteForm() {
+export function useDeleteForm(kind: FormKind = 'request') {
   return useOptimisticListMutation<FormRow, { formId: string }>({
-    queryKey: requestKeys.forms(),
+    queryKey: requestKeys.forms(kind),
     mutationFn: async (values) => {
       await deleteForm(values.formId)
     },

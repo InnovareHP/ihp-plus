@@ -25,6 +25,7 @@ vi.mock('next/navigation', () => ({
 
 const FORM: FormRow = {
   id: 'form-1',
+  kind: 'request',
   name: 'Equipment request',
   description: 'Ask for a laptop, monitor or headset.',
   status: 'published',

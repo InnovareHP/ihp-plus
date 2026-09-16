@@ -21,6 +21,14 @@ enum FormStatus {
   FORM_STATUS_ARCHIVED = 3;
 }
 
+// A request form runs the approval queue; an evaluation form is assigned to a supervisor and
+// has no approver at all.
+enum FormKind {
+  FORM_KIND_UNSPECIFIED = 0;
+  FORM_KIND_REQUEST = 1;
+  FORM_KIND_EVALUATION = 2;
+}
+
 enum RequestStatus {
   REQUEST_STATUS_UNSPECIFIED = 0;
   REQUEST_STATUS_PENDING = 1;
@@ -68,6 +76,8 @@ message RequestForm {
   repeated TeamRef teams = 6;
   int32 submission_count = 7;
   string updated_at = 8;
+  // UNSPECIFIED reads as REQUEST: every form predating evaluations is one.
+  FormKind kind = 9;
 }
 
 // One answer. The oneof keeps a number a number across the wire rather than making every
@@ -126,7 +136,10 @@ message DepartmentApprovers {
   repeated Approver approvers = 3;
 }
 
-message ListFormsRequest {}
+message ListFormsRequest {
+  // Which catalogue to list; UNSPECIFIED reads as REQUEST.
+  FormKind kind = 1;
+}
 
 message ListFormsResponse {
   repeated RequestForm forms = 1;
@@ -147,6 +160,7 @@ message SaveFormRequest {
   string description = 3;
   repeated FormField fields = 4;
   repeated string team_ids = 5;
+  FormKind kind = 6;
 }
 
 message SaveFormResponse {

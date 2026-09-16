@@ -104,6 +104,36 @@ export function clientFolderSharedTemplate(options: {
   }
 }
 
+const dueDate = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' })
+
+export function evaluationAssignedTemplate(options: {
+  formName: string
+  count: number
+  dueAt: Date | null
+  url: string
+}): PreparedEmail {
+  const people = options.count === 1 ? 'one person' : `${options.count} people`
+
+  return {
+    subject:
+      options.count === 1
+        ? `An ${options.formName} is waiting for you`
+        : `${options.count} ${options.formName} evaluations are waiting for you`,
+    ...renderEmail({
+      preheader: `You have ${people} to evaluate on the ${options.formName} form.`,
+      heading: 'An evaluation is waiting for you',
+      body: [
+        `People & Culture asked you to fill in the ${options.formName} form for ${people}.`,
+        options.dueAt
+          ? `It is due by ${dueDate.format(options.dueAt)}.`
+          : 'There is no due date, so fill it in when you can.',
+        'Nobody has to approve it: what you submit is the record.',
+      ],
+      action: { label: 'Open your evaluations', url: options.url },
+    }),
+  }
+}
+
 export function requestSubmittedTemplate(options: {
   requesterName: string
   formName: string

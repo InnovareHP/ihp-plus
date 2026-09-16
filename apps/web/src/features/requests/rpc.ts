@@ -6,6 +6,7 @@ import {
   approversFromProto,
   fieldToProto,
   formFromProto,
+  formKindToProto,
   formStatusToProto,
   requestStatusToProto,
   statusFilterToProto,
@@ -17,6 +18,7 @@ import type {
   DepartmentApproversRow,
   FormDraftValues,
   FormField,
+  FormKind,
   FormRow,
   FormStatus,
   RequestQuery,
@@ -52,8 +54,10 @@ function requiredSubmission(
   return submissionFromProto(submission)
 }
 
-export async function listForms(): Promise<FormRow[]> {
-  const response = await call(() => browserClients.requests.listForms({}))
+export async function listForms(kind: FormKind = 'request'): Promise<FormRow[]> {
+  const response = await call(() =>
+    browserClients.requests.listForms({ kind: formKindToProto(kind) }),
+  )
   return response.forms.map(formFromProto)
 }
 
@@ -66,6 +70,7 @@ export async function saveForm(values: FormDraftValues): Promise<FormRow> {
   const response = await call(() =>
     browserClients.requests.saveForm({
       formId: values.formId,
+      kind: formKindToProto(values.kind),
       name: values.name,
       description: values.description,
       fields: values.fields.map((field: FormField) => fieldToProto(field)),
