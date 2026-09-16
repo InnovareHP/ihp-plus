@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import type { NextConfig } from 'next'
+import { routes, withBasePath } from './src/lib/routes'
 
 // Repo root — standalone output must trace files outside apps/web (pnpm workspace links).
 const monorepoRoot = fileURLToPath(new URL('../../', import.meta.url))
@@ -22,6 +23,13 @@ const nextConfig: NextConfig = {
   // Bluebook uploads travel through a server action, whose body cap is 1MB by default; nginx
   // allows 25m, so the two limits are kept in step.
   experimental: { serverActions: { bodySizeLimit: '25mb' } },
+
+  // Nothing is served outside basePath, so the bare origin root 404s; send it to sign-in.
+  async redirects() {
+    return [
+      { source: '/', destination: withBasePath(routes.login), basePath: false, permanent: false },
+    ]
+  },
 
   reactStrictMode: true,
   poweredByHeader: false,
