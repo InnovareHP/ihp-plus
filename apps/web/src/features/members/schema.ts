@@ -61,6 +61,7 @@ export const memberQuerySchema = paginationSchema.extend({
   portalRoles: csvOf(PORTAL_ROLES),
   // Curated per organization, so the filter carries free text capped like the id lists.
   employmentTypes: csvValues,
+  employmentStatuses: csvValues,
   teamIds: csvIds,
   status: z.enum(MEMBER_STATUSES).catch('all'),
   startDateFrom: z.iso.date().optional().catch(undefined),
@@ -79,6 +80,12 @@ export const setPortalRoleSchema = z.object({
   role: z.enum(PORTAL_ROLES),
 })
 
+// An empty status clears it, which is how one set by mistake goes back to unset.
+export const setEmploymentStatusSchema = z.object({
+  userId: z.string().min(1),
+  employmentStatus: z.string().trim().max(80),
+})
+
 export const setBannedSchema = z.object({
   userId: z.string().min(1),
   banned: z.boolean(),
@@ -92,6 +99,7 @@ export type MemberQuery = z.infer<typeof memberQuerySchema>
 export type SetOrganizationRoleValues = z.infer<typeof setOrganizationRoleSchema>
 export type SetPortalRoleValues = z.infer<typeof setPortalRoleSchema>
 export type SetBannedValues = z.infer<typeof setBannedSchema>
+export type SetEmploymentStatusValues = z.infer<typeof setEmploymentStatusSchema>
 
 export const DEFAULT_MEMBER_QUERY: MemberQuery = memberQuerySchema.parse({})
 
@@ -103,6 +111,7 @@ export function isFilteredQuery(query: MemberQuery) {
     query.organizationRoles.length > 0 ||
     query.portalRoles.length > 0 ||
     query.employmentTypes.length > 0 ||
+    query.employmentStatuses.length > 0 ||
     query.teamIds.length > 0 ||
     query.startDateFrom !== undefined ||
     query.startDateTo !== undefined
@@ -119,6 +128,8 @@ export interface MemberRow {
   team: string | undefined
   jobTitle: string | undefined
   ihpId: string | undefined
+  /** Where the person stands in employment; absent until People & Culture sets one. */
+  employmentStatus: string | undefined
   /** ISO date; a Date would cross the server-action boundary as a less predictable value. */
   startDate: string | undefined
   banned: boolean
@@ -133,4 +144,5 @@ export interface MembersPage {
 export interface MemberFilterOptions {
   teams: { id: string; name: string; memberCount: number }[]
   employmentTypes: readonly string[]
+  employmentStatuses: readonly string[]
 }

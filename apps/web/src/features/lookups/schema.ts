@@ -12,6 +12,7 @@ import { z } from 'zod'
 export const LOOKUP_KINDS = [
   'position',
   'employmentType',
+  'employmentStatus',
   'clientType',
   'clientServiceLine',
   'clientSource',
@@ -26,6 +27,7 @@ export type LookupKind = (typeof LOOKUP_KINDS)[number]
 export const LOOKUP_KIND_LABELS: Record<LookupKind, string> = {
   position: 'Positions',
   employmentType: 'Employment types',
+  employmentStatus: 'Employment statuses',
   clientType: 'Client types',
   clientServiceLine: 'Service lines',
   clientSource: 'Client sources',

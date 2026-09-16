@@ -5,6 +5,7 @@ import { LookupsService } from '@ihp/rpc/lookups'
 import { MembersService } from '@ihp/rpc/members'
 import { RequestsService } from '@ihp/rpc/requests'
 import {
+  applyEmploymentStatus,
   applyMemberAccess,
   applyOrganizationRole,
   applyPortalRole,
@@ -43,6 +44,7 @@ const members: ServiceImpl<typeof MembersService> = {
         memberCount: team.memberCount,
       })),
       employmentTypes: [...options.employmentTypes],
+      employmentStatuses: [...options.employmentStatuses],
     }
   },
 
@@ -58,6 +60,15 @@ const members: ServiceImpl<typeof MembersService> = {
   setPortalRole: async (request) => ({
     member: memberToProto(
       await applyPortalRole({ userId: request.userId, role: portalRoleFromProto(request.role) }),
+    ),
+  }),
+
+  setEmploymentStatus: async (request) => ({
+    member: memberToProto(
+      await applyEmploymentStatus({
+        userId: request.userId,
+        employmentStatus: request.employmentStatus,
+      }),
     ),
   }),
 

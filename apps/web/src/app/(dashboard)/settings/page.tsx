@@ -87,6 +87,7 @@ export default async function SettingsPage() {
               <Row label="Position" value={text(profile.jobTitle)} />
               <Row label="Department" value={membership.team?.name ?? 'Not provided'} />
               <Row label="Employment type" value={text(profile.employmentType)} />
+              <Row label="Employment status" value={text(profile.employmentStatus)} />
               <Row label="Start date" value={date(profile.startDate)} />
             </Stack>
             <Text size="xs" c="dimmed" mt="sm">

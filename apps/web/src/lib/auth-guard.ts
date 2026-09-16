@@ -21,6 +21,7 @@ export const readProfile = cache(async (userId: string) =>
       dateOfBirth: true,
       jobTitle: true,
       employmentType: true,
+      employmentStatus: true,
       photoKey: true,
       ihpId: true,
       startDate: true,

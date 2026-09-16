@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { memberQuerySchema } from './schema'
 
 const prisma = vi.hoisted(() => ({
-  member: { count: vi.fn(), findMany: vi.fn() },
+  member: { count: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
   team: { findMany: vi.fn() },
-  lookupOption: { findMany: vi.fn() },
+  user: { update: vi.fn() },
+  lookupOption: { findMany: vi.fn(), findFirst: vi.fn() },
 }))
 
 const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
@@ -20,7 +21,7 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 vi.mock('@/lib/auth', () => ({ auth: { api: {} } }))
 vi.mock('next/headers', () => ({ headers: vi.fn(async () => new Headers()) }))
 
-const { loadFilterOptions, loadMembersPage } = await import('./service')
+const { applyEmploymentStatus, loadFilterOptions, loadMembersPage } = await import('./service')
 
 // The service takes a parsed query; turning URL params into one is the caller's job.
 const listMembers = (query: Record<string, unknown> = {}) =>
@@ -43,6 +44,7 @@ const ROW = {
     banned: null,
     jobTitle: 'Software Engineer',
     ihpId: 'IHP-0001',
+    employmentStatus: 'Probationary',
     startDate: new Date('2026-03-04T00:00:00.000Z'),
     teammembers: [{ team: { name: 'Information Technology' } }],
   },
@@ -158,6 +160,18 @@ describe('loadMembersPage', () => {
     ])
   })
 
+  it('filters by employment status, which is curated per organization', async () => {
+    const { clauses } = await clausesFor({ employmentStatuses: 'Probationary,Regular' })
+
+    expect(clauses).toEqual([{ employmentStatus: { in: ['Probationary', 'Regular'] } }])
+  })
+
+  it('carries the employment status onto the row', async () => {
+    const page = await listMembers({})
+
+    expect(page.rows[0]).toMatchObject({ employmentStatus: 'Probationary' })
+  })
+
   it('sorts by a column on the user row', async () => {
     const { args } = await clausesFor({ sortBy: 'startDate', sortDirection: 'desc' })
 
@@ -171,6 +185,51 @@ describe('loadMembersPage', () => {
 
     expect(prisma.member.findMany.mock.calls.at(-1)?.[0]).toMatchObject({ skip: 25, take: 25 })
     expect(result).toMatchObject({ pageInfo: { page: 2, pageCount: 2, hasNext: false } })
+  })
+})
+
+describe('applyEmploymentStatus', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    signedInAs()
+    prisma.member.findFirst.mockResolvedValue(ROW)
+    prisma.lookupOption.findFirst.mockResolvedValue({ id: 'option-1' })
+  })
+
+  it('saves a status the organization keeps', async () => {
+    await applyEmploymentStatus({ userId: 'user-1', employmentStatus: 'Regular' })
+
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { employmentStatus: 'Regular' },
+    })
+  })
+
+  it('refuses a status that is not on the organization list', async () => {
+    prisma.lookupOption.findFirst.mockResolvedValue(null)
+
+    expect(
+      await codeOf(() => applyEmploymentStatus({ userId: 'user-1', employmentStatus: 'Tenured' })),
+    ).toBe(Code.InvalidArgument)
+    expect(prisma.user.update).not.toHaveBeenCalled()
+  })
+
+  it('clears the status on an empty value without checking the list', async () => {
+    await applyEmploymentStatus({ userId: 'user-1', employmentStatus: '' })
+
+    expect(prisma.lookupOption.findFirst).not.toHaveBeenCalled()
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { employmentStatus: null },
+    })
+  })
+
+  it('refuses someone outside the organization', async () => {
+    prisma.member.findFirst.mockResolvedValue(null)
+
+    expect(
+      await codeOf(() => applyEmploymentStatus({ userId: 'user-x', employmentStatus: 'Regular' })),
+    ).toBe(Code.NotFound)
   })
 })
 

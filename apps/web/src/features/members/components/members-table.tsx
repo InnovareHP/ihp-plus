@@ -17,6 +17,7 @@ import { useMemberQuery } from '../hooks/use-member-query'
 import {
   useMembers,
   useSetBanned,
+  useSetEmploymentStatus,
   useSetOrganizationRole,
   useSetPortalRole,
 } from '../hooks/use-members'
@@ -53,6 +54,12 @@ export function MembersTable() {
       options: (options.data?.employmentTypes ?? []).map((value) => ({ value, label: value })),
     },
     {
+      kind: 'multi',
+      key: 'employmentStatuses',
+      label: 'Employment status',
+      options: (options.data?.employmentStatuses ?? []).map((value) => ({ value, label: value })),
+    },
+    {
       kind: 'select',
       key: 'status',
       label: 'Access',
@@ -69,7 +76,9 @@ export function MembersTable() {
       help: 'Anyone who started between these dates.',
     },
   ]
+  const statuses = options.data?.employmentStatuses ?? []
   const organizationRole = useSetOrganizationRole()
+  const employmentStatus = useSetEmploymentStatus()
   const portalRole = useSetPortalRole()
   const banned = useSetBanned()
 
@@ -102,6 +111,28 @@ export function MembersTable() {
       key: 'team',
       header: 'Department',
       render: (row) => <Text size="sm">{row.team ?? '—'}</Text>,
+    },
+    {
+      key: 'employmentStatus',
+      header: 'Employment status',
+      render: (row) => (
+        <Select
+          aria-label={`Employment status for ${row.name}`}
+          // A retired status the person still holds is seeded in, so the row shows what is saved.
+          data={
+            row.employmentStatus && !statuses.includes(row.employmentStatus)
+              ? [row.employmentStatus, ...statuses]
+              : statuses
+          }
+          value={row.employmentStatus ?? null}
+          placeholder="Not set"
+          size="sm"
+          w={150}
+          onChange={(value) =>
+            employmentStatus.mutate({ userId: row.userId, employmentStatus: value ?? '' })
+          }
+        />
+      ),
     },
     {
       key: 'organizationRole',

@@ -3,7 +3,7 @@ import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
-import { listFor } from '@/features/lookups/service'
+import { isKnownOption, listFor } from '@/features/lookups/service'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake, type SortDirection } from '@/lib/pagination'
 import type {
@@ -15,6 +15,7 @@ import type {
   OrganizationRole,
   PortalRole,
   SetBannedValues,
+  SetEmploymentStatusValues,
   SetOrganizationRoleValues,
   SetPortalRoleValues,
 } from './schema'
@@ -66,6 +67,10 @@ function userFilterOf(query: MemberQuery): Prisma.UserWhereInput | undefined {
     clauses.push({ employmentType: { in: [...query.employmentTypes] } })
   }
 
+  if (query.employmentStatuses.length > 0) {
+    clauses.push({ employmentStatus: { in: [...query.employmentStatuses] } })
+  }
+
   if (query.teamIds.length > 0) {
     clauses.push({ teammembers: { some: { teamId: { in: query.teamIds } } } })
   }
@@ -107,6 +112,7 @@ const ROW_SELECT = {
       banned: true,
       jobTitle: true,
       ihpId: true,
+      employmentStatus: true,
       startDate: true,
       teammembers: { select: { team: { select: { name: true } } }, take: 1 },
     },
@@ -126,6 +132,7 @@ function rowOf(row: MemberRecord, callerId: string): MemberRow {
     team: row.user.teammembers[0]?.team.name,
     jobTitle: row.user.jobTitle ?? undefined,
     ihpId: row.user.ihpId ?? undefined,
+    employmentStatus: row.user.employmentStatus ?? undefined,
     startDate: row.user.startDate?.toISOString(),
     banned: row.user.banned ?? false,
     isSelf: row.user.id === callerId,
@@ -155,13 +162,14 @@ export async function loadMembersPage(query: MemberQuery): Promise<MembersPage> 
 export async function loadFilterOptions(): Promise<MemberFilterOptions> {
   const { organizationId } = await requireManager()
 
-  const [teams, employmentTypes] = await Promise.all([
+  const [teams, employmentTypes, employmentStatuses] = await Promise.all([
     db.team.findMany({
       where: { organizationId },
       orderBy: { name: 'asc' },
       select: { id: true, name: true, _count: { select: { teammembers: true } } },
     }),
     listFor(organizationId, 'employmentType'),
+    listFor(organizationId, 'employmentStatus'),
   ])
 
   return {
@@ -171,6 +179,7 @@ export async function loadFilterOptions(): Promise<MemberFilterOptions> {
       memberCount: team._count.teammembers,
     })),
     employmentTypes: employmentTypes.map((option) => option.value),
+    employmentStatuses: employmentStatuses.map((option) => option.value),
   }
 }
 
@@ -212,6 +221,36 @@ export async function applyPortalRole(values: SetPortalRoleValues): Promise<Memb
   } catch {
     throw new ConnectError('Could not change that portal role — try again.', Code.Internal)
   }
+
+  return reload({ userId: values.userId, organizationId }, user.id)
+}
+
+export async function applyEmploymentStatus(values: SetEmploymentStatusValues): Promise<MemberRow> {
+  const { user, organizationId } = await requireManager()
+
+  const inOrganization = await db.member.findFirst({
+    where: { organizationId, userId: values.userId },
+    select: { id: true },
+  })
+  if (!inOrganization) {
+    throw new ConnectError('That person is not in this organization.', Code.NotFound)
+  }
+
+  // The curated list is the trust boundary; an empty value clears the status instead.
+  if (values.employmentStatus) {
+    const known = await isKnownOption(organizationId, 'employmentStatus', values.employmentStatus)
+    if (!known) {
+      throw new ConnectError(
+        'That is not one of the employment statuses this organization keeps.',
+        Code.InvalidArgument,
+      )
+    }
+  }
+
+  await db.user.update({
+    where: { id: values.userId },
+    data: { employmentStatus: values.employmentStatus || null },
+  })
 
   return reload({ userId: values.userId, organizationId }, user.id)
 }

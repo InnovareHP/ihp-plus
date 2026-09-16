@@ -112,6 +112,7 @@ export function queryToProto(query: MemberQuery): MemberQueryMessage {
     organizationRoles: query.organizationRoles.map((role) => ORG_ROLE_TO_PROTO[role]),
     portalRoles: query.portalRoles.map((role) => PORTAL_ROLE_TO_PROTO[role]),
     employmentTypes: [...query.employmentTypes],
+    employmentStatuses: [...query.employmentStatuses],
     teamIds: [...query.teamIds],
     status: STATUS_TO_PROTO[query.status],
     startDateFrom: query.startDateFrom,
@@ -131,6 +132,7 @@ export function queryFromProto(message: MemberQueryMessage | undefined): MemberQ
     organizationRoles: message.organizationRoles.map((role) => ORG_ROLE_FROM_PROTO[role]),
     portalRoles: message.portalRoles.map((role) => PORTAL_ROLE_FROM_PROTO[role]),
     employmentTypes: message.employmentTypes,
+    employmentStatuses: message.employmentStatuses,
     teamIds: message.teamIds,
     status: STATUS_FROM_PROTO[message.status],
     startDateFrom: message.startDateFrom,
@@ -156,6 +158,7 @@ export function memberToProto(row: MemberRow): Member {
     jobTitle: row.jobTitle,
     ihpId: row.ihpId,
     startDate: row.startDate,
+    employmentStatus: row.employmentStatus,
     banned: row.banned,
     isSelf: row.isSelf,
   }
@@ -173,6 +176,7 @@ export function memberFromProto(member: Member): MemberRow {
     jobTitle: member.jobTitle,
     ihpId: member.ihpId,
     startDate: member.startDate,
+    employmentStatus: member.employmentStatus,
     banned: member.banned,
     isSelf: member.isSelf,
   }

@@ -30,6 +30,7 @@ export const auth = betterAuth({
       dateOfBirth: { type: 'date', required: false, input: false },
       jobTitle: { type: 'string', required: false, input: false },
       employmentType: { type: 'string', required: false, input: false },
+      employmentStatus: { type: 'string', required: false, input: false },
       startDate: { type: 'date', required: false, input: false },
       photoKey: { type: 'string', required: false, input: false },
       ihpId: { type: 'string', required: false, input: false, unique: true },

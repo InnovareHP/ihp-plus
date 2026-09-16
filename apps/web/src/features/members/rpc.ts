@@ -68,6 +68,7 @@ export async function listMemberFilterOptions(): Promise<MemberFilterOptions> {
       memberCount: team.memberCount,
     })),
     employmentTypes: response.employmentTypes,
+    employmentStatuses: response.employmentStatuses,
   }
 }
 
@@ -94,6 +95,14 @@ export async function setPortalRole(values: {
       role: portalRoleToProto(values.role),
     }),
   )
+  return updatedRow(response.member)
+}
+
+export async function setEmploymentStatus(values: {
+  userId: string
+  employmentStatus: string
+}): Promise<MemberRow> {
+  const response = await call(() => browserClients.members.setEmploymentStatus(values))
   return updatedRow(response.member)
 }
 

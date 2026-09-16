@@ -4,7 +4,13 @@ import { queryToHref, searchParamsParser, useUrlQuery } from '@/lib/url-query'
 import { DEFAULT_MEMBER_QUERY, memberQuerySchema, type MemberQuery } from '../schema'
 
 // Filters that can hold several values arrive as `?x=a,b` or as repeated params.
-const MULTI_KEYS = ['organizationRoles', 'portalRoles', 'employmentTypes', 'teamIds'] as const
+const MULTI_KEYS = [
+  'organizationRoles',
+  'portalRoles',
+  'employmentTypes',
+  'employmentStatuses',
+  'teamIds',
+] as const
 
 export const parseMemberQuery = searchParamsParser<MemberQuery>(memberQuerySchema, MULTI_KEYS)
 

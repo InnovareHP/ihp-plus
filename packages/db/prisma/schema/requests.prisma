@@ -10,6 +10,8 @@ model RequestForm {
 
   name        String
   description String?
+  // "request" runs the approval queue; "evaluation" is assigned to a supervisor and has none.
+  kind        String  @default("request")
   // draft is invisible to requesters, published is live, archived keeps past submissions
   // readable without offering the form again.
   status      String  @default("draft")
@@ -21,8 +23,9 @@ model RequestForm {
 
   teams       RequestFormTeam[]
   submissions RequestSubmission[]
+  evaluations EvaluationAssignment[]
 
-  @@index([organizationId, status])
+  @@index([organizationId, kind, status])
   @@map("requestForm")
   @@schema("requests")
 }

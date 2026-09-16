@@ -17,6 +17,7 @@ export const LOOKUP_OPTION_SEED: Record<string, readonly string[]> = {
     'Vice President',
   ],
   employmentType: ['Full-time', 'Part-time', 'Contract', 'Per diem', 'Intern'],
+  employmentStatus: ['Probationary', 'Regular', 'Project-based', 'Seasonal', 'Retired'],
 
   // The client CRM's dropdowns are lookup lists too, so they are seeded here beside the rest.
   clientType: [

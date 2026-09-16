@@ -6,6 +6,7 @@ import {
   listMemberFilterOptions,
   listMembers,
   setBanned,
+  setEmploymentStatus,
   setOrganizationRole,
   setPortalRole,
 } from '../rpc'
@@ -70,6 +71,20 @@ export function useSetPortalRole() {
     patch: (row, { role }) => ({ ...row, portalRole: role }),
     successEvent: memberEvents.roleChanged,
     failureEvent: memberEvents.roleChangeFailed,
+  })
+}
+
+export function useSetEmploymentStatus() {
+  return useMemberRowMutation<{ userId: string; employmentStatus: string }>({
+    mutationFn: async ({ userId, employmentStatus }) => {
+      await setEmploymentStatus({ userId, employmentStatus })
+    },
+    patch: (row, { employmentStatus }) => ({
+      ...row,
+      employmentStatus: employmentStatus || undefined,
+    }),
+    successEvent: memberEvents.employmentStatusChanged,
+    failureEvent: memberEvents.employmentStatusChangeFailed,
   })
 }
 

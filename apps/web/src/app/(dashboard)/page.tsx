@@ -42,6 +42,11 @@ export default async function DashboardPage() {
             <Text size="sm" c="dimmed">
               {profile.employmentType} in {membership.team?.name ?? 'no department'}
             </Text>
+            {profile.employmentStatus ? (
+              <Text size="sm" c="dimmed">
+                {profile.employmentStatus}
+              </Text>
+            ) : null}
             {profile.startDate ? (
               <Text size="sm" c="dimmed">
                 Started {dateOnly.format(profile.startDate)}
