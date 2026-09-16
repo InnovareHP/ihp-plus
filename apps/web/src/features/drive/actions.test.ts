@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const graph = vi.hoisted(() => ({
   ensureFolder: vi.fn(async () => ({
@@ -14,6 +14,10 @@ const graph = vi.hoisted(() => ({
     }> => ({ granted: [{ id: 'perm-1' }], failed: [] }),
   ),
   revokePermission: vi.fn(),
+  createLink: vi.fn(async () => ({
+    id: 'perm-link-1',
+    link: { webUrl: 'https://sharepoint.test/:f:/s/ihp-clients/anon' },
+  })),
   requireClientDriveId: vi.fn(() => 'client-drive'),
   rootItem: vi.fn(async () => ({ id: 'client-root', name: 'root' })),
 }))
@@ -318,5 +322,39 @@ describe('listOrganizationAccess', () => {
       'org-1',
       expect.objectContaining({ view: 'active', page: 1 }),
     )
+  })
+})
+
+describe('shareClientFolder in link mode', () => {
+  beforeEach(() => {
+    process.env.GRAPH_SHARE_MODE = 'link'
+  })
+
+  afterEach(() => {
+    delete process.env.GRAPH_SHARE_MODE
+  })
+
+  it('creates an anonymous link and invites nobody', async () => {
+    const result = await shareClientFolder({ clientId: CLIENT_ID, email: 'buyer@acme.test' })
+
+    expect(graph.inviteGuest).not.toHaveBeenCalled()
+    expect(graph.shareItem).not.toHaveBeenCalled()
+    expect(graph.createLink).toHaveBeenCalledWith(
+      'client-drive',
+      'folder-1',
+      expect.objectContaining({ scope: 'anonymous', type: 'view' }),
+    )
+    expect(service.saveGuest).toHaveBeenCalledWith(
+      expect.objectContaining({ permissionId: 'perm-link-1', invitedUserId: undefined }),
+    )
+    expect(result.ok).toBe(true)
+  })
+
+  it('mails the link itself and says it opens without a sign-in', async () => {
+    await shareClientFolder({ clientId: CLIENT_ID, email: 'buyer@acme.test' })
+
+    const sent = mail.sendEmail.mock.calls[0]?.[0] as { html: string }
+    expect(sent.html).toContain('https://sharepoint.test/:f:/s/ihp-clients/anon')
+    expect(sent.html).toContain('without a sign-in')
   })
 })

@@ -1,6 +1,7 @@
 'use server'
 
 import {
+  createLink,
   ensureFolder,
   GraphError,
   GraphNotConfiguredError,
@@ -37,6 +38,7 @@ import {
   saveGuest,
 } from './service'
 import { inviteRedirectUrl } from './utils/invite-redirect'
+import { linkExpiry, sharesByLink } from './utils/share-mode'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
 export type OrganizationAccessResult =
@@ -131,38 +133,55 @@ export async function shareClientFolder(
     const folder = await folderFor(who.organizationId, client)
     const known = await guestFor(client.id, email)
 
-    const invitedUserId =
-      known?.invitedUserId ??
-      (
-        await inviteGuest(
-          email,
-          parsed.data.name ?? email,
-          inviteRedirectUrl(process.env.GRAPH_INVITE_REDIRECT_URL ?? portalUrl(routes.dashboard)),
-        )
-      ).invitedUser?.id
+    let invitedUserId: string | undefined
+    let permissionId: string | undefined
+    let openUrl = folder.webUrl
 
-    const shared = await shareItem(folder.driveId, folder.itemId, [email], 'read')
-    const failure = shared.failed[0]
-    if (failure) {
-      track(driveEvents.accessShareFailed, { clientId: client.id })
-      return { ok: false, message: `Microsoft refused that address — ${failure.message}` }
+    if (sharesByLink()) {
+      // No sign-in, and so no named person behind the access: the link is the credential.
+      const permission = await createLink(folder.driveId, folder.itemId, {
+        type: 'view',
+        scope: 'anonymous',
+        ...(linkExpiry() ? { expirationDateTime: linkExpiry() } : {}),
+      })
+      permissionId = permission.id
+      openUrl = permission.link?.webUrl ?? folder.webUrl
+    } else {
+      invitedUserId =
+        known?.invitedUserId ??
+        (
+          await inviteGuest(
+            email,
+            parsed.data.name ?? email,
+            inviteRedirectUrl(process.env.GRAPH_INVITE_REDIRECT_URL ?? portalUrl(routes.dashboard)),
+          )
+        ).invitedUser?.id
+
+      const shared = await shareItem(folder.driveId, folder.itemId, [email], 'read')
+      const failure = shared.failed[0]
+      if (failure) {
+        track(driveEvents.accessShareFailed, { clientId: client.id })
+        return { ok: false, message: `Microsoft refused that address — ${failure.message}` }
+      }
+      permissionId = shared.granted[0]?.id
     }
 
     const guest = await saveGuest({
       clientId: client.id,
       email,
       invitedUserId,
-      permissionId: shared.granted[0]?.id,
+      permissionId,
       role: 'read',
     })
 
-    if (folder.webUrl) {
+    if (openUrl) {
       await sendEmail({
         to: email,
         ...clientFolderSharedTemplate({
           organizationName: await organizationName(who.organizationId),
           clientName: client.name,
-          url: folder.webUrl,
+          url: openUrl,
+          requiresSignIn: !sharesByLink(),
         }),
       })
     }

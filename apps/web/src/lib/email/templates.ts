@@ -87,6 +87,8 @@ export function clientFolderSharedTemplate(options: {
   organizationName: string
   clientName: string
   url: string
+  /** A guest share asks for a Microsoft sign-in; a link share opens straight away. */
+  requiresSignIn?: boolean
 }): PreparedEmail {
   return {
     subject: `${options.organizationName} shared a document folder with you`,
@@ -99,7 +101,9 @@ export function clientFolderSharedTemplate(options: {
       ],
       action: { label: 'Open the folder', url: options.url },
       footnote:
-        'Sign in with this email address to open it. If the link does not work, ask your contact to share the folder again.',
+        options.requiresSignIn === false
+          ? 'The link opens without a sign-in, so keep it to yourself — anyone who has it can read the folder.'
+          : 'Sign in with this email address to open it. If the link does not work, ask your contact to share the folder again.',
     }),
   }
 }

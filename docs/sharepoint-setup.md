@@ -96,3 +96,17 @@ Bluebook/...                    → internal; where the portal files bluebook up
 `<client name>` must match a client in the portal's CRM, or the sweep copies nothing and says
 so. Sharing itself is done in the portal: a client's row → **Folder access**. Every grant the
 organization has made is listed on `/app/folder-access`, admin only.
+
+## How a client opens the folder
+
+`GRAPH_SHARE_MODE` decides, and the two answers are not interchangeable:
+
+- **`guest`** (default) — the address is invited as a B2B guest and signs in once with Microsoft.
+  Every grant is a named person, which is what makes revoking on the folder access page mean
+  anything, and what puts a name in SharePoint's audit log.
+- **`link`** — an anonymous view link, no sign-in at all. Whoever holds the URL holds the
+  access: it forwards, it cannot be attributed, and revoking kills it for everyone at once. The
+  tenant must allow "Anyone" links, and `GRAPH_LINK_EXPIRY_DAYS` is worth setting because
+  nothing else bounds a link nobody can be asked to give back.
+
+Either way the portal sends the mail itself; Graph's own notification stays off.
