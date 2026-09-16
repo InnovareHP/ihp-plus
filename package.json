@@ -18,6 +18,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,astro,md,json,css}\"",
     "db:generate": "pnpm --filter @ihp/db db:generate",
     "db:migrate": "pnpm --filter @ihp/db db:migrate",
+    "graph:check": "dotenv -e .env -- pnpm --filter @ihp/graph check",
+    "graph:sites": "dotenv -e .env -- pnpm --filter @ihp/graph sites",
     "rpc:generate": "pnpm --filter @ihp/proto generate",
     "rpc:lint": "pnpm --filter @ihp/proto lint",
     "db:seed": "dotenv -e .env -- pnpm --filter @ihp/db db:seed",

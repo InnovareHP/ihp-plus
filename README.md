@@ -83,6 +83,8 @@ Change the entry port with `PROXY_PORT` in `.env`.
 | `pnpm db:migrate`     | apply migrations to `DATABASE_URL`            |
 | `pnpm db:seed`        | create the org + one team per department      |
 | `pnpm rpc:generate`   | regenerate TS clients from the `.proto` files |
+| `pnpm graph:check`    | prove the SharePoint setup end to end         |
+| `pnpm graph:sites`    | list the SharePoint sites and library ids     |
 | `pnpm rpc:lint`       | `buf lint` the contract                       |
 | `pnpm db:studio`      | prisma studio                                 |
 | `pnpm infra:up`       | dev postgres + redis                          |
