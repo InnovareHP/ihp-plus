@@ -37,6 +37,8 @@ the first of these that is missing.
 1. **Two sites**, if they do not exist: one internal (staff sync this one), one for client
    folders. They must be separate sites — a `Sites.Selected` grant is per site collection,
    there is no folder-level grant, so one site cannot be both staff-only and client-facing.
+   Make them **Communication sites**: a Team site drags a Microsoft 365 group behind it — a
+   mailbox, calendar, Planner and a Teams hook nobody uses for a document library.
 2. **Admin consent** on the app's API permissions → Microsoft Graph → Application permissions:
    - `Sites.Selected` — the least-privilege file permission
    - `User.Invite.All` — app-only access cannot invite a _new_ guest to a drive item, so the
@@ -50,7 +52,8 @@ the first of these that is missing.
    admin instead:
 
    ```bash
-   pnpm graph:grant
+   pnpm graph:grant                                    # sites already in .env
+   pnpm graph:grant <internal site URL> <client site URL>   # fresh sites, prints the drive ids
    ```
 
    It prints a device code, an admin signs in once in a browser, and it then reads each

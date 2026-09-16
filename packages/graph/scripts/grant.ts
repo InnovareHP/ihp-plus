@@ -88,23 +88,53 @@ async function call<T>(token: string, path: string, init: RequestInit = {}) {
   return payload
 }
 
-/** The site a library belongs to, read off the library rather than asked for. */
-async function siteOf(token: string, driveId: string) {
-  const drive = await call<{ webUrl?: string; name?: string }>(token, `/drives/${driveId}`)
-  if (!drive.webUrl) throw new Error('That library reported no URL.')
+interface SiteAddress {
+  /** How Graph addresses the site: `host:/sites/name:`, or `host:` for the tenant root. */
+  address: string
+  webUrl: string
+}
 
-  const url = new URL(drive.webUrl)
+function addressOf(webUrl: string): SiteAddress {
+  const url = new URL(webUrl)
   const parts = url.pathname.split('/').filter(Boolean)
   // A site library is /sites/<name>/<library>; the tenant root site has no /sites/ prefix.
   const path = parts[0] === 'sites' && parts[1] ? `/sites/${parts[1]}` : ''
   return { address: `${url.host}:${path}:`, webUrl: `${url.origin}${path}` }
 }
 
-async function grant(token: string, label: string, driveId: string, appId: string) {
+/** The site a library belongs to, read off the library rather than asked for. */
+async function siteOfDrive(token: string, driveId: string) {
+  const drive = await call<{ webUrl?: string }>(token, `/drives/${driveId}`)
+  if (!drive.webUrl) throw new Error('That library reported no URL.')
+  return addressOf(drive.webUrl)
+}
+
+/** The Documents library of a site, so a fresh site needs no id hunting before it is granted. */
+async function documentsOf(token: string, site: SiteAddress) {
+  const payload = await call<{ value: { id: string; name?: string }[] }>(
+    token,
+    `/sites/${site.address}/drives`,
+  )
+  const documents = payload.value.find((drive) => drive.name === 'Documents') ?? payload.value[0]
+  if (!documents) throw new Error('That site has no document library.')
+  return documents.id
+}
+
+async function grant(
+  token: string,
+  label: string,
+  target: { driveId?: string; siteUrl?: string },
+  appId: string,
+) {
   console.log(`\n${label}`)
   try {
-    const site = await siteOf(token, driveId)
+    const site = target.siteUrl
+      ? addressOf(target.siteUrl)
+      : await siteOfDrive(token, target.driveId ?? '')
     console.log(`  site      ${site.webUrl}`)
+
+    const driveId = target.driveId ?? (await documentsOf(token, site))
+    if (!target.driveId) console.log(`  drive id  ${driveId}`)
 
     const permission = await call<{ id: string; roles?: string[] }>(
       token,
@@ -120,10 +150,10 @@ async function grant(token: string, label: string, driveId: string, appId: strin
     console.log(
       `  granted   ${permission.roles?.join(', ') ?? 'write'} (permission ${permission.id})`,
     )
-    return true
+    return driveId
   } catch (error) {
     console.log(`  FAILED    ${error instanceof Error ? error.message : String(error)}`)
-    return false
+    return undefined
   }
 }
 
@@ -134,8 +164,17 @@ async function main() {
     process.exitCode = 1
     return
   }
-  if (!config.internalDriveId || !config.clientDriveId) {
-    console.log('Set GRAPH_INTERNAL_DRIVE_ID and GRAPH_CLIENT_DRIVE_ID in .env first.')
+
+  // Two site URLs mean freshly made sites, whose drive ids .env cannot know yet.
+  const [internalUrl, clientUrl] = process.argv.slice(2)
+  if (!internalUrl !== !clientUrl) {
+    console.log('Pass both site URLs, or neither to use the drive ids already in .env.')
+    process.exitCode = 1
+    return
+  }
+  if (!internalUrl && (!config.internalDriveId || !config.clientDriveId)) {
+    console.log('Set GRAPH_INTERNAL_DRIVE_ID and GRAPH_CLIENT_DRIVE_ID in .env, or pass two site')
+    console.log('URLs: pnpm graph:grant https://host/sites/internal https://host/sites/clients')
     process.exitCode = 1
     return
   }
@@ -144,12 +183,26 @@ async function main() {
   const token = await signIn(config.tenantId)
   console.log('  Signed in.')
 
-  const internal = await grant(token, 'Internal library', config.internalDriveId, config.clientId)
-  const client = await grant(token, 'Client library', config.clientDriveId, config.clientId)
-
-  console.log(
-    `\n${internal && client ? 'Both granted. Run `pnpm graph:check`.' : 'Something failed — the lines above say what.'}`,
+  const internal = await grant(
+    token,
+    'Internal library',
+    internalUrl ? { siteUrl: internalUrl } : { driveId: config.internalDriveId },
+    config.clientId,
   )
+  const client = await grant(
+    token,
+    'Client library',
+    clientUrl ? { siteUrl: clientUrl } : { driveId: config.clientDriveId },
+    config.clientId,
+  )
+
+  if (internal && client) {
+    console.log('\nBoth granted. Put these in .env, then run `pnpm graph:check`:\n')
+    console.log(`GRAPH_INTERNAL_DRIVE_ID=${internal}`)
+    console.log(`GRAPH_CLIENT_DRIVE_ID=${client}`)
+  } else {
+    console.log('\nSomething failed — the lines above say what.')
+  }
   process.exitCode = internal && client ? 0 : 1
 }
 
