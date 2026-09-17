@@ -7,6 +7,7 @@ import {
   uploadFile,
 } from '@ihp/graph'
 import { safeLibraryName } from '@/lib/library-name'
+import { CLIENTS_ROOT } from './schema'
 
 /** Bluebook sits outside Clients/, so nothing filed here is ever mirrored to a client. */
 export const BLUEBOOK_ROOT = 'Bluebook'
@@ -21,6 +22,12 @@ async function ensureInternalFolder(segments: string[]) {
   }
 
   return { driveId, parentItemId }
+}
+
+/** The staff side of a client's folder; the client library one is the mirror of what lands here. */
+export async function ensureInternalClientFolder(clientName: string) {
+  const folder = await ensureInternalFolder([CLIENTS_ROOT, clientName])
+  return folder.parentItemId
 }
 
 /** Files one document into the staff library and returns the id the portal stores. */

@@ -16,6 +16,7 @@ import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/aut
 import { clientFolderSharedTemplate, portalUrl, sendEmail } from '@/lib/email'
 import { routes } from '@/lib/routes'
 import { driveEvents } from './events'
+import { ensureInternalClientFolder } from './library'
 import {
   clientAccessSchema,
   clientIdSchema,
@@ -82,13 +83,30 @@ function graphMessage(error: unknown, fallback: string) {
   return `Microsoft refused that (${error.code}) — ${error.message}`
 }
 
+/**
+ * The staff folder the client's one mirrors. Best-effort: the share still works without it, and
+ * the internal library is where staff put documents, not where the client reads them.
+ */
+async function internalFolderFor(clientName: string) {
+  try {
+    await ensureInternalClientFolder(clientName)
+  } catch (error) {
+    track(driveEvents.internalFolderFailed, {
+      reason: error instanceof Error ? error.message.slice(0, 120) : 'Unknown error.',
+    })
+  }
+}
+
 /** The client's folder in the shared library, created the first time someone shares it. */
 async function folderFor(organizationId: string, client: { id: string; name: string }) {
   const targetDriveId = requireClientDriveId()
   const known = await clientDriveFolder(client.id)
   if (known && known.driveId === targetDriveId) return known
 
+  // Both sides are made together, so staff have somewhere to file the moment a client can read.
+  await internalFolderFor(client.name)
   const folder = await ensureFolder(targetDriveId, (await rootItem(targetDriveId)).id, client.name)
+  track(driveEvents.clientFolderCreated, { clientId: client.id })
   return saveClientDriveFolder({
     organizationId,
     clientId: client.id,

@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const graph = vi.hoisted(() => ({
-  ensureFolder: vi.fn(async () => ({
-    id: 'folder-1',
-    name: 'Acme',
+  ensureFolder: vi.fn(async (_driveId: string, _parentId: string, name: string) => ({
+    id: name === 'Clients' ? 'internal-clients' : 'folder-1',
+    name,
     webUrl: 'https://sharepoint.test/Acme',
   })),
   inviteGuest: vi.fn(async () => ({ id: 'inv-1', invitedUser: { id: 'guest-user-1' } })),
@@ -19,7 +19,8 @@ const graph = vi.hoisted(() => ({
     link: { webUrl: 'https://sharepoint.test/:f:/s/ihp-clients/anon' },
   })),
   requireClientDriveId: vi.fn(() => 'client-drive'),
-  rootItem: vi.fn(async () => ({ id: 'client-root', name: 'root' })),
+  requireInternalDriveId: vi.fn(() => 'internal-drive'),
+  rootItem: vi.fn(async (driveId: string) => ({ id: `${driveId}-root`, name: 'root' })),
 }))
 
 const service = vi.hoisted(() => ({
@@ -120,6 +121,40 @@ describe('shareClientFolder', () => {
     })
   })
 
+  it('makes the staff folder in the internal library alongside the client one', async () => {
+    await shareClientFolder({ clientId: CLIENT_ID, email: 'buyer@acme.test' })
+
+    expect(graph.ensureFolder).toHaveBeenNthCalledWith(
+      1,
+      'internal-drive',
+      'internal-drive-root',
+      'Clients',
+    )
+    expect(graph.ensureFolder).toHaveBeenNthCalledWith(
+      2,
+      'internal-drive',
+      'internal-clients',
+      'Acme',
+    )
+    expect(graph.ensureFolder).toHaveBeenNthCalledWith(
+      3,
+      'client-drive',
+      'client-drive-root',
+      'Acme',
+    )
+  })
+
+  it('still shares when the internal library cannot be written to', async () => {
+    graph.requireInternalDriveId.mockImplementationOnce(() => {
+      throw new Error('not configured')
+    })
+
+    const result = await shareClientFolder({ clientId: CLIENT_ID, email: 'buyer@acme.test' })
+
+    expect(result).toMatchObject({ ok: true })
+    expect(graph.shareItem).toHaveBeenCalled()
+  })
+
   it('does not re-invite someone Entra already knows as a guest', async () => {
     service.guestFor.mockResolvedValue({ ...GUEST_ROW, invitedUserId: 'guest-user-1' })
 
@@ -211,7 +246,9 @@ describe('shareClientFolder', () => {
 
   it('says what to do when Graph is not configured yet', async () => {
     const { GraphNotConfiguredError } = await import('@ihp/graph')
-    graph.ensureFolder.mockRejectedValueOnce(new GraphNotConfiguredError())
+    graph.requireClientDriveId.mockImplementationOnce(() => {
+      throw new GraphNotConfiguredError()
+    })
 
     const result = await shareClientFolder({ clientId: CLIENT_ID, email: 'buyer@acme.test' })
 

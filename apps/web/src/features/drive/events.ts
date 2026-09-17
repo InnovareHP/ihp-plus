@@ -8,6 +8,8 @@ export const driveEvents = {
   subscriptionCreated: 'drive.subscription.created',
   subscriptionRenewed: 'drive.subscription.renewed',
   subscriptionRenewFailed: 'drive.subscription.renew_failed',
+  clientFolderCreated: 'drive.client_folder.created',
+  internalFolderFailed: 'drive.client_folder.internal_failed',
   accessShared: 'drive.client_access.shared',
   accessShareFailed: 'drive.client_access.share_failed',
   accessRevoked: 'drive.client_access.revoked',
