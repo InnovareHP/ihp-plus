@@ -86,8 +86,8 @@ describe('syncDrive', () => {
     expect(service.saveSweep).toHaveBeenCalledWith('internal-drive', 'delta-2')
   })
 
-  it('copies a file from a client’s Shared shelf into that client’s folder', async () => {
-    sweep([file('sow.pdf', '/drive/root:/Clients/Acme/Shared')])
+  it('copies a file from a client’s folder into that client’s folder', async () => {
+    sweep([file('sow.pdf', '/drive/root:/Clients/Acme')])
 
     const outcome = await syncDrive('internal-drive')
 
@@ -102,8 +102,8 @@ describe('syncDrive', () => {
     expect(outcome.copied).toBe(1)
   })
 
-  it('leaves an internal file alone', async () => {
-    sweep([file('margins.xlsx', '/drive/root:/Clients/Acme/Internal')])
+  it('leaves a file filed outside Clients alone', async () => {
+    sweep([file('handbook.pdf', '/drive/root:/Bluebook')])
 
     const outcome = await syncDrive('internal-drive')
 
@@ -118,7 +118,7 @@ describe('syncDrive', () => {
       sourceEtag: 'etag-1',
       targetItemId: 'target-1',
     })
-    sweep([file('sow.pdf', '/drive/root:/Clients/Acme/Shared')])
+    sweep([file('sow.pdf', '/drive/root:/Clients/Acme')])
 
     const outcome = await syncDrive('internal-drive')
 
@@ -133,7 +133,7 @@ describe('syncDrive', () => {
       sourceEtag: 'etag-0',
       targetItemId: 'target-old',
     })
-    sweep([file('sow.pdf', '/drive/root:/Clients/Acme/Shared')])
+    sweep([file('sow.pdf', '/drive/root:/Clients/Acme')])
 
     const outcome = await syncDrive('internal-drive')
 
@@ -149,7 +149,7 @@ describe('syncDrive', () => {
       sourceEtag: 'etag-1',
       targetItemId: 'target-1',
     })
-    sweep([file('sow.pdf', '/drive/root:/Clients/Acme/Shared', { deleted: { state: 'deleted' } })])
+    sweep([file('sow.pdf', '/drive/root:/Clients/Acme', { deleted: { state: 'deleted' } })])
 
     const outcome = await syncDrive('internal-drive')
 
@@ -158,14 +158,14 @@ describe('syncDrive', () => {
     expect(outcome.removed).toBe(1)
   })
 
-  it('withdraws the copy when a file is moved off the Shared shelf', async () => {
+  it('withdraws the copy when a file is moved out of the client’s folder', async () => {
     service.mirrorFor.mockResolvedValue({
       id: 'mirror-1',
       state: 'synced',
       sourceEtag: 'etag-1',
       targetItemId: 'target-1',
     })
-    sweep([file('sow.pdf', '/drive/root:/Clients/Acme/Internal')])
+    sweep([file('sow.pdf', '/drive/root:/Bluebook')])
 
     const outcome = await syncDrive('internal-drive')
 
@@ -175,7 +175,7 @@ describe('syncDrive', () => {
 
   it('does not share a folder named after a client the CRM does not have', async () => {
     service.clientByFolderName.mockResolvedValue(null)
-    sweep([file('sow.pdf', '/drive/root:/Clients/Ghost Ltd/Shared')])
+    sweep([file('sow.pdf', '/drive/root:/Clients/Ghost Ltd')])
 
     const outcome = await syncDrive('internal-drive')
 
@@ -184,7 +184,7 @@ describe('syncDrive', () => {
   })
 
   it('creates the subfolders a nested file needs before copying it', async () => {
-    sweep([file('q1.xlsx', '/drive/root:/Clients/Acme/Shared/Reports/2026')])
+    sweep([file('q1.xlsx', '/drive/root:/Clients/Acme/Reports/2026')])
 
     await syncDrive('internal-drive')
 
@@ -202,10 +202,7 @@ describe('syncDrive', () => {
 
   it('records the failure and keeps sweeping when one copy fails', async () => {
     graph.copyItem.mockRejectedValueOnce(new Error('Quota exceeded.'))
-    sweep([
-      file('a.pdf', '/drive/root:/Clients/Acme/Shared'),
-      file('b.pdf', '/drive/root:/Clients/Acme/Shared'),
-    ])
+    sweep([file('a.pdf', '/drive/root:/Clients/Acme'), file('b.pdf', '/drive/root:/Clients/Acme')])
 
     const outcome = await syncDrive('internal-drive')
 

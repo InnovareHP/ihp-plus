@@ -3,7 +3,6 @@ import { paginationSchema, sortDirectionSchema, type PageInfo } from '@/lib/pagi
 
 /** The folder staff drop a client's documents into; everything else stays internal. */
 export const CLIENTS_ROOT = 'Clients'
-export const SHARED_SEGMENT = 'Shared'
 
 export const MIRROR_STATES = ['pending', 'copying', 'synced', 'failed', 'removed'] as const
 

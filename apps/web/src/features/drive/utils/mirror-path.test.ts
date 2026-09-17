@@ -38,29 +38,29 @@ describe('pathFromRoot', () => {
 })
 
 describe('mirrorTargetOf', () => {
-  it('mirrors a file on a client’s Shared shelf', () => {
-    expect(mirrorTargetOf(item('sow.pdf', '/drive/root:/Clients/Acme/Shared'))).toEqual({
+  it('mirrors a file sitting directly in a client’s folder', () => {
+    expect(mirrorTargetOf(item('sow.pdf', '/drive/root:/Clients/Acme'))).toEqual({
       clientFolder: 'Acme',
       relativePath: 'sow.pdf',
     })
   })
 
-  it('keeps the subfolders under Shared', () => {
-    expect(mirrorTargetOf(item('q1.xlsx', '/drive/root:/Clients/Acme/Shared/Reports'))).toEqual({
+  it('keeps the subfolders a client’s documents are filed in', () => {
+    expect(mirrorTargetOf(item('q1.xlsx', '/drive/root:/Clients/Acme/Reports/2026'))).toEqual({
       clientFolder: 'Acme',
-      relativePath: 'Reports/q1.xlsx',
+      relativePath: 'Reports/2026/q1.xlsx',
     })
   })
 
-  it('treats the Shared folder itself as the client’s root', () => {
-    expect(mirrorTargetOf(item('Shared', '/drive/root:/Clients/Acme'))).toEqual({
+  it('treats the client folder itself as the client’s root', () => {
+    expect(mirrorTargetOf(item('Acme', '/drive/root:/Clients'))).toEqual({
       clientFolder: 'Acme',
       relativePath: '',
     })
   })
 
-  it('leaves a file the staff kept outside Shared internal', () => {
-    expect(mirrorTargetOf(item('margins.xlsx', '/drive/root:/Clients/Acme/Internal'))).toBeNull()
+  it('leaves the Clients folder itself alone', () => {
+    expect(mirrorTargetOf(item('Clients', '/drive/root:'))).toBeNull()
   })
 
   it('leaves a file that is not under Clients at all internal', () => {
@@ -68,12 +68,12 @@ describe('mirrorTargetOf', () => {
   })
 
   it('does not mirror the sync client’s leftovers', () => {
-    expect(mirrorTargetOf(item('~$sow.docx', '/drive/root:/Clients/Acme/Shared'))).toBeNull()
+    expect(mirrorTargetOf(item('~$sow.docx', '/drive/root:/Clients/Acme'))).toBeNull()
   })
 })
 
 describe('parentSegmentsOf', () => {
-  it('is empty for a file sitting directly on the shelf', () => {
+  it('is empty for a file sitting directly in the client folder', () => {
     expect(parentSegmentsOf({ clientFolder: 'Acme', relativePath: 'sow.pdf' })).toEqual([])
   })
 

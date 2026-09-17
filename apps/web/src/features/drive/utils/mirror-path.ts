@@ -1,5 +1,5 @@
 import type { DriveItem } from '@ihp/graph'
-import { CLIENTS_ROOT, SHARED_SEGMENT } from '../schema'
+import { CLIENTS_ROOT } from '../schema'
 
 /** What a mirrored item is: the client folder it belongs to and where it sits inside it. */
 export interface MirrorTarget {
@@ -40,11 +40,10 @@ export function mirrorTargetOf(item: DriveItem): MirrorTarget | null {
   if (parentPath === undefined) return null
 
   const segments = [...parentPath.split('/').filter(Boolean), item.name]
-  const [root, clientFolder, shared, ...rest] = segments
+  const [root, clientFolder, ...rest] = segments
 
+  // The whole client folder travels; `Clients/Acme` itself is the client's root, not a copy.
   if (root !== CLIENTS_ROOT || !clientFolder) return null
-  // `Clients/Acme` and `Clients/Acme/Internal` are staff-only; only the Shared shelf travels.
-  if (shared !== SHARED_SEGMENT) return null
   if (rest.some(isSyncJunk)) return null
 
   return { clientFolder, relativePath: rest.join('/') }
