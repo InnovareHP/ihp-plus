@@ -1,15 +1,45 @@
 /* Shared design tokens for every app. Tailwind v4 CSS-first config. */
+/* The ramps are OKLCH so both apps interpolate identically; the three anchors from the
+   IHP+ brand guidelines are brand-600 #1346C5, brand-800 #0B286B and mint-300 #95E5DC. */
 @theme {
-  --color-brand-50: oklch(0.97 0.02 250);
-  --color-brand-100: oklch(0.93 0.04 250);
-  --color-brand-300: oklch(0.78 0.11 250);
-  --color-brand-500: oklch(0.58 0.18 250);
-  --color-brand-600: oklch(0.5 0.18 250);
-  --color-brand-700: oklch(0.42 0.16 250);
-  --color-brand-900: oklch(0.28 0.1 250);
+  --color-brand-50: oklch(0.972 0.017 266);
+  --color-brand-100: oklch(0.927 0.0347 266);
+  --color-brand-200: oklch(0.87 0.064 265);
+  --color-brand-300: oklch(0.79 0.108 265);
+  --color-brand-400: oklch(0.69 0.152 264);
+  --color-brand-500: oklch(0.575 0.19 264);
+  --color-brand-600: oklch(0.4534 0.2043 263.56);
+  --color-brand-700: oklch(0.38 0.165 263.4);
+  --color-brand-800: oklch(0.3047 0.122 263.28);
+  --color-brand-900: oklch(0.24 0.095 263);
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "JetBrains Mono", monospace;
+  --color-mint-50: oklch(0.98 0.011 187);
+  --color-mint-100: oklch(0.9629 0.0223 186.5);
+  --color-mint-200: oklch(0.93 0.042 187);
+  --color-mint-300: oklch(0.8678 0.0796 186.85);
+  --color-mint-400: oklch(0.8 0.1 187);
+  --color-mint-500: oklch(0.73 0.11 187);
+  --color-mint-600: oklch(0.66 0.115 188);
+  --color-mint-700: oklch(0.58 0.11 189);
+  --color-mint-800: oklch(0.48 0.095 190);
+  --color-mint-900: oklch(0.38 0.075 191);
+
+  /* Neutrals the guidelines name outright: body copy, page canvas, and the tinted panel. */
+  --color-ink: #222222;
+  --color-canvas: #f7f9fc;
+
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', monospace;
+
+  /* The guidelines' four type steps, size/leading verbatim. */
+  --text-headline: 3.75rem;
+  --text-headline--line-height: 4rem;
+  --text-headline-2: 1.875rem;
+  --text-headline-2--line-height: 2rem;
+  --text-subheading: 1.25rem;
+  --text-subheading--line-height: 1.5rem;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.25rem;
 
   --radius-card: 0.875rem;
 }

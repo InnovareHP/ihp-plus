@@ -1,0 +1,161 @@
+syntax = "proto3";
+
+package ihp.members.v1;
+
+// Role inside the organization, from Better Auth's organization plugin.
+enum OrganizationRole {
+  ORGANIZATION_ROLE_UNSPECIFIED = 0;
+  ORGANIZATION_ROLE_OWNER = 1;
+  ORGANIZATION_ROLE_ADMIN = 2;
+  ORGANIZATION_ROLE_MEMBER = 3;
+}
+
+// Portal-wide role from the admin plugin. USER is what the members page labels "Member".
+enum PortalRole {
+  PORTAL_ROLE_UNSPECIFIED = 0;
+  PORTAL_ROLE_ADMIN = 1;
+  PORTAL_ROLE_USER = 2;
+}
+
+enum MemberStatus {
+  MEMBER_STATUS_UNSPECIFIED = 0;
+  MEMBER_STATUS_ALL = 1;
+  MEMBER_STATUS_ACTIVE = 2;
+  MEMBER_STATUS_SUSPENDED = 3;
+}
+
+// Department is a to-many relation and Prisma cannot order by one, so it is filter-only.
+enum MemberSortKey {
+  MEMBER_SORT_KEY_UNSPECIFIED = 0;
+  MEMBER_SORT_KEY_NAME = 1;
+  MEMBER_SORT_KEY_EMAIL = 2;
+  MEMBER_SORT_KEY_ORGANIZATION_ROLE = 3;
+  MEMBER_SORT_KEY_PORTAL_ROLE = 4;
+  MEMBER_SORT_KEY_JOB_TITLE = 5;
+  MEMBER_SORT_KEY_START_DATE = 6;
+  MEMBER_SORT_KEY_CREATED_AT = 7;
+}
+
+enum SortDirection {
+  SORT_DIRECTION_UNSPECIFIED = 0;
+  SORT_DIRECTION_ASC = 1;
+  SORT_DIRECTION_DESC = 2;
+}
+
+message Member {
+  string member_id = 1;
+  string user_id = 2;
+  string name = 3;
+  string email = 4;
+  OrganizationRole organization_role = 5;
+  PortalRole portal_role = 6;
+  // Each absent when the person has no department, title, issued ID or start date yet.
+  optional string team = 7;
+  optional string job_title = 8;
+  optional string ihp_id = 9;
+  optional string start_date = 10;
+  bool banned = 11;
+  // True for the caller's own row, which the UI must not offer to suspend.
+  bool is_self = 12;
+  // Where the person stands in employment — probationary, regular and so on. Absent until
+  // People & Culture sets one.
+  optional string employment_status = 13;
+}
+
+message PageInfo {
+  int32 page = 1;
+  int32 page_size = 2;
+  int32 total = 3;
+  int32 page_count = 4;
+  bool has_previous = 5;
+  bool has_next = 6;
+}
+
+// Already parsed: turning ?a=x,y into these fields is the caller's job, so a stale URL
+// falls back on the client rather than reaching the service.
+message MemberQuery {
+  string search = 1;
+  repeated OrganizationRole organization_roles = 2;
+  repeated PortalRole portal_roles = 3;
+  repeated string employment_types = 4;
+  repeated string team_ids = 5;
+  MemberStatus status = 6;
+  optional string start_date_from = 7;
+  optional string start_date_to = 8;
+  MemberSortKey sort_by = 9;
+  SortDirection sort_direction = 10;
+  int32 page = 11;
+  int32 page_size = 12;
+  repeated string employment_statuses = 13;
+}
+
+message ListMembersRequest {
+  MemberQuery query = 1;
+}
+
+message ListMembersResponse {
+  repeated Member rows = 1;
+  PageInfo page_info = 2;
+}
+
+message TeamOption {
+  string team_id = 1;
+  string name = 2;
+  int32 member_count = 3;
+}
+
+message ListMemberFilterOptionsRequest {}
+
+message ListMemberFilterOptionsResponse {
+  repeated TeamOption teams = 1;
+  repeated string employment_types = 2;
+  repeated string employment_statuses = 3;
+}
+
+message SetOrganizationRoleRequest {
+  string member_id = 1;
+  OrganizationRole role = 2;
+}
+
+message SetPortalRoleRequest {
+  string user_id = 1;
+  PortalRole role = 2;
+}
+
+message SetMemberAccessRequest {
+  string user_id = 1;
+  bool banned = 2;
+}
+
+// An empty status clears it, which is how someone set by mistake goes back to unset.
+message SetEmploymentStatusRequest {
+  string user_id = 1;
+  string employment_status = 2;
+}
+
+// Each mutation gets its own response so they can evolve independently. All three carry
+// the updated row, so an optimistic cache reconciles against what the server actually holds.
+message SetOrganizationRoleResponse {
+  Member member = 1;
+}
+
+message SetPortalRoleResponse {
+  Member member = 1;
+}
+
+message SetMemberAccessResponse {
+  Member member = 1;
+}
+
+message SetEmploymentStatusResponse {
+  Member member = 1;
+}
+
+service MembersService {
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+  rpc ListMemberFilterOptions(ListMemberFilterOptionsRequest) returns (ListMemberFilterOptionsResponse);
+  rpc SetOrganizationRole(SetOrganizationRoleRequest) returns (SetOrganizationRoleResponse);
+  rpc SetPortalRole(SetPortalRoleRequest) returns (SetPortalRoleResponse);
+  rpc SetMemberAccess(SetMemberAccessRequest) returns (SetMemberAccessResponse);
+  rpc SetEmploymentStatus(SetEmploymentStatusRequest) returns (SetEmploymentStatusResponse);
+}

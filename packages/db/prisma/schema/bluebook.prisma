@@ -1,0 +1,68 @@
+// The company bluebook: the handbook every employee reads, in its own Postgres schema. It
+// stays out of auth.prisma because `pnpm db:auth-schema` rewrites that file wholesale.
+
+model BluebookDocument {
+  id             String @id @default(uuid())
+  organizationId String
+  // A document sits on as many department shelves as it applies to. No rows is the
+  // company-wide shelf every department reads, which is what a null teamId used to mean.
+  teams          BluebookDocumentTeam[]
+  acknowledgements BluebookAcknowledgement[]
+
+  title       String
+  description String?
+  /// A value from the bluebookCategory lookup list, stored as plain text.
+  category    String?
+
+  /// Object storage key, kept for documents filed before the SharePoint library existed.
+  fileKey     String?
+  /// Graph driveItem id in the internal library — where new documents go.
+  driveItemId String?
+  fileName    String
+  contentType String
+  byteSize    Int
+
+  uploadedById   String?
+  uploadedByName String?
+
+  // Archiving rather than deleting: a document someone linked to stays accounted for, and the
+  // object is removed from storage only when an admin purges it.
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([organizationId, archivedAt])
+  @@index([organizationId, category])
+  @@map("bluebookDocument")
+  @@schema("bluebook")
+}
+
+/// Which department shelves one document sits on.
+model BluebookDocumentTeam {
+  id         String           @id @default(uuid())
+  documentId String
+  document   BluebookDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  teamId     String
+  // Snapshot: a department renamed or deleted later must still label the document it holds.
+  teamName   String
+
+  @@unique([documentId, teamId])
+  @@index([teamId])
+  @@map("bluebookDocumentTeam")
+  @@schema("bluebook")
+}
+
+/// One person confirming they have read one document; unique per pair, so confirming twice is a no-op.
+model BluebookAcknowledgement {
+  id             String           @id @default(uuid())
+  documentId     String
+  document       BluebookDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  // A plain column, not a relation: a relation field would have to be added to the generated User model.
+  userId         String
+  acknowledgedAt DateTime         @default(now())
+
+  @@unique([documentId, userId])
+  @@index([userId])
+  @@map("bluebookAcknowledgement")
+  @@schema("bluebook")
+}

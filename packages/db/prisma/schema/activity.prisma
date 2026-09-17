@@ -1,0 +1,25 @@
+// What happened to each contract and request, in its own Postgres schema. It stays out of
+// auth.prisma because `pnpm db:auth-schema` rewrites that file wholesale.
+
+/// One thing that happened to one subject. Append-only: nothing updates or deletes a row.
+model ActivityEvent {
+  id             String   @id @default(uuid())
+  organizationId String
+  /// "contract" | "request" — what subjectId points at.
+  subjectType    String
+  subjectId      String
+  /// A dotted action such as "contract.published", turned into words when it is read.
+  action         String
+  /// Null when the actor is not a portal user, such as a client accepting through their link.
+  actorId        String?
+  /// Snapshot, so a renamed or deleted user still reads as whoever did it.
+  actorName      String
+  /// Short human detail such as a decision note; never a payload.
+  detail         String?
+  createdAt      DateTime @default(now())
+
+  @@index([subjectType, subjectId, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("activityEvent")
+  @@schema("activity")
+}

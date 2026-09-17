@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ihp.lookups.v1;
+
+// Curated dropdown values, per organization. Kinds are open strings rather than an enum on
+// purpose: adding a list is a seed row, not a contract change. A value the code branches on
+// is not a lookup and stays in its own enum.
+message LookupOption {
+  string value = 1;
+  int32 sort_order = 2;
+}
+
+message ListOptionsRequest {
+  // One of the kinds in features/lookups/schema.ts, e.g. "position".
+  string kind = 1;
+}
+
+message ListOptionsResponse {
+  repeated LookupOption options = 1;
+}
+
+service LookupsService {
+  rpc ListOptions(ListOptionsRequest) returns (ListOptionsResponse);
+}

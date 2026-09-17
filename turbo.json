@@ -6,21 +6,80 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "env": ["DATABASE_URL", "REDIS_URL", "NEXT_PUBLIC_*"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "src/generated/**"],
+      "env": [
+        "DATABASE_URL",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "REDIS_URL",
+        "NEXT_PUBLIC_*",
+        "BETTER_AUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "MICROSOFT_TENANT_ID",
+        "EMAIL_*",
+        "SES_*",
+        "AWS_REGION",
+        "S3_*",
+        "GRAPH_*",
+        "ORG_*"
+      ]
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": [
+        "DATABASE_URL",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "REDIS_URL",
+        "NEXT_PUBLIC_*",
+        "BETTER_AUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "MICROSOFT_TENANT_ID",
+        "EMAIL_*",
+        "SES_*",
+        "AWS_REGION",
+        "S3_*",
+        "GRAPH_*",
+        "ORG_*"
+      ]
     },
     "lint": {
       "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "env": [
+        "DATABASE_URL",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "REDIS_URL",
+        "NEXT_PUBLIC_*",
+        "BETTER_AUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "MICROSOFT_CLIENT_ID",
+        "MICROSOFT_CLIENT_SECRET",
+        "MICROSOFT_TENANT_ID",
+        "EMAIL_*",
+        "SES_*",
+        "AWS_REGION",
+        "S3_*",
+        "GRAPH_*",
+        "ORG_*"
+      ]
     },
     "typecheck": {
       "dependsOn": ["^build"]
     },
     "clean": {
       "cache": false
+    },
+    "@ihp/db#typecheck": {
+      "dependsOn": ["build"]
     }
   }
 }

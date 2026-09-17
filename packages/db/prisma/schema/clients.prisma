@@ -1,0 +1,38 @@
+// The clients CRM, in its own Postgres schema. It stays out of auth.prisma because
+// `pnpm db:auth-schema` rewrites that file wholesale.
+
+model Client {
+  id             String @id @default(uuid())
+  // Plain columns, not relations: a relation field would have to be added to the generated
+  // User and Organization models in auth.prisma.
+  organizationId String
+  ownerId        String?
+  createdById    String?
+
+  name        String
+  contactName String?
+  email       String?
+  phone       String?
+  status      String   @default("prospect")
+  // Curated dropdown values, kept as plain text so an option can be renamed or retired
+  // without rewriting every client row.
+  type        String?
+  serviceLine String?
+  source      String?
+  city        String?
+  state       String?
+  tags        String[] @default([])
+  notes       String?
+
+  lastContactAt DateTime?
+  // Archiving is the reversible delete the UI offers as undo.
+  archivedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([organizationId, archivedAt])
+  @@index([organizationId, status])
+  @@index([organizationId, ownerId])
+  @@map("client")
+  @@schema("clients")
+}

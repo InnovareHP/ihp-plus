@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package ihp.directory.v1;
+
+// One colleague as the directory shows them. Everything here is already collected at
+// onboarding; the directory is the first screen that shows it to the whole company.
+message Person {
+  string user_id = 1;
+  // Preferred name when there is one, so people are listed as they are addressed.
+  string name = 2;
+  string job_title = 3;
+  string department = 4;
+  string email = 5;
+  string phone = 6;
+  string ihp_id = 7;
+  string employment_type = 8;
+  // Short-lived signed link to the profile photo; empty when there is none.
+  string photo_url = 9;
+  // ISO date, empty when the profile carries none.
+  string start_date = 10;
+  bool is_lead = 11;
+}
+
+message PageInfo {
+  int32 page = 1;
+  int32 page_size = 2;
+  int32 total = 3;
+  int32 page_count = 4;
+  bool has_previous = 5;
+  bool has_next = 6;
+}
+
+message ListPeopleRequest {
+  // Matches a name, job title, email, phone or IHP ID.
+  string search = 1;
+  // Department ids; empty means every department.
+  repeated string team_ids = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListPeopleResponse {
+  repeated Person people = 1;
+  PageInfo page_info = 2;
+}
+
+message Department {
+  string team_id = 1;
+  string name = 2;
+  int32 member_count = 3;
+}
+
+message ListDepartmentsRequest {}
+
+message ListDepartmentsResponse {
+  repeated Department departments = 1;
+  // People with no department yet, so the filter can offer them rather than hide them.
+  int32 unassigned_count = 2;
+}
+
+// Reading the company directory is open to everyone who has finished onboarding.
+service DirectoryService {
+  rpc ListPeople(ListPeopleRequest) returns (ListPeopleResponse);
+  rpc ListDepartments(ListDepartmentsRequest) returns (ListDepartmentsResponse);
+}

@@ -1,0 +1,11 @@
+# The contract. `pnpm --filter @ihp/proto generate` writes TypeScript into
+# packages/rpc/src/gen, which is committed so installs and Docker builds need no codegen.
+version: v2
+modules:
+  - path: .
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

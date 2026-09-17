@@ -7,23 +7,44 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "turbo run dev",
-    "dev:web": "turbo run dev --filter=@ihp/web",
-    "dev:landing": "turbo run dev --filter=@ihp/landing",
-    "build": "turbo run build",
+    "dev": "dotenv -e .env -- turbo run dev",
+    "dev:web": "dotenv -e .env -- turbo run dev --filter=@ihp/web",
+    "dev:landing": "dotenv -e .env -- turbo run dev --filter=@ihp/landing",
+    "build": "dotenv -e .env -- turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
+    "test": "dotenv -e .env -- turbo run test",
     "clean": "turbo run clean && rm -rf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,astro,md,json,css}\"",
+    "db:generate": "pnpm --filter @ihp/db db:generate",
+    "db:migrate": "pnpm --filter @ihp/db db:migrate",
+    "graph:check": "dotenv -e .env -- pnpm --filter @ihp/graph check",
+    "graph:grant": "dotenv -e .env -- pnpm --filter @ihp/graph grant",
+    "graph:sites": "dotenv -e .env -- pnpm --filter @ihp/graph sites",
+    "rpc:generate": "pnpm --filter @ihp/proto generate",
+    "rpc:lint": "pnpm --filter @ihp/proto lint",
+    "db:seed": "dotenv -e .env -- pnpm --filter @ihp/db db:seed",
+    "db:studio": "pnpm --filter @ihp/db db:studio",
+    "db:push": "pnpm --filter @ihp/db db:push",
     "infra:up": "docker compose --env-file .env -f infra/compose.dev.yml up -d",
     "infra:down": "docker compose --env-file .env -f infra/compose.dev.yml down",
+    "infra:pg": "docker compose --env-file .env -f infra/compose.dev.yml up -d postgres",
+    "infra:pg:stop": "docker compose --env-file .env -f infra/compose.dev.yml stop postgres",
+    "infra:redis": "docker compose --env-file .env -f infra/compose.dev.yml up -d redis",
+    "infra:redis:stop": "docker compose --env-file .env -f infra/compose.dev.yml stop redis",
+    "infra:s3": "docker compose --env-file .env -f infra/compose.dev.yml up -d minio minio-init",
+    "infra:s3:stop": "docker compose --env-file .env -f infra/compose.dev.yml stop minio",
     "stack:up": "docker compose --env-file .env -f infra/compose.yml up --build",
-    "stack:down": "docker compose --env-file .env -f infra/compose.yml down"
+    "stack:down": "docker compose --env-file .env -f infra/compose.yml down",
+    "db:auth-schema": "pnpm --filter @ihp/db db:auth-schema"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^5.0.0",
+    "dotenv-cli": "^10.0.0",
     "prettier": "^3.9.6",
     "prettier-plugin-astro": "^0.14.1",
     "turbo": "^2.10.12",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.0"
   }
 }

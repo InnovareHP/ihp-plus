@@ -1,0 +1,36 @@
+// Performance evaluations. The questions live in a requests.requestForm of kind "evaluation",
+// so the same builder serves both; a row here is one supervisor's evaluation of one employee.
+// Its own Postgres schema because `pnpm db:auth-schema` rewrites auth.prisma wholesale.
+
+model EvaluationAssignment {
+  id String @id @default(uuid())
+  // Plain columns, not relations: a relation field would have to be added to the generated
+  // User and Organization models in auth.prisma.
+  organizationId String
+  employeeId     String
+  evaluatorId    String
+  assignedById   String?
+
+  formId String
+  form   RequestForm @relation(fields: [formId], references: [id], onDelete: Restrict)
+
+  // Both snapshots: a form renamed, reordered or archived later must still render the answers
+  // as they were given.
+  formName String
+  fields   Json
+  values   Json   @default("{}")
+
+  // pending until the evaluator submits it; cancelled retires one nobody should fill.
+  status      String    @default("pending")
+  dueAt       DateTime?
+  submittedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([evaluatorId, status])
+  @@index([employeeId, status])
+  @@map("evaluationAssignment")
+  @@schema("evaluations")
+}

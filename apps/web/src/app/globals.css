@@ -1,25 +1,44 @@
-@import 'tailwindcss';
-@import '@ihp/config/tailwind/theme.css';
+/* Poppins is the brand typeface; the latin subset covers both apps' copy. */
+@import '@fontsource/poppins/latin-400.css';
+@import '@fontsource/poppins/latin-500.css';
+@import '@fontsource/poppins/latin-600.css';
+@import '@fontsource/poppins/latin-700.css';
+@import '@mantine/core/styles.css';
+@import '@mantine/notifications/styles.css';
 
-/* @ihp/ui lives outside this app, so Tailwind must be told to scan it. */
-@source '../../../../packages/ui/src';
+/* The skip link must be the first focusable element, so it is hidden until focused. */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  padding: 0.5rem 1rem;
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+  border: 2px solid var(--mantine-primary-color-filled);
+  border-radius: var(--mantine-radius-md);
+  transform: translateY(-150%);
+}
 
-@layer base {
-  :root {
-    --background: #ffffff;
-    --foreground: #171717;
+.skip-link:focus-visible {
+  transform: translateY(0.5rem);
+}
+
+/* A client prints the contract itself, and the browser's Save as PDF makes the file. */
+@media print {
+  [data-print-hidden] {
+    display: none !important;
   }
+}
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: #0a0a0a;
-      --foreground: #ededed;
-    }
-  }
-
-  body {
-    background: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-sans);
+/* Mantine honours reduced motion itself; this covers plain CSS transitions in this app. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

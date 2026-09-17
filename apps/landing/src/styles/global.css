@@ -1,5 +1,11 @@
 @import 'tailwindcss';
 @import '@ihp/config/tailwind/theme.css';
 
+/* Poppins is the brand typeface, self-hosted so the page still ships zero third-party requests. */
+@import '@fontsource/poppins/latin-400.css';
+@import '@fontsource/poppins/latin-500.css';
+@import '@fontsource/poppins/latin-600.css';
+@import '@fontsource/poppins/latin-700.css';
+
 /* @ihp/ui lives outside this app, so Tailwind must be told to scan it. */
 @source '../../../../packages/ui/src';

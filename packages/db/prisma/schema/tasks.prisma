@@ -1,0 +1,128 @@
+// Work the company assigns itself: a project holds lists, a list holds tasks. Modelled on the
+// task board in the referral portal, minus its checklists, comments, attachments, timers and
+// dependency graph — those land in a second pass.
+
+model TaskProject {
+  id String @id @default(uuid())
+  // Plain columns, not relations: a relation field would have to be added to the generated
+  // User and Organization models in auth.prisma.
+  organizationId String
+  createdById    String?
+
+  name      String
+  // Hex, shown as the project's dot in the switcher.
+  color     String?
+  sortOrder Int     @default(0)
+  // Task numbers read #1, #2 … per project, so the next one is counted here rather than by
+  // scanning the tasks table under a race.
+  taskCounter Int  @default(0)
+  isArchived  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lists TaskList[]
+  tasks Task[]
+
+  @@index([organizationId, isArchived])
+  @@map("taskProject")
+  @@schema("tasks")
+}
+
+// The columns of a board. A project always has at least one, because a task has to land
+// somewhere.
+model TaskList {
+  id        String      @id @default(uuid())
+  projectId String
+  project   TaskProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  name           String
+  sortOrder      Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks Task[]
+
+  @@index([projectId])
+  @@index([organizationId])
+  @@map("taskList")
+  @@schema("tasks")
+}
+
+// Statuses are the organization's own words, shared by every project, and seeded on first use.
+// `category` is what the app reasons about: "active", "done" or "cancelled".
+model TaskStatus {
+  id             String @id @default(uuid())
+  organizationId String
+
+  name      String
+  color     String
+  category  String @default("active")
+  sortOrder Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks Task[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("taskStatus")
+  @@schema("tasks")
+}
+
+model Task {
+  id             String @id @default(uuid())
+  organizationId String
+
+  projectId String
+  project   TaskProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  listId    String
+  list      TaskList    @relation(fields: [listId], references: [id], onDelete: Cascade)
+  statusId  String
+  status    TaskStatus  @relation(fields: [statusId], references: [id], onDelete: Restrict)
+
+  // Human handle for a task inside its project: #14 is stable even after a rename.
+  taskNumber  Int
+  name        String
+  description String?
+  // urgent | high | normal | low
+  priority    String  @default("normal")
+  startDate   DateTime?
+  dueDate     DateTime?
+  // Sparse float so a drop between two rows is one UPDATE; the service renormalizes a list
+  // once neighbours get too close to halve again.
+  position    Float
+  completedAt DateTime?
+  isArchived  Boolean   @default(false)
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignees TaskAssignee[]
+
+  @@unique([projectId, taskNumber])
+  @@index([organizationId, listId, isArchived])
+  @@index([statusId])
+  @@map("task")
+  @@schema("tasks")
+}
+
+// Who is doing it. Keyed by user rather than member: everything else in this app resolves a
+// person by user id, and a member row is per organization anyway.
+model TaskAssignee {
+  id     String @id @default(uuid())
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId String
+
+  createdAt DateTime @default(now())
+
+  @@unique([taskId, userId])
+  @@index([userId])
+  @@map("taskAssignee")
+  @@schema("tasks")
+}

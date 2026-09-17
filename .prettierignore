@@ -4,3 +4,7 @@ dist
 .astro
 .turbo
 node_modules
+packages/db/src/generated
+
+# buf codegen output; regenerate with `pnpm --filter @ihp/proto generate`.
+packages/rpc/src/gen

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "prisma-cli": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-cli/SKILL.md",
+      "computedHash": "b92e55aef78f6796d81433c44738a6733211a04c16e65cbad6d42c5f71092aab"
+    },
+    "prisma-client-api": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-client-api/SKILL.md",
+      "computedHash": "5dcc0793337151efa73a444e5adbc7e1c24180778e83b4fe94c9109c391bd333"
+    },
+    "prisma-postgres": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-postgres/SKILL.md",
+      "computedHash": "d669fbd0d8017d16c967f18b20e1c1345cd4a2a0076d762459bfef79f551f655"
+    }
+  }
+}

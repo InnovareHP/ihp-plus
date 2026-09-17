@@ -1,0 +1,31 @@
+{
+  "name": "@ihp/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "prisma generate",
+    "db:auth-schema": "pnpm dlx auth@latest generate --config ../../apps/web/src/lib/auth.ts --output prisma/schema/auth.prisma -y",
+    "db:generate": "prisma migrate dev --create-only",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "db:push": "prisma db push",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf src/generated .turbo tsconfig.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@ihp/config": "workspace:*",
+    "dotenv": "^17.4.2",
+    "prisma": "7.10.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0"
+  }
+}

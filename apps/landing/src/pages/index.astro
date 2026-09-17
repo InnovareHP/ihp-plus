@@ -4,10 +4,12 @@ import { Button, Card } from '@ihp/ui'
 ---
 
 <Layout title="IHP Plus — Landing">
-  <main class="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-8 p-8">
+  <div class="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-8 p-8">
     <div class="flex flex-col gap-4">
-      <h1 class="text-5xl font-bold tracking-tight">Ship faster with IHP Plus</h1>
-      <p class="max-w-xl text-lg opacity-70">
+      <h1 class="text-headline-2 sm:text-headline font-bold tracking-tight text-balance">
+        Ship faster with IHP Plus
+      </h1>
+      <p class="text-body max-w-xl opacity-70">
         Astro handles this marketing page as static HTML. Next.js handles the product at
         <code class="font-mono">/app</code>. One repo, one origin, two runtimes.
       </p>
@@ -20,7 +22,9 @@ import { Button, Card } from '@ihp/ui'
     <div class="grid gap-4 sm:grid-cols-3">
       <Card title="Astro landing">Zero JS by default. Static output, CDN-friendly.</Card>
       <Card title="Next.js app">App Router, RSC, standalone Docker output.</Card>
-      <Card title="Shared UI">One <code class="font-mono">@ihp/ui</code> package, both runtimes.</Card>
+      <Card title="Shared UI"
+        >One <code class="font-mono">@ihp/ui</code> package, both runtimes.</Card
+      >
     </div>
-  </main>
+  </div>
 </Layout>

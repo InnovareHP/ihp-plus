@@ -12,7 +12,11 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/web/package.json apps/web/
 COPY apps/landing/package.json apps/landing/
 COPY packages/ui/package.json packages/ui/
+COPY packages/db/package.json packages/db/
 COPY packages/config/package.json packages/config/
+COPY packages/proto/package.json packages/proto/
+COPY packages/rpc/package.json packages/rpc/
+COPY packages/graph/package.json packages/graph/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store && \
     pnpm install --frozen-lockfile
@@ -21,7 +25,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 FROM deps AS builder
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm --filter @ihp/web build
+RUN pnpm --filter @ihp/db build && pnpm --filter @ihp/web build
 
 # ---- runner: only the standalone bundle ----
 FROM base AS runner
