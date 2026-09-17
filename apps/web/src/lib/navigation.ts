@@ -10,6 +10,7 @@ import {
   IconForms,
   IconGavel,
   IconLayoutDashboard,
+  IconListCheck,
   IconSettings,
   type Icon,
 } from '@tabler/icons-react'
@@ -63,6 +64,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Clients',
         description: 'Accounts and follow-ups',
         icon: IconAddressBook,
+      },
+      {
+        href: routes.tasks,
+        label: 'Tasks',
+        description: 'Projects and what is left to do',
+        icon: IconListCheck,
       },
       {
         href: routes.bluebook,

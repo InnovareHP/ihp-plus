@@ -5,6 +5,7 @@ import { EvaluationsService } from '@ihp/rpc/evaluations'
 import { LookupsService } from '@ihp/rpc/lookups'
 import { MembersService } from '@ihp/rpc/members'
 import { RequestsService } from '@ihp/rpc/requests'
+import { TasksService } from '@ihp/rpc/tasks'
 import {
   applyEmploymentStatus,
   applyMemberAccess,
@@ -24,6 +25,7 @@ import { directory } from './directory-routes'
 import { evaluations } from './evaluations-routes'
 import { lookups } from './lookups-routes'
 import { requests } from './requests-routes'
+import { tasks } from './tasks-routes'
 
 // Thin by design: every implementation converts at the wire boundary and delegates to the
 // feature's service, so the business rules stay testable without a transport.
@@ -88,4 +90,5 @@ export function registerRoutes(router: ConnectRouter) {
   router.service(ContractsService, contracts)
   router.service(DirectoryService, directory)
   router.service(EvaluationsService, evaluations)
+  router.service(TasksService, tasks)
 }

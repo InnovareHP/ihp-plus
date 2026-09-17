@@ -1,0 +1,210 @@
+syntax = "proto3";
+
+package ihp.tasks.v1;
+
+enum TaskPriority {
+  TASK_PRIORITY_UNSPECIFIED = 0;
+  TASK_PRIORITY_URGENT = 1;
+  TASK_PRIORITY_HIGH = 2;
+  TASK_PRIORITY_NORMAL = 3;
+  TASK_PRIORITY_LOW = 4;
+}
+
+// What a status means to the app, whatever the organization named it: ACTIVE is open work,
+// DONE closes a task, CANCELLED retires one nobody will do.
+enum TaskStatusCategory {
+  TASK_STATUS_CATEGORY_UNSPECIFIED = 0;
+  TASK_STATUS_CATEGORY_ACTIVE = 1;
+  TASK_STATUS_CATEGORY_DONE = 2;
+  TASK_STATUS_CATEGORY_CANCELLED = 3;
+}
+
+// Filter value: ALL is the board's default, and has no stored counterpart.
+enum TaskAssigneeFilter {
+  TASK_ASSIGNEE_FILTER_UNSPECIFIED = 0;
+  TASK_ASSIGNEE_FILTER_ALL = 1;
+  TASK_ASSIGNEE_FILTER_MINE = 2;
+  TASK_ASSIGNEE_FILTER_UNASSIGNED = 3;
+}
+
+message TaskProject {
+  string id = 1;
+  string name = 2;
+  optional string color = 3;
+  bool is_archived = 4;
+  int32 task_count = 5;
+}
+
+message TaskList {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  int32 sort_order = 4;
+}
+
+message TaskStatus {
+  string id = 1;
+  string name = 2;
+  string color = 3;
+  TaskStatusCategory category = 4;
+  int32 sort_order = 5;
+}
+
+message TaskAssignee {
+  string user_id = 1;
+  string name = 2;
+}
+
+message Task {
+  string id = 1;
+  int32 task_number = 2;
+  string name = 3;
+  string description = 4;
+  TaskPriority priority = 5;
+  string project_id = 6;
+  string list_id = 7;
+  string status_id = 8;
+  TaskStatus status = 9;
+  repeated TaskAssignee assignees = 10;
+  optional string start_date = 11;
+  optional string due_date = 12;
+  optional string completed_at = 13;
+  bool is_archived = 14;
+  double position = 15;
+  string created_at = 16;
+  string updated_at = 17;
+}
+
+message ListProjectsRequest {
+  bool include_archived = 1;
+}
+
+message ListProjectsResponse {
+  repeated TaskProject projects = 1;
+}
+
+// Creating a project also creates its first list, because a project with no list can hold
+// nothing.
+message CreateProjectRequest {
+  string name = 1;
+  optional string color = 2;
+}
+
+message CreateProjectResponse {
+  TaskProject project = 1;
+}
+
+message ListListsRequest {
+  string project_id = 1;
+}
+
+message ListListsResponse {
+  repeated TaskList lists = 1;
+}
+
+message CreateListRequest {
+  string project_id = 1;
+  string name = 2;
+}
+
+message CreateListResponse {
+  TaskList list = 1;
+}
+
+message ListStatusesRequest {}
+
+message ListStatusesResponse {
+  repeated TaskStatus statuses = 1;
+}
+
+// A board is read whole: one project's tasks, ordered by list and position. Filtering happens
+// on the server so the counts a board shows match the rows it draws.
+message ListTasksRequest {
+  string project_id = 1;
+  optional string list_id = 2;
+  TaskAssigneeFilter assignee = 3;
+  string search = 4;
+  bool include_archived = 5;
+}
+
+message ListTasksResponse {
+  repeated Task tasks = 1;
+}
+
+message CreateTaskRequest {
+  string project_id = 1;
+  string list_id = 2;
+  string name = 3;
+  string description = 4;
+  TaskPriority priority = 5;
+  optional string due_date = 6;
+  repeated string assignee_ids = 7;
+}
+
+message CreateTaskResponse {
+  Task task = 1;
+}
+
+// Every field is optional: the board patches one at a time, and the detail form sends the lot.
+message UpdateTaskRequest {
+  string task_id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional TaskPriority priority = 4;
+  optional string status_id = 5;
+  optional string due_date = 6;
+  optional bool is_archived = 7;
+  // Absent leaves the assignees alone; an empty list clears them.
+  optional AssigneeIds assignees = 8;
+}
+
+message AssigneeIds {
+  repeated string user_ids = 1;
+}
+
+message UpdateTaskResponse {
+  Task task = 1;
+}
+
+// Completing is not an ordinary status change: it also stamps completed_at, and the status it
+// lands on is whichever one the organization marked DONE.
+message CompleteTaskRequest {
+  string task_id = 1;
+  bool completed = 2;
+}
+
+message CompleteTaskResponse {
+  Task task = 1;
+}
+
+// before_task_id is the row the task is dropped above; absent means the end of the list.
+message ReorderTaskRequest {
+  string task_id = 1;
+  string list_id = 2;
+  optional string before_task_id = 3;
+}
+
+message ReorderTaskResponse {
+  Task task = 1;
+}
+
+message DeleteTaskRequest {
+  string task_id = 1;
+}
+
+message DeleteTaskResponse {}
+
+service TasksService {
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  rpc ListLists(ListListsRequest) returns (ListListsResponse);
+  rpc CreateList(CreateListRequest) returns (CreateListResponse);
+  rpc ListStatuses(ListStatusesRequest) returns (ListStatusesResponse);
+
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+  rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);
+  rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
+  rpc CompleteTask(CompleteTaskRequest) returns (CompleteTaskResponse);
+  rpc ReorderTask(ReorderTaskRequest) returns (ReorderTaskResponse);
+  rpc DeleteTask(DeleteTaskRequest) returns (DeleteTaskResponse);
+}

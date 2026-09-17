@@ -20,11 +20,15 @@ export const ACTIVITY_LABELS = {
   'evaluation.assigned': 'Evaluation assigned',
   'evaluation.submitted': 'Evaluation submitted',
   'evaluation.cancelled': 'Evaluation cancelled',
+  'task.created': 'Task created',
+  'task.completed': 'Task completed',
+  'task.reopened': 'Task reopened',
+  'task.deleted': 'Task deleted',
 } as const
 
 export type ActivityAction = keyof typeof ACTIVITY_LABELS
 
-export type ActivitySubject = 'contract' | 'request' | 'evaluation'
+export type ActivitySubject = 'contract' | 'request' | 'evaluation' | 'task'
 
 export interface ActivityInput {
   organizationId: string

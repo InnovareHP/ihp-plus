@@ -11,7 +11,8 @@
     "./requests": "./src/gen/ihp/requests/v1/requests_pb.ts",
     "./contracts": "./src/gen/ihp/contracts/v1/contracts_pb.ts",
     "./directory": "./src/gen/ihp/directory/v1/directory_pb.ts",
-    "./evaluations": "./src/gen/ihp/evaluations/v1/evaluations_pb.ts"
+    "./evaluations": "./src/gen/ihp/evaluations/v1/evaluations_pb.ts",
+    "./tasks": "./src/gen/ihp/tasks/v1/tasks_pb.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
