@@ -8,6 +8,7 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "src/generated/**"],
       "env": [
+        "VERCEL",
         "DATABASE_URL",
         "STRIPE_SECRET_KEY",
         "STRIPE_WEBHOOK_SECRET",
@@ -32,6 +33,7 @@
       "cache": false,
       "persistent": true,
       "env": [
+        "VERCEL",
         "DATABASE_URL",
         "STRIPE_SECRET_KEY",
         "STRIPE_WEBHOOK_SECRET",
@@ -58,6 +60,7 @@
     "test": {
       "dependsOn": ["^build"],
       "env": [
+        "VERCEL",
         "DATABASE_URL",
         "STRIPE_SECRET_KEY",
         "STRIPE_WEBHOOK_SECRET",

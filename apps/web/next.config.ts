@@ -6,8 +6,11 @@ import { routes, withBasePath } from './src/lib/routes'
 const monorepoRoot = fileURLToPath(new URL('../../', import.meta.url))
 
 const nextConfig: NextConfig = {
-  // Slim Docker image: emits apps/web/.next/standalone with only used deps.
-  output: 'standalone',
+  // Slim Docker image: emits apps/web/.next/standalone with only used deps. Vercel builds its
+  // own output and never writes the trace manifest the standalone step then reads
+  // (ENOENT next-server.js.nft.json), so that platform gets an ordinary build.
+  // VERCEL is declared in turbo.json; strict env mode would otherwise hide it here.
+  ...(process.env.VERCEL ? {} : { output: 'standalone' as const }),
   outputFileTracingRoot: monorepoRoot,
 
   // Astro owns "/", Next is mounted under "/app" by the nginx proxy.
