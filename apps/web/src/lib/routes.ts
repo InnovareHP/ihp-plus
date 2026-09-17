@@ -7,6 +7,7 @@ export const routes = {
   directoryChart: '/directory/chart',
   clients: '/clients',
   bluebook: '/bluebook',
+  library: '/library',
   tasks: '/tasks',
   onboarding: '/onboarding',
   requests: '/requests',

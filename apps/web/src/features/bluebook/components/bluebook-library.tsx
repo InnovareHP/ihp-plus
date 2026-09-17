@@ -27,11 +27,11 @@ import { LinkButton } from '@/components/link-button'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { LookupOptionsModal } from '@/components/lookup-options-modal'
 import { EmptyState } from '@/components/empty-state'
+import { fileLook, formatBytes } from '@/lib/file-look'
 import { organizationTab } from '@/lib/routes'
 import {
   BLUEBOOK_LOOKUP_KINDS,
   draftOf,
-  formatBytes,
   isFilteredBluebookQuery,
   type BluebookSortKey,
   type DocumentRow,
@@ -48,7 +48,6 @@ import {
   useUpdateDocument,
   useUploadDocument,
 } from '../hooks/use-bluebook'
-import { fileLook } from '../utils/file-look'
 import { ShelfPicker } from './shelf-picker'
 import { ShelfRail } from './shelf-rail'
 import { UploadDocumentModal } from './upload-document-modal'

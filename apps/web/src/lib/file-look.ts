@@ -27,3 +27,16 @@ function fileLook(contentType: string): { Icon: Icon; color: string } {
   if (contentType.startsWith('text/')) return { Icon: IconFileText, color: 'gray' }
   return { Icon: IconFile, color: 'gray' }
 }
+
+/** Bytes as a person would say them, for a row that has to stay narrow. */
+export function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  const units = ['KB', 'MB', 'GB']
+  let size = bytes / 1024
+  let unit = 0
+  while (size >= 1024 && unit < units.length - 1) {
+    size /= 1024
+    unit += 1
+  }
+  return `${size < 10 ? size.toFixed(1) : Math.round(size)} ${units[unit]}`
+}

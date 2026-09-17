@@ -20,6 +20,7 @@ export {
   ensureFolder,
   getItem,
   getItemByPath,
+  listAllChildren,
   listChildren,
   renameItem,
   rootItem,

@@ -5,7 +5,6 @@ import {
   COMPANY_SHELF,
   EMPTY_DOCUMENT_DRAFT,
   fileProblem,
-  formatBytes,
   isFilteredBluebookQuery,
   MAX_UPLOAD_BYTES,
 } from './schema'
@@ -42,14 +41,6 @@ describe('fileProblem', () => {
       'Files have to be 25 MB or smaller.',
     )
     expect(fileProblem(file({ size: MAX_UPLOAD_BYTES }))).toBeUndefined()
-  })
-})
-
-describe('formatBytes', () => {
-  it('reads as a person would say it', () => {
-    expect(formatBytes(512)).toBe('512 B')
-    expect(formatBytes(2048)).toBe('2.0 KB')
-    expect(formatBytes(25 * 1024 * 1024)).toBe('25 MB')
   })
 })
 

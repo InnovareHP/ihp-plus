@@ -6,6 +6,11 @@ export const SIMPLE_UPLOAD_LIMIT_BYTES = 4 * 1024 * 1024
 const COPY_POLL_INTERVAL_MS = 1000
 const COPY_POLL_ATTEMPTS = 60
 
+interface ChildrenResponse {
+  value: DriveItem[]
+  '@odata.nextLink'?: string
+}
+
 interface DeltaResponse {
   value: DriveItem[]
   '@odata.nextLink'?: string
@@ -56,6 +61,22 @@ export async function listChildren(driveId: string, itemId: string) {
     `/drives/${driveId}/items/${itemId}/children`,
   )
   return payload.value
+}
+
+/** Graph pages children at 200, so a browser that reads one page silently loses the rest. */
+export async function listAllChildren(driveId: string, itemId: string) {
+  const items: DriveItem[] = []
+  let link: string | undefined
+
+  do {
+    const payload: ChildrenResponse = link
+      ? await graphJson<ChildrenResponse>(link, { absolute: true })
+      : await graphJson<ChildrenResponse>(`/drives/${driveId}/items/${itemId}/children`)
+    items.push(...payload.value)
+    link = payload['@odata.nextLink']
+  } while (link)
+
+  return items
 }
 
 function encodePath(path: string) {

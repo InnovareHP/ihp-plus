@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { deltaSweep, ensureFolder, startCopy, uploadFile, waitForCopy } from './drive'
+import {
+  deltaSweep,
+  ensureFolder,
+  listAllChildren,
+  startCopy,
+  uploadFile,
+  waitForCopy,
+} from './drive'
 import { getAccessToken, resetTokenCache } from './token'
 
 function jsonResponse(body: unknown, init: ResponseInit = {}) {
@@ -65,6 +72,25 @@ describe('deltaSweep', () => {
     const sweep = await deltaSweep('drive-1')
 
     expect(sweep.items[0]?.deleted?.state).toBe('deleted')
+  })
+})
+
+describe('listAllChildren', () => {
+  it('follows every page so a folder past 200 items is not truncated', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        value: [{ id: 'a', name: 'a.docx' }],
+        '@odata.nextLink': 'https://graph.microsoft.com/v1.0/children?skiptoken=2',
+      }),
+    )
+    fetchMock.mockResolvedValueOnce(jsonResponse({ value: [{ id: 'b', name: 'b.docx' }] }))
+
+    const children = await listAllChildren('drive-1', 'item-1')
+
+    expect(children.map((child) => child.id)).toEqual(['a', 'b'])
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://graph.microsoft.com/v1.0/children?skiptoken=2',
+    )
   })
 })
 

@@ -16,13 +16,13 @@ import {
 import { IconPaperclip } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
+import { formatBytes } from '@/lib/file-look'
 import {
   ACCEPTED_EXTENSIONS,
   COMPANY_SHELF,
   documentDraftSchema,
   EMPTY_DOCUMENT_DRAFT,
   fileProblem,
-  formatBytes,
   type DocumentDraftInput,
   type DocumentDraftValues,
 } from '../schema'
