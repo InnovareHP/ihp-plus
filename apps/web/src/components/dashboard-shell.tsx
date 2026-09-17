@@ -8,7 +8,6 @@ import {
   Divider,
   Group,
   Menu,
-  NavLink,
   ScrollArea,
   Stack,
   Text,
@@ -24,6 +23,8 @@ import { isNavItemActive, visibleSections } from '@/lib/navigation'
 import { routes } from '@/lib/routes'
 import { AppLogo } from './app-logo'
 import { ColorSchemeToggle } from './color-scheme-toggle'
+import { NavGroup } from './nav-group'
+import { NavItemLink } from './nav-item-link'
 
 export interface DashboardShellProps {
   user: { name: string; email: string; jobTitle?: string | null; photoUrl?: string }
@@ -127,22 +128,26 @@ export function DashboardShell({
                 <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="xs" lts="0.04em">
                   {section.label}
                 </Text>
-                {section.items.map((item) => {
-                  const active = isNavItemActive(pathname, item.href)
-                  return (
-                    <NavLink
+                {section.items.map((item) =>
+                  item.children ? (
+                    <NavGroup
+                      key={item.label}
+                      item={item}
+                      pathname={pathname}
+                      onNavigate={closeNav}
+                    />
+                  ) : (
+                    <NavItemLink
                       key={item.href}
-                      component={Link}
                       href={item.href}
                       label={item.label}
                       description={item.description}
-                      leftSection={<item.icon size={18} stroke={1.6} aria-hidden />}
-                      active={active}
-                      aria-current={active ? 'page' : undefined}
-                      onClick={closeNav}
+                      icon={item.icon}
+                      active={isNavItemActive(pathname, item.href)}
+                      onNavigate={closeNav}
                     />
-                  )
-                })}
+                  ),
+                )}
               </Stack>
             ))}
           </Stack>
