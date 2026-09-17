@@ -13,7 +13,7 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { useDisclosure, useHotkeys } from '@mantine/hooks'
 import { IconChevronDown, IconLogout, IconSettings } from '@tabler/icons-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -51,15 +51,24 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure(false)
+  // Wide screens get their own state: the sidebar is permanent there, so without this there
+  // is no way to put it away at all.
+  const [sidebarShown, { toggle: toggleSidebar }] = useDisclosure(true)
   const pathname = usePathname()
   const signOut = useSignOut()
   const sections = visibleSections({ canManageOrganization, canApproveRequests })
+
+  useHotkeys([['Escape', closeNav]])
 
   return (
     <AppShell
       padding={0}
       header={{ height: 60 }}
-      navbar={{ width: 272, breakpoint: 'sm', collapsed: { mobile: !navOpened } }}
+      navbar={{
+        width: 272,
+        breakpoint: 'sm',
+        collapsed: { mobile: !navOpened, desktop: !sidebarShown },
+      }}
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
@@ -71,6 +80,15 @@ export function DashboardShell({
               size="sm"
               aria-label={navOpened ? 'Close navigation' : 'Open navigation'}
               aria-expanded={navOpened}
+              aria-controls="primary-navigation"
+            />
+            <Burger
+              opened={sidebarShown}
+              onClick={toggleSidebar}
+              visibleFrom="sm"
+              size="sm"
+              aria-label={sidebarShown ? 'Hide navigation' : 'Show navigation'}
+              aria-expanded={sidebarShown}
               aria-controls="primary-navigation"
             />
             <AppLogo height={28} />

@@ -40,9 +40,11 @@ export function NavGroup({ item, pathname, onNavigate }: NavGroupProps) {
         aria-controls={panelId}
         onClick={() => setOverride({ pathname, opened: !opened })}
       />
-      {/* Always rendered so aria-controls points at something, hidden rather than animated:
-          a sidebar that slides open is motion under a click the user is about to make. */}
-      <Stack gap={2} pl="lg" id={panelId} hidden={!opened}>
+      {/* Always rendered so aria-controls points at something. `hidden` alone would not hide
+          it: that UA rule loses to Stack's own display, so the inline display goes with it.
+          Hidden rather than animated — a sidebar that slides is motion under a click the user
+          is about to make. */}
+      <Stack gap={2} pl="lg" id={panelId} hidden={!opened} display={opened ? undefined : 'none'}>
         {children.map((child) => (
           <NavItemLink
             key={child.href}

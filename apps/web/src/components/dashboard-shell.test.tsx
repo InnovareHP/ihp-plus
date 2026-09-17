@@ -81,6 +81,24 @@ describe('DashboardShell navigation', () => {
     expect(within(panel as HTMLElement).getByRole('link', { name: 'Forms' })).toBeInTheDocument()
   })
 
+  // `hidden` alone left the links on screen in a real browser: that UA rule loses to Stack's
+  // own display, and jsdom loads no Mantine CSS to show it. So the assertion is on the inline
+  // style, which is the thing that actually wins in the browser.
+  it('really hides a closed area, not just from the accessibility tree', async () => {
+    const user = userEvent.setup()
+    renderShell()
+
+    const requests = group('Requests')
+    const panel = document.getElementById(requests.getAttribute('aria-controls') as string)
+    expect(panel?.style.display).toBe('none')
+
+    await user.click(requests)
+    expect(panel?.style.display).not.toBe('none')
+
+    await user.click(requests)
+    expect(panel?.style.display).toBe('none')
+  })
+
   it('gives an ordinary member a plain row instead of an area with one page', () => {
     renderShell({ canManageOrganization: false, canApproveRequests: false })
 
@@ -94,5 +112,54 @@ describe('DashboardShell navigation', () => {
     const { container } = renderShell()
 
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('DashboardShell sidebar controls', () => {
+  it('opens and closes the sidebar on a narrow screen', async () => {
+    const user = userEvent.setup()
+    renderShell()
+
+    const burger = screen.getByRole('button', { name: 'Open navigation' })
+    expect(burger).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(burger)
+    expect(screen.getByRole('button', { name: 'Close navigation' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Close navigation' }))
+    expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+  })
+
+  it('closes the narrow-screen sidebar with Escape', async () => {
+    const user = userEvent.setup()
+    renderShell()
+
+    await user.click(screen.getByRole('button', { name: 'Open navigation' }))
+    await user.keyboard('{Escape}')
+
+    expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+  })
+
+  it('folds the permanent sidebar away on a wide screen', async () => {
+    const user = userEvent.setup()
+    renderShell()
+
+    const toggle = screen.getByRole('button', { name: 'Hide navigation' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+
+    await user.click(toggle)
+    expect(screen.getByRole('button', { name: 'Show navigation' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
   })
 })
