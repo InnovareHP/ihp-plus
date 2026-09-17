@@ -3,8 +3,11 @@ import {
   deleteItem,
   deltaSweep,
   ensureFolder,
+  getItemByPath,
   GraphError,
+  renameItem,
   requireClientDriveId,
+  requireInternalDriveId,
   rootItem,
   type DriveItem,
 } from '@ihp/graph'
@@ -15,6 +18,7 @@ import {
   clientByFolderName,
   clientDriveFolder,
   markMirrorRemoved,
+  markMirrorsRemovedUnder,
   mirrorFor,
   saveClientDriveFolder,
   saveMirror,
@@ -22,7 +26,13 @@ import {
   saveSweepError,
   subscriptionForDrive,
 } from './service'
-import { isFolder, isRemoved, mirrorTargetOf, parentSegmentsOf } from './utils/mirror-path'
+import {
+  isFolder,
+  isRemoved,
+  mirrorTargetOf,
+  parentSegmentsOf,
+  type MirrorTarget,
+} from './utils/mirror-path'
 
 interface SyncContext {
   organizationId: string
@@ -214,4 +224,92 @@ export async function syncDrive(driveId: string): Promise<SyncOutcome> {
 
   track(driveEvents.sweepFinished, { driveId, ...outcome })
   return outcome
+}
+
+function contextFor(organizationId: string): SyncContext {
+  return {
+    organizationId,
+    sourceDriveId: requireInternalDriveId(),
+    targetDriveId: requireClientDriveId(),
+    folders: new Map(),
+  }
+}
+
+/** Joins a root folder to a relative path, which is empty for the client folder itself. */
+function pathUnder(root: string, relativePath: string) {
+  return relativePath ? `${root}/${relativePath}` : root
+}
+
+async function clientFor(organizationId: string, target: MirrorTarget) {
+  return clientByFolderName(organizationId, target.clientFolder)
+}
+
+async function removeCopyAt(targetDriveId: string, path: string) {
+  try {
+    const copy = await getItemByPath(targetDriveId, path)
+    await deleteItem(targetDriveId, copy.id)
+  } catch (error) {
+    if (!(error instanceof GraphError) || !error.isNotFound) throw error
+  }
+}
+
+/**
+ * Mirrors one portal write straight away. The delta sweep would catch it minutes later, which
+ * reads to staff as the copy never landing.
+ */
+export async function mirrorWrite(organizationId: string, item: DriveItem) {
+  const outcome = { ...EMPTY_OUTCOME }
+  await syncItem(contextFor(organizationId), item, outcome)
+  return outcome
+}
+
+/** Renames the copy in place. Folders carry no mirror record, so theirs is found by its old path. */
+export async function mirrorRename(
+  organizationId: string,
+  item: DriveItem,
+  previousName: string,
+): Promise<void> {
+  if (!isFolder(item)) {
+    await mirrorWrite(organizationId, item)
+    return
+  }
+
+  const target = mirrorTargetOf(item)
+  if (!target) return
+
+  const client = await clientFor(organizationId, target)
+  if (!client) return
+
+  const parent = parentSegmentsOf(target).join('/')
+  const targetDriveId = requireClientDriveId()
+  const previousPath = pathUnder(client.name, parent ? `${parent}/${previousName}` : previousName)
+
+  try {
+    const copy = await getItemByPath(targetDriveId, previousPath)
+    await renameItem(targetDriveId, copy.id, item.name)
+  } catch (error) {
+    // Nothing mirrored yet: the folder travels on the first file written into it.
+    if (!(error instanceof GraphError) || !error.isNotFound) throw error
+  }
+}
+
+/** Withdraws the copy of an item the portal is about to delete, or has just deleted. */
+export async function mirrorRemoval(organizationId: string, item: DriveItem): Promise<void> {
+  const context = contextFor(organizationId)
+  const target = mirrorTargetOf(item)
+  if (!target) return
+
+  if (!isFolder(item)) {
+    await dropMirror(context, item)
+    return
+  }
+
+  const client = await clientFor(organizationId, target)
+  if (!client) return
+
+  await removeCopyAt(context.targetDriveId, pathUnder(client.name, target.relativePath))
+  await markMirrorsRemovedUnder(
+    context.sourceDriveId,
+    pathUnder(target.clientFolder, target.relativePath),
+  )
 }

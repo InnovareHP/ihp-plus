@@ -90,6 +90,18 @@ export function saveMirror(input: {
   })
 }
 
+/** A deleted folder takes its copies with it, so every mirror beneath it stops claiming synced. */
+export function markMirrorsRemovedUnder(sourceDriveId: string, sourcePath: string) {
+  return db.driveMirror.updateMany({
+    where: {
+      sourceDriveId,
+      sourcePath: { startsWith: `${sourcePath}/` },
+      state: { not: 'removed' },
+    },
+    data: { state: 'removed', removedAt: new Date(), targetItemId: null },
+  })
+}
+
 export function markMirrorRemoved(id: string) {
   return db.driveMirror.update({
     where: { id },

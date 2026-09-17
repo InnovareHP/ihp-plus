@@ -11,7 +11,10 @@ const graph = vi.hoisted(() => ({
     webUrl: `https://sharepoint.test/${name}`,
   })),
   requireClientDriveId: vi.fn(() => 'client-drive'),
+  requireInternalDriveId: vi.fn(() => 'internal-drive'),
   rootItem: vi.fn(async () => ({ id: 'client-root', name: 'root' })),
+  getItemByPath: vi.fn(async () => ({ id: 'copy-1', name: 'Reports' })),
+  renameItem: vi.fn(),
 }))
 
 const service = vi.hoisted(() => ({
@@ -24,6 +27,7 @@ const service = vi.hoisted(() => ({
   mirrorFor: vi.fn(async (): Promise<Record<string, unknown> | null> => null),
   saveMirror: vi.fn(),
   markMirrorRemoved: vi.fn(),
+  markMirrorsRemovedUnder: vi.fn(),
 }))
 
 vi.mock('@ihp/graph', async () => ({
@@ -42,7 +46,7 @@ vi.mock('@ihp/graph', async () => ({
 vi.mock('./service', () => service)
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
 
-const { syncDrive } = await import('./sync')
+const { mirrorRemoval, mirrorRename, syncDrive } = await import('./sync')
 
 function file(name: string, parentPath: string, extra: Partial<DriveItem> = {}): DriveItem {
   return {
@@ -219,5 +223,48 @@ describe('syncDrive', () => {
     await expect(syncDrive('internal-drive')).rejects.toThrow('Graph is down.')
     expect(service.saveSweep).not.toHaveBeenCalled()
     expect(service.saveSweepError).toHaveBeenCalledWith('internal-drive', 'Graph is down.')
+  })
+})
+
+function folder(name: string, parentPath: string): DriveItem {
+  return { id: `src-${name}`, name, folder: {}, parentReference: { path: parentPath } }
+}
+
+describe('mirrorRename', () => {
+  it('renames the copy a folder was mirrored as', async () => {
+    await mirrorRename('org-1', folder('Statements', '/drive/root:/Clients/Acme'), 'Reports')
+
+    expect(graph.getItemByPath).toHaveBeenCalledWith('client-drive', 'Acme/Reports')
+    expect(graph.renameItem).toHaveBeenCalledWith('client-drive', 'copy-1', 'Statements')
+  })
+
+  it('leaves a folder outside Clients alone', async () => {
+    await mirrorRename('org-1', folder('Policies', '/drive/root:/Bluebook'), 'Handbook')
+
+    expect(graph.renameItem).not.toHaveBeenCalled()
+  })
+})
+
+describe('mirrorRemoval', () => {
+  it('withdraws a deleted folder and stops its contents claiming synced', async () => {
+    await mirrorRemoval('org-1', folder('Reports', '/drive/root:/Clients/Acme'))
+
+    expect(graph.getItemByPath).toHaveBeenCalledWith('client-drive', 'Acme/Reports')
+    expect(graph.deleteItem).toHaveBeenCalledWith('client-drive', 'copy-1')
+    expect(service.markMirrorsRemovedUnder).toHaveBeenCalledWith('internal-drive', 'Acme/Reports')
+  })
+
+  it('drops the mirror record for a deleted file', async () => {
+    service.mirrorFor.mockResolvedValue({
+      id: 'mirror-1',
+      state: 'synced',
+      sourceEtag: 'etag-1',
+      targetItemId: 'target-1',
+    })
+
+    await mirrorRemoval('org-1', file('sow.pdf', '/drive/root:/Clients/Acme'))
+
+    expect(graph.deleteItem).toHaveBeenCalledWith('client-drive', 'target-1')
+    expect(service.markMirrorRemoved).toHaveBeenCalledWith('mirror-1')
   })
 })

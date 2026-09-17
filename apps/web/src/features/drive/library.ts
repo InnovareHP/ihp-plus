@@ -6,7 +6,7 @@ import {
   rootItem,
   uploadFile,
 } from '@ihp/graph'
-import { safeLibraryName } from './utils/library-name'
+import { safeLibraryName } from '@/lib/library-name'
 
 /** Bluebook sits outside Clients/, so nothing filed here is ever mirrored to a client. */
 export const BLUEBOOK_ROOT = 'Bluebook'

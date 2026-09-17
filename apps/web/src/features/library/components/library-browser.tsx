@@ -1,17 +1,30 @@
 'use client'
 
-import { Button, Stack, Text } from '@mantine/core'
+import { Button, Group, Stack, Text } from '@mantine/core'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { formatBytes } from '@/lib/file-look'
 import { routes } from '@/lib/routes'
-import { useLibraryFolder, useOpenLibraryFile } from '../hooks/use-library'
+import {
+  useCreateLibraryFolder,
+  useDeleteLibraryItem,
+  useLibraryFolder,
+  useOpenLibraryFile,
+  useRenameLibraryItem,
+  useUploadToLibrary,
+} from '../hooks/use-library'
 import { libraryHref, useLibraryQuery } from '../hooks/use-library-query'
 import type { LibraryEntry, LibrarySortKey } from '../schema'
-import { parentLibraryPath } from '../utils/library-path'
+import { LIBRARY_ROOT_LABEL, parentLibraryPath } from '../utils/library-path'
+import { DeleteItemModal } from './delete-item-modal'
 import { LibraryEntryName } from './library-entry-name'
+import { LibraryRowActions } from './library-row-actions'
+import { LibraryToolbar } from './library-toolbar'
 import { LibraryTrail } from './library-trail'
+import { NewFolderModal } from './new-folder-modal'
+import { RenameItemModal } from './rename-item-modal'
 
 const stamp = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
@@ -21,6 +34,16 @@ export function LibraryBrowser() {
   const { query, setQuery } = useLibraryQuery()
   const folder = useLibraryFolder(query)
   const open = useOpenLibraryFile()
+  const upload = useUploadToLibrary(query)
+  const createFolder = useCreateLibraryFolder(query)
+  const rename = useRenameLibraryItem(query)
+  const remove = useDeleteLibraryItem(query)
+
+  const [isNewFolderOpen, setNewFolderOpen] = useState(false)
+  const [renaming, setRenaming] = useState<LibraryEntry | null>(null)
+  const [deleting, setDeleting] = useState<LibraryEntry | null>(null)
+
+  const folderLabel = query.path || LIBRARY_ROOT_LABEL
 
   const columns: DataTableColumn<LibraryEntry>[] = [
     {
@@ -63,24 +86,40 @@ export function LibraryBrowser() {
       key: 'actions',
       header: 'Actions',
       align: 'right',
-      width: 120,
-      render: (entry) =>
-        entry.isFolder ? null : (
-          <Button
-            variant="subtle"
-            size="compact-sm"
-            loading={open.isPending && open.variables === entry.id}
-            onClick={() => open.mutate(entry.id)}
-          >
-            Open
-          </Button>
-        ),
+      width: 140,
+      render: (entry) => (
+        <Group gap="xs" justify="flex-end" wrap="nowrap">
+          {entry.isFolder ? null : (
+            <Button
+              variant="subtle"
+              size="compact-sm"
+              loading={open.isPending && open.variables === entry.id}
+              onClick={() => open.mutate(entry.id)}
+            >
+              Download
+            </Button>
+          )}
+          <LibraryRowActions
+            entry={entry}
+            onDownload={() => open.mutate(entry.id)}
+            onRename={() => setRenaming(entry)}
+            onDelete={() => setDeleting(entry)}
+          />
+        </Group>
+      ),
     },
   ]
 
   return (
     <Stack gap="md">
-      <LibraryTrail pathname={pathname} query={query} />
+      <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
+        <LibraryTrail pathname={pathname} query={query} />
+        <LibraryToolbar
+          isUploading={upload.isPending}
+          onUpload={(files) => files.forEach((file) => upload.mutate(file))}
+          onNewFolder={() => setNewFolderOpen(true)}
+        />
+      </Group>
 
       <DataTable
         label="Internal library"
@@ -97,7 +136,7 @@ export function LibraryBrowser() {
         empty={
           <EmptyState
             title="This folder is empty"
-            description="Anything staff add to it in SharePoint shows up here."
+            description="Upload a file, or add one in SharePoint and it shows up here."
             action={
               query.path ? (
                 <Button
@@ -114,6 +153,31 @@ export function LibraryBrowser() {
         onSortChange={({ key, direction }) =>
           setQuery({ sortBy: key as LibrarySortKey, sortDirection: direction })
         }
+      />
+
+      <NewFolderModal
+        opened={isNewFolderOpen}
+        onClose={() => setNewFolderOpen(false)}
+        folderLabel={folderLabel}
+        onCreate={(name) => createFolder.mutateAsync(name).then(() => undefined)}
+      />
+
+      <RenameItemModal
+        entry={renaming}
+        onClose={() => setRenaming(null)}
+        onRename={(name) =>
+          rename.mutateAsync({ itemId: renaming?.id ?? '', name }).then(() => undefined)
+        }
+      />
+
+      <DeleteItemModal
+        entry={deleting}
+        isPending={remove.isPending}
+        onClose={() => setDeleting(null)}
+        onDelete={() => {
+          if (deleting) remove.mutate({ itemId: deleting.id, name: deleting.name })
+          setDeleting(null)
+        }}
       />
     </Stack>
   )

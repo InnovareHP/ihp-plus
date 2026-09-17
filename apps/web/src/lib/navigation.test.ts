@@ -37,6 +37,7 @@ describe('navigation', () => {
       routes.clients,
       routes.tasks,
       routes.bluebook,
+      routes.library,
     ])
   })
 

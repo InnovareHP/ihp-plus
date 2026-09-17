@@ -35,8 +35,8 @@ export function ClientAccessModal({ opened, onClose, client }: ClientAccessModal
     >
       <Stack gap="md">
         <Text size="sm" c="dimmed">
-          Anything your team files under <strong>Clients/{client?.name}/Shared</strong> appears in
-          this folder. The people below open it in SharePoint with their own sign-in.
+          Anything your team files under <strong>Clients/{client?.name}</strong> appears in this
+          folder. The people below open it in SharePoint with their own sign-in.
         </Text>
 
         <ShareFolderForm

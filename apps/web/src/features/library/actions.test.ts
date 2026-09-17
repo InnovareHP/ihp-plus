@@ -21,10 +21,26 @@ const graph = vi.hoisted(() => ({
   })),
   listAllChildren: vi.fn(async () => [] as unknown[]),
   downloadUrl: vi.fn(async () => 'https://graph.test/download'),
+  uploadFile: vi.fn(async (): Promise<TestItem> => ({ id: 'new-file', name: 'invoice.pdf' })),
+  ensureFolder: vi.fn(async (): Promise<TestItem> => ({
+    id: 'new-folder',
+    name: 'Invoices',
+    folder: {},
+  })),
+  renameItem: vi.fn(async (): Promise<TestItem> => ({ id: 'file-1', name: 'guide.pdf' })),
+  getItem: vi.fn(async (): Promise<TestItem> => ({ id: 'file-1', name: 'handbook.pdf' })),
+  deleteItem: vi.fn(async () => undefined),
+}))
+
+const sync = vi.hoisted(() => ({
+  mirrorWrite: vi.fn(async () => undefined),
+  mirrorRename: vi.fn(async () => undefined),
+  mirrorRemoval: vi.fn(async () => undefined),
 }))
 
 const guard = vi.hoisted(() => ({
   requireOnboarded: vi.fn(async () => ({ user: { id: 'user-1' }, profile: {} })),
+  membershipOf: vi.fn((): { organizationId: string | undefined } => ({ organizationId: 'org-1' })),
 }))
 
 class TestGraphError extends Error {
@@ -49,9 +65,18 @@ vi.mock('@ihp/graph', () => ({
   GraphNotConfiguredError: class GraphNotConfiguredError extends Error {},
 }))
 vi.mock('@/lib/auth-guard', () => guard)
+vi.mock('@/features/drive/sync', () => sync)
+vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
 
 const { GraphNotConfiguredError } = await import('@ihp/graph')
-const { libraryFileLink, listLibraryFolder } = await import('./actions')
+const {
+  addLibraryFolder,
+  libraryFileLink,
+  listLibraryFolder,
+  removeFromLibraryFolder,
+  renameInLibrary,
+  uploadToLibraryFolder,
+} = await import('./actions')
 
 const folder = (name: string, childCount = 0) => ({
   id: `folder-${name}`,
@@ -73,7 +98,16 @@ beforeEach(() => {
   graph.requireInternalDriveId.mockReturnValue('internal-drive')
   graph.rootItem.mockResolvedValue({ id: 'root-item', name: 'root', folder: { childCount: 2 } })
   graph.getItemByPath.mockResolvedValue({ id: 'clients-item', name: 'Clients', folder: {} })
+  graph.getItem.mockResolvedValue({ id: 'file-1', name: 'handbook.pdf' })
+  guard.membershipOf.mockReturnValue({ organizationId: 'org-1' })
 })
+
+function uploadForm(path: string, file: File) {
+  const form = new FormData()
+  form.set('path', path)
+  form.set('file', file)
+  return form
+}
 
 describe('listLibraryFolder', () => {
   it('reads the drive root when no folder is asked for', async () => {
@@ -177,5 +211,99 @@ describe('libraryFileLink', () => {
 
     expect(result).toMatchObject({ ok: false })
     expect(graph.downloadUrl).not.toHaveBeenCalled()
+  })
+})
+
+describe('uploadToLibraryFolder', () => {
+  it('files the upload in the open folder and mirrors it at once', async () => {
+    const file = new File(['bytes'], 'invoice.pdf', { type: 'application/pdf' })
+
+    const result = await uploadToLibraryFolder(uploadForm('Clients/Acme', file))
+
+    expect(graph.getItemByPath).toHaveBeenCalledWith('internal-drive', 'Clients/Acme')
+    expect(graph.uploadFile).toHaveBeenCalledWith(
+      'internal-drive',
+      'clients-item',
+      'invoice.pdf',
+      expect.any(Uint8Array),
+      'application/pdf',
+    )
+    expect(sync.mirrorWrite).toHaveBeenCalledWith('org-1', { id: 'new-file', name: 'invoice.pdf' })
+    expect(result).toMatchObject({ ok: true, data: { name: 'invoice.pdf', isFolder: false } })
+  })
+
+  it('refuses a file past the server action body limit', async () => {
+    const file = new File([''], 'huge.pdf', { type: 'application/pdf' })
+    Object.defineProperty(file, 'size', { value: 26 * 1024 * 1024 })
+
+    const result = await uploadToLibraryFolder(uploadForm('', file))
+
+    expect(result).toEqual({ ok: false, message: 'Files have to be 25 MB or smaller.' })
+    expect(graph.uploadFile).not.toHaveBeenCalled()
+  })
+
+  it('keeps the upload when the mirror fails', async () => {
+    sync.mirrorWrite.mockRejectedValueOnce(new Error('client drive refused'))
+    const file = new File(['bytes'], 'invoice.pdf', { type: 'application/pdf' })
+
+    const result = await uploadToLibraryFolder(uploadForm('Clients/Acme', file))
+
+    expect(result).toMatchObject({ ok: true })
+  })
+})
+
+describe('addLibraryFolder', () => {
+  it('creates the folder and mirrors it', async () => {
+    const result = await addLibraryFolder({ path: 'Clients/Acme', name: 'Invoices' })
+
+    expect(graph.ensureFolder).toHaveBeenCalledWith('internal-drive', 'clients-item', 'Invoices')
+    expect(sync.mirrorWrite).toHaveBeenCalled()
+    expect(result).toMatchObject({
+      ok: true,
+      data: { isFolder: true, path: 'Clients/Acme/Invoices' },
+    })
+  })
+
+  it('rejects a name SharePoint would refuse', async () => {
+    const result = await addLibraryFolder({ path: '', name: 'Q1/Q2' })
+
+    expect(result).toMatchObject({ ok: false })
+    expect(graph.ensureFolder).not.toHaveBeenCalled()
+  })
+})
+
+describe('renameInLibrary', () => {
+  it('renames the item and carries the old name to the mirror', async () => {
+    const result = await renameInLibrary({ itemId: 'file-1', name: 'guide.pdf' })
+
+    expect(graph.renameItem).toHaveBeenCalledWith('internal-drive', 'file-1', 'guide.pdf')
+    expect(sync.mirrorRename).toHaveBeenCalledWith(
+      'org-1',
+      { id: 'file-1', name: 'guide.pdf' },
+      'handbook.pdf',
+    )
+    expect(result).toMatchObject({ ok: true, data: { name: 'guide.pdf' } })
+  })
+})
+
+describe('removeFromLibraryFolder', () => {
+  it('reads the item before deleting it so the copy can still be found', async () => {
+    const result = await removeFromLibraryFolder({ itemId: 'file-1' })
+
+    expect(graph.getItem).toHaveBeenCalledWith('internal-drive', 'file-1')
+    expect(graph.deleteItem).toHaveBeenCalledWith('internal-drive', 'file-1')
+    expect(sync.mirrorRemoval).toHaveBeenCalledWith('org-1', {
+      id: 'file-1',
+      name: 'handbook.pdf',
+    })
+    expect(result).toEqual({ ok: true, data: { id: 'file-1' } })
+  })
+
+  it('does not mirror for an account with no organization', async () => {
+    guard.membershipOf.mockReturnValue({ organizationId: undefined })
+
+    await removeFromLibraryFolder({ itemId: 'file-1' })
+
+    expect(sync.mirrorRemoval).not.toHaveBeenCalled()
   })
 })

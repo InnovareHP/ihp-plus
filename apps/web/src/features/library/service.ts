@@ -1,11 +1,17 @@
 import {
+  deleteItem,
   downloadUrl,
+  ensureFolder,
+  getItem,
   getItemByPath,
   listAllChildren,
+  renameItem,
   requireInternalDriveId,
   rootItem,
+  uploadFile,
   type DriveItem,
 } from '@ihp/graph'
+import { safeLibraryName } from '@/lib/library-name'
 import type { LibraryEntry, LibraryListing, LibraryQuery } from './schema'
 import { joinLibraryPath, normalizeLibraryPath } from './utils/library-path'
 
@@ -16,7 +22,7 @@ export class NotAFolderError extends Error {
   }
 }
 
-function entryOf(item: DriveItem, parentPath: string): LibraryEntry {
+export function entryOf(item: DriveItem, parentPath: string): LibraryEntry {
   return {
     id: item.id,
     name: item.name,
@@ -47,12 +53,16 @@ function compare(a: LibraryEntry, b: LibraryEntry, query: LibraryQuery) {
   return byName.compare(a.name, b.name) * direction
 }
 
-export async function readLibraryFolder(query: LibraryQuery): Promise<LibraryListing> {
+async function folderItem(path: string) {
   const driveId = requireInternalDriveId()
-  const path = normalizeLibraryPath(query.path)
-
-  const folder = path ? await getItemByPath(driveId, path) : await rootItem(driveId)
+  const normalized = normalizeLibraryPath(path)
+  const folder = normalized ? await getItemByPath(driveId, normalized) : await rootItem(driveId)
   if (!folder.folder) throw new NotAFolderError()
+  return { driveId, path: normalized, folder }
+}
+
+export async function readLibraryFolder(query: LibraryQuery): Promise<LibraryListing> {
+  const { driveId, path, folder } = await folderItem(query.path)
 
   const entries = (await listAllChildren(driveId, folder.id)).map((item) => entryOf(item, path))
   return { path, entries: entries.sort((a, b) => compare(a, b, query)) }
@@ -60,4 +70,37 @@ export async function readLibraryFolder(query: LibraryQuery): Promise<LibraryLis
 
 export function libraryDownloadUrl(itemId: string) {
   return downloadUrl(requireInternalDriveId(), itemId)
+}
+
+export async function uploadToLibrary(input: {
+  path: string
+  name: string
+  body: Uint8Array
+  contentType: string
+}) {
+  const parent = await folderItem(input.path)
+  return uploadFile(
+    parent.driveId,
+    parent.folder.id,
+    safeLibraryName(input.name),
+    input.body,
+    input.contentType,
+  )
+}
+
+export async function createLibraryFolder(path: string, name: string) {
+  const parent = await folderItem(path)
+  return ensureFolder(parent.driveId, parent.folder.id, safeLibraryName(name, 'folder'))
+}
+
+export function readLibraryItem(itemId: string) {
+  return getItem(requireInternalDriveId(), itemId)
+}
+
+export function renameLibraryItem(itemId: string, name: string) {
+  return renameItem(requireInternalDriveId(), itemId, safeLibraryName(name, 'folder'))
+}
+
+export function deleteLibraryItem(itemId: string) {
+  return deleteItem(requireInternalDriveId(), itemId)
 }

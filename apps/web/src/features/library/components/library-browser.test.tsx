@@ -1,10 +1,14 @@
 import { axe } from 'vitest-axe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, userEvent, waitFor } from '@/test/render'
+import { render, screen, userEvent, waitFor, within } from '@/test/render'
 
 const actions = vi.hoisted(() => ({
   listLibraryFolder: vi.fn(),
   libraryFileLink: vi.fn(),
+  uploadToLibraryFolder: vi.fn(),
+  addLibraryFolder: vi.fn(),
+  renameInLibrary: vi.fn(),
+  removeFromLibraryFolder: vi.fn(),
 }))
 
 const urlQuery = vi.hoisted(() => ({
@@ -60,6 +64,10 @@ beforeEach(() => {
   urlQuery.query = { path: '', sortBy: 'name', sortDirection: 'asc' }
   actions.listLibraryFolder.mockResolvedValue({ ok: true, path: '', entries: [FOLDER, FILE] })
   actions.libraryFileLink.mockResolvedValue({ ok: true, data: { url: 'https://graph.test/d' } })
+  actions.uploadToLibraryFolder.mockResolvedValue({ ok: true, data: { ...FILE, id: 'file-2' } })
+  actions.addLibraryFolder.mockResolvedValue({ ok: true, data: { ...FOLDER, id: 'folder-2' } })
+  actions.renameInLibrary.mockResolvedValue({ ok: true, data: { ...FILE, name: 'guide.pdf' } })
+  actions.removeFromLibraryFolder.mockResolvedValue({ ok: true, data: { id: 'file-1' } })
 })
 
 describe('LibraryBrowser', () => {
@@ -79,7 +87,7 @@ describe('LibraryBrowser', () => {
     const opener = vi.spyOn(window, 'open').mockReturnValue(null)
     render(<LibraryBrowser />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Open' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Download' }))
 
     await waitFor(() => expect(actions.libraryFileLink).toHaveBeenCalledWith({ itemId: 'file-1' }))
     expect(opener).toHaveBeenCalledWith('https://graph.test/d', '_blank', 'noopener,noreferrer')
@@ -89,7 +97,7 @@ describe('LibraryBrowser', () => {
     actions.libraryFileLink.mockResolvedValue({ ok: false, message: 'That file is gone.' })
     render(<LibraryBrowser />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Open' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Download' }))
 
     await waitFor(() => expect(announce.announceFailure).toHaveBeenCalledWith('That file is gone.'))
   })
@@ -110,6 +118,101 @@ describe('LibraryBrowser', () => {
 
     expect(await screen.findByText('That folder is gone.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument()
+  })
+
+  it('shows an uploaded file before the server answers', async () => {
+    let settle: (value: unknown) => void = () => {}
+    actions.uploadToLibraryFolder.mockReturnValue(
+      new Promise((resolve) => {
+        settle = resolve
+      }),
+    )
+    render(<LibraryBrowser />)
+    await screen.findByText('handbook.pdf')
+
+    const file = new File(['x'], 'invoice.pdf', { type: 'application/pdf' })
+    await userEvent.upload(screen.getByLabelText('Upload files'), file)
+
+    expect(await screen.findByText('invoice.pdf')).toBeInTheDocument()
+    settle({ ok: true, data: { ...FILE, id: 'file-2', name: 'invoice.pdf' } })
+  })
+
+  it('puts the folder back and says why when an upload fails', async () => {
+    actions.uploadToLibraryFolder.mockResolvedValue({
+      ok: false,
+      message: 'Files have to be 25 MB or smaller.',
+    })
+    render(<LibraryBrowser />)
+    await screen.findByText('handbook.pdf')
+
+    const file = new File(['x'], 'huge.pdf', { type: 'application/pdf' })
+    await userEvent.upload(screen.getByLabelText('Upload files'), file)
+
+    await waitFor(() =>
+      expect(announce.announceFailure).toHaveBeenCalledWith('Files have to be 25 MB or smaller.'),
+    )
+    expect(screen.queryByText('huge.pdf')).not.toBeInTheDocument()
+  })
+
+  it('creates a folder from the toolbar', async () => {
+    render(<LibraryBrowser />)
+    await screen.findByText('handbook.pdf')
+
+    await userEvent.click(screen.getByRole('button', { name: 'New folder' }))
+    await userEvent.type(await screen.findByLabelText(/folder name/i), 'Invoices')
+    await userEvent.click(screen.getByRole('button', { name: 'Create folder' }))
+
+    await waitFor(() =>
+      expect(actions.addLibraryFolder).toHaveBeenCalledWith({ path: '', name: 'Invoices' }),
+    )
+  })
+
+  it('renames an item from its row menu', async () => {
+    render(<LibraryBrowser />)
+    await screen.findByText('handbook.pdf')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Actions for handbook.pdf' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Rename' }))
+    const field = await screen.findByLabelText(/file name/i)
+    await userEvent.clear(field)
+    await userEvent.type(field, 'guide.pdf')
+    await userEvent.click(screen.getByRole('button', { name: 'Save name' }))
+
+    await waitFor(() =>
+      expect(actions.renameInLibrary).toHaveBeenCalledWith({ itemId: 'file-1', name: 'guide.pdf' }),
+    )
+  })
+
+  it('names the item in the delete confirmation and removes the row', async () => {
+    render(<LibraryBrowser />)
+    actions.listLibraryFolder.mockResolvedValue({ ok: true, path: '', entries: [FOLDER] })
+    await screen.findByText('handbook.pdf')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Actions for handbook.pdf' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('handbook.pdf')).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Delete file' }))
+
+    await waitFor(() =>
+      expect(actions.removeFromLibraryFolder).toHaveBeenCalledWith({ itemId: 'file-1' }),
+    )
+    await waitFor(() => expect(screen.queryByText('handbook.pdf')).not.toBeInTheDocument())
+  })
+
+  it('restores a deleted row when the server refuses', async () => {
+    actions.removeFromLibraryFolder.mockResolvedValue({ ok: false, message: 'That file is gone.' })
+    render(<LibraryBrowser />)
+    await screen.findByText('handbook.pdf')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Actions for handbook.pdf' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Delete file' }))
+
+    await waitFor(() => expect(announce.announceFailure).toHaveBeenCalledWith('That file is gone.'))
+    expect(await screen.findByText('handbook.pdf')).toBeInTheDocument()
   })
 
   it('has no axe violations', async () => {
