@@ -2,9 +2,11 @@
 
 import { Button, Group, Stack, Text, Title } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
+import { useMemo } from 'react'
 import { EmptyState } from '@/components/empty-state'
 import type { TaskListRow, TaskRow as Task } from '../schema'
-import { TaskRow } from './task-row'
+import { groupTasksByStatus } from '../utils/group-by-status'
+import { TaskStatusGroup } from './task-status-group'
 
 export interface TaskListSectionProps {
   list: TaskListRow
@@ -25,6 +27,8 @@ export function TaskListSection({
   onEdit,
   onDelete,
 }: TaskListSectionProps) {
+  const groups = useMemo(() => groupTasksByStatus(tasks), [tasks])
+
   return (
     <Stack gap="sm">
       <Group justify="space-between" align="baseline" wrap="wrap" gap="xs">
@@ -57,16 +61,16 @@ export function TaskListSection({
           }
         />
       ) : (
-        <Stack component="ul" gap="xs" p={0} style={{ listStyle: 'none' }}>
-          {tasks.map((task, index) => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              canMoveUp={index > 0}
-              canMoveDown={index < tasks.length - 1}
+        <Stack gap="sm">
+          {groups.map((group) => (
+            <TaskStatusGroup
+              key={group.status.id}
+              status={group.status}
+              items={group.items}
+              // Closed work is history; it stays folded away until someone asks for it.
+              defaultOpen={group.status.category === 'active'}
               onToggleComplete={onToggleComplete}
-              onMoveUp={(row) => onMove(row, 'up')}
-              onMoveDown={(row) => onMove(row, 'down')}
+              onMove={onMove}
               onEdit={onEdit}
               onDelete={onDelete}
             />

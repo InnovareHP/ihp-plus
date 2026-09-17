@@ -87,8 +87,42 @@ describe('TaskBoard', () => {
     await renderBoard()
 
     expect(screen.getByRole('heading', { name: 'This week' })).toBeInTheDocument()
-    expect(screen.getByText('1 task')).toBeInTheDocument()
+    expect(screen.getAllByText('1 task')).toHaveLength(2)
     expect(screen.getByText('#1')).toBeInTheDocument()
+  })
+
+  it('folds a status group away and back', async () => {
+    const user = userEvent.setup()
+    await renderBoard()
+
+    const toggle = screen.getByRole('button', { name: /To do/ })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await waitFor(() => expect(screen.queryByText('Send the renewal pack')).not.toBeVisible())
+
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('starts a done status collapsed and keeps its work separate', async () => {
+    rpc.listTasks.mockResolvedValue([
+      TASK,
+      {
+        ...TASK,
+        id: 'task-2',
+        taskNumber: 2,
+        name: 'Archive the old pack',
+        statusId: 'status-done',
+        status: STATUSES[1]!,
+      },
+    ])
+
+    await renderBoard()
+
+    expect(screen.getByRole('button', { name: /Done/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('button', { name: /To do/ })).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('offers the first project as a starting point when there are none', async () => {
