@@ -1,4 +1,6 @@
-import { List, Text } from '@mantine/core'
+// A sub-component reached as List.Item resolves to undefined in the browser chunk when a
+// server component renders it, so the named export is imported directly.
+import { List, ListItem, Text } from '@mantine/core'
 import type { ChartPerson } from '../schema'
 
 export interface ChartPeopleProps {
@@ -20,7 +22,7 @@ export function ChartPeople({ people, emphasis = false, emptyText }: ChartPeople
   return (
     <List listStyleType="none" spacing={4} ml={0} pl={0}>
       {people.map((person) => (
-        <List.Item key={person.userId}>
+        <ListItem key={person.userId}>
           <Text size="sm" fw={emphasis ? 600 : 400}>
             {person.name}
           </Text>
@@ -29,7 +31,7 @@ export function ChartPeople({ people, emphasis = false, emptyText }: ChartPeople
               {person.jobTitle}
             </Text>
           ) : null}
-        </List.Item>
+        </ListItem>
       ))}
     </List>
   )

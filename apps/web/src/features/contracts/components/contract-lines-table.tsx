@@ -1,4 +1,17 @@
-import { Group, Stack, Table, Text } from '@mantine/core'
+// A sub-component reached as Table.Td resolves to undefined in the browser chunk when a
+// server component renders it, so the named exports are imported directly.
+import {
+  Group,
+  Stack,
+  Table,
+  TableScrollContainer,
+  TableTbody,
+  TableTd,
+  TableTh,
+  TableThead,
+  TableTr,
+  Text,
+} from '@mantine/core'
 import { CATALOG_UNIT_LABELS, formatCents, lineTotalCents, type ContractLineRow } from '../schema'
 
 export interface ContractLinesTableProps {
@@ -10,46 +23,46 @@ export function ContractLinesTable({ lines, subtotalCents }: ContractLinesTableP
   return (
     <Stack gap="xs">
       {/* Scrolls inside its own box, so a narrow screen never scrolls the whole page sideways. */}
-      <Table.ScrollContainer minWidth={420}>
+      <TableScrollContainer minWidth={420}>
         <Table withTableBorder withColumnBorders verticalSpacing="xs">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th scope="col">Service</Table.Th>
-              <Table.Th scope="col" w={120}>
+          <TableThead>
+            <TableTr>
+              <TableTh scope="col">Service</TableTh>
+              <TableTh scope="col" w={120}>
                 Price
-              </Table.Th>
-              <Table.Th scope="col" w={80}>
+              </TableTh>
+              <TableTh scope="col" w={80}>
                 Qty
-              </Table.Th>
-              <Table.Th scope="col" w={120}>
+              </TableTh>
+              <TableTh scope="col" w={120}>
                 Total
-              </Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
+              </TableTh>
+            </TableTr>
+          </TableThead>
+          <TableTbody>
             {lines.map((line) => (
-              <Table.Tr key={line.id}>
-                <Table.Th scope="row" fw={400}>
+              <TableTr key={line.id}>
+                <TableTh scope="row" fw={400}>
                   <Text size="sm">{line.name}</Text>
-                </Table.Th>
-                <Table.Td>
+                </TableTh>
+                <TableTd>
                   <Text size="sm">
                     {formatCents(line.unitPriceCents)}/{CATALOG_UNIT_LABELS[line.unit]}
                   </Text>
-                </Table.Td>
-                <Table.Td>
+                </TableTd>
+                <TableTd>
                   <Text size="sm">{line.quantity}</Text>
-                </Table.Td>
-                <Table.Td>
+                </TableTd>
+                <TableTd>
                   <Text size="sm" fw={500}>
                     {formatCents(lineTotalCents(line))}
                   </Text>
-                </Table.Td>
-              </Table.Tr>
+                </TableTd>
+              </TableTr>
             ))}
-          </Table.Tbody>
+          </TableTbody>
         </Table>
-      </Table.ScrollContainer>
+      </TableScrollContainer>
       <Group justify="flex-end" gap="sm">
         <Text size="sm" c="dimmed">
           Subtotal

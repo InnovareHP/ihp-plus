@@ -1,4 +1,6 @@
-import { Text, Timeline } from '@mantine/core'
+// A sub-component reached as Timeline.Item resolves to undefined in the browser chunk when a
+// server component renders it, so the named export is imported directly.
+import { Text, Timeline, TimelineItem } from '@mantine/core'
 
 export interface ActivityTimelineItem {
   id: string
@@ -35,7 +37,7 @@ export function ActivityTimeline({ items, label }: ActivityTimelineProps) {
       aria-label={label}
     >
       {items.map((item) => (
-        <Timeline.Item key={item.id} title={item.label} role="listitem">
+        <TimelineItem key={item.id} title={item.label} role="listitem">
           <Text size="xs" c="dimmed">
             {item.actorName} ·{' '}
             <time dateTime={item.createdAt}>{stamp.format(new Date(item.createdAt))}</time>
@@ -45,7 +47,7 @@ export function ActivityTimeline({ items, label }: ActivityTimelineProps) {
               {item.detail}
             </Text>
           ) : null}
-        </Timeline.Item>
+        </TimelineItem>
       ))}
     </Timeline>
   )
