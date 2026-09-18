@@ -29,36 +29,53 @@ const ORG_NAME = process.env.ORG_NAME
 const ORG_SLUG = process.env.ORG_SLUG
 const OWNER_EMAIL = process.env.ORG_OWNER_EMAIL
 
+// Named so a production database can take the reference data without the demo rows:
+// `pnpm db:seed lookups teams`. No argument runs them all, which is the dev default.
+const STEPS = ['teams', 'lookups', 'forms', 'clients', 'catalog', 'contract', 'owner'] as const
+type Step = (typeof STEPS)[number]
+
+function requestedSteps(): Set<Step> {
+  const names = process.argv.slice(2).filter((argument) => !argument.startsWith('-'))
+  const unknown = names.filter((name) => !(STEPS as readonly string[]).includes(name))
+  if (unknown.length > 0) {
+    throw new Error(`Unknown seed step: ${unknown.join(', ')}. Pick from ${STEPS.join(', ')}.`)
+  }
+  return new Set(names.length > 0 ? (names as Step[]) : STEPS)
+}
+
 // Membership rows that carry a plugin-derived membershipKey or memberCount are written by
 // Better Auth's own API, never here — this seed only touches tables with plain columns.
 async function main() {
+  const steps = requestedSteps()
   const organization = await currentOrganization()
   console.log(`organization ${organization.slug} (${organization.id})`)
+  console.log(`steps: ${[...steps].join(', ')}`)
 
+  if (steps.has('teams')) await seedDepartments(organization.id)
+  if (steps.has('lookups')) await seedLookupOptions(organization.id)
+  if (steps.has('forms')) await seedRequestForms(organization.id)
+  if (steps.has('clients')) await seedDemoClients(organization.id)
+  if (steps.has('catalog')) await seedCatalog(organization.id)
+  if (steps.has('contract')) await seedContractTemplate(organization.id)
+  if (steps.has('owner')) await seedOwner(organization.id)
+}
+
+async function seedDepartments(organizationId: string) {
   for (const name of DEPARTMENTS) {
     // team has no unique constraint on (organizationId, name), so upsert is not available.
     const existing = await db.team.findFirst({
-      where: { organizationId: organization.id, name },
+      where: { organizationId, name },
       select: { id: true },
     })
     if (existing) continue
     await db.team.create({
-      data: {
-        id: crypto.randomUUID(),
-        name,
-        organizationId: organization.id,
-        createdAt: new Date(),
-      },
+      data: { id: crypto.randomUUID(), name, organizationId, createdAt: new Date() },
     })
     console.log(`  + team ${name}`)
   }
+}
 
-  await seedLookupOptions(organization.id)
-  await seedRequestForms(organization.id)
-  await seedDemoClients(organization.id)
-  await seedCatalog(organization.id)
-  await seedContractTemplate(organization.id)
-
+async function seedOwner(organizationId: string) {
   if (!OWNER_EMAIL) {
     console.log('ORG_OWNER_EMAIL is unset, so no owner was assigned.')
     return
@@ -73,7 +90,7 @@ async function main() {
   }
 
   const membership = await db.member.findFirst({
-    where: { organizationId: organization.id, userId: owner.id },
+    where: { organizationId, userId: owner.id },
     select: { id: true },
   })
 
@@ -83,7 +100,7 @@ async function main() {
     await db.member.create({
       data: {
         id: crypto.randomUUID(),
-        organizationId: organization.id,
+        organizationId,
         userId: owner.id,
         role: 'owner',
         createdAt: new Date(),
