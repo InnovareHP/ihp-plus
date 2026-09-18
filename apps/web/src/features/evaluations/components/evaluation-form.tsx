@@ -60,7 +60,8 @@ export function EvaluationForm({ evaluation }: { evaluation: EvaluationRow }) {
 
   return (
     <PageSection
-      title={`${evaluation.formName} · ${evaluation.employeeName}`}
+      title="Your answers"
+      maw={680}
       description={
         evaluation.dueAt
           ? `Due by ${dateOnly.format(new Date(evaluation.dueAt))}.`
@@ -68,7 +69,7 @@ export function EvaluationForm({ evaluation }: { evaluation: EvaluationRow }) {
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Stack gap="lg" maw={620}>
+        <Stack gap="lg">
           <FormError message={errors.root?.message} title="Could not submit that evaluation" />
 
           <Stack gap="md">
