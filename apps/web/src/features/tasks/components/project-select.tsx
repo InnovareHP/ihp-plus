@@ -16,6 +16,7 @@ export function ProjectSelect({ projects, value, onChange, onCreate }: ProjectSe
     <Group gap="sm" align="flex-end" wrap="wrap">
       <Select
         label="Project"
+        placeholder="Choose a project"
         data={projects.map((project) => ({
           value: project.id,
           label: `${project.name} (${project.taskCount})`,

@@ -24,6 +24,8 @@ export const ACTIVITY_LABELS = {
   'task.completed': 'Task completed',
   'task.reopened': 'Task reopened',
   'task.deleted': 'Task deleted',
+  'task.commented': 'Commented',
+  'task.attached': 'File attached',
 } as const
 
 export type ActivityAction = keyof typeof ACTIVITY_LABELS

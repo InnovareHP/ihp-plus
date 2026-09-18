@@ -140,6 +140,8 @@ export interface TaskRow {
   position: number
   createdAt: string
   updatedAt: string
+  commentCount: number
+  attachmentCount: number
 }
 
 export interface TaskQuery {
@@ -175,4 +177,61 @@ export function isTaskDone(task: TaskRow) {
 export function isTaskOverdue(task: TaskRow, now: Date = new Date()) {
   if (!task.dueDate || isTaskDone(task)) return false
   return new Date(task.dueDate).getTime() < now.getTime()
+}
+
+// 25 MB is what nginx accepts on this origin (client_max_body_size), so a bigger file is
+// rejected here rather than by a proxy error nobody can read.
+export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
+
+export const commentFormSchema = z.object({
+  body: z
+    .string()
+    .trim()
+    .min(1, 'Write something before posting.')
+    .max(4000, 'A comment can run to 4000 characters.'),
+  mentionUserIds: z.array(z.string().min(1)).default([]),
+  attachmentIds: z.array(z.string().min(1)).default([]),
+})
+
+export type CommentFormValues = z.infer<typeof commentFormSchema>
+
+export interface TaskAttachmentRow {
+  id: string
+  fileName: string
+  contentType: string
+  fileSize: number
+  /** Presigned and short-lived, so it is never stored or cached anywhere. */
+  url: string
+  uploadedByName: string
+  createdAt: string
+  commentId: string | undefined
+}
+
+export interface TaskCommentRow {
+  id: string
+  taskId: string
+  authorId: string
+  authorName: string
+  body: string
+  mentions: TaskAssigneeRef[]
+  attachments: TaskAttachmentRow[]
+  editedAt: string | undefined
+  createdAt: string
+}
+
+export interface TaskConversation {
+  comments: TaskCommentRow[]
+  /** Everything on the task, a comment's files included, for the attachments panel. */
+  attachments: TaskAttachmentRow[]
+}
+
+/**
+ * An @mention is written as the person's name, so the composer keeps the ids it resolved and
+ * the body is left as typed — re-parsing a display name out of prose is how you mention the
+ * wrong Grace.
+ */
+export const MENTION_PATTERN = /@([\p{L}][\p{L}\p{N}'’.-]*(?: [\p{L}][\p{L}\p{N}'’.-]*)?)/gu
+
+export function mentionedNames(body: string): string[] {
+  return [...body.matchAll(MENTION_PATTERN)].map((match) => match[1] ?? '').filter(Boolean)
 }

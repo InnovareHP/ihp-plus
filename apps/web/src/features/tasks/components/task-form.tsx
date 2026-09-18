@@ -73,6 +73,7 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
         <TextInput
           {...register('name')}
           label="What has to be done"
+          placeholder="Draft the onboarding packet"
           required
           error={errors.name?.message}
           autoComplete="off"
@@ -81,6 +82,7 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
         <Textarea
           {...register('description')}
           label="Details"
+          placeholder="Anything the person picking this up needs to know"
           description="Anything the person picking this up needs to know."
           minRows={3}
           autosize
@@ -93,6 +95,7 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
           render={({ field }) => (
             <Select
               label="List"
+              placeholder="Choose a list"
               required
               data={lists.map((list) => ({ value: list.id, label: list.name }))}
               value={field.value}
@@ -111,6 +114,7 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
             render={({ field }) => (
               <Select
                 label="Priority"
+                placeholder="Choose a priority"
                 data={PRIORITY_OPTIONS}
                 value={field.value}
                 onChange={(value) => field.onChange(value ?? 'normal')}
@@ -125,6 +129,7 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
             {...register('dueDate')}
             type="date"
             label="Due date"
+            placeholder="mm/dd/yyyy"
             error={errors.dueDate?.message}
           />
         </Group>
@@ -135,6 +140,7 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
           render={({ field }) => (
             <MultiSelect
               label="Assigned to"
+              placeholder="Pick teammates"
               description="Leave empty and the task sits in the unassigned filter."
               data={people}
               value={field.value ?? []}

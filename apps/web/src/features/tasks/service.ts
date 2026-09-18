@@ -3,16 +3,23 @@ import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { recordActivity } from '@/lib/activity'
+import { deleteObject, objectUrl } from '@/lib/s3'
+import { notifyComment } from './notifications'
 import {
+  commentFormSchema,
   DEFAULT_TASK_LIST_NAME,
   DEFAULT_TASK_STATUSES,
   listFormSchema,
   projectFormSchema,
   taskFormSchema,
+  type CommentFormValues,
   type ListFormValues,
   type ProjectFormValues,
   type ReorderTaskValues,
   type TaskFormValues,
+  type TaskAttachmentRow,
+  type TaskCommentRow,
+  type TaskConversation,
   type TaskListRow,
   type TaskPriority,
   type TaskProjectRow,
@@ -75,6 +82,7 @@ const taskSelect = {
   position: true,
   createdAt: true,
   updatedAt: true,
+  _count: { select: { comments: true, attachments: true } },
 } satisfies Prisma.TaskSelect
 
 type TaskRecord = Prisma.TaskGetPayload<{ select: typeof taskSelect }>
@@ -112,6 +120,8 @@ function toTaskRow(task: TaskRecord, names: ReadonlyMap<string, string>): TaskRo
     position: task.position,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
+    commentCount: task._count.comments,
+    attachmentCount: task._count.attachments,
   }
 }
 
@@ -525,4 +535,327 @@ export async function deleteTask(taskId: string): Promise<void> {
     actorName: caller.name,
     detail: task.name,
   })
+}
+
+const attachmentSelect = {
+  id: true,
+  fileKey: true,
+  fileName: true,
+  contentType: true,
+  fileSize: true,
+  uploadedById: true,
+  commentId: true,
+  createdAt: true,
+} satisfies Prisma.TaskAttachmentSelect
+
+const commentSelect = {
+  id: true,
+  taskId: true,
+  authorId: true,
+  body: true,
+  editedAt: true,
+  createdAt: true,
+  mentions: { select: { userId: true } },
+  attachments: { select: attachmentSelect },
+} satisfies Prisma.TaskCommentSelect
+
+type AttachmentRecord = Prisma.TaskAttachmentGetPayload<{ select: typeof attachmentSelect }>
+type CommentRecord = Prisma.TaskCommentGetPayload<{ select: typeof commentSelect }>
+
+// One lookup for a whole conversation: the same few people author and are mentioned throughout.
+async function peopleNames(ids: readonly string[]) {
+  const unique = [...new Set(ids)].filter(Boolean)
+  if (unique.length === 0) return new Map<string, string>()
+
+  const people = await db.user.findMany({
+    where: { id: { in: unique } },
+    select: { id: true, name: true, preferredName: true },
+  })
+
+  return new Map(people.map((person) => [person.id, person.preferredName ?? person.name]))
+}
+
+// Storage being unconfigured must not blank the panel: the row still lists the file, it just
+// cannot be opened.
+async function signedUrl(fileKey: string) {
+  try {
+    return await objectUrl(fileKey)
+  } catch {
+    return ''
+  }
+}
+
+async function toAttachmentRows(
+  records: readonly AttachmentRecord[],
+  names: ReadonlyMap<string, string>,
+): Promise<TaskAttachmentRow[]> {
+  return Promise.all(
+    records.map(async (record) => ({
+      id: record.id,
+      fileName: record.fileName,
+      contentType: record.contentType,
+      fileSize: record.fileSize,
+      url: await signedUrl(record.fileKey),
+      uploadedByName: names.get(record.uploadedById ?? '') ?? 'Removed teammate',
+      createdAt: record.createdAt.toISOString(),
+      commentId: record.commentId ?? undefined,
+    })),
+  )
+}
+
+function toCommentRow(
+  comment: CommentRecord,
+  names: ReadonlyMap<string, string>,
+  attachments: readonly TaskAttachmentRow[],
+): TaskCommentRow {
+  return {
+    id: comment.id,
+    taskId: comment.taskId,
+    authorId: comment.authorId,
+    authorName: names.get(comment.authorId) ?? 'Removed teammate',
+    body: comment.body,
+    mentions: comment.mentions.map((mention) => ({
+      userId: mention.userId,
+      name: names.get(mention.userId) ?? 'Removed teammate',
+    })),
+    attachments: attachments.filter((file) => file.commentId === comment.id),
+    editedAt: comment.editedAt?.toISOString(),
+    createdAt: comment.createdAt.toISOString(),
+  }
+}
+
+async function commentOrThrow(caller: Caller, commentId: string) {
+  const comment = await db.taskComment.findFirst({
+    where: { id: commentId, organizationId: caller.organizationId },
+    select: commentSelect,
+  })
+  if (!comment) throw new ConnectError('That comment is no longer there.', Code.NotFound)
+  return comment
+}
+
+// Moderating someone else's words is a separate feature with its own audit trail; until then
+// an author owns their own comment and nothing more.
+function requireAuthor(caller: Caller, authorId: string) {
+  if (caller.userId !== authorId) {
+    throw new ConnectError('You can only change your own comments.', Code.PermissionDenied)
+  }
+}
+
+// The ids the composer sent are checked against the organization rather than trusted: a mention
+// emails someone, so an id from anywhere else must never reach the mail queue.
+async function colleagueIds(caller: Caller, userIds: readonly string[]) {
+  const wanted = [...new Set(userIds)].filter((id) => id !== caller.userId)
+  if (wanted.length === 0) return []
+
+  const members = await db.member.findMany({
+    where: { organizationId: caller.organizationId, userId: { in: wanted } },
+    select: { userId: true },
+  })
+
+  return members.map((member) => member.userId)
+}
+
+async function readComment(commentId: string): Promise<TaskCommentRow> {
+  const comment = await db.taskComment.findUnique({
+    where: { id: commentId },
+    select: commentSelect,
+  })
+  if (!comment) throw new ConnectError('That comment is no longer there.', Code.NotFound)
+
+  const names = await peopleNames([
+    comment.authorId,
+    ...comment.mentions.map((mention) => mention.userId),
+    ...comment.attachments.map((file) => file.uploadedById ?? ''),
+  ])
+
+  return toCommentRow(comment, names, await toAttachmentRows(comment.attachments, names))
+}
+
+export async function loadConversation(taskId: string): Promise<TaskConversation> {
+  const caller = await requireMember()
+  await taskOrThrow(caller, taskId)
+
+  const [comments, attachments] = await Promise.all([
+    db.taskComment.findMany({
+      where: { taskId },
+      select: commentSelect,
+      orderBy: { createdAt: 'asc' },
+    }),
+    db.taskAttachment.findMany({
+      where: { taskId },
+      select: attachmentSelect,
+      orderBy: { createdAt: 'asc' },
+    }),
+  ])
+
+  const names = await peopleNames([
+    ...comments.map((comment) => comment.authorId),
+    ...comments.flatMap((comment) => comment.mentions.map((mention) => mention.userId)),
+    ...attachments.map((file) => file.uploadedById ?? ''),
+  ])
+
+  const files = await toAttachmentRows(attachments, names)
+
+  return {
+    comments: comments.map((comment) => toCommentRow(comment, names, files)),
+    attachments: files,
+  }
+}
+
+export async function createComment(
+  values: CommentFormValues & { taskId: string },
+): Promise<TaskCommentRow> {
+  const caller = await requireMember()
+  const parsed = commentFormSchema.safeParse(values)
+  if (!parsed.success) {
+    throw new ConnectError(
+      parsed.error.issues[0]?.message ?? 'That comment could not be posted.',
+      Code.InvalidArgument,
+    )
+  }
+
+  const task = await taskOrThrow(caller, values.taskId)
+  const mentionedIds = await colleagueIds(caller, parsed.data.mentionUserIds)
+
+  const comment = await db.taskComment.create({
+    data: {
+      organizationId: caller.organizationId,
+      taskId: task.id,
+      authorId: caller.userId,
+      body: parsed.data.body,
+      mentions: { create: mentionedIds.map((userId) => ({ userId })) },
+    },
+    select: { id: true },
+  })
+
+  // The files were uploaded before the comment existed, so they are claimed now; scoping the
+  // update to this task, this uploader and an unclaimed file makes a stray id a no-op.
+  if (parsed.data.attachmentIds.length > 0) {
+    await db.taskAttachment.updateMany({
+      where: {
+        id: { in: parsed.data.attachmentIds },
+        taskId: task.id,
+        commentId: null,
+        uploadedById: caller.userId,
+      },
+      data: { commentId: comment.id },
+    })
+  }
+
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'task',
+    subjectId: task.id,
+    action: 'task.commented',
+    actorId: caller.userId,
+    actorName: caller.name,
+    detail: task.name,
+  })
+
+  await notifyComment({
+    taskId: task.id,
+    taskNumber: task.taskNumber,
+    taskName: task.name,
+    projectId: task.projectId,
+    authorId: caller.userId,
+    authorName: caller.name,
+    body: parsed.data.body,
+    mentionedIds,
+  })
+
+  return readComment(comment.id)
+}
+
+export async function updateComment(
+  commentId: string,
+  body: string,
+  mentionUserIds: readonly string[],
+): Promise<TaskCommentRow> {
+  const caller = await requireMember()
+  const existing = await commentOrThrow(caller, commentId)
+  requireAuthor(caller, existing.authorId)
+
+  const parsed = commentFormSchema.safeParse({
+    body,
+    mentionUserIds: [...mentionUserIds],
+    attachmentIds: [],
+  })
+  if (!parsed.success) {
+    throw new ConnectError(
+      parsed.error.issues[0]?.message ?? 'That comment could not be saved.',
+      Code.InvalidArgument,
+    )
+  }
+
+  const mentionedIds = await colleagueIds(caller, parsed.data.mentionUserIds)
+  const added = mentionedIds.filter(
+    (userId) => !existing.mentions.some((mention) => mention.userId === userId),
+  )
+
+  await db.$transaction([
+    db.taskCommentMention.deleteMany({
+      where: { commentId: existing.id, userId: { notIn: [...mentionedIds, ''] } },
+    }),
+    db.taskCommentMention.createMany({
+      data: mentionedIds.map((userId) => ({ commentId: existing.id, userId })),
+      skipDuplicates: true,
+    }),
+    db.taskComment.update({
+      where: { id: existing.id },
+      data: { body: parsed.data.body, editedAt: new Date() },
+    }),
+  ])
+
+  // Only the newly named hear about it: fixing a typo must not mail the thread a second time.
+  if (added.length > 0) {
+    const task = await taskOrThrow(caller, existing.taskId)
+    await notifyComment({
+      taskId: task.id,
+      taskNumber: task.taskNumber,
+      taskName: task.name,
+      projectId: task.projectId,
+      authorId: caller.userId,
+      authorName: caller.name,
+      body: parsed.data.body,
+      mentionedIds: added,
+    })
+  }
+
+  return readComment(existing.id)
+}
+
+export async function deleteComment(commentId: string): Promise<void> {
+  const caller = await requireMember()
+  const comment = await commentOrThrow(caller, commentId)
+  requireAuthor(caller, comment.authorId)
+
+  // The rows cascade with the comment, but the objects behind them do not.
+  for (const file of comment.attachments) await forgetObject(file.fileKey)
+
+  await db.taskComment.delete({ where: { id: comment.id } })
+}
+
+export async function deleteAttachment(attachmentId: string): Promise<void> {
+  const caller = await requireMember()
+  const attachment = await db.taskAttachment.findFirst({
+    where: { id: attachmentId, organizationId: caller.organizationId },
+    select: { id: true, fileKey: true, uploadedById: true },
+  })
+  if (!attachment) throw new ConnectError('That file is no longer there.', Code.NotFound)
+  if (attachment.uploadedById && attachment.uploadedById !== caller.userId) {
+    throw new ConnectError('You can only remove files you attached.', Code.PermissionDenied)
+  }
+
+  await forgetObject(attachment.fileKey)
+  await db.taskAttachment.delete({ where: { id: attachment.id } })
+}
+
+// Storage refusing the delete must not strand the row: without it the file is unreachable
+// anyway, and the row is what the app reads.
+async function forgetObject(fileKey: string) {
+  try {
+    await deleteObject(fileKey)
+  } catch {
+    // Left for whoever reconciles the bucket.
+  }
 }

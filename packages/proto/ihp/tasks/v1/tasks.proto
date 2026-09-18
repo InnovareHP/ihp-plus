@@ -73,6 +73,34 @@ message Task {
   double position = 15;
   string created_at = 16;
   string updated_at = 17;
+  // Card badges: the board shows the counts without loading either collection.
+  int32 comment_count = 18;
+  int32 attachment_count = 19;
+}
+
+message TaskAttachmentFile {
+  string id = 1;
+  string file_name = 2;
+  string content_type = 3;
+  int64 file_size = 4;
+  // Presigned and short-lived, so it is fetched with the row rather than stored anywhere.
+  string url = 5;
+  string uploaded_by_name = 6;
+  string created_at = 7;
+  // Set when the file hangs off a comment rather than the task itself.
+  optional string comment_id = 8;
+}
+
+message TaskComment {
+  string id = 1;
+  string task_id = 2;
+  string author_id = 3;
+  string author_name = 4;
+  string body = 5;
+  repeated TaskAssignee mentions = 6;
+  repeated TaskAttachmentFile attachments = 7;
+  optional string edited_at = 8;
+  string created_at = 9;
 }
 
 message ListProjectsRequest {
@@ -194,6 +222,52 @@ message DeleteTaskRequest {
 
 message DeleteTaskResponse {}
 
+message ListCommentsRequest {
+  string task_id = 1;
+}
+
+message ListCommentsResponse {
+  repeated TaskComment comments = 1;
+  // Everything on the task, including files posted inside a comment.
+  repeated TaskAttachmentFile attachments = 2;
+}
+
+message CreateCommentRequest {
+  string task_id = 1;
+  string body = 2;
+  // Ids the composer resolved from the @names it offered; the server checks each is a
+  // colleague before it notifies anyone.
+  repeated string mention_user_ids = 3;
+  // Files uploaded by the attachment action beforehand, moved onto this comment on post.
+  repeated string attachment_ids = 4;
+}
+
+message CreateCommentResponse {
+  TaskComment comment = 1;
+}
+
+message UpdateCommentRequest {
+  string comment_id = 1;
+  string body = 2;
+  repeated string mention_user_ids = 3;
+}
+
+message UpdateCommentResponse {
+  TaskComment comment = 1;
+}
+
+message DeleteCommentRequest {
+  string comment_id = 1;
+}
+
+message DeleteCommentResponse {}
+
+message DeleteAttachmentRequest {
+  string attachment_id = 1;
+}
+
+message DeleteAttachmentResponse {}
+
 service TasksService {
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
   rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
@@ -207,4 +281,10 @@ service TasksService {
   rpc CompleteTask(CompleteTaskRequest) returns (CompleteTaskResponse);
   rpc ReorderTask(ReorderTaskRequest) returns (ReorderTaskResponse);
   rpc DeleteTask(DeleteTaskRequest) returns (DeleteTaskResponse);
+
+  rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
+  rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse);
+  rpc UpdateComment(UpdateCommentRequest) returns (UpdateCommentResponse);
+  rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse);
+  rpc DeleteAttachment(DeleteAttachmentRequest) returns (DeleteAttachmentResponse);
 }

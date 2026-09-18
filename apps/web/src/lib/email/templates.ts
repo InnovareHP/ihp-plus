@@ -208,3 +208,44 @@ export function contractAcceptedTemplate(options: {
     }),
   }
 }
+
+export function taskMentionTemplate(options: {
+  authorName: string
+  taskNumber: number
+  taskName: string
+  excerpt: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.authorName} mentioned you on #${options.taskNumber} ${options.taskName}`,
+    ...renderEmail({
+      preheader: `${options.authorName} asked for you on a task.`,
+      heading: `${options.authorName} mentioned you`,
+      body: [
+        `On #${options.taskNumber} ${options.taskName}:`,
+        options.excerpt,
+        'Reply on the task so the answer stays with the work.',
+      ],
+      action: { label: 'Open the task', url: options.url },
+    }),
+  }
+}
+
+export function taskCommentTemplate(options: {
+  authorName: string
+  taskNumber: number
+  taskName: string
+  excerpt: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `New comment on #${options.taskNumber} ${options.taskName}`,
+    ...renderEmail({
+      preheader: `${options.authorName} commented on a task you are on.`,
+      heading: `${options.authorName} commented`,
+      body: [`On #${options.taskNumber} ${options.taskName}:`, options.excerpt],
+      action: { label: 'Open the task', url: options.url },
+      footnote: 'You are getting this because you are assigned to this task or have replied on it.',
+    }),
+  }
+}

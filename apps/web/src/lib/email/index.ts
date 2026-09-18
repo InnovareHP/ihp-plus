@@ -8,6 +8,8 @@ export {
   requestDecidedTemplate,
   requestSubmittedTemplate,
   resetPasswordTemplate,
+  taskCommentTemplate,
+  taskMentionTemplate,
   verifyEmailTemplate,
   type PreparedEmail,
 } from './templates'

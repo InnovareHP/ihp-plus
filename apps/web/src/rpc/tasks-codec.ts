@@ -3,12 +3,16 @@ import {
   TaskPriority,
   TaskStatusCategory,
   type Task as TaskMessage,
+  type TaskAttachmentFile as TaskAttachmentMessage,
+  type TaskComment as TaskCommentMessage,
   type TaskList as TaskListMessage,
   type TaskProject as TaskProjectMessage,
   type TaskStatus as TaskStatusMessage,
 } from '@ihp/rpc/tasks'
 import type {
   TaskAssigneeFilter as AssigneeFilter,
+  TaskAttachmentRow,
+  TaskCommentRow,
   TaskListRow,
   TaskPriority as Priority,
   TaskProjectRow,
@@ -161,6 +165,8 @@ export function taskToProto(task: TaskRow): TaskMessage {
     position: task.position,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
+    commentCount: task.commentCount,
+    attachmentCount: task.attachmentCount,
   }
 }
 
@@ -188,5 +194,71 @@ export function taskFromProto(task: TaskMessage): TaskRow {
     position: task.position,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
+    commentCount: task.commentCount,
+    attachmentCount: task.attachmentCount,
+  }
+}
+
+export function attachmentToProto(file: TaskAttachmentRow): TaskAttachmentMessage {
+  return {
+    $typeName: 'ihp.tasks.v1.TaskAttachmentFile',
+    id: file.id,
+    fileName: file.fileName,
+    contentType: file.contentType,
+    // int64 crosses the wire as bigint; a file this app accepts is nowhere near the limit.
+    fileSize: BigInt(file.fileSize),
+    url: file.url,
+    uploadedByName: file.uploadedByName,
+    createdAt: file.createdAt,
+    commentId: file.commentId,
+  }
+}
+
+export function attachmentFromProto(file: TaskAttachmentMessage): TaskAttachmentRow {
+  return {
+    id: file.id,
+    fileName: file.fileName,
+    contentType: file.contentType,
+    fileSize: Number(file.fileSize),
+    url: file.url,
+    uploadedByName: file.uploadedByName,
+    createdAt: file.createdAt,
+    commentId: file.commentId,
+  }
+}
+
+export function commentToProto(comment: TaskCommentRow): TaskCommentMessage {
+  return {
+    $typeName: 'ihp.tasks.v1.TaskComment',
+    id: comment.id,
+    taskId: comment.taskId,
+    authorId: comment.authorId,
+    authorName: comment.authorName,
+    body: comment.body,
+    mentions: comment.mentions.map((mention) => ({
+      $typeName: 'ihp.tasks.v1.TaskAssignee' as const,
+      userId: mention.userId,
+      name: mention.name,
+    })),
+    attachments: comment.attachments.map(attachmentToProto),
+    editedAt: comment.editedAt,
+    createdAt: comment.createdAt,
+  }
+}
+
+export function commentFromProto(comment: TaskCommentMessage): TaskCommentRow {
+  return {
+    id: comment.id,
+    taskId: comment.taskId,
+    authorId: comment.authorId,
+    authorName: comment.authorName,
+    body: comment.body,
+    mentions: comment.mentions.map((mention) => ({
+      userId: mention.userId,
+      name: mention.name,
+    })),
+    attachments: comment.attachments.map(attachmentFromProto),
+    editedAt: comment.editedAt,
+    createdAt: comment.createdAt,
   }
 }

@@ -58,6 +58,8 @@ message FormField {
   // NUMBER only.
   optional double min = 7;
   optional double max = 8;
+  // Empty falls back to a default written per answer type in the portal.
+  string placeholder = 9;
 }
 
 message TeamRef {

@@ -19,6 +19,8 @@ const TASK: TaskRow = {
   position: 1024,
   createdAt: '2026-09-01T00:00:00.000Z',
   updatedAt: '2026-09-01T00:00:00.000Z',
+  commentCount: 0,
+  attachmentCount: 0,
 }
 
 const NOW = new Date('2026-09-17T00:00:00.000Z')

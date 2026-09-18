@@ -120,6 +120,8 @@ export function useCreateTask() {
         position: last + 1024,
         createdAt: now,
         updatedAt: now,
+        commentCount: 0,
+        attachmentCount: 0,
       }
 
       return [...rows, pending]

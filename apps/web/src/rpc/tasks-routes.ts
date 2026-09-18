@@ -1,20 +1,27 @@
 import type { ServiceImpl } from '@ihp/rpc'
 import { TasksService } from '@ihp/rpc/tasks'
 import {
+  createComment,
   createList,
   createProject,
   createTask,
+  deleteAttachment,
+  deleteComment,
   deleteTask,
+  loadConversation,
   loadLists,
   loadProjects,
   loadStatuses,
   loadTasks,
   reorderTask,
   setTaskCompleted,
+  updateComment,
   updateTask,
 } from '@/features/tasks/service'
 import {
   assigneeFilterFromProto,
+  attachmentToProto,
+  commentToProto,
   listToProto,
   priorityFromProto,
   projectToProto,
@@ -103,6 +110,41 @@ export const tasks: ServiceImpl<typeof TasksService> = {
 
   deleteTask: async (request) => {
     await deleteTask(request.taskId)
+    return {}
+  },
+
+  listComments: async (request) => {
+    const conversation = await loadConversation(request.taskId)
+    return {
+      comments: conversation.comments.map(commentToProto),
+      attachments: conversation.attachments.map(attachmentToProto),
+    }
+  },
+
+  createComment: async (request) => ({
+    comment: commentToProto(
+      await createComment({
+        taskId: request.taskId,
+        body: request.body,
+        mentionUserIds: [...request.mentionUserIds],
+        attachmentIds: [...request.attachmentIds],
+      }),
+    ),
+  }),
+
+  updateComment: async (request) => ({
+    comment: commentToProto(
+      await updateComment(request.commentId, request.body, request.mentionUserIds),
+    ),
+  }),
+
+  deleteComment: async (request) => {
+    await deleteComment(request.commentId)
+    return {}
+  },
+
+  deleteAttachment: async (request) => {
+    await deleteAttachment(request.attachmentId)
     return {}
   },
 }

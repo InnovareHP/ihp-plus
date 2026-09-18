@@ -1,6 +1,6 @@
-// Work the company assigns itself: a project holds lists, a list holds tasks. Modelled on the
-// task board in the referral portal, minus its checklists, comments, attachments, timers and
-// dependency graph — those land in a second pass.
+// Work the company assigns itself: a project holds lists, a list holds tasks, and a task
+// carries the conversation about it. Modelled on the task board in the referral portal, minus
+// its checklists, timers and dependency graph — those land in a later pass.
 
 model TaskProject {
   id String @id @default(uuid())
@@ -102,7 +102,9 @@ model Task {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  assignees TaskAssignee[]
+  assignees   TaskAssignee[]
+  comments    TaskComment[]
+  attachments TaskAttachment[]
 
   @@unique([projectId, taskNumber])
   @@index([organizationId, listId, isArchived])
@@ -124,5 +126,76 @@ model TaskAssignee {
   @@unique([taskId, userId])
   @@index([userId])
   @@map("taskAssignee")
+  @@schema("tasks")
+}
+
+// The conversation on a task. Flat rather than threaded: a task is already the thread, and a
+// reply tree on work this small buys nothing but a harder read.
+model TaskComment {
+  id             String @id @default(uuid())
+  organizationId String
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  authorId String
+  body     String
+  // Set on the first edit, so the UI can say "edited" without comparing timestamps that a
+  // trigger or a backfill could move on their own.
+  editedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mentions    TaskCommentMention[]
+  attachments TaskAttachment[]
+
+  @@index([taskId, createdAt])
+  @@index([organizationId])
+  @@map("taskComment")
+  @@schema("tasks")
+}
+
+// Who a comment called on. Its own table rather than an array column because the unread badge
+// is a query by user, and readAt has to live somewhere per person.
+model TaskCommentMention {
+  id        String      @id @default(uuid())
+  commentId String
+  comment   TaskComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([commentId, userId])
+  @@index([userId, readAt])
+  @@map("taskCommentMention")
+  @@schema("tasks")
+}
+
+// A file on a task, or on one comment of it. taskId is always set even for a comment's file,
+// so the task's own list can show everything attached to it without a join through comments.
+model TaskAttachment {
+  id             String @id @default(uuid())
+  organizationId String
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  commentId String?
+  comment   TaskComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  // The S3 object key; the file itself never touches Postgres.
+  fileKey     String
+  fileName    String
+  contentType String
+  fileSize    Int
+
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  @@index([taskId, createdAt])
+  @@index([commentId])
+  @@map("taskAttachment")
   @@schema("tasks")
 }
