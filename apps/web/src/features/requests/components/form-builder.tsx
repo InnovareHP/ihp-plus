@@ -156,6 +156,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
             <Textarea
               {...register('description')}
               label="Description"
+              placeholder="Use this to request equipment for a new hire"
               description="One line telling people when to use it."
               autosize
               minRows={2}
@@ -202,6 +203,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
                   type: 'text',
                   label: '',
                   help: '',
+                  placeholder: '',
                   required: false,
                   options: [],
                 })
@@ -223,6 +225,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
                       type: 'text',
                       label: '',
                       help: '',
+                      placeholder: '',
                       required: false,
                       options: [],
                     })

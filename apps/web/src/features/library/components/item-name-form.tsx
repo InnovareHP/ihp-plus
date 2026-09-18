@@ -8,6 +8,7 @@ import { newFolderSchema, type NewFolderValues } from '../schema'
 export interface ItemNameFormProps {
   label: string
   description: string
+  placeholder: string
   submitLabel: string
   pendingLabel: string
   errorTitle: string
@@ -52,6 +53,7 @@ export function ItemNameForm({ defaultName = '', onSubmit, ...copy }: ItemNameFo
           {...register('name')}
           label={copy.label}
           description={copy.description}
+          placeholder={copy.placeholder}
           required
           aria-required="true"
           error={errors.name?.message}

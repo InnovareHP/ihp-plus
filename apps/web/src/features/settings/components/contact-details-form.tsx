@@ -120,6 +120,7 @@ export function ContactDetailsForm({
 
         <TextInput
           label="Preferred name"
+          placeholder="Dee"
           description="What colleagues see in the directory and the portal header."
           autoComplete="nickname"
           error={errors.preferredName?.message}
@@ -129,6 +130,7 @@ export function ContactDetailsForm({
 
         <TextInput
           label="Phone"
+          placeholder="(609) 555-0134"
           type="tel"
           inputMode="tel"
           autoComplete="tel"

@@ -41,6 +41,7 @@ export function ContractTermsForm({ defaultValues }: { defaultValues: ContractTe
           <Textarea
             {...register('scopeTemplate')}
             label="Scope checklist"
+            placeholder="One scope control per line"
             description="The scope controls every proposal states, filled in per contract."
             autosize
             minRows={6}
@@ -50,6 +51,7 @@ export function ContractTermsForm({ defaultValues }: { defaultValues: ContractTe
           <Textarea
             {...register('standardTerms')}
             label="Standard terms and conditions"
+            placeholder="Payment, excluded costs, ownership, cancellation"
             description="Payment, excluded costs, ownership and cancellation. Appended after the scope."
             autosize
             minRows={8}

@@ -50,6 +50,7 @@ export const formFieldSchema = z
     type: z.enum(FIELD_TYPES),
     label: z.string().trim().min(1, 'Give the question a label.').max(120),
     help: z.string().trim().max(200).default(''),
+    placeholder: z.string().trim().max(80).default(''),
     required: z.boolean().default(false),
     options: z.array(z.string().trim().min(1)).default([]),
     min: z.number().optional(),

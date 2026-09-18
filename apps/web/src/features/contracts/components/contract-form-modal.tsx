@@ -220,34 +220,38 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
             />
           </Group>
 
+          <Controller
+            control={control}
+            name="billingCycle"
+            render={({ field }) => (
+              <Select
+                label="Billing"
+                placeholder="Choose a billing cycle"
+                description="Whether it recurs or is billed once."
+                data={BILLING_CYCLES.map((cycle) => ({
+                  value: cycle,
+                  label: BILLING_CYCLE_LABELS[cycle],
+                }))}
+                allowDeselect={false}
+                value={field.value}
+                onChange={(value) => value && field.onChange(value)}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+
           <Group grow align="flex-start">
-            <Controller
-              control={control}
-              name="billingCycle"
-              render={({ field }) => (
-                <Select
-                  label="Billing"
-                  description="Whether it recurs or is billed once."
-                  data={BILLING_CYCLES.map((cycle) => ({
-                    value: cycle,
-                    label: BILLING_CYCLE_LABELS[cycle],
-                  }))}
-                  allowDeselect={false}
-                  value={field.value}
-                  onChange={(value) => value && field.onChange(value)}
-                  onBlur={field.onBlur}
-                />
-              )}
-            />
             <TextInput
               {...register('startDate')}
               label="Start date"
+              placeholder="mm/dd/yyyy"
               description="Optional."
               type="date"
             />
             <TextInput
               {...register('endDate')}
               label="End date"
+              placeholder="mm/dd/yyyy"
               description="Optional; leave blank for open-ended."
               type="date"
             />
@@ -302,6 +306,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
                         <TextInput
                           {...register(`lines.${index}.name`)}
                           aria-label={`Service ${index + 1}`}
+                          placeholder="Monthly retainer"
                           error={errors.lines?.[index]?.name?.message}
                         />
                       </Table.Th>
@@ -312,6 +317,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
                           render={({ field: price }) => (
                             <NumberInput
                               aria-label={`Price for ${watchedLines?.[index]?.name ?? `service ${index + 1}`}`}
+                              placeholder="0.00"
                               prefix="$"
                               thousandSeparator=","
                               min={0}
@@ -332,6 +338,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
                           render={({ field: quantity }) => (
                             <NumberInput
                               aria-label={`Quantity for ${watchedLines?.[index]?.name ?? `service ${index + 1}`}`}
+                              placeholder="1"
                               min={1}
                               max={999}
                               value={quantity.value}
@@ -400,6 +407,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
             <Textarea
               {...register('terms', { onChange: () => (termsEdited.current = true) })}
               id="contract-terms"
+              placeholder="Scope, payment, cancellation — what the client agrees to"
               autosize
               minRows={6}
               maxRows={16}

@@ -37,6 +37,7 @@ export function RenameTeamModal({ team, onClose }: { team: TeamRow | null; onClo
           <TextInput
             {...register('name')}
             label="Department name"
+            placeholder="Clinical Operations"
             required
             aria-required="true"
             error={errors.name?.message}

@@ -69,12 +69,14 @@ export function FilterField<TQuery extends Record<string, unknown>>({
             <TextInput
               type="date"
               aria-label={`${filter.label}, from`}
+              placeholder="mm/dd/yyyy"
               value={stringOf(query[filter.fromKey])}
               onChange={(event) => patch({ [filter.fromKey]: event.currentTarget.value })}
             />
             <TextInput
               type="date"
               aria-label={`${filter.label}, to`}
+              placeholder="mm/dd/yyyy"
               value={stringOf(query[filter.toKey])}
               onChange={(event) => patch({ [filter.toKey]: event.currentTarget.value })}
             />

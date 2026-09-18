@@ -2,7 +2,17 @@
 
 import { Checkbox, NumberInput, Select, Textarea, TextInput } from '@mantine/core'
 import { Controller, type Control, type FieldValues } from 'react-hook-form'
-import type { FormField } from '@/features/requests/schema'
+import type { FieldType, FormField } from '@/features/requests/schema'
+
+// A field the admin left without a placeholder still says what an answer looks like.
+const DEFAULT_PLACEHOLDERS: Record<FieldType, string> = {
+  text: 'Type your answer',
+  textarea: 'Type your answer',
+  number: '0',
+  date: 'mm/dd/yyyy',
+  select: 'Choose an option',
+  checkbox: '',
+}
 
 export interface FieldInputProps {
   field: FormField
@@ -17,6 +27,7 @@ export function FieldInput({ field, control, error }: FieldInputProps) {
   const shared = {
     label: field.label,
     description: field.help || undefined,
+    placeholder: field.placeholder || DEFAULT_PLACEHOLDERS[field.type],
     required: field.required,
     'aria-required': field.required || undefined,
     error,

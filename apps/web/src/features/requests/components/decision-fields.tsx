@@ -47,6 +47,7 @@ export function DecisionFields({
       <Textarea
         {...register('note')}
         label="Note"
+        placeholder="Say what decided it"
         description={noteHelp ?? 'Optional when approving, required when rejecting.'}
         autosize
         minRows={3}

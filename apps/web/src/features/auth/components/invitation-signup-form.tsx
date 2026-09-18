@@ -69,6 +69,7 @@ export function InvitationSignupForm({ invitationId, email }: InvitationSignupFo
           {...register('password')}
           label="Password"
           description="At least 12 characters."
+          placeholder="Create a password"
           autoComplete="new-password"
           required
           aria-required="true"
@@ -79,6 +80,7 @@ export function InvitationSignupForm({ invitationId, email }: InvitationSignupFo
         <PasswordInput
           {...register('confirmPassword')}
           label="Confirm password"
+          placeholder="Re-enter your password"
           autoComplete="new-password"
           required
           aria-required="true"

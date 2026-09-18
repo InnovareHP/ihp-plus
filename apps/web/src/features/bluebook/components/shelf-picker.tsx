@@ -14,6 +14,7 @@ export function ShelfPicker({
   return (
     <Select
       label="Shelf"
+      placeholder="Choose a shelf"
       hiddenFrom="md"
       w="100%"
       allowDeselect={false}

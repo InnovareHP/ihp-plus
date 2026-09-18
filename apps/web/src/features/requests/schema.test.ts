@@ -12,7 +12,7 @@ import {
 function field(
   overrides: Partial<FormField> & Pick<FormField, 'id' | 'type' | 'label'>,
 ): FormField {
-  return { help: '', required: false, options: [], ...overrides }
+  return { help: '', placeholder: '', required: false, options: [], ...overrides }
 }
 
 const REASON = field({ id: 'reason', type: 'textarea', label: 'Reason', required: true })

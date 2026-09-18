@@ -138,6 +138,7 @@ export function DocumentForm({
         <Group grow align="flex-start">
           <MultiSelect
             label="Filed under"
+            placeholder="Pick one or more shelves"
             description="Every department that should find it. One document can sit on several shelves."
             data={shelves.map((shelf) => ({ value: shelf.value, label: shelf.label }))}
             value={picked}
@@ -153,6 +154,7 @@ export function DocumentForm({
           />
           <Select
             label="Category"
+            placeholder="Choose a category"
             description={
               canManageCategories ? (
                 <Anchor component="button" type="button" size="xs" onClick={onManageCategories}>
@@ -173,6 +175,7 @@ export function DocumentForm({
         <Textarea
           {...register('description')}
           label="Summary"
+          placeholder="What this document covers and who needs it"
           description="One or two lines on what this covers and who needs it."
           autosize
           minRows={2}

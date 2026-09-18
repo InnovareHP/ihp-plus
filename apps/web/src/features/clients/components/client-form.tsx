@@ -79,6 +79,7 @@ export function ClientForm({
     return (
       <Select
         label={label}
+        placeholder={`Choose a ${label.toLowerCase()}`}
         description={
           <Anchor component="button" type="button" size="xs" onClick={() => onManageOptions(kind)}>
             Manage options
@@ -124,6 +125,7 @@ export function ClientForm({
           />
           <Select
             label="Status"
+            placeholder="Choose a status"
             data={STATUS_OPTIONS}
             value={watch('status')}
             allowDeselect={false}
@@ -156,6 +158,7 @@ export function ClientForm({
           {optionField('source', 'Source')}
           <Select
             label="Account owner"
+            placeholder="Choose an owner"
             description="Who on the team handles this client."
             data={owners}
             value={watch('ownerId')}
@@ -167,16 +170,19 @@ export function ClientForm({
           />
           {optionField('city', 'City')}
           {optionField('state', 'State')}
-          <TextInput
-            {...register('lastContactAt')}
-            label="Last contact"
-            type="date"
-            error={errors.lastContactAt?.message}
-          />
         </SimpleGrid>
+
+        <TextInput
+          {...register('lastContactAt')}
+          label="Last contact"
+          placeholder="mm/dd/yyyy"
+          type="date"
+          error={errors.lastContactAt?.message}
+        />
 
         <TagsInput
           label="Tags"
+          placeholder="Add a tag"
           description="Pick from the curated list or type a new one."
           data={options.clientTag ?? []}
           value={watch('tags')}
@@ -189,6 +195,7 @@ export function ClientForm({
         <Textarea
           {...register('notes')}
           label="Notes"
+          placeholder="What the next person picking this up needs to know"
           description="What the next person picking this up needs to know."
           autosize
           minRows={3}

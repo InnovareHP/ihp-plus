@@ -84,6 +84,7 @@ export function LookupOptionsModal({
       <Stack gap="md">
         <Select
           label="List"
+          placeholder="Choose a list"
           description="Each list is its own dropdown, and every form that reads it updates at once."
           data={kindOptions}
           value={active}

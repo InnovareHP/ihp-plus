@@ -30,6 +30,22 @@ const mint: MantineColorsTuple = [
 
 const fontFamily = 'Poppins, ui-sans-serif, system-ui, sans-serif'
 
+const INPUTS = [
+  'TextInput',
+  'PasswordInput',
+  'Textarea',
+  'NumberInput',
+  'Select',
+  'MultiSelect',
+  'TagsInput',
+  'Autocomplete',
+  'FileInput',
+  'NativeSelect',
+  'JsonInput',
+] as const
+
+const INPUT_DEFAULTS = { size: 'sm' as const }
+
 export const theme = createTheme({
   primaryColor: 'brand',
   // Measured: shade 6 (#1346C5) is 7.75:1 on white, shade 4 is 5.5:1 on Mantine's dark body.
@@ -65,6 +81,12 @@ export const theme = createTheme({
   respectReducedMotion: true,
   cursorType: 'pointer',
   components: {
+    // Every field is the same height, so a form reads as one column of controls; a dense table
+    // control opts out with its own size.
+    ...INPUTS.reduce(
+      (registered, name) => ({ ...registered, [name]: { defaultProps: INPUT_DEFAULTS } }),
+      {},
+    ),
     Card: { defaultProps: { withBorder: true, radius: 'md' } },
     Paper: { defaultProps: { radius: 'md' } },
     Button: { defaultProps: { fw: 600 } },

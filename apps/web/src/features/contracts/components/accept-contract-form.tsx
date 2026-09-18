@@ -58,6 +58,7 @@ export function AcceptContractForm({ contractId, signature, clientName }: Accept
 
         <TextInput
           label="Your full name"
+          placeholder="Dana Reyes"
           description="Typing your name is your signature on this contract."
           autoComplete="name"
           required

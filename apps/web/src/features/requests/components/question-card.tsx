@@ -89,6 +89,7 @@ export function QuestionCard({
           <TextInput
             {...register(`fields.${index}.label`)}
             label="Label"
+            placeholder="What are you asking for?"
             required
             aria-required="true"
             error={labelError}
@@ -101,6 +102,7 @@ export function QuestionCard({
             render={({ field }) => (
               <Select
                 label="Answer type"
+                placeholder="Choose an answer type"
                 data={TYPE_OPTIONS}
                 allowDeselect={false}
                 value={field.value}
@@ -111,11 +113,21 @@ export function QuestionCard({
           />
         </Group>
 
-        <TextInput
-          {...register(`fields.${index}.help`)}
-          label="Help text"
-          description="Shown under the label, before anyone makes a mistake."
-        />
+        <Group grow align="flex-start">
+          <TextInput
+            {...register(`fields.${index}.help`)}
+            label="Help text"
+            placeholder="Shown under the question"
+            description="Shown under the label, before anyone makes a mistake."
+          />
+
+          <TextInput
+            {...register(`fields.${index}.placeholder`)}
+            label="Placeholder"
+            placeholder="An example answer"
+            description="Shown inside the empty field. Leave blank for the default."
+          />
+        </Group>
 
         {type === 'select' ? (
           <Controller
@@ -124,6 +136,7 @@ export function QuestionCard({
             render={({ field }) => (
               <TagsInput
                 label="Options"
+                placeholder="Add an option"
                 description="Press Enter after each one."
                 value={field.value}
                 onChange={field.onChange}
@@ -142,6 +155,7 @@ export function QuestionCard({
               render={({ field }) => (
                 <NumberInput
                   label="Lowest allowed"
+                  placeholder="0"
                   value={field.value ?? ''}
                   onChange={(value) => field.onChange(value === '' ? undefined : Number(value))}
                   onBlur={field.onBlur}
@@ -154,6 +168,7 @@ export function QuestionCard({
               render={({ field }) => (
                 <NumberInput
                   label="Highest allowed"
+                  placeholder="100"
                   value={field.value ?? ''}
                   onChange={(value) => field.onChange(value === '' ? undefined : Number(value))}
                   onBlur={field.onBlur}

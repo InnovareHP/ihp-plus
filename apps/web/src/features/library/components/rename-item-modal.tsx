@@ -25,6 +25,7 @@ export function RenameItemModal({ entry, onClose, onRename }: RenameItemModalPro
           key={entry.id}
           label={entry.isFolder ? 'Folder name' : 'File name'}
           description="The client's copy is renamed to match."
+          placeholder={entry.isFolder ? 'Onboarding packets' : 'Signed agreement.pdf'}
           submitLabel="Save name"
           pendingLabel="Saving…"
           errorTitle="Could not rename it"

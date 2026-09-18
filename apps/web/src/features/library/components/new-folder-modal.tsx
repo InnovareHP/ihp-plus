@@ -23,6 +23,7 @@ export function NewFolderModal({ opened, onClose, folderLabel, onCreate }: NewFo
       <ItemNameForm
         label="Folder name"
         description={`It is created in ${folderLabel}.`}
+        placeholder="Onboarding packets"
         submitLabel="Create folder"
         pendingLabel="Creating…"
         errorTitle="Could not create the folder"

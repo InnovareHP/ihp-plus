@@ -97,6 +97,7 @@ export function InviteForm({ invitedBy }: { invitedBy: string }) {
               render={({ field }) => (
                 <Select
                   label="Organization role"
+                  placeholder="Pick a role"
                   description="Admins can manage members and departments."
                   data={ROLE_OPTIONS}
                   allowDeselect={false}

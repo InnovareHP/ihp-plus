@@ -3,7 +3,6 @@
 import { Select, Stack, TextInput } from '@mantine/core'
 import { Controller, type UseFormReturn } from 'react-hook-form'
 import { LookupSelect } from '@/components/lookup-select'
-import { NARROW_INPUT } from '../utils/field-styles'
 import type { OnboardingValues } from '../schema'
 
 export interface TeamOption {
@@ -96,8 +95,8 @@ export function EmploymentStep({ form, teams }: EmploymentStepProps) {
         {...register('startDate')}
         label="Start date"
         description="The first day of your current position."
+        placeholder="mm/dd/yyyy"
         type="date"
-        styles={NARROW_INPUT}
         required
         aria-required="true"
         error={errors.startDate?.message}

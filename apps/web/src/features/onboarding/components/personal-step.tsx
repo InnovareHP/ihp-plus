@@ -2,7 +2,6 @@
 
 import { Fieldset, Stack, Text, TextInput } from '@mantine/core'
 import type { UseFormReturn } from 'react-hook-form'
-import { NARROW_INPUT, TINY_INPUT } from '../utils/field-styles'
 import type { OnboardingValues } from '../schema'
 
 export interface PersonalStepProps {
@@ -23,6 +22,7 @@ export function PersonalStep({ form, email }: PersonalStepProps) {
           <TextInput
             {...register('firstName')}
             label="First name"
+            placeholder="Dana"
             autoComplete="given-name"
             required
             aria-required="true"
@@ -33,8 +33,8 @@ export function PersonalStep({ form, email }: PersonalStepProps) {
             {...register('middleInitial')}
             label="Middle initial"
             description="Optional."
+            placeholder="R"
             maxLength={1}
-            styles={TINY_INPUT}
             autoComplete="additional-name"
             error={errors.middleInitial?.message}
             errorProps={{ role: 'alert' }}
@@ -42,6 +42,7 @@ export function PersonalStep({ form, email }: PersonalStepProps) {
           <TextInput
             {...register('lastName')}
             label="Last name"
+            placeholder="Reyes"
             autoComplete="family-name"
             required
             aria-required="true"
@@ -64,6 +65,7 @@ export function PersonalStep({ form, email }: PersonalStepProps) {
             {...register('preferredName')}
             label="Preferred name"
             description="Optional. What colleagues should call you if it differs from your legal name."
+            placeholder="Dee"
             autoComplete="nickname"
             error={errors.preferredName?.message}
             errorProps={{ role: 'alert' }}
@@ -72,6 +74,7 @@ export function PersonalStep({ form, email }: PersonalStepProps) {
             {...register('phone')}
             label="Phone number"
             description="Optional. Needed only if you turn on text-message verification."
+            placeholder="(609) 555-0134"
             type="tel"
             inputMode="tel"
             autoComplete="tel"
@@ -82,9 +85,9 @@ export function PersonalStep({ form, email }: PersonalStepProps) {
             {...register('dateOfBirth')}
             label="Date of birth"
             description="Optional. Used for benefits eligibility only."
+            placeholder="mm/dd/yyyy"
             type="date"
             autoComplete="bday"
-            styles={NARROW_INPUT}
             error={errors.dateOfBirth?.message}
             errorProps={{ role: 'alert' }}
           />

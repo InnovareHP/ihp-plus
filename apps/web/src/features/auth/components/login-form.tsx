@@ -79,6 +79,7 @@ export function LoginForm() {
         <PasswordInput
           {...register('password')}
           label="Password"
+          placeholder="Your password"
           autoComplete="current-password"
           required
           aria-required="true"

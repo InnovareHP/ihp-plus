@@ -17,7 +17,13 @@ export interface LookupSelectProps extends Omit<SelectProps, 'data' | 'value' | 
  * The currently selected value is seeded into `data` so an edit form shows the saved answer
  * before anything is fetched, and keeps showing it even if the option has since been retired.
  */
-export function LookupSelect({ kind, value, onChange, ...props }: LookupSelectProps) {
+export function LookupSelect({
+  kind,
+  value,
+  onChange,
+  placeholder = 'Choose an option',
+  ...props
+}: LookupSelectProps) {
   const lookup = useLookup(kind)
 
   const values = lookup.options.map((option) => option.value)
@@ -28,6 +34,7 @@ export function LookupSelect({ kind, value, onChange, ...props }: LookupSelectPr
       {...props}
       data={data}
       value={value}
+      placeholder={placeholder}
       onChange={onChange}
       onMouseEnter={lookup.warm}
       onFocus={lookup.warm}

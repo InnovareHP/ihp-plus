@@ -130,6 +130,7 @@ export function AssignEvaluationForm({ onDone }: { onDone: () => void }) {
         <TextInput
           {...register('dueAt')}
           label="Due date"
+          placeholder="mm/dd/yyyy"
           description="Optional. The supervisor is chased by the date, not by a person."
           type="date"
           error={errors.dueAt?.message}

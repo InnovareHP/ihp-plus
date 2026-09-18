@@ -30,7 +30,15 @@ const PENDING: RequestRow = {
   formId: 'form-1',
   formName: 'Equipment request',
   fields: [
-    { id: 'item', type: 'text', label: 'Item needed', help: '', required: true, options: [] },
+    {
+      id: 'item',
+      type: 'text',
+      label: 'Item needed',
+      help: '',
+      placeholder: '',
+      required: true,
+      options: [],
+    },
   ],
   values: { item: 'Laptop' },
   requesterId: 'user-1',
