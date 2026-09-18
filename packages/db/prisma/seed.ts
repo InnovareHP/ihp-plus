@@ -34,6 +34,11 @@ const OWNER_EMAIL = process.env.ORG_OWNER_EMAIL
 const STEPS = ['teams', 'lookups', 'forms', 'clients', 'catalog', 'contract', 'owner'] as const
 type Step = (typeof STEPS)[number]
 
+// Membership, approvers and submissions hang off a department, and the owner step only edits
+// rows Better Auth owns, so neither has a delete this file is allowed to make.
+const WIPEABLE = ['lookups', 'forms', 'clients', 'catalog', 'contract'] as const
+type Wipeable = (typeof WIPEABLE)[number]
+
 function requestedSteps(): Set<Step> {
   const names = process.argv.slice(2).filter((argument) => !argument.startsWith('-'))
   const unknown = names.filter((name) => !(STEPS as readonly string[]).includes(name))
@@ -43,13 +48,100 @@ function requestedSteps(): Set<Step> {
   return new Set(names.length > 0 ? (names as Step[]) : STEPS)
 }
 
+/**
+ * --wipe deletes what the named steps seed before writing them again, so an edited starter can
+ * be replaced by the current one. It refuses to run without named steps: a bare `--wipe` reads
+ * like "reset the demo data" and would take the whole organization's content with it.
+ */
+function wipeSteps(steps: Set<Step>): Set<Wipeable> {
+  if (!process.argv.slice(2).includes('--wipe')) return new Set()
+
+  const named = process.argv.slice(2).filter((argument) => !argument.startsWith('-'))
+  if (named.length === 0) {
+    throw new Error('--wipe needs the steps to wipe, e.g. db:seed forms --wipe.')
+  }
+
+  const refused = [...steps].filter((step) => !(WIPEABLE as readonly string[]).includes(step))
+  if (refused.length > 0) {
+    throw new Error(
+      `--wipe cannot delete: ${refused.join(', ')}. Wipeable steps are ${WIPEABLE.join(', ')}.`,
+    )
+  }
+
+  return new Set(steps as Set<Wipeable>)
+}
+
+async function wipe(step: Wipeable, organizationId: string) {
+  if (step === 'lookups') {
+    const { count } = await db.lookupOption.deleteMany({ where: { organizationId } })
+    console.log(`  - ${count} lookup options`)
+    return
+  }
+
+  if (step === 'clients') {
+    const { count } = await db.client.deleteMany({ where: { organizationId } })
+    console.log(`  - ${count} clients`)
+    return
+  }
+
+  if (step === 'catalog') {
+    const { count } = await db.catalogItem.deleteMany({ where: { organizationId } })
+    console.log(`  - ${count} catalog items`)
+    return
+  }
+
+  if (step === 'contract') {
+    const { count } = await db.contractTemplate.deleteMany({ where: { organizationId } })
+    console.log(`  - ${count} contract templates`)
+    return
+  }
+
+  await wipeForms(organizationId)
+}
+
+/**
+ * A submission and an evaluation both snapshot the form they were answered on, but the row
+ * still points at it with onDelete: Restrict — so a form anyone has used is kept rather than
+ * letting Postgres refuse the whole delete. The seed says which ones stayed.
+ */
+async function wipeForms(organizationId: string) {
+  const forms = await db.requestForm.findMany({
+    where: { organizationId },
+    select: {
+      id: true,
+      name: true,
+      _count: { select: { submissions: true, evaluations: true } },
+    },
+  })
+
+  const used = forms.filter((form) => form._count.submissions + form._count.evaluations > 0)
+  const unused = forms.filter((form) => form._count.submissions + form._count.evaluations === 0)
+
+  if (unused.length > 0) {
+    // requestFormTeam cascades with the form; nothing else points at one.
+    const { count } = await db.requestForm.deleteMany({
+      where: { id: { in: unused.map((form) => form.id) } },
+    })
+    console.log(`  - ${count} forms`)
+  }
+
+  for (const form of used) {
+    console.log(
+      `  kept ${form.name}: ${form._count.submissions} submissions, ${form._count.evaluations} evaluations`,
+    )
+  }
+}
+
 // Membership rows that carry a plugin-derived membershipKey or memberCount are written by
 // Better Auth's own API, never here — this seed only touches tables with plain columns.
 async function main() {
   const steps = requestedSteps()
+  const wiping = wipeSteps(steps)
   const organization = await currentOrganization()
   console.log(`organization ${organization.slug} (${organization.id})`)
-  console.log(`steps: ${[...steps].join(', ')}`)
+  console.log(`steps: ${[...steps].join(', ')}${wiping.size > 0 ? ' (wiping first)' : ''}`)
+
+  for (const step of wiping) await wipe(step, organization.id)
 
   if (steps.has('teams')) await seedDepartments(organization.id)
   if (steps.has('lookups')) await seedLookupOptions(organization.id)
@@ -185,15 +277,17 @@ async function seedLookupOptions(organizationId: string) {
 
 /**
  * The forms a company starts with, published so they are usable the moment someone signs in.
- * Written once and never again: these are content an admin edits, and a second run must not
- * undo an edit or resurrect a form that was deliberately retired.
+ * A form already there is left alone: it is content an admin edits, and a second run must not
+ * undo an edit or resurrect a form that was deliberately retired. --wipe is how you replace one.
  */
 async function seedRequestForms(organizationId: string) {
-  const existing = await db.requestForm.count({ where: { organizationId } })
-  if (existing > 0) {
-    console.log(`request forms already present (${existing}), seed skipped`)
-    return
-  }
+  // By name, not by count: a form someone built, or one --wipe had to keep, must not stop the
+  // rest of the catalogue from arriving.
+  const present = new Set(
+    (await db.requestForm.findMany({ where: { organizationId }, select: { name: true } })).map(
+      (form) => form.name,
+    ),
+  )
 
   const teams = await db.team.findMany({
     where: { organizationId },
@@ -202,6 +296,8 @@ async function seedRequestForms(organizationId: string) {
   const idOf = new Map(teams.map((team) => [team.name, team.id]))
 
   for (const form of REQUEST_FORM_SEED) {
+    if (present.has(form.name)) continue
+
     const teamIds =
       form.departments === 'all'
         ? teams.map((team) => team.id)
@@ -233,6 +329,8 @@ async function seedRequestForms(organizationId: string) {
 
   // An evaluation form reaches people by assignment, so it is publishable with no department.
   for (const form of EVALUATION_FORM_SEED) {
+    if (present.has(form.name)) continue
+
     await db.requestForm.create({
       data: {
         organizationId,
