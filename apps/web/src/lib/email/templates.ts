@@ -249,3 +249,210 @@ export function taskCommentTemplate(options: {
     }),
   }
 }
+
+export function requestReceivedTemplate(options: {
+  formName: string
+  teamName: string
+  /** How many people can decide it; 0 with asAdmin true means the admins were asked. */
+  approverCount: number
+  asAdmin: boolean
+  url: string
+}): PreparedEmail {
+  const waiting = options.asAdmin
+    ? `${options.teamName} has no approver appointed, so an admin will decide it.`
+    : options.approverCount === 1
+      ? `The approver for ${options.teamName} has it.`
+      : `The ${options.approverCount} approvers for ${options.teamName} have it.`
+
+  return {
+    subject: `Your ${options.formName} request is in`,
+    ...renderEmail({
+      preheader: `Your ${options.formName} request is waiting for a decision.`,
+      heading: `Your ${options.formName} request is in`,
+      body: [`We have it, and it is waiting for a decision.`, waiting],
+      action: { label: 'Track the request', url: options.url },
+      footnote: 'You can withdraw it yourself until somebody decides it.',
+    }),
+  }
+}
+
+export function requestWithdrawnTemplate(options: {
+  requesterName: string
+  formName: string
+  teamName: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.requesterName} withdrew their ${options.formName} request`,
+    ...renderEmail({
+      preheader: `Nothing is waiting on you for this ${options.formName} request any more.`,
+      heading: `${options.requesterName} withdrew a request`,
+      body: [
+        `${options.requesterName} withdrew the ${options.formName} request they raised in ${options.teamName}.`,
+        'There is nothing left to decide on it.',
+      ],
+      action: { label: 'Open the request', url: options.url },
+    }),
+  }
+}
+
+export function evaluationSubmittedTemplate(options: {
+  evaluatorName: string
+  employeeName: string
+  formName: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.evaluatorName} submitted the ${options.formName} for ${options.employeeName}`,
+    ...renderEmail({
+      preheader: `The ${options.formName} for ${options.employeeName} is filled in.`,
+      heading: 'An evaluation came back',
+      body: [
+        `${options.evaluatorName} filled in the ${options.formName} form for ${options.employeeName}.`,
+        'What they submitted is the record — nobody has to approve it.',
+      ],
+      action: { label: 'Read the evaluation', url: options.url },
+    }),
+  }
+}
+
+export function evaluationCancelledTemplate(options: {
+  formName: string
+  employeeName: string
+  cancelledByName: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `The ${options.formName} for ${options.employeeName} was cancelled`,
+    ...renderEmail({
+      preheader: `You no longer have to fill in the ${options.formName} for ${options.employeeName}.`,
+      heading: 'An evaluation was cancelled',
+      body: [
+        `${options.cancelledByName} cancelled the ${options.formName} form you were asked to fill in for ${options.employeeName}.`,
+        'Anything you had typed was not kept, so there is nothing to finish.',
+      ],
+      action: { label: 'Open your evaluations', url: options.url },
+    }),
+  }
+}
+
+export function memberRoleChangedTemplate(options: {
+  organizationName: string
+  /** The organization role decides what they manage; the portal role decides admin screens. */
+  scope: 'organization' | 'portal'
+  roleLabel: string
+  changedByName: string
+  url: string
+}): PreparedEmail {
+  const what = options.scope === 'organization' ? 'role' : 'portal access'
+
+  return {
+    subject: `Your ${what} in ${options.organizationName} changed`,
+    ...renderEmail({
+      preheader: `${options.changedByName} set your ${what} to ${options.roleLabel}.`,
+      heading: `You are now ${options.roleLabel}`,
+      body: [
+        `${options.changedByName} changed your ${what} in ${options.organizationName} to ${options.roleLabel}.`,
+        'What the portal offers you changes the next time you open it.',
+      ],
+      action: { label: 'Open the portal', url: options.url },
+      footnote: 'If that looks wrong, reply to whoever manages your organization.',
+    }),
+  }
+}
+
+export function memberAccessChangedTemplate(options: {
+  organizationName: string
+  suspended: boolean
+  changedByName: string
+  url: string
+}): PreparedEmail {
+  if (options.suspended) {
+    return {
+      subject: `Your ${options.organizationName} access was suspended`,
+      ...renderEmail({
+        preheader: `You cannot sign in to ${options.organizationName} on IHP Plus for now.`,
+        heading: 'Your access was suspended',
+        body: [
+          `${options.changedByName} suspended your access to ${options.organizationName} on IHP Plus.`,
+          'Signing in will not work until somebody restores it. Nothing you filed has been deleted.',
+        ],
+        footnote: 'If you think this is a mistake, contact whoever manages your organization.',
+      }),
+    }
+  }
+
+  return {
+    subject: `Your ${options.organizationName} access is back`,
+    ...renderEmail({
+      preheader: `You can sign in to ${options.organizationName} on IHP Plus again.`,
+      heading: 'Your access is back',
+      body: [
+        `${options.changedByName} restored your access to ${options.organizationName} on IHP Plus.`,
+        'Everything you had before is where you left it.',
+      ],
+      action: { label: 'Sign in', url: options.url },
+    }),
+  }
+}
+
+export function memberJoinedTemplate(options: {
+  memberName: string
+  teamName: string
+  jobTitle: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.memberName} finished setting up their account`,
+    ...renderEmail({
+      preheader: `${options.memberName} joined ${options.teamName} as ${options.jobTitle}.`,
+      heading: `${options.memberName} is set up`,
+      body: [
+        `${options.memberName} finished onboarding and joined ${options.teamName} as ${options.jobTitle}.`,
+        'Check their role and department are right, and give them whatever they need to start.',
+      ],
+      action: { label: 'Open members', url: options.url },
+    }),
+  }
+}
+
+export function clientOwnerAssignedTemplate(options: {
+  clientName: string
+  assignedByName: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `You are the account owner for ${options.clientName}`,
+    ...renderEmail({
+      preheader: `${options.assignedByName} made you the account owner for ${options.clientName}.`,
+      heading: `${options.clientName} is yours`,
+      body: [
+        `${options.assignedByName} made you the account owner for ${options.clientName}.`,
+        'Their contracts, documents and follow-ups come to you from here.',
+      ],
+      action: { label: 'Open the client', url: options.url },
+    }),
+  }
+}
+
+export function contractStatusChangedTemplate(options: {
+  reference: string
+  title: string
+  clientName: string
+  statusLabel: string
+  changedByName: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.reference} is now ${options.statusLabel}`,
+    ...renderEmail({
+      preheader: `${options.changedByName} set ${options.reference} to ${options.statusLabel}.`,
+      heading: `${options.reference} is now ${options.statusLabel}`,
+      body: [
+        `${options.changedByName} moved ${options.title} for ${options.clientName} to ${options.statusLabel}.`,
+        'You own this contract, so the change is yours to know about.',
+      ],
+      action: { label: 'Open contracts', url: options.url },
+    }),
+  }
+}

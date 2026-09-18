@@ -5,6 +5,7 @@ const prisma = vi.hoisted(() => ({
   client: {
     count: vi.fn(),
     findMany: vi.fn(),
+    findFirst: vi.fn(),
     findUnique: vi.fn(),
     create: vi.fn(),
     updateMany: vi.fn(),
@@ -19,7 +20,10 @@ const guard = vi.hoisted(() => ({
   membershipOf: vi.fn((): { organizationId: string | undefined } => ({ organizationId: 'org-1' })),
 }))
 
+const notifications = vi.hoisted(() => ({ notifyOwnerAssigned: vi.fn() }))
+
 vi.mock('@ihp/db', () => ({ db: prisma }))
+vi.mock('./notifications', () => notifications)
 vi.mock('@/lib/auth-guard', () => guard)
 
 const {
@@ -63,10 +67,14 @@ async function argsFor(query: Record<string, unknown>) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  guard.requireOnboarded.mockResolvedValue({ user: { id: 'user-1' }, profile: {} })
+  guard.requireOnboarded.mockResolvedValue({
+    user: { id: 'user-1', name: 'Ada Lovelace' },
+    profile: {},
+  })
   guard.membershipOf.mockReturnValue({ organizationId: 'org-1' })
   prisma.client.count.mockResolvedValue(1)
   prisma.client.findMany.mockResolvedValue([CLIENT])
+  prisma.client.findFirst.mockResolvedValue({ ownerId: CLIENT.ownerId })
   prisma.client.findUnique.mockResolvedValue(CLIENT)
   prisma.client.create.mockResolvedValue(CLIENT)
   prisma.client.updateMany.mockResolvedValue({ count: 1 })
@@ -212,6 +220,27 @@ describe('updateClient', () => {
     expect(prisma.client.updateMany.mock.calls[0]?.[0]).toMatchObject({
       where: { id: 'client-1', organizationId: 'org-1' },
     })
+  })
+
+  it('tells the new owner when a handover changes who the client belongs to', async () => {
+    prisma.client.findFirst.mockResolvedValue({ ownerId: 'user-3' })
+
+    await updateClient({ ...DRAFT, id: 'client-1' })
+
+    expect(notifications.notifyOwnerAssigned).toHaveBeenCalledWith({
+      clientName: 'Riverside Care Center',
+      ownerId: 'user-2',
+      assignedById: 'user-1',
+      assignedByName: 'Ada Lovelace',
+    })
+  })
+
+  it('stays quiet on an edit that leaves the owner alone', async () => {
+    prisma.client.findFirst.mockResolvedValue({ ownerId: 'user-2' })
+
+    await updateClient({ ...DRAFT, id: 'client-1' })
+
+    expect(notifications.notifyOwnerAssigned).not.toHaveBeenCalled()
   })
 
   it('reports a client that no longer exists instead of pretending it saved', async () => {

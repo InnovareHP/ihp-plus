@@ -11,7 +11,7 @@ import {
   type FormField,
   type RequestValues,
 } from '@/features/requests/schema'
-import { notifyEvaluator } from './notifications'
+import { notifyAssigner, notifyEvaluator, notifyEvaluatorCancelled } from './notifications'
 import {
   assignEvaluationsSchema,
   type AssignEvaluationsValues,
@@ -222,6 +222,16 @@ export async function submitEvaluation(input: {
     },
   })
 
+  // Not awaited: the answers are saved whether or not the mail provider answers promptly.
+  void notifyAssigner({
+    evaluationId: updated.id,
+    assignedById: updated.assignedById,
+    evaluatorId: updated.evaluatorId,
+    evaluatorName: caller.name,
+    employeeId: updated.employeeId,
+    formName: updated.formName,
+  })
+
   await recordActivity({
     organizationId: caller.organizationId,
     subjectType: 'evaluation',
@@ -362,6 +372,14 @@ export async function cancelEvaluation(evaluationId: string): Promise<Evaluation
   const updated = await db.evaluationAssignment.update({
     where: { id: row.id },
     data: { status: 'cancelled' },
+  })
+
+  // Not awaited: whoever was going to fill it in is told, but the cancellation already stands.
+  void notifyEvaluatorCancelled({
+    evaluatorId: updated.evaluatorId,
+    employeeId: updated.employeeId,
+    formName: updated.formName,
+    cancelledByName: caller.name,
   })
 
   await recordActivity({

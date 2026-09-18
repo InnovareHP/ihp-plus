@@ -5,7 +5,12 @@ import { z } from 'zod'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake } from '@/lib/pagination'
 import { recordActivity } from '@/lib/activity'
-import { notifyApprovers, notifyRequester } from './notifications'
+import {
+  notifyApprovers,
+  notifyApproversWithdrawn,
+  notifyRequester,
+  notifyRequesterReceived,
+} from './notifications'
 import {
   answerSchemaOf,
   decisionSchema,
@@ -308,8 +313,7 @@ export async function submitRequest(input: {
     },
   })
 
-  // Not awaited: a slow mail provider must not hold up raising the request.
-  void notifyApprovers({
+  const raised = {
     submissionId: submission.id,
     organizationId: caller.organizationId,
     teamId: caller.team.id,
@@ -317,7 +321,11 @@ export async function submitRequest(input: {
     formName: form.name,
     requesterId: caller.userId,
     requesterName: caller.name,
-  })
+  }
+
+  // Not awaited: a slow mail provider must not hold up raising the request.
+  void notifyApprovers(raised)
+  void notifyRequesterReceived(raised)
 
   await recordActivity({
     organizationId: caller.organizationId,
@@ -413,6 +421,17 @@ export async function withdrawRequest(submissionId: string): Promise<RequestRow>
   const updated = await db.requestSubmission.update({
     where: { id: submission.id },
     data: { status: 'withdrawn' },
+  })
+
+  // Not awaited: the queue is told it lost a request, but the withdrawal is already saved.
+  void notifyApproversWithdrawn({
+    submissionId: updated.id,
+    organizationId: caller.organizationId,
+    teamId: updated.teamId ?? '',
+    teamName: updated.teamName ?? 'their department',
+    formName: updated.formName,
+    requesterId: caller.userId,
+    requesterName: caller.name,
   })
 
   await recordActivity({

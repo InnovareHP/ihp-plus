@@ -20,7 +20,12 @@ const guard = vi.hoisted(() => ({
   canManageOrganization: vi.fn(() => false),
 }))
 
-const notifications = vi.hoisted(() => ({ notifyApprovers: vi.fn(), notifyRequester: vi.fn() }))
+const notifications = vi.hoisted(() => ({
+  notifyApprovers: vi.fn(),
+  notifyApproversWithdrawn: vi.fn(),
+  notifyRequester: vi.fn(),
+  notifyRequesterReceived: vi.fn(),
+}))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./notifications', () => notifications)
@@ -33,7 +38,8 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...guard,
 }))
 
-const { decideRequest, loadRequest, loadRequestsPage, submitRequest } = await import('./service')
+const { decideRequest, loadRequest, loadRequestsPage, submitRequest, withdrawRequest } =
+  await import('./service')
 
 const PENDING = {
   id: 'sub-1',
@@ -230,11 +236,36 @@ describe('notifications', () => {
 
     await submitRequest({ formId: 'form-1', values: {} })
 
-    expect(notifications.notifyApprovers).toHaveBeenCalledWith({
+    const raised = {
       submissionId: 'sub-2',
       organizationId: 'org-1',
       teamId: 'team-2',
       teamName: 'Care Management',
+      formName: 'Time off',
+      requesterId: 'user-1',
+      requesterName: 'Ada Lovelace',
+    }
+    expect(notifications.notifyApprovers).toHaveBeenCalledWith(raised)
+    // The sender gets a receipt from the same raise, not only the approvers.
+    expect(notifications.notifyRequesterReceived).toHaveBeenCalledWith(raised)
+  })
+
+  it('tells the queue when the requester withdraws, so nobody opens it to decide', async () => {
+    signedIn()
+    prisma.requestSubmission.findFirst.mockResolvedValue({ ...PENDING, requesterId: 'user-1' })
+    prisma.requestSubmission.update.mockResolvedValue({
+      ...PENDING,
+      requesterId: 'user-1',
+      status: 'withdrawn',
+    })
+
+    await withdrawRequest('sub-1')
+
+    expect(notifications.notifyApproversWithdrawn).toHaveBeenCalledWith({
+      submissionId: 'sub-1',
+      organizationId: 'org-1',
+      teamId: 'team-1',
+      teamName: 'Revenue Cycle',
       formName: 'Time off',
       requesterId: 'user-1',
       requesterName: 'Ada Lovelace',

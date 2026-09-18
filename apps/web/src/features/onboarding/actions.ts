@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth'
 import { isKnownOption } from '@/features/lookups/service'
 import { requireSession } from '@/lib/auth-guard'
 import { deleteObject, objectUrl, putObject, S3NotConfiguredError } from '@/lib/s3'
+import { notifyAdminsOfNewMember } from './notifications'
 import { generateIhpId } from './utils/ihp-id'
 import { detectPhotoType, MAX_PHOTO_BYTES, photoExtension } from './utils/photo'
 import { onboardingSchema } from './schema'
@@ -46,7 +47,7 @@ export async function completeOnboarding(values: unknown): Promise<CompleteOnboa
   // The chosen team is client input, so the organization comes from the team row, not the body.
   const team = await db.team.findUnique({
     where: { id: profile.teamId },
-    select: { id: true, organizationId: true },
+    select: { id: true, name: true, organizationId: true },
   })
   if (!team) {
     return { ok: false, message: 'That department no longer exists — pick another one.' }
@@ -95,6 +96,15 @@ export async function completeOnboarding(values: unknown): Promise<CompleteOnboa
   } catch {
     return { ok: false, message: 'Could not save your profile — check your connection and retry.' }
   }
+
+  // Not awaited: the profile is saved, and the admins being told is not the person's problem.
+  void notifyAdminsOfNewMember({
+    organizationId: team.organizationId,
+    userId: session.user.id,
+    memberName: profile.preferredName || fullName(profile.firstName, '', profile.lastName),
+    teamName: team.name,
+    jobTitle: profile.jobTitle,
+  })
 
   return { ok: true }
 }

@@ -22,7 +22,11 @@ const guard = vi.hoisted(() => ({
   canManageOrganization: vi.fn(() => false),
 }))
 
-const notifications = vi.hoisted(() => ({ notifyEvaluator: vi.fn() }))
+const notifications = vi.hoisted(() => ({
+  notifyAssigner: vi.fn(),
+  notifyEvaluator: vi.fn(),
+  notifyEvaluatorCancelled: vi.fn(),
+}))
 const activity = vi.hoisted(() => ({ recordActivity: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
@@ -190,6 +194,16 @@ describe('filling one in', () => {
   it('saves the answers, stamps the time and needs no approver', async () => {
     await submitEvaluation({ evaluationId: 'eval-1', values: { rating: 4 } })
 
+    // Whoever asked for it hears it came back, which is the only signal they get.
+    expect(notifications.notifyAssigner).toHaveBeenCalledWith({
+      evaluationId: 'eval-1',
+      assignedById: 'user-2',
+      evaluatorId: 'user-1',
+      evaluatorName: 'Ada',
+      employeeId: 'user-9',
+      formName: 'Probationary review',
+    })
+
     const data = prisma.evaluationAssignment.update.mock.calls[0]?.[0].data
     expect(data).toMatchObject({ status: 'submitted', values: { rating: 4 } })
     expect(data.submittedAt).toBeInstanceOf(Date)
@@ -245,6 +259,20 @@ describe('cancelling and listing', () => {
     prisma.evaluationAssignment.findFirst.mockResolvedValue({ ...PENDING, status: 'submitted' })
 
     expect(await codeOf(() => cancelEvaluation('eval-1'))).toBe(Code.FailedPrecondition)
+  })
+
+  it('tells the evaluator when an admin cancels what they were asked to fill in', async () => {
+    signedIn({ isAdmin: true, userId: 'user-2' })
+    prisma.evaluationAssignment.update.mockResolvedValue({ ...PENDING, status: 'cancelled' })
+
+    await cancelEvaluation('eval-1')
+
+    expect(notifications.notifyEvaluatorCancelled).toHaveBeenCalledWith({
+      evaluatorId: 'user-1',
+      employeeId: 'user-9',
+      formName: 'Probationary review',
+      cancelledByName: 'Ada',
+    })
   })
 
   it('lists only the evaluations the caller has to fill in', async () => {

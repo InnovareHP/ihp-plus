@@ -6,6 +6,8 @@ import { auth } from '@/lib/auth'
 import { isKnownOption, listFor } from '@/features/lookups/service'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake, type SortDirection } from '@/lib/pagination'
+import { notifyAccessChanged, notifyRoleChanged } from './notifications'
+import { ORGANIZATION_ROLE_LABELS, PORTAL_ROLE_LABELS } from './schema'
 import type {
   MemberFilterOptions,
   MemberQuery,
@@ -202,7 +204,18 @@ export async function applyOrganizationRole(values: SetOrganizationRoleValues): 
     throw new ConnectError('Could not change that organization role — try again.', Code.Internal)
   }
 
-  return reload({ id: values.memberId, organizationId }, user.id)
+  const row = await reload({ id: values.memberId, organizationId }, user.id)
+
+  // Not awaited: the role is already changed, and a slow mail provider must not hold the call.
+  void notifyRoleChanged({
+    organizationId,
+    userId: row.userId,
+    scope: 'organization',
+    roleLabel: ORGANIZATION_ROLE_LABELS[values.role],
+    changedByName: user.name,
+  })
+
+  return row
 }
 
 export async function applyPortalRole(values: SetPortalRoleValues): Promise<MemberRow> {
@@ -221,6 +234,14 @@ export async function applyPortalRole(values: SetPortalRoleValues): Promise<Memb
   } catch {
     throw new ConnectError('Could not change that portal role — try again.', Code.Internal)
   }
+
+  void notifyRoleChanged({
+    organizationId,
+    userId: values.userId,
+    scope: 'portal',
+    roleLabel: PORTAL_ROLE_LABELS[values.role],
+    changedByName: user.name,
+  })
 
   return reload({ userId: values.userId, organizationId }, user.id)
 }
@@ -273,6 +294,13 @@ export async function applyMemberAccess(values: SetBannedValues): Promise<Member
   } catch {
     throw new ConnectError('Could not change that access level — try again.', Code.Internal)
   }
+
+  void notifyAccessChanged({
+    organizationId,
+    userId: values.userId,
+    suspended: values.banned,
+    changedByName: user.name,
+  })
 
   return reload({ userId: values.userId, organizationId }, user.id)
 }

@@ -10,6 +10,11 @@ const prisma = vi.hoisted(() => ({
 }))
 
 const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
+const authApi = vi.hoisted(() => ({ setRole: vi.fn(), banUser: vi.fn(), unbanUser: vi.fn() }))
+const notifications = vi.hoisted(() => ({
+  notifyRoleChanged: vi.fn(),
+  notifyAccessChanged: vi.fn(),
+}))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 // membershipOf and canManageOrganization are pure, so the real ones are kept: the manager
@@ -18,10 +23,17 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/auth-guard')>()),
   ...guard,
 }))
-vi.mock('@/lib/auth', () => ({ auth: { api: {} } }))
+vi.mock('@/lib/auth', () => ({ auth: { api: authApi } }))
+vi.mock('./notifications', () => notifications)
 vi.mock('next/headers', () => ({ headers: vi.fn(async () => new Headers()) }))
 
-const { applyEmploymentStatus, loadFilterOptions, loadMembersPage } = await import('./service')
+const {
+  applyEmploymentStatus,
+  applyMemberAccess,
+  applyPortalRole,
+  loadFilterOptions,
+  loadMembersPage,
+} = await import('./service')
 
 // The service takes a parsed query; turning URL params into one is the caller's job.
 const listMembers = (query: Record<string, unknown> = {}) =>
@@ -270,5 +282,37 @@ describe('loadFilterOptions', () => {
     signedInAs({ portalRole: 'user', organizationRole: 'member' })
 
     expect(await codeOf(listMemberFilterOptions)).toBe(Code.PermissionDenied)
+  })
+})
+
+describe('telling people their own access changed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    signedInAs()
+    guard.getSession.mockResolvedValue({ user: { id: 'user-9', name: 'Ada Lovelace' } })
+    prisma.member.findFirst.mockResolvedValue(ROW)
+  })
+
+  it('names the new portal role to whoever now holds it', async () => {
+    await applyPortalRole({ userId: 'user-1', role: 'admin' })
+
+    expect(notifications.notifyRoleChanged).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      userId: 'user-1',
+      scope: 'portal',
+      roleLabel: 'Admin',
+      changedByName: 'Ada Lovelace',
+    })
+  })
+
+  it('tells a suspended member, since sign-in itself will not explain why', async () => {
+    await applyMemberAccess({ userId: 'user-1', banned: true })
+
+    expect(notifications.notifyAccessChanged).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      userId: 'user-1',
+      suspended: true,
+      changedByName: 'Ada Lovelace',
+    })
   })
 })

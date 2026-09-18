@@ -8,6 +8,12 @@ export const PORTAL_ROLES = ['admin', 'user'] as const
 
 export const PORTAL_ROLE_LABELS: Record<PortalRole, string> = { admin: 'Admin', user: 'Member' }
 
+export const ORGANIZATION_ROLE_LABELS: Record<OrganizationRole, string> = {
+  owner: 'Owner',
+  admin: 'Admin',
+  member: 'Member',
+}
+
 export const MEMBER_STATUSES = ['all', 'active', 'suspended'] as const
 // Department is a to-many relation, and Prisma cannot order by one, so it is filter-only.
 export const MEMBER_SORT_KEYS = [

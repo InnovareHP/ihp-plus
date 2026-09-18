@@ -11,7 +11,8 @@ const prisma = vi.hoisted(() => ({
     create: vi.fn(),
     update: vi.fn(),
   },
-  client: { findMany: vi.fn(), findFirst: vi.fn() },
+  client: { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn() },
+  user: { findUnique: vi.fn() },
   organization: { findUnique: vi.fn() },
   stripeInvoice: { findMany: vi.fn() },
 }))
@@ -19,7 +20,12 @@ const prisma = vi.hoisted(() => ({
 const guard = vi.hoisted(() => ({ requireOnboarded: vi.fn() }))
 
 const billing = vi.hoisted(() => ({ syncBilling: vi.fn() }))
-const email = vi.hoisted(() => ({ sendEmail: vi.fn(), contractPublishedTemplate: vi.fn() }))
+const email = vi.hoisted(() => ({
+  sendEmail: vi.fn(),
+  portalUrl: vi.fn((route: string) => `https://portal.ihp.test/app${route}`),
+  contractPublishedTemplate: vi.fn(),
+  contractStatusChangedTemplate: vi.fn(),
+}))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/features/billing/contract-billing', () => billing)
@@ -59,7 +65,7 @@ async function codeOf(operation: () => Promise<unknown>) {
 
 function signedInAs(options: { organizationRole?: string; portalRole?: string } = {}) {
   guard.requireOnboarded.mockResolvedValue({
-    user: { id: 'user-9' },
+    user: { id: 'user-9', name: 'Ada Lovelace' },
     profile: {
       role: options.portalRole ?? 'admin',
       members: [{ role: options.organizationRole ?? 'admin', organizationId: 'org-1' }],
@@ -284,6 +290,54 @@ describe('setContractStatus', () => {
       await codeOf(() => setContractStatus({ contractId: 'contract-1', status: 'sent' })),
     ).toBe(Code.FailedPrecondition)
     expect(prisma.contract.update).not.toHaveBeenCalled()
+    expect(email.sendEmail).not.toHaveBeenCalled()
+  })
+
+  it('tells the contract owner when somebody else moves it', async () => {
+    email.portalUrl.mockImplementation((route: string) => `https://portal.ihp.test/app${route}`)
+    email.contractStatusChangedTemplate.mockReturnValue({
+      subject: 'Moved',
+      html: '<p/>',
+      text: '',
+    })
+    prisma.user.findUnique.mockResolvedValue({ email: 'owner@ihp.test' })
+    prisma.client.findUnique.mockResolvedValue({ name: 'Atlantic Home Health' })
+    queueWriteThenReload({
+      id: 'contract-1',
+      signedAt: null,
+      status: 'sent',
+      clientId: 'client-1',
+      ownerId: 'user-2',
+      reference: 'IHP-C-0007',
+      title: 'Growth retainer',
+    })
+
+    await setContractStatus({ contractId: 'contract-1', status: 'cancelled' })
+
+    expect(email.sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'owner@ihp.test' }))
+    expect(email.contractStatusChangedTemplate).toHaveBeenCalledWith({
+      reference: 'IHP-C-0007',
+      title: 'Growth retainer',
+      clientName: 'Atlantic Home Health',
+      statusLabel: 'cancelled',
+      changedByName: 'Ada Lovelace',
+      url: 'https://portal.ihp.test/app/clients?tab=contracts',
+    })
+  })
+
+  it('stays quiet when the owner is the one moving their own contract', async () => {
+    queueWriteThenReload({
+      id: 'contract-1',
+      signedAt: null,
+      status: 'sent',
+      clientId: 'client-1',
+      ownerId: 'user-9',
+      reference: 'IHP-C-0007',
+      title: 'Growth retainer',
+    })
+
+    await setContractStatus({ contractId: 'contract-1', status: 'cancelled' })
+
     expect(email.sendEmail).not.toHaveBeenCalled()
   })
 

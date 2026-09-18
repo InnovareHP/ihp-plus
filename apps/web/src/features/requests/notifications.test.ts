@@ -11,12 +11,15 @@ const email = vi.hoisted(() => ({
   portalUrl: vi.fn(),
   requestSubmittedTemplate: vi.fn(),
   requestDecidedTemplate: vi.fn(),
+  requestReceivedTemplate: vi.fn(),
+  requestWithdrawnTemplate: vi.fn(),
 }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/email', () => email)
 
-const { notifyApprovers, notifyRequester } = await import('./notifications')
+const { notifyApprovers, notifyApproversWithdrawn, notifyRequester, notifyRequesterReceived } =
+  await import('./notifications')
 
 const SUBMITTED = {
   submissionId: 'sub-1',
@@ -33,6 +36,8 @@ beforeEach(() => {
   email.portalUrl.mockImplementation((route: string) => `https://portal.ihp.test/app${route}`)
   email.requestSubmittedTemplate.mockReturnValue({ subject: 'New', html: '<p/>', text: '' })
   email.requestDecidedTemplate.mockReturnValue({ subject: 'Decided', html: '<p/>', text: '' })
+  email.requestReceivedTemplate.mockReturnValue({ subject: 'Received', html: '<p/>', text: '' })
+  email.requestWithdrawnTemplate.mockReturnValue({ subject: 'Withdrawn', html: '<p/>', text: '' })
   prisma.user.findMany.mockImplementation(
     async ({ where }: { where: { id?: { in: string[] }; role?: string } }) =>
       where.role
@@ -132,6 +137,71 @@ describe('notifyRequester', () => {
       deciderName: 'Ada Lovelace',
       note: undefined,
     })
+
+    expect(email.sendEmail).not.toHaveBeenCalled()
+  })
+})
+
+describe('notifyRequesterReceived', () => {
+  it('confirms to the sender that it landed, and how many people can decide it', async () => {
+    prisma.requestApprover.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }])
+    prisma.user.findUnique.mockResolvedValue({ email: 'grace@ihp.test' })
+
+    await notifyRequesterReceived(SUBMITTED)
+
+    expect(email.sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'grace@ihp.test' }))
+    expect(email.requestReceivedTemplate).toHaveBeenCalledWith({
+      formName: 'Time off',
+      teamName: 'Revenue Cycle',
+      approverCount: 2,
+      asAdmin: false,
+      url: 'https://portal.ihp.test/app/requests/view/sub-1',
+    })
+  })
+
+  it('says an admin has it when the department appointed nobody', async () => {
+    prisma.requestApprover.findMany.mockResolvedValue([])
+    prisma.member.findMany.mockResolvedValue([{ userId: 'user-5' }])
+    prisma.user.findUnique.mockResolvedValue({ email: 'grace@ihp.test' })
+
+    await notifyRequesterReceived(SUBMITTED)
+
+    expect(email.requestReceivedTemplate).toHaveBeenCalledWith(
+      expect.objectContaining({ asAdmin: true }),
+    )
+  })
+
+  it('logs rather than throws, since the request is already saved', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    prisma.user.findUnique.mockRejectedValue(new Error('connection reset'))
+
+    await expect(notifyRequesterReceived(SUBMITTED)).resolves.toBeUndefined()
+    expect(console.error).toHaveBeenCalled()
+  })
+})
+
+describe('notifyApproversWithdrawn', () => {
+  it('tells each approver the request left their queue', async () => {
+    prisma.requestApprover.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }])
+
+    await notifyApproversWithdrawn(SUBMITTED)
+
+    expect(email.sendEmail.mock.calls.map((call) => call[0].to)).toEqual([
+      'user-1@ihp.test',
+      'user-2@ihp.test',
+    ])
+    expect(email.requestWithdrawnTemplate).toHaveBeenCalledWith({
+      requesterName: 'Grace Hopper',
+      formName: 'Time off',
+      teamName: 'Revenue Cycle',
+      url: 'https://portal.ihp.test/app/requests/view/sub-1',
+    })
+  })
+
+  it('sends nothing when the queue was empty anyway', async () => {
+    prisma.requestApprover.findMany.mockResolvedValue([{ userId: 'user-9' }])
+
+    await notifyApproversWithdrawn(SUBMITTED)
 
     expect(email.sendEmail).not.toHaveBeenCalled()
   })

@@ -9,14 +9,21 @@ import {
   type ActivityItem,
 } from '@/lib/activity'
 import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
-import { contractPublishedTemplate, sendEmail } from '@/lib/email'
+import {
+  contractPublishedTemplate,
+  contractStatusChangedTemplate,
+  portalUrl,
+  sendEmail,
+} from '@/lib/email'
 import { pageInfoOf, skipTake, type SortDirection } from '@/lib/pagination'
+import { clientTab } from '@/lib/routes'
 import { clientContractUrl } from './client-link'
 import {
   catalogItemSchema,
   contractDraftSchema,
   contractStatusSchema,
   contractUpdateSchema,
+  CONTRACT_STATUS_LABELS,
   CONTRACT_TRANSITIONS,
   isEditable,
   subtotalOf,
@@ -557,6 +564,7 @@ export async function setContractStatus(input: unknown): Promise<ContractDetail>
       startDate: true,
       endDate: true,
       updatedAt: true,
+      ownerId: true,
       stripeCustomerId: true,
       stripeSubscriptionId: true,
       lines: {
@@ -611,6 +619,9 @@ export async function setContractStatus(input: unknown): Promise<ContractDetail>
     actorName: userName,
   })
 
+  // Not awaited: the status already moved, and the owner hearing about it is a courtesy.
+  void notifyContractOwner(contract, to, userId, userName)
+
   if (recipient && sharedAt) {
     // Not awaited, and sendEmail never throws: a slow mail provider must not hold up publishing.
     void sendEmail({
@@ -625,6 +636,44 @@ export async function setContractStatus(input: unknown): Promise<ContractDetail>
   }
 
   return loadContract(contract.id)
+}
+
+/** Tells a contract's owner when somebody else moves it, since the money is theirs to track. */
+async function notifyContractOwner(
+  contract: {
+    id: string
+    ownerId: string | null
+    clientId: string
+    reference: string
+    title: string
+  },
+  status: ContractStatus,
+  actorId: string,
+  actorName: string,
+) {
+  try {
+    if (!contract.ownerId || contract.ownerId === actorId) return
+
+    const [owner, client] = await Promise.all([
+      db.user.findUnique({ where: { id: contract.ownerId }, select: { email: true } }),
+      db.client.findUnique({ where: { id: contract.clientId }, select: { name: true } }),
+    ])
+    if (!owner) return
+
+    void sendEmail({
+      to: owner.email,
+      ...contractStatusChangedTemplate({
+        reference: contract.reference,
+        title: contract.title,
+        clientName: client?.name ?? 'the client',
+        statusLabel: CONTRACT_STATUS_LABELS[status].toLowerCase(),
+        changedByName: actorName,
+        url: portalUrl(clientTab('contracts')),
+      }),
+    })
+  } catch (error) {
+    console.error(`[contracts] could not tell the owner of ${contract.id}`, error)
+  }
 }
 
 // Publishing emails the client their link, so a client with no address cannot be published to.

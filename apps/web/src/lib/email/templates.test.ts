@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
 import {
+  clientOwnerAssignedTemplate,
+  contractStatusChangedTemplate,
+  evaluationCancelledTemplate,
+  evaluationSubmittedTemplate,
   invitationTemplate,
+  memberAccessChangedTemplate,
+  memberJoinedTemplate,
+  memberRoleChangedTemplate,
   requestDecidedTemplate,
+  requestReceivedTemplate,
   requestSubmittedTemplate,
+  requestWithdrawnTemplate,
   resetPasswordTemplate,
   verifyEmailTemplate,
 } from './templates'
@@ -141,5 +150,139 @@ describe('templates', () => {
       expect(email.html).toContain('#1346c5')
       expect(email.text).toContain('Innovare Health Partners')
     }
+  })
+})
+
+describe('request receipts', () => {
+  it('names who has the request, so the requester knows who to chase', () => {
+    const email = requestReceivedTemplate({
+      formName: 'Time off',
+      teamName: 'Revenue Cycle',
+      approverCount: 2,
+      asAdmin: false,
+      url: 'https://ihp.test/app/requests/view/sub-1',
+    })
+
+    expect(email.subject).toBe('Your Time off request is in')
+    expect(email.text).toContain('The 2 approvers for Revenue Cycle have it.')
+    expect(email.text).toContain('withdraw it yourself')
+  })
+
+  it('says an admin will decide when the department has no approver', () => {
+    const email = requestReceivedTemplate({
+      formName: 'Time off',
+      teamName: 'Revenue Cycle',
+      approverCount: 3,
+      asAdmin: true,
+      url: 'https://ihp.test/app/requests/view/sub-1',
+    })
+
+    expect(email.text).toContain('has no approver appointed')
+  })
+
+  it('tells an approver a withdrawn request needs nothing from them', () => {
+    const email = requestWithdrawnTemplate({
+      requesterName: 'Grace Hopper',
+      formName: 'Time off',
+      teamName: 'Revenue Cycle',
+      url: 'https://ihp.test/app/requests/view/sub-1',
+    })
+
+    expect(email.subject).toBe('Grace Hopper withdrew their Time off request')
+    expect(email.text).toContain('nothing left to decide')
+  })
+})
+
+describe('evaluation emails', () => {
+  it('reports a submitted evaluation to whoever asked for it', () => {
+    const email = evaluationSubmittedTemplate({
+      evaluatorName: 'Ada Lovelace',
+      employeeName: 'Grace Hopper',
+      formName: 'Annual review',
+      url: 'https://ihp.test/app/evaluations/view/ev-1',
+    })
+
+    expect(email.subject).toBe('Ada Lovelace submitted the Annual review for Grace Hopper')
+    expect(email.text).toContain('https://ihp.test/app/evaluations/view/ev-1')
+  })
+
+  it('tells the evaluator a cancelled evaluation kept nothing they typed', () => {
+    const email = evaluationCancelledTemplate({
+      formName: 'Annual review',
+      employeeName: 'Grace Hopper',
+      cancelledByName: 'Ada Lovelace',
+      url: 'https://ihp.test/app/evaluations',
+    })
+
+    expect(email.subject).toBe('The Annual review for Grace Hopper was cancelled')
+    expect(email.text).toContain('was not kept')
+  })
+})
+
+describe('member emails', () => {
+  it('names the new role and who set it', () => {
+    const email = memberRoleChangedTemplate({
+      organizationName: 'Innovare Health Partners',
+      scope: 'organization',
+      roleLabel: 'Admin',
+      changedByName: 'Ada Lovelace',
+      url: 'https://ihp.test/app/',
+    })
+
+    expect(email.subject).toBe('Your role in Innovare Health Partners changed')
+    expect(email.text).toContain('Ada Lovelace')
+    expect(email.text).toContain('Admin')
+  })
+
+  it('offers no sign-in button to somebody who was just suspended', () => {
+    const email = memberAccessChangedTemplate({
+      organizationName: 'Innovare Health Partners',
+      suspended: true,
+      changedByName: 'Ada Lovelace',
+      url: 'https://ihp.test/app/login',
+    })
+
+    expect(email.subject).toBe('Your Innovare Health Partners access was suspended')
+    expect(email.text).not.toContain('https://ihp.test/app/login')
+    expect(email.text).toContain('Nothing you filed has been deleted.')
+  })
+
+  it('tells the admins who joined and where they landed', () => {
+    const email = memberJoinedTemplate({
+      memberName: 'Grace Hopper',
+      teamName: 'Revenue Cycle',
+      jobTitle: 'Billing Specialist',
+      url: 'https://ihp.test/app/organization?tab=members',
+    })
+
+    expect(email.subject).toBe('Grace Hopper finished setting up their account')
+    expect(email.text).toContain('joined Revenue Cycle as Billing Specialist')
+  })
+})
+
+describe('client and contract emails', () => {
+  it('tells a new account owner what came to them', () => {
+    const email = clientOwnerAssignedTemplate({
+      clientName: 'Riverside Care Center',
+      assignedByName: 'Ada Lovelace',
+      url: 'https://ihp.test/app/clients',
+    })
+
+    expect(email.subject).toBe('You are the account owner for Riverside Care Center')
+    expect(email.text).toContain('Ada Lovelace')
+  })
+
+  it('names the contract, the client and the new status', () => {
+    const email = contractStatusChangedTemplate({
+      reference: 'IHP-2026-014',
+      title: 'Growth retainer',
+      clientName: 'Riverside Care Center',
+      statusLabel: 'cancelled',
+      changedByName: 'Ada Lovelace',
+      url: 'https://ihp.test/app/clients?tab=contracts',
+    })
+
+    expect(email.subject).toBe('IHP-2026-014 is now cancelled')
+    expect(email.text).toContain('Growth retainer for Riverside Care Center')
   })
 })

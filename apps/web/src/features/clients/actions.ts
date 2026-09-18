@@ -5,6 +5,7 @@ import type { Client, Prisma } from '@ihp/db'
 import { listManyFor } from '@/features/lookups/service'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake, type SortDirection } from '@/lib/pagination'
+import { notifyOwnerAssigned } from './notifications'
 import {
   CLIENT_LOOKUP_KINDS,
   clientIdSchema,
@@ -33,7 +34,11 @@ const GONE = 'That client no longer exists.'
 // organization roles gate the company screens, not this one.
 async function requireOrganization() {
   const { user, profile } = await requireOnboarded()
-  return { userId: user.id, organizationId: membershipOf(profile).organizationId }
+  return {
+    userId: user.id,
+    userName: profile.preferredName ?? user.name,
+    organizationId: membershipOf(profile).organizationId,
+  }
 }
 
 const SEARCH_FIELDS = ['name', 'contactName', 'email', 'phone', 'city'] as const
@@ -192,7 +197,7 @@ export async function listClientFilterOptions(): Promise<Result<ClientFilterOpti
 }
 
 export async function createClient(input: unknown): Promise<Result<ClientRow>> {
-  const { organizationId, userId } = await requireOrganization()
+  const { organizationId, userId, userName } = await requireOrganization()
   if (!organizationId) return { ok: false, message: NO_ORGANIZATION }
 
   const parsed = createClientSchema.safeParse(input)
@@ -202,12 +207,22 @@ export async function createClient(input: unknown): Promise<Result<ClientRow>> {
     data: { ...dataOf(parsed.data), organizationId, createdById: userId },
   })
 
+  if (client.ownerId) {
+    // Not awaited: the client is saved whether or not the mail provider answers promptly.
+    void notifyOwnerAssigned({
+      clientName: client.name,
+      ownerId: client.ownerId,
+      assignedById: userId,
+      assignedByName: userName,
+    })
+  }
+
   const names = await ownerNames([client])
   return { ok: true, data: rowOf(client, names.get(client.ownerId ?? '') ?? '') }
 }
 
 export async function updateClient(input: unknown): Promise<Result<ClientRow>> {
-  const { organizationId } = await requireOrganization()
+  const { organizationId, userId, userName } = await requireOrganization()
   if (!organizationId) return { ok: false, message: NO_ORGANIZATION }
 
   const parsed = updateClientSchema.safeParse(input)
@@ -215,6 +230,11 @@ export async function updateClient(input: unknown): Promise<Result<ClientRow>> {
 
   // updateMany, not update: the organization id has to be part of the match, never trusted input.
   const { id, ...values } = parsed.data
+  // Read first, so a handover can be told apart from an edit that leaves the owner alone.
+  const before = await db.client.findFirst({
+    where: { id, organizationId },
+    select: { ownerId: true },
+  })
   const changed = await db.client.updateMany({
     where: { id, organizationId },
     data: dataOf(values),
@@ -223,6 +243,15 @@ export async function updateClient(input: unknown): Promise<Result<ClientRow>> {
 
   const client = await db.client.findUnique({ where: { id } })
   if (!client) return { ok: false, message: GONE }
+
+  if (client.ownerId && client.ownerId !== before?.ownerId) {
+    void notifyOwnerAssigned({
+      clientName: client.name,
+      ownerId: client.ownerId,
+      assignedById: userId,
+      assignedByName: userName,
+    })
+  }
 
   const names = await ownerNames([client])
   return { ok: true, data: rowOf(client, names.get(client.ownerId ?? '') ?? '') }
