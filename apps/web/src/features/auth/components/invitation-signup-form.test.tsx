@@ -1,20 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { render, screen, userEvent, waitFor } from '@/test/render'
-import { SignupForm } from './signup-form'
+import { InvitationSignupForm } from './invitation-signup-form'
 
 const mocks = vi.hoisted(() => ({
   signUpEmail: vi.fn(),
   signInSocial: vi.fn(),
   replace: vi.fn(),
   refresh: vi.fn(),
-  searchParams: new URLSearchParams(),
 }))
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.replace, refresh: mocks.refresh, push: vi.fn() }),
-  useSearchParams: () => mocks.searchParams,
-  usePathname: () => '/signup',
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => '/accept-invitation/invite-1',
 }))
 
 vi.mock('@/lib/auth-client', () => ({
@@ -24,22 +23,24 @@ vi.mock('@/lib/auth-client', () => ({
   },
 }))
 
+function renderForm() {
+  return render(<InvitationSignupForm invitationId="invite-1" email="ada@innovarehp.com" />)
+}
+
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText(/email address/i), 'ada@innovarehp.com')
   await user.type(screen.getByLabelText(/^password/i), 'correct-horse-battery')
   await user.type(screen.getByLabelText(/confirm password/i), 'correct-horse-battery')
 }
 
-describe('SignupForm', () => {
+describe('InvitationSignupForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.searchParams = new URLSearchParams()
     mocks.signUpEmail.mockResolvedValue({ data: {}, error: null })
   })
 
-  it('sends a provisional name derived from the address, since onboarding collects the real one', async () => {
+  it('signs up with the invited address and returns there once the email is confirmed', async () => {
     const user = userEvent.setup()
-    render(<SignupForm />)
+    renderForm()
 
     await fillValidForm(user)
     await user.click(screen.getByRole('button', { name: 'Create account' }))
@@ -49,25 +50,25 @@ describe('SignupForm', () => {
         name: 'ada',
         email: 'ada@innovarehp.com',
         password: 'correct-horse-battery',
+        callbackURL: '/app/accept-invitation/invite-1',
       }),
     )
-    expect(mocks.replace).toHaveBeenCalledWith('/onboarding')
+    expect(mocks.replace).toHaveBeenCalledWith(
+      '/verify-email?email=ada%40innovarehp.com&next=%2Faccept-invitation%2Finvite-1',
+    )
   })
 
-  it('returns to the invitation that sent them here instead of the onboarding page', async () => {
-    mocks.searchParams = new URLSearchParams('next=/accept-invitation/invite-1')
-    const user = userEvent.setup()
-    render(<SignupForm />)
+  it('offers no way to change the address the invitation was sent to', () => {
+    renderForm()
 
-    await fillValidForm(user)
-    await user.click(screen.getByRole('button', { name: 'Create account' }))
-
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/accept-invitation/invite-1'))
+    const email = screen.getByLabelText(/email address/i)
+    expect(email).toHaveValue('ada@innovarehp.com')
+    expect(email).toBeDisabled()
   })
 
   it('rejects a password under twelve characters', async () => {
     const user = userEvent.setup()
-    render(<SignupForm />)
+    renderForm()
 
     await user.type(screen.getByLabelText(/^password/i), 'short')
     await user.tab()
@@ -77,9 +78,8 @@ describe('SignupForm', () => {
 
   it('rejects a mismatched confirmation', async () => {
     const user = userEvent.setup()
-    render(<SignupForm />)
+    renderForm()
 
-    await user.type(screen.getByLabelText(/email address/i), 'ada@innovarehp.com')
     await user.type(screen.getByLabelText(/^password/i), 'correct-horse-battery')
     await user.type(screen.getByLabelText(/confirm password/i), 'something-else-here')
     await user.click(screen.getByRole('button', { name: 'Create account' }))
@@ -88,43 +88,26 @@ describe('SignupForm', () => {
     expect(mocks.signUpEmail).not.toHaveBeenCalled()
   })
 
-  it('puts a duplicate address on the email field, not in the summary', async () => {
+  it('announces a server failure in a summary alert and stays put', async () => {
     mocks.signUpEmail.mockResolvedValue({
       data: null,
       error: { code: 'USER_ALREADY_EXISTS', message: 'raw code' },
     })
     const user = userEvent.setup()
-    render(<SignupForm />)
-
-    await fillValidForm(user)
-    await user.click(screen.getByRole('button', { name: 'Create account' }))
-
-    const email = screen.getByLabelText(/email address/i)
-    const error = await screen.findByText(
-      'An account with that email already exists. Try signing in instead.',
-    )
-    expect(email).toHaveAttribute('aria-invalid', 'true')
-    expect(email.getAttribute('aria-describedby')).toContain(error.id)
-    expect(mocks.replace).not.toHaveBeenCalled()
-  })
-
-  it('announces an unexpected server failure in a summary alert', async () => {
-    mocks.signUpEmail.mockResolvedValue({
-      data: null,
-      error: { code: 'FAILED_TO_CREATE_USER', message: 'raw code' },
-    })
-    const user = userEvent.setup()
-    render(<SignupForm />)
+    renderForm()
 
     await fillValidForm(user)
     await user.click(screen.getByRole('button', { name: 'Create account' }))
 
     const alert = await screen.findByRole('alert')
-    expect(alert).toHaveTextContent('The account could not be created. Try again in a moment.')
+    expect(alert).toHaveTextContent(
+      'An account with that email already exists. Try signing in instead.',
+    )
+    expect(mocks.replace).not.toHaveBeenCalled()
   })
 
   it('has no axe violations', async () => {
-    const { container } = render(<SignupForm />)
+    const { container } = renderForm()
     expect(await axe(container)).toHaveNoViolations()
   })
 })

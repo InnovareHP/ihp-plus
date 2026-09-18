@@ -41,7 +41,9 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 12,
-    autoSignIn: true,
+    // A confirmed address is the account: autoSignIn would hand out a session before it.
+    autoSignIn: false,
+    requireEmailVerification: true,
     revokeSessionsOnPasswordReset: true,
     // Not awaited: a slow mail provider would leak whether the address exists.
     sendResetPassword: async ({ user, url }) => {
@@ -50,6 +52,10 @@ export const auth = betterAuth({
   },
 
   emailVerification: {
+    sendOnSignUp: true,
+    // Someone who never opened the first link is stuck otherwise: signing in resends it.
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       void sendEmail({ to: user.email, ...verifyEmailTemplate({ url }) })
     },
@@ -81,6 +87,7 @@ export const auth = betterAuth({
     customRules: {
       '/sign-in/email': { window: 60, max: 5 },
       '/sign-up/email': { window: 60, max: 5 },
+      '/send-verification-email': { window: 60, max: 3 },
     },
   },
 

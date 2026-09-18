@@ -3,6 +3,7 @@ import { Alert, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { LinkAnchor } from '@/components/link-anchor'
+import { InvitationSignupForm } from '@/features/auth/components/invitation-signup-form'
 import { AcceptInvitationForm } from '@/features/organization/components/accept-invitation-form'
 import { getSession } from '@/lib/auth-guard'
 import { invitationRoute, routes } from '@/lib/routes'
@@ -85,25 +86,24 @@ export default async function AcceptInvitationPage({
       </Text>
 
       {!session ? (
-        <Alert color="blue" variant="light" title="Sign in first">
-          <Text size="sm">
-            Sign in as {invitation.email} to accept, then you land back here.{' '}
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            Set a password to create your account. We confirm the address before you come back here.
+          </Text>
+
+          <InvitationSignupForm invitationId={invitation.id} email={invitation.email} />
+
+          <Text size="sm" c="dimmed">
+            Already have an account?{' '}
             <LinkAnchor
               href={`${routes.login}?next=${encodeURIComponent(invitationRoute(invitation.id))}`}
               size="sm"
             >
               Sign in
             </LinkAnchor>{' '}
-            or{' '}
-            <LinkAnchor
-              href={`${routes.signup}?next=${encodeURIComponent(invitationRoute(invitation.id))}`}
-              size="sm"
-            >
-              create an account
-            </LinkAnchor>
-            .
+            and you land back here.
           </Text>
-        </Alert>
+        </Stack>
       ) : session.user.email.toLowerCase() !== invitation.email.toLowerCase() ? (
         <Alert role="alert" color="yellow" variant="light" title="Signed in as someone else">
           <Text size="sm">

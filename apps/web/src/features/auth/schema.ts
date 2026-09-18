@@ -11,10 +11,10 @@ export const loginSchema = z.object({
   rememberMe: z.boolean(),
 })
 
-// No name here: the onboarding stepper collects it, so signup asks for the minimum.
-export const signupSchema = z
+// No email and no name: an invitation fixes the address, and the onboarding stepper collects
+// the rest, so creating an account asks for the minimum.
+export const invitationSignupSchema = z
   .object({
-    email,
     password: z.string().min(MIN_PASSWORD, `Password must be at least ${MIN_PASSWORD} characters`),
     confirmPassword: z.string().min(1, 'Confirm your password'),
   })
@@ -36,6 +36,6 @@ export const resetPasswordSchema = z
   })
 
 export type LoginValues = z.infer<typeof loginSchema>
-export type SignupValues = z.infer<typeof signupSchema>
+export type InvitationSignupValues = z.infer<typeof invitationSignupSchema>
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>

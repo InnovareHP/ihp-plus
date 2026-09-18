@@ -39,7 +39,7 @@ describe('proxy', () => {
   it('lets an anonymous visitor reach the public routes', () => {
     mocks.getSessionCookie.mockReturnValue(null)
 
-    for (const path of ['/login', '/signup', '/forgot-password', '/reset-password']) {
+    for (const path of ['/login', '/verify-email', '/forgot-password', '/reset-password']) {
       expect(proxy(request(path)).headers.get('location')).toBeNull()
     }
   })

@@ -1,13 +1,22 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Anchor, Button, Checkbox, Divider, PasswordInput, Stack, TextInput } from '@mantine/core'
+import {
+  Anchor,
+  Button,
+  Checkbox,
+  Divider,
+  PasswordInput,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { authClient } from '@/lib/auth-client'
-import { routes, safeNextRoute } from '@/lib/routes'
+import { routes, safeNextRoute, verifyEmailRoute } from '@/lib/routes'
 import { authErrorMessage } from '../messages'
 import { loginSchema, type LoginValues } from '../schema'
 import { OutlookButton } from './outlook-button'
@@ -37,6 +46,11 @@ export function LoginForm() {
     })
 
     if (error) {
+      // Signing in resends the link, so an unverified account belongs on that page, not an error.
+      if (error.code === 'EMAIL_NOT_VERIFIED') {
+        router.replace(verifyEmailRoute(values.email, next))
+        return
+      }
       setError('root', { message: authErrorMessage(error) })
       return
     }
@@ -98,9 +112,9 @@ export function LoginForm() {
 
         <OutlookButton callbackPath={next} onFailure={(message) => setError('root', { message })} />
 
-        <Anchor component={Link} href={routes.signup} size="sm" ta="center">
-          No account yet? Create one
-        </Anchor>
+        <Text size="sm" c="dimmed" ta="center">
+          Accounts are created from an invitation. Ask your manager to send you one.
+        </Text>
       </Stack>
     </form>
   )

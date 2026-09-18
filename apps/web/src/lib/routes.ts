@@ -20,9 +20,9 @@ export const routes = {
   folderAccess: '/folder-access',
   settings: '/settings',
   login: '/login',
-  signup: '/signup',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
+  verifyEmail: '/verify-email',
   acceptInvitation: '/accept-invitation',
   clientContract: '/contract',
 } as const
@@ -90,6 +90,13 @@ export function invitationRoute(invitationId: string) {
   return `${routes.acceptInvitation}/${invitationId}`
 }
 
+// The address rides along so the page can name the inbox to open and resend to it.
+export function verifyEmailRoute(email: string, next?: string) {
+  const query = new URLSearchParams({ email })
+  if (next) query.set('next', next)
+  return `${routes.verifyEmail}?${query.toString()}`
+}
+
 export function clientContractRoute(contractId: string, signature: string) {
   return `${routes.clientContract}/${contractId}/${signature}`
 }
@@ -104,9 +111,9 @@ export function isSharedRoute(pathname: string) {
 // The (auth) route group is invisible in the URL, so the guard matches these prefixes instead.
 export const PUBLIC_ROUTES: readonly Route[] = [
   routes.login,
-  routes.signup,
   routes.forgotPassword,
   routes.resetPassword,
+  routes.verifyEmail,
   routes.acceptInvitation,
 ]
 
