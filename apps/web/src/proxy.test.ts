@@ -44,6 +44,14 @@ describe('proxy', () => {
     }
   })
 
+  it('lets an invitation open either way, because accepting one needs a session', () => {
+    for (const cookie of ['a-session-token', null]) {
+      mocks.getSessionCookie.mockReturnValue(cookie)
+      const response = proxy(request('/accept-invitation/invite-1'))
+      expect(response.headers.get('location')).toBeNull()
+    }
+  })
+
   it('bounces a signed-in user off the public routes', () => {
     mocks.getSessionCookie.mockReturnValue('a-session-token')
 

@@ -101,8 +101,9 @@ export function clientContractRoute(contractId: string, signature: string) {
   return `${routes.clientContract}/${contractId}/${signature}`
 }
 
-// Open with or without a session, so a manager opening a client link sees what the client sees.
-export const SHARED_ROUTES: readonly Route[] = [routes.clientContract]
+// Open with or without a session: a manager opening a client link sees what the client sees, and
+// accepting an invitation needs the session the guard would otherwise bounce to the dashboard.
+export const SHARED_ROUTES: readonly Route[] = [routes.clientContract, routes.acceptInvitation]
 
 export function isSharedRoute(pathname: string) {
   return SHARED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
@@ -114,7 +115,6 @@ export const PUBLIC_ROUTES: readonly Route[] = [
   routes.forgotPassword,
   routes.resetPassword,
   routes.verifyEmail,
-  routes.acceptInvitation,
 ]
 
 export function isPublicRoute(pathname: string) {
