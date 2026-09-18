@@ -1,6 +1,6 @@
 'use client'
 
-import { Alert, Button, Group, Skeleton, Stack } from '@mantine/core'
+import { Alert, Button, Group, SegmentedControl, Skeleton, Stack } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconPlus } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
@@ -11,6 +11,7 @@ import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 // The people who can be assigned are the same org list evaluations already fetches; a second
 // RPC returning the same rows would only be a second cache to keep warm.
 import { useEvaluationCandidates } from '@/features/evaluations/hooks/use-evaluations'
+import { useSession } from '@/lib/auth-client'
 import { useTaskLists, useTaskProjects, useTaskStatuses } from '../hooks/use-task-projects'
 import {
   useCompleteTask,
@@ -25,11 +26,15 @@ import {
   DEFAULT_BOARD_QUERY,
   TASK_ASSIGNEE_FILTERS,
   TASK_ASSIGNEE_FILTER_LABELS,
+  TASK_VIEWS,
+  TASK_VIEW_LABELS,
   type TaskFormValues,
   type TaskListRow,
   type TaskRow,
 } from '../schema'
 import { DeleteTaskModal } from './delete-task-modal'
+import { TaskDetailDrawer } from './task-detail-drawer'
+import { TaskKanban } from './task-kanban'
 import { ListFormModal } from './list-form-modal'
 import { ProjectFormModal } from './project-form-modal'
 import { ProjectSelect } from './project-select'
@@ -101,6 +106,25 @@ export function TaskBoard() {
 
   const peopleById = useMemo(
     () => new Map(people.map((person) => [person.value, person.label])),
+    [people],
+  )
+
+  const openTask = useMemo(
+    () => tasks.find((task) => task.id === query.task) ?? null,
+    [tasks, query.task],
+  )
+
+  const session = useSession()
+  const viewer = useMemo(
+    () => ({
+      userId: session.data?.user.id ?? '',
+      name: session.data?.user.name ?? 'You',
+    }),
+    [session.data?.user.id, session.data?.user.name],
+  )
+
+  const colleagues = useMemo(
+    () => people.map((person) => ({ userId: person.value, name: person.label })),
     [people],
   )
 
@@ -225,7 +249,19 @@ export function TaskBoard() {
 
       <TaskStats tasks={tasks} />
 
-      <PageSection title="Board" description="Every list in this project, in the order you set.">
+      <PageSection
+        title="Board"
+        description="Every list in this project, in the order you set."
+        actions={
+          <SegmentedControl
+            size="sm"
+            aria-label="How to show the tasks"
+            value={query.view}
+            onChange={(next) => setQuery({ view: next as (typeof TASK_VIEWS)[number] })}
+            data={TASK_VIEWS.map((view) => ({ value: view, label: TASK_VIEW_LABELS[view] }))}
+          />
+        }
+      >
         <Stack gap="md">
           <TableToolbar
             label="tasks"
@@ -283,7 +319,21 @@ export function TaskBoard() {
             />
           ) : null}
 
-          {!board.isError
+          {!board.isError && query.view === 'board' && !board.isPending ? (
+            <TaskKanban
+              statuses={statusRows}
+              tasks={tasks}
+              onOpen={(task) => setQuery({ task: task.id })}
+              onMoveTo={(task, statusId) => update.mutate({ taskId: task.id, statusId })}
+              onEdit={(task) => {
+                const list = listRows.find((row) => row.id === task.listId)
+                if (list) setComposing({ list, task })
+              }}
+              onDelete={setDeleting}
+            />
+          ) : null}
+
+          {!board.isError && query.view === 'list'
             ? listRows.map((list) => (
                 <TaskListSection
                   key={list.id}
@@ -304,6 +354,13 @@ export function TaskBoard() {
             : null}
         </Stack>
       </PageSection>
+
+      <TaskDetailDrawer
+        task={openTask}
+        viewer={viewer}
+        colleagues={colleagues}
+        onClose={() => setQuery({ task: '' })}
+      />
 
       <ProjectFormModal
         opened={projectOpened}

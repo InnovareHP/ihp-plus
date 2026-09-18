@@ -61,6 +61,7 @@ const TASK_RECORD = {
   position: 1024,
   createdAt: new Date('2026-09-01T00:00:00.000Z'),
   updatedAt: new Date('2026-09-01T00:00:00.000Z'),
+  _count: { comments: 0, attachments: 0 },
 }
 
 beforeEach(() => {

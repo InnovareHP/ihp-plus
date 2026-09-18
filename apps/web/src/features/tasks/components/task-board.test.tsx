@@ -15,13 +15,24 @@ const rpc = vi.hoisted(() => ({
   completeTask: vi.fn(),
   reorderTask: vi.fn(),
   deleteTask: vi.fn(),
+  listConversation: vi.fn(),
+  createComment: vi.fn(),
+  updateComment: vi.fn(),
+  deleteComment: vi.fn(),
+  deleteAttachment: vi.fn(),
 }))
+
+const actions = vi.hoisted(() => ({ uploadTaskAttachment: vi.fn() }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 const nav = vi.hoisted(() => ({ search: '', replace: vi.fn() }))
 const candidates = vi.hoisted(() => ({ useEvaluationCandidates: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
+vi.mock('../actions', () => actions)
+vi.mock('@/lib/auth-client', () => ({
+  useSession: () => ({ data: { user: { id: 'user-1', name: 'Dana Reyes' } } }),
+}))
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 vi.mock('@/features/evaluations/hooks/use-evaluations', () => candidates)
 vi.mock('next/navigation', () => ({
@@ -62,15 +73,19 @@ const TASK = {
   position: 1024,
   createdAt: '2026-09-01T00:00:00.000Z',
   updatedAt: '2026-09-01T00:00:00.000Z',
+  commentCount: 2,
+  attachmentCount: 1,
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
-  nav.search = ''
+  // The board view is the default; these cases are about the list, so they ask for it.
+  nav.search = 'view=list'
   rpc.listProjects.mockResolvedValue([PROJECT])
   rpc.listLists.mockResolvedValue([LIST])
   rpc.listStatuses.mockResolvedValue(STATUSES)
   rpc.listTasks.mockResolvedValue([TASK])
+  rpc.listConversation.mockResolvedValue({ comments: [], attachments: [] })
   candidates.useEvaluationCandidates.mockReturnValue({
     data: [{ userId: 'user-2', name: 'Grace Hopper', email: 'grace@example.com' }],
   })
@@ -142,6 +157,7 @@ describe('TaskBoard', () => {
     expect(within(alert).getByText('Could not reach the server.')).toBeInTheDocument()
 
     rpc.listTasks.mockResolvedValue([TASK])
+    rpc.listConversation.mockResolvedValue({ comments: [], attachments: [] })
     await userEvent.click(within(alert).getByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByText('Send the renewal pack')).toBeInTheDocument()

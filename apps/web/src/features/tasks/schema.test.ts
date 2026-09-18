@@ -72,6 +72,8 @@ describe('boardQuerySchema', () => {
       }),
     ).toEqual({
       project: 'project-1',
+      view: 'board',
+      task: '',
       list: '',
       assignee: 'mine',
       search: 'renewal',

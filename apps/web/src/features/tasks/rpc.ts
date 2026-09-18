@@ -4,6 +4,8 @@ import { ConnectError } from '@ihp/rpc'
 import { browserClients } from '@/rpc/browser'
 import {
   assigneeFilterToProto,
+  attachmentFromProto,
+  commentFromProto,
   listFromProto,
   priorityToProto,
   projectFromProto,
@@ -11,10 +13,13 @@ import {
   taskFromProto,
 } from '@/rpc/tasks-codec'
 import type {
+  CommentFormValues,
   ListFormValues,
   ProjectFormValues,
   ReorderTaskValues,
   TaskFormValues,
+  TaskCommentRow,
+  TaskConversation,
   TaskListRow,
   TaskProjectRow,
   TaskQuery,
@@ -128,4 +133,50 @@ export async function reorderTask(values: ReorderTaskValues): Promise<TaskRow> {
 
 export async function deleteTask(taskId: string): Promise<void> {
   await call(() => browserClients.tasks.deleteTask({ taskId }))
+}
+
+export async function listConversation(taskId: string): Promise<TaskConversation> {
+  const response = await call(() => browserClients.tasks.listComments({ taskId }))
+  return {
+    comments: response.comments.map(commentFromProto),
+    attachments: response.attachments.map(attachmentFromProto),
+  }
+}
+
+function requiredComment(comment: Parameters<typeof commentFromProto>[0] | undefined) {
+  if (!comment) throw new Error('The server did not return the comment.')
+  return commentFromProto(comment)
+}
+
+export async function createComment(
+  values: CommentFormValues & { taskId: string },
+): Promise<TaskCommentRow> {
+  const response = await call(() =>
+    browserClients.tasks.createComment({
+      taskId: values.taskId,
+      body: values.body,
+      mentionUserIds: [...values.mentionUserIds],
+      attachmentIds: [...values.attachmentIds],
+    }),
+  )
+  return requiredComment(response.comment)
+}
+
+export async function updateComment(
+  commentId: string,
+  body: string,
+  mentionUserIds: readonly string[],
+): Promise<TaskCommentRow> {
+  const response = await call(() =>
+    browserClients.tasks.updateComment({ commentId, body, mentionUserIds: [...mentionUserIds] }),
+  )
+  return requiredComment(response.comment)
+}
+
+export async function deleteComment(commentId: string): Promise<void> {
+  await call(() => browserClients.tasks.deleteComment({ commentId }))
+}
+
+export async function deleteAttachment(attachmentId: string): Promise<void> {
+  await call(() => browserClients.tasks.deleteAttachment({ attachmentId }))
 }

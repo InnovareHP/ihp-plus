@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ALLOWED_UPLOAD_TYPES } from '@/features/bluebook/schema'
 
 export const TASK_PRIORITIES = ['urgent', 'high', 'normal', 'low'] as const
 export const TASK_STATUS_CATEGORIES = ['active', 'done', 'cancelled'] as const
@@ -73,8 +74,20 @@ export const taskFormSchema = z.object({
 
 // The board's own state — which project, which list, whose work, what was typed — lives in the
 // URL so a board someone is looking at can be linked to.
+export const TASK_VIEWS = ['board', 'list'] as const
+
+export type TaskView = (typeof TASK_VIEWS)[number]
+
+export const TASK_VIEW_LABELS: Record<TaskView, string> = {
+  board: 'Board',
+  list: 'List',
+}
+
 export const boardQuerySchema = z.object({
   project: z.string().trim().max(64).catch('').default(''),
+  view: z.enum(TASK_VIEWS).catch('board').default('board'),
+  // The open task: a detail panel has to be linkable, so it is a query param, not local state.
+  task: z.string().trim().max(64).catch('').default(''),
   list: z.string().trim().max(64).catch('').default(''),
   assignee: z.enum(TASK_ASSIGNEE_FILTERS).catch('all').default('all'),
   search: z.string().trim().max(100).catch('').default(''),
@@ -182,6 +195,16 @@ export function isTaskOverdue(task: TaskRow, now: Date = new Date()) {
 // 25 MB is what nginx accepts on this origin (client_max_body_size), so a bigger file is
 // rejected here rather than by a proxy error nobody can read.
 export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024
+
+/** The same check client- and server-side, so the message a user reads is the rule enforced. */
+export function attachmentProblem(file: { name: string; size: number; type: string }) {
+  if (file.size === 0) return 'That file is empty.'
+  if (file.size > MAX_ATTACHMENT_BYTES) return 'Files have to be 25 MB or smaller.'
+  if (!ALLOWED_UPLOAD_TYPES[file.type]) {
+    return 'Attach a PDF, Office document, text file or image.'
+  }
+  return undefined
+}
 
 export const commentFormSchema = z.object({
   body: z
