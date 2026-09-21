@@ -62,6 +62,8 @@ const TASK_RECORD = {
   createdAt: new Date('2026-09-01T00:00:00.000Z'),
   updatedAt: new Date('2026-09-01T00:00:00.000Z'),
   _count: { comments: 0, attachments: 0 },
+  parentId: null,
+  subtasks: [],
 }
 
 beforeEach(() => {
@@ -112,6 +114,8 @@ describe('loadTasks', () => {
           isArchived: false,
           name: { contains: 'renewal', mode: 'insensitive' },
           assignees: { some: { userId: 'user-1' } },
+          // Subtasks hang off their parent's panel, never a board row of their own.
+          parentId: null,
         }),
       }),
     )
@@ -135,6 +139,7 @@ describe('createTask', () => {
       priority: 'normal',
       dueDate: '',
       assigneeIds: [],
+      parentId: '',
     })
 
     expect(prisma.taskProject.update).toHaveBeenCalledWith(
@@ -155,6 +160,58 @@ describe('createTask', () => {
     expect(row.taskNumber).toBe(7)
   })
 
+  it('files a subtask in the list its parent lives in', async () => {
+    prisma.task.findFirst.mockResolvedValue({
+      id: 'task-1',
+      projectId: 'project-1',
+      listId: 'list-9',
+      parentId: null,
+    })
+
+    await createTask({
+      projectId: 'project-1',
+      listId: 'list-1',
+      name: 'Draft the cover letter',
+      description: '',
+      priority: 'normal',
+      dueDate: '',
+      assigneeIds: [],
+      parentId: 'task-1',
+    })
+
+    // The list the client sent is ignored: a subtask lives wherever its parent does.
+    expect(prisma.task.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ parentId: 'task-1', listId: 'list-9' }),
+      }),
+    )
+    expect(prisma.task.aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { parentId: 'task-1' } }),
+    )
+  })
+
+  it('refuses a subtask of a subtask, because the board cannot draw a tree', async () => {
+    prisma.task.findFirst.mockResolvedValue({
+      id: 'task-2',
+      projectId: 'project-1',
+      listId: 'list-1',
+      parentId: 'task-1',
+    })
+
+    await expect(
+      createTask({
+        projectId: 'project-1',
+        listId: 'list-1',
+        name: 'Draft the cover letter',
+        description: '',
+        priority: 'normal',
+        dueDate: '',
+        assigneeIds: [],
+        parentId: 'task-2',
+      }),
+    ).rejects.toMatchObject({ code: Code.FailedPrecondition })
+  })
+
   it('refuses an assignee who is not in the organization', async () => {
     prisma.member.findMany.mockResolvedValue([])
 
@@ -167,6 +224,7 @@ describe('createTask', () => {
         priority: 'normal',
         dueDate: '',
         assigneeIds: ['user-outside'],
+        parentId: '',
       }),
     ).rejects.toBeInstanceOf(ConnectError)
     expect(prisma.task.create).not.toHaveBeenCalled()

@@ -5,6 +5,7 @@ import {
   IconArrowDown,
   IconArrowUp,
   IconDotsVertical,
+  IconListCheck,
   IconMessage,
   IconPaperclip,
   IconPencil,
@@ -98,6 +99,16 @@ export function TaskRow({
                 <Text size="xs" c="dimmed">
                   {assignees}
                 </Text>
+              ) : null}
+              {task.subtasks.length > 0 ? (
+                <Badge
+                  size="sm"
+                  variant="default"
+                  leftSection={<IconListCheck size={12} aria-hidden />}
+                  aria-label={`${task.subtasks.filter((one) => one.isDone).length} of ${task.subtasks.length} subtasks done`}
+                >
+                  {task.subtasks.filter((one) => one.isDone).length}/{task.subtasks.length}
+                </Badge>
               ) : null}
               {task.commentCount > 0 ? (
                 <Badge

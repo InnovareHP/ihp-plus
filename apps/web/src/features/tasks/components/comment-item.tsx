@@ -1,19 +1,24 @@
 'use client'
 
-import { ActionIcon, Badge, Button, Group, Menu, Paper, Stack, Text, Textarea } from '@mantine/core'
+import { ActionIcon, Badge, Group, Menu, Paper, Stack, Text } from '@mantine/core'
 import { IconDotsVertical, IconPencil, IconTrash } from '@tabler/icons-react'
 import { useState } from 'react'
 import { AttachmentChip } from './attachment-chip'
-import type { TaskAssigneeRef, TaskAttachmentRow, TaskCommentRow } from '../schema'
-
-const posted = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+import type {
+  CommentEditValues,
+  TaskAssigneeRef,
+  TaskAttachmentRow,
+  TaskCommentRow,
+} from '../schema'
+import { describeMoment } from '../utils/relative-time'
+import { CommentEditForm } from './comment-edit-form'
 
 export interface CommentItemProps {
   comment: TaskCommentRow
   /** The viewer, so only their own words offer edit and delete. */
   viewerId: string
-  isSaving: boolean
-  onEdit: (commentId: string, body: string, mentions: readonly TaskAssigneeRef[]) => void
+  colleagues: readonly TaskAssigneeRef[]
+  onEdit: (comment: TaskCommentRow, values: CommentEditValues) => Promise<void>
   onDelete: (comment: TaskCommentRow) => void
   onRemoveAttachment: (file: TaskAttachmentRow) => void
 }
@@ -21,23 +26,17 @@ export interface CommentItemProps {
 export function CommentItem({
   comment,
   viewerId,
-  isSaving,
+  colleagues,
   onEdit,
   onDelete,
   onRemoveAttachment,
 }: CommentItemProps) {
-  const [draft, setDraft] = useState<string | null>(null)
-  const mine = comment.authorId === viewerId
-
-  function save() {
-    if (draft === null || draft.trim().length === 0) return
-    // Re-sending the mentions keeps them: the server replaces the whole list on every edit.
-    onEdit(comment.id, draft.trim(), comment.mentions)
-    setDraft(null)
-  }
+  const [editing, setEditing] = useState(false)
+  // A comment the server has not acknowledged has no id to edit or delete by yet.
+  const mine = comment.authorId === viewerId && !comment.isSending
 
   return (
-    <Paper component="li" withBorder radius="md" p="sm">
+    <Paper component="li" withBorder radius="md" p="sm" opacity={comment.isSending ? 0.6 : 1}>
       <Stack gap="xs">
         <Group justify="space-between" wrap="nowrap" align="baseline">
           <Group gap="xs" align="baseline" wrap="wrap">
@@ -45,9 +44,14 @@ export function CommentItem({
               {comment.authorName}
             </Text>
             <Text size="xs" c="dimmed">
-              {posted.format(new Date(comment.createdAt))}
+              {describeMoment(comment.createdAt)}
               {comment.editedAt ? ' · edited' : ''}
             </Text>
+            {comment.isSending ? (
+              <Badge size="sm" variant="light" color="gray">
+                Sending…
+              </Badge>
+            ) : null}
           </Group>
 
           {mine ? (
@@ -60,7 +64,7 @@ export function CommentItem({
               <Menu.Dropdown>
                 <Menu.Item
                   leftSection={<IconPencil size={16} aria-hidden />}
-                  onClick={() => setDraft(comment.body)}
+                  onClick={() => setEditing(true)}
                 >
                   Edit
                 </Menu.Item>
@@ -76,28 +80,20 @@ export function CommentItem({
           ) : null}
         </Group>
 
-        {draft === null ? (
+        {editing ? (
+          <CommentEditForm
+            comment={comment}
+            colleagues={colleagues}
+            onCancel={() => setEditing(false)}
+            onSave={async (values) => {
+              await onEdit(comment, values)
+              setEditing(false)
+            }}
+          />
+        ) : (
           <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
             {comment.body}
           </Text>
-        ) : (
-          <Stack gap="xs">
-            <Textarea
-              label="Edit your comment"
-              value={draft}
-              autosize
-              minRows={2}
-              onChange={(event) => setDraft(event.currentTarget.value)}
-            />
-            <Group gap="xs">
-              <Button size="xs" loading={isSaving} onClick={save}>
-                Save changes
-              </Button>
-              <Button size="xs" variant="subtle" color="gray" onClick={() => setDraft(null)}>
-                Cancel
-              </Button>
-            </Group>
-          </Stack>
         )}
 
         {comment.mentions.length > 0 ? (

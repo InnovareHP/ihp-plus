@@ -70,6 +70,12 @@ export const taskFormSchema = z.object({
   // Empty means no due date; the task simply has no deadline.
   dueDate: z.string().trim().default(''),
   assigneeIds: z.array(z.string().min(1)).default([]),
+  // Set makes this a subtask: it takes its project and list from the parent.
+  parentId: z.string().trim().default(''),
+})
+
+export const subtaskFormSchema = z.object({
+  name: z.string().trim().min(1, 'Say what has to be done.').max(200, 'Keep the title shorter.'),
 })
 
 // The board's own state — which project, which list, whose work, what was typed — lives in the
@@ -106,6 +112,7 @@ export type ProjectFormInput = z.input<typeof projectFormSchema>
 export type ListFormValues = z.infer<typeof listFormSchema>
 export type TaskFormValues = z.infer<typeof taskFormSchema>
 export type TaskFormInput = z.input<typeof taskFormSchema>
+export type SubtaskFormValues = z.infer<typeof subtaskFormSchema>
 
 export interface TaskProjectRow {
   id: string
@@ -135,6 +142,14 @@ export interface TaskAssigneeRef {
   name: string
 }
 
+/** A checklist line under a task: the whole subtask is one query away if it is ever needed. */
+export interface TaskSubtaskRow {
+  id: string
+  name: string
+  isDone: boolean
+  position: number
+}
+
 export interface TaskRow {
   id: string
   taskNumber: number
@@ -155,6 +170,8 @@ export interface TaskRow {
   updatedAt: string
   commentCount: number
   attachmentCount: number
+  parentId: string | undefined
+  subtasks: TaskSubtaskRow[]
 }
 
 export interface TaskQuery {
@@ -218,6 +235,11 @@ export const commentFormSchema = z.object({
 
 export type CommentFormValues = z.infer<typeof commentFormSchema>
 
+/** Editing changes the words and who hears about them; the files are their own controls. */
+export const commentEditSchema = commentFormSchema.omit({ attachmentIds: true })
+
+export type CommentEditValues = z.infer<typeof commentEditSchema>
+
 export interface TaskAttachmentRow {
   id: string
   fileName: string
@@ -240,6 +262,8 @@ export interface TaskCommentRow {
   attachments: TaskAttachmentRow[]
   editedAt: string | undefined
   createdAt: string
+  /** Set only on the optimistic row, so the thread can say it has not landed yet. */
+  isSending?: boolean
 }
 
 export interface TaskConversation {

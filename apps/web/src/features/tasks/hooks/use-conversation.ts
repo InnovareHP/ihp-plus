@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { track } from '@/lib/analytics'
 import { announceFailure } from '@/lib/announce'
+import { offerUndo } from '@/lib/undo'
 import { uploadTaskAttachment } from '../actions'
 import { taskEvents } from '../events'
 import { taskKeys } from '../query-keys'
@@ -94,6 +95,7 @@ export function usePostComment(taskId: string, author: { userId: string; name: s
         attachments: values.pendingFiles.map((file) => ({ ...file, commentId: id })),
         editedAt: undefined,
         createdAt: new Date().toISOString(),
+        isSending: true,
       }
 
       return {
@@ -139,30 +141,83 @@ export function useEditComment(taskId: string) {
   })
 }
 
+/**
+ * A delete the user can take back: the row goes at once, the server hears about it only when the
+ * undo window closes, and undoing puts the snapshot back without a second call.
+ */
+function useUndoableRemoval(options: {
+  taskId: string
+  mutationFn: (id: string) => Promise<unknown>
+  apply: (conversation: TaskConversation, id: string) => TaskConversation
+  message: string
+  undoLabel: string
+  successEvent: (typeof taskEvents)[keyof typeof taskEvents]
+  failureEvent: (typeof taskEvents)[keyof typeof taskEvents]
+}) {
+  const queryClient = useQueryClient()
+  const key = taskKeys.conversation(options.taskId)
+
+  const commit = useMutation({
+    mutationFn: (variables: { id: string; previous: TaskConversation | undefined }) =>
+      options.mutationFn(variables.id),
+    onError: (error: Error, variables) => {
+      queryClient.setQueryData(key, variables.previous)
+      // The row coming back explains nothing on its own.
+      announceFailure(error.message)
+      track(options.failureEvent, { reason: error.message })
+    },
+    onSuccess: () => track(options.successEvent),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key })
+      void queryClient.invalidateQueries({ queryKey: taskKeys.boards() })
+    },
+  })
+
+  async function remove(id: string) {
+    // An in-flight refetch would put the row straight back.
+    await queryClient.cancelQueries({ queryKey: key })
+    const previous = queryClient.getQueryData<TaskConversation>(key)
+    queryClient.setQueryData<TaskConversation>(key, options.apply(previous ?? EMPTY, id))
+
+    offerUndo({
+      message: options.message,
+      undoLabel: options.undoLabel,
+      onUndo: () => queryClient.setQueryData(key, previous),
+      onCommit: () => commit.mutate({ id, previous }),
+    })
+  }
+
+  return { remove, isPending: commit.isPending }
+}
+
 export function useDeleteComment(taskId: string) {
-  return useConversationMutation<{ commentId: string }>({
+  return useUndoableRemoval({
     taskId,
-    mutationFn: (values) => deleteComment(values.commentId),
-    apply: (conversation, values) => ({
-      comments: conversation.comments.filter((comment) => comment.id !== values.commentId),
-      attachments: conversation.attachments.filter((file) => file.commentId !== values.commentId),
+    mutationFn: (commentId) => deleteComment(commentId),
+    apply: (conversation, commentId) => ({
+      comments: conversation.comments.filter((comment) => comment.id !== commentId),
+      attachments: conversation.attachments.filter((file) => file.commentId !== commentId),
     }),
+    message: 'Comment deleted.',
+    undoLabel: 'Undo',
     successEvent: taskEvents.commentDeleted,
     failureEvent: taskEvents.commentDeleteFailed,
   })
 }
 
 export function useDeleteAttachment(taskId: string) {
-  return useConversationMutation<{ attachmentId: string }>({
+  return useUndoableRemoval({
     taskId,
-    mutationFn: (values) => deleteAttachment(values.attachmentId),
-    apply: (conversation, values) => ({
+    mutationFn: (attachmentId) => deleteAttachment(attachmentId),
+    apply: (conversation, attachmentId) => ({
       comments: conversation.comments.map((comment) => ({
         ...comment,
-        attachments: comment.attachments.filter((file) => file.id !== values.attachmentId),
+        attachments: comment.attachments.filter((file) => file.id !== attachmentId),
       })),
-      attachments: conversation.attachments.filter((file) => file.id !== values.attachmentId),
+      attachments: conversation.attachments.filter((file) => file.id !== attachmentId),
     }),
+    message: 'File removed.',
+    undoLabel: 'Undo',
     successEvent: taskEvents.attachmentDeleted,
     failureEvent: taskEvents.attachmentDeleteFailed,
   })

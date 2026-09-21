@@ -75,6 +75,8 @@ const TASK = {
   updatedAt: '2026-09-01T00:00:00.000Z',
   commentCount: 2,
   attachmentCount: 1,
+  parentId: undefined,
+  subtasks: [],
 }
 
 beforeEach(() => {

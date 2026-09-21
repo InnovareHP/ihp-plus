@@ -122,6 +122,8 @@ export function useCreateTask() {
         updatedAt: now,
         commentCount: 0,
         attachmentCount: 0,
+        parentId: undefined,
+        subtasks: [],
       }
 
       return [...rows, pending]
@@ -185,6 +187,76 @@ export function useCompleteTask() {
     },
     successEvent: taskEvents.completed,
     failureEvent: taskEvents.completeFailed,
+  })
+}
+
+interface CreateSubtaskContext {
+  parent: TaskRow
+  name: string
+}
+
+export function useCreateSubtask() {
+  return useBoardMutation<CreateSubtaskContext>({
+    mutationFn: ({ parent, name }) =>
+      createTask({
+        projectId: parent.projectId,
+        listId: parent.listId,
+        name,
+        description: '',
+        priority: 'normal',
+        dueDate: '',
+        assigneeIds: [],
+        parentId: parent.id,
+      }),
+    apply: (rows, { parent, name }) =>
+      rows.map((row) =>
+        row.id === parent.id
+          ? {
+              ...row,
+              subtasks: [
+                ...row.subtasks,
+                {
+                  // Replaced by the server's id on settle; never a list index.
+                  id: crypto.randomUUID(),
+                  name,
+                  isDone: false,
+                  position:
+                    row.subtasks.reduce((max, one) => Math.max(max, one.position), 0) + 1024,
+                },
+              ],
+            }
+          : row,
+      ),
+    successEvent: taskEvents.subtaskCreated,
+    failureEvent: taskEvents.subtaskCreateFailed,
+  })
+}
+
+export function useCompleteSubtask() {
+  return useBoardMutation<{ subtaskId: string; completed: boolean }>({
+    mutationFn: ({ subtaskId, completed }) => completeTask(subtaskId, completed),
+    apply: (rows, { subtaskId, completed }) =>
+      rows.map((row) => ({
+        ...row,
+        subtasks: row.subtasks.map((one) =>
+          one.id === subtaskId ? { ...one, isDone: completed } : one,
+        ),
+      })),
+    successEvent: taskEvents.subtaskCompleted,
+    failureEvent: taskEvents.subtaskCompleteFailed,
+  })
+}
+
+export function useDeleteSubtask() {
+  return useBoardMutation<{ subtaskId: string }>({
+    mutationFn: ({ subtaskId }) => deleteTask(subtaskId),
+    apply: (rows, { subtaskId }) =>
+      rows.map((row) => ({
+        ...row,
+        subtasks: row.subtasks.filter((one) => one.id !== subtaskId),
+      })),
+    successEvent: taskEvents.subtaskDeleted,
+    failureEvent: taskEvents.subtaskDeleteFailed,
   })
 }
 

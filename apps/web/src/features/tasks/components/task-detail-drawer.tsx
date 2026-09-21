@@ -1,7 +1,8 @@
 'use client'
 
-import { Badge, Divider, Drawer, Group, Skeleton, Stack, Text } from '@mantine/core'
+import { Badge, Box, Divider, Drawer, Group, Skeleton, Stack, Text } from '@mantine/core'
 import { EmptyState } from '@/components/empty-state'
+import { useCompleteSubtask, useCreateSubtask, useDeleteSubtask } from '../hooks/use-tasks'
 import {
   useConversation,
   useDeleteAttachment,
@@ -11,15 +12,16 @@ import {
   useUploadAttachment,
 } from '../hooks/use-conversation'
 import {
-  MENTION_EVERYONE,
   TASK_PRIORITY_COLORS,
   TASK_PRIORITY_LABELS,
   type TaskAssigneeRef,
   type TaskRow,
 } from '../schema'
+import { resolveMentions } from '../utils/mentions'
 import { AttachmentChip } from './attachment-chip'
 import { CommentComposer } from './comment-composer'
 import { CommentItem } from './comment-item'
+import { SubtaskList } from './subtask-list'
 
 export interface TaskDetailDrawerProps {
   task: TaskRow | null
@@ -37,6 +39,10 @@ export function TaskDetailDrawer({ task, viewer, colleagues, onClose }: TaskDeta
   const remove = useDeleteComment(taskId ?? '')
   const removeFile = useDeleteAttachment(taskId ?? '')
   const upload = useUploadAttachment(taskId ?? '')
+
+  const addSubtask = useCreateSubtask()
+  const completeSubtask = useCompleteSubtask()
+  const deleteSubtask = useDeleteSubtask()
 
   const comments = conversation.data?.comments ?? []
   // Files posted inside a comment are shown there; this panel is the task's own shelf.
@@ -77,6 +83,20 @@ export function TaskDetailDrawer({ task, viewer, colleagues, onClose }: TaskDeta
             </Text>
           ) : null}
 
+          <Divider label="Subtasks" labelPosition="left" />
+
+          <SubtaskList
+            subtasks={task.subtasks}
+            isAdding={addSubtask.isPending}
+            onAdd={async (name) => {
+              await addSubtask.mutateAsync({ parent: task, name })
+            }}
+            onToggle={(subtask, completed) =>
+              completeSubtask.mutate({ subtaskId: subtask.id, completed })
+            }
+            onDelete={(subtask) => deleteSubtask.mutate({ subtaskId: subtask.id })}
+          />
+
           <Divider label="Files on this task" labelPosition="left" />
 
           {taskFiles.length === 0 ? (
@@ -90,7 +110,7 @@ export function TaskDetailDrawer({ task, viewer, colleagues, onClose }: TaskDeta
                   key={file.id}
                   file={file}
                   isRemoving={removeFile.isPending}
-                  onRemove={() => removeFile.mutate({ attachmentId: file.id })}
+                  onRemove={() => void removeFile.remove(file.id)}
                 />
               ))}
             </Stack>
@@ -119,33 +139,47 @@ export function TaskDetailDrawer({ task, viewer, colleagues, onClose }: TaskDeta
                   key={comment.id}
                   comment={comment}
                   viewerId={viewer.userId}
-                  isSaving={edit.isPending}
-                  onEdit={(commentId, body, mentions) => edit.mutate({ commentId, body, mentions })}
-                  onDelete={(one) => remove.mutate({ commentId: one.id })}
-                  onRemoveAttachment={(file) => removeFile.mutate({ attachmentId: file.id })}
+                  colleagues={colleagues}
+                  onEdit={async (one, values) => {
+                    await edit.mutateAsync({
+                      commentId: one.id,
+                      body: values.body,
+                      mentions: resolveMentions(values.mentionUserIds, colleagues),
+                    })
+                  }}
+                  onDelete={(one) => void remove.remove(one.id)}
+                  onRemoveAttachment={(file) => void removeFile.remove(file.id)}
                 />
               ))}
             </Stack>
           )}
 
-          <CommentComposer
-            colleagues={colleagues}
-            isPosting={post.isPending}
-            isUploading={upload.isPending}
-            onUpload={(file) => upload.mutateAsync(file).catch(() => undefined)}
-            onPost={async (values) => {
-              await post.mutateAsync({
-                body: values.body,
-                mentionUserIds: values.mentionUserIds,
-                // The server expands @everyone against the org; the thread shows who is loaded here.
-                mentions: values.mentionUserIds.includes(MENTION_EVERYONE)
-                  ? [...colleagues]
-                  : colleagues.filter((person) => values.mentionUserIds.includes(person.userId)),
-                attachmentIds: values.attachments.map((file) => file.id),
-                pendingFiles: values.attachments,
-              })
+          {/* The reply box stays in reach however long the thread runs. */}
+          <Box
+            pos="sticky"
+            bottom={0}
+            pt="sm"
+            style={{
+              backgroundColor: 'var(--mantine-color-body)',
+              borderTop: '1px solid var(--mantine-color-default-border)',
             }}
-          />
+          >
+            <CommentComposer
+              colleagues={colleagues}
+              isPosting={post.isPending}
+              isUploading={upload.isPending}
+              onUpload={(file) => upload.mutateAsync(file).catch(() => undefined)}
+              onPost={async (values) => {
+                await post.mutateAsync({
+                  body: values.body,
+                  mentionUserIds: values.mentionUserIds,
+                  mentions: resolveMentions(values.mentionUserIds, colleagues),
+                  attachmentIds: values.attachments.map((file) => file.id),
+                  pendingFiles: values.attachments,
+                })
+              }}
+            />
+          </Box>
         </Stack>
       ) : null}
     </Drawer>

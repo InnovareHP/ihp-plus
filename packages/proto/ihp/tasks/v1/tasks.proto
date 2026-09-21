@@ -76,6 +76,17 @@ message Task {
   // Card badges: the board shows the counts without loading either collection.
   int32 comment_count = 18;
   int32 attachment_count = 19;
+  // Set on a subtask; the board lists only the tasks without one.
+  optional string parent_id = 20;
+  repeated Subtask subtasks = 21;
+}
+
+// A subtask carries only what a checklist line shows: the whole task is one query away.
+message Subtask {
+  string id = 1;
+  string name = 2;
+  bool is_done = 3;
+  double position = 4;
 }
 
 message TaskAttachmentFile {
@@ -167,6 +178,8 @@ message CreateTaskRequest {
   TaskPriority priority = 5;
   optional string due_date = 6;
   repeated string assignee_ids = 7;
+  // Present makes this a subtask, which takes its project and list from its parent.
+  optional string parent_id = 8;
 }
 
 message CreateTaskResponse {

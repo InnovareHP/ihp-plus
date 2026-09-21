@@ -31,6 +31,8 @@ function task(overrides: Partial<TaskRow> = {}): TaskRow {
     updatedAt: '2026-09-01T00:00:00.000Z',
     commentCount: 0,
     attachmentCount: 0,
+    parentId: undefined,
+    subtasks: [],
     ...overrides,
   }
 }
@@ -117,6 +119,19 @@ describe('TaskKanban', () => {
 
     expect(screen.getByLabelText('3 comments')).toBeInTheDocument()
     expect(screen.getByLabelText('2 files')).toBeInTheDocument()
+  })
+
+  it("badges how far a card's subtasks have got", () => {
+    renderBoard([
+      task({
+        subtasks: [
+          { id: 'subtask-1', name: 'Pull the figures', isDone: true, position: 1024 },
+          { id: 'subtask-2', name: 'Draft the letter', isDone: false, position: 2048 },
+        ],
+      }),
+    ])
+
+    expect(screen.getByLabelText('1 of 2 subtasks done')).toBeInTheDocument()
   })
 
   it('says a column is empty rather than leaving it blank', () => {

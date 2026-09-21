@@ -227,6 +227,7 @@ export function TaskBoard() {
         priority: composing.task.priority,
         dueDate: composing.task.dueDate ? composing.task.dueDate.slice(0, 10) : '',
         assigneeIds: composing.task.assignees.map((assignee) => assignee.userId),
+        parentId: '',
       }
     : {
         projectId,
@@ -236,6 +237,7 @@ export function TaskBoard() {
         priority: 'normal',
         dueDate: '',
         assigneeIds: [],
+        parentId: '',
       }
 
   return (

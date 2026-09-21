@@ -85,6 +85,11 @@ const taskSelect = {
   createdAt: true,
   updatedAt: true,
   _count: { select: { comments: true, attachments: true } },
+  parentId: true,
+  subtasks: {
+    select: { id: true, name: true, completedAt: true, position: true },
+    orderBy: { position: 'asc' as const },
+  },
 } satisfies Prisma.TaskSelect
 
 type TaskRecord = Prisma.TaskGetPayload<{ select: typeof taskSelect }>
@@ -124,6 +129,13 @@ function toTaskRow(task: TaskRecord, names: ReadonlyMap<string, string>): TaskRo
     updatedAt: task.updatedAt.toISOString(),
     commentCount: task._count.comments,
     attachmentCount: task._count.attachments,
+    parentId: task.parentId ?? undefined,
+    subtasks: task.subtasks.map((subtask) => ({
+      id: subtask.id,
+      name: subtask.name,
+      isDone: subtask.completedAt !== null,
+      position: subtask.position,
+    })),
   }
 }
 
@@ -191,6 +203,19 @@ async function projectOrThrow(caller: Caller, projectId: string) {
   })
   if (!project) throw new ConnectError('That project no longer exists.', Code.NotFound)
   return project
+}
+
+// One level only: a checklist that can nest is an outline, and the board cannot draw one.
+async function parentOrThrow(caller: Caller, parentId: string) {
+  const parent = await db.task.findFirst({
+    where: { id: parentId, organizationId: caller.organizationId },
+    select: { id: true, projectId: true, listId: true, parentId: true },
+  })
+  if (!parent) throw new ConnectError('That task no longer exists.', Code.NotFound)
+  if (parent.parentId) {
+    throw new ConnectError('A subtask cannot have subtasks of its own.', Code.FailedPrecondition)
+  }
+  return parent
 }
 
 async function taskOrThrow(caller: Caller, taskId: string) {
@@ -309,6 +334,8 @@ export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
     where: {
       organizationId: caller.organizationId,
       projectId: query.projectId,
+      // Subtasks belong to their parent's panel, not to a column of their own.
+      parentId: null,
       ...(query.listId ? { listId: query.listId } : {}),
       ...(query.includeArchived ? {} : { isArchived: false }),
       ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
@@ -327,15 +354,19 @@ export async function createTask(values: TaskFormValues): Promise<TaskRow> {
   const caller = await requireMember()
   const parsed = taskFormSchema.parse(values)
 
-  const list = await db.taskList.findFirst({
-    where: {
-      id: parsed.listId,
-      projectId: parsed.projectId,
-      organizationId: caller.organizationId,
-    },
-    select: { id: true },
-  })
-  if (!list) throw new ConnectError('That list no longer exists.', Code.NotFound)
+  // A subtask takes its project and list from its parent, so a client cannot file one
+  // somewhere its parent is not.
+  const parent = parsed.parentId ? await parentOrThrow(caller, parsed.parentId) : null
+  const projectId = parent?.projectId ?? parsed.projectId
+  const listId = parent?.listId ?? parsed.listId
+
+  if (!parent) {
+    const list = await db.taskList.findFirst({
+      where: { id: listId, projectId, organizationId: caller.organizationId },
+      select: { id: true },
+    })
+    if (!list) throw new ConnectError('That list no longer exists.', Code.NotFound)
+  }
 
   const status = await statusOfCategory(caller.organizationId, 'active')
   const assigneeIds = await knownTeammates(caller, parsed.assigneeIds)
@@ -344,21 +375,21 @@ export async function createTask(values: TaskFormValues): Promise<TaskRow> {
     // The counter is incremented inside the transaction so two people creating at once cannot
     // land on the same #number.
     const project = await tx.taskProject.update({
-      where: { id: parsed.projectId },
+      where: { id: projectId },
       data: { taskCounter: { increment: 1 } },
       select: { taskCounter: true },
     })
 
     const last = await tx.task.aggregate({
-      where: { listId: parsed.listId },
+      where: parent ? { parentId: parent.id } : { listId, parentId: null },
       _max: { position: true },
     })
 
     return tx.task.create({
       data: {
         organizationId: caller.organizationId,
-        projectId: parsed.projectId,
-        listId: parsed.listId,
+        projectId,
+        listId,
         statusId: status.id,
         taskNumber: project.taskCounter,
         name: parsed.name,
@@ -367,6 +398,7 @@ export async function createTask(values: TaskFormValues): Promise<TaskRow> {
         dueDate: parsed.dueDate ? new Date(parsed.dueDate) : null,
         position: (last._max.position ?? 0) + POSITION_STEP,
         createdById: caller.userId,
+        parentId: parent?.id ?? null,
         assignees: { create: assigneeIds.map((userId) => ({ userId })) },
       },
       select: taskSelect,

@@ -3,6 +3,7 @@
 import { ActionIcon, Badge, Group, Menu, Paper, Stack, Text } from '@mantine/core'
 import {
   IconDotsVertical,
+  IconListCheck,
   IconMessage,
   IconPaperclip,
   IconPencil,
@@ -111,6 +112,17 @@ export function TaskCard({
             <Badge size="sm" variant="light" color={overdue ? 'red' : 'gray'}>
               {overdue ? 'Overdue · ' : ''}
               {due.format(new Date(task.dueDate))}
+            </Badge>
+          ) : null}
+
+          {task.subtasks.length > 0 ? (
+            <Badge
+              size="sm"
+              variant="default"
+              leftSection={<IconListCheck size={12} aria-hidden />}
+              aria-label={`${task.subtasks.filter((one) => one.isDone).length} of ${task.subtasks.length} subtasks done`}
+            >
+              {task.subtasks.filter((one) => one.isDone).length}/{task.subtasks.length}
             </Badge>
           ) : null}
 

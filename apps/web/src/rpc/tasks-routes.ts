@@ -73,6 +73,7 @@ export const tasks: ServiceImpl<typeof TasksService> = {
         priority: priorityFromProto(request.priority),
         dueDate: request.dueDate ?? '',
         assigneeIds: [...request.assigneeIds],
+        parentId: request.parentId ?? '',
       }),
     ),
   }),

@@ -167,6 +167,14 @@ export function taskToProto(task: TaskRow): TaskMessage {
     updatedAt: task.updatedAt,
     commentCount: task.commentCount,
     attachmentCount: task.attachmentCount,
+    parentId: task.parentId,
+    subtasks: task.subtasks.map((subtask) => ({
+      $typeName: 'ihp.tasks.v1.Subtask' as const,
+      id: subtask.id,
+      name: subtask.name,
+      isDone: subtask.isDone,
+      position: subtask.position,
+    })),
   }
 }
 
@@ -196,6 +204,13 @@ export function taskFromProto(task: TaskMessage): TaskRow {
     updatedAt: task.updatedAt,
     commentCount: task.commentCount,
     attachmentCount: task.attachmentCount,
+    parentId: task.parentId,
+    subtasks: task.subtasks.map((subtask) => ({
+      id: subtask.id,
+      name: subtask.name,
+      isDone: subtask.isDone,
+      position: subtask.position,
+    })),
   }
 }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, FileButton, Group, MultiSelect, Stack, Text, Textarea } from '@mantine/core'
+import { Button, FileButton, Group, Stack, Text, Textarea } from '@mantine/core'
 import { IconPaperclip, IconSend } from '@tabler/icons-react'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -9,13 +9,13 @@ import type { z } from 'zod'
 import { FormError } from '@/components/form-error'
 import {
   commentFormSchema,
-  MENTION_EVERYONE,
-  MENTION_EVERYONE_LABEL,
   type CommentFormValues,
   type TaskAssigneeRef,
   type TaskAttachmentRow,
 } from '../schema'
+import { isSubmitShortcut } from '../utils/submit-shortcut'
 import { AttachmentChip } from './attachment-chip'
+import { NotifySelect } from './notify-select'
 
 export interface CommentComposerProps {
   colleagues: readonly TaskAssigneeRef[]
@@ -82,35 +82,27 @@ export function CommentComposer({
         <Textarea
           {...register('body')}
           label="Add a comment"
+          description="⌘/Ctrl + Enter posts it."
           placeholder="Ask a question, or say what changed."
           autosize
           minRows={3}
           maxRows={10}
           error={errors.body?.message}
           errorProps={{ role: 'alert' }}
+          onKeyDown={(event) => {
+            if (isSubmitShortcut(event)) void handleSubmit(submit)()
+          }}
         />
 
         <Controller
           control={control}
           name="mentionUserIds"
           render={({ field }) => (
-            <MultiSelect
-              label="Notify"
-              description="They get an email with this comment. @everyone reaches the whole team."
-              placeholder={field.value?.length ? undefined : 'Nobody yet'}
-              data={[
-                { value: MENTION_EVERYONE, label: MENTION_EVERYONE_LABEL },
-                ...colleagues.map((person) => ({ value: person.userId, label: person.name })),
-              ]}
-              value={[...(field.value ?? [])]}
-              // Naming people on top of everyone reaches nobody extra, so the wider pick wins.
-              onChange={(next) =>
-                field.onChange(next.includes(MENTION_EVERYONE) ? [MENTION_EVERYONE] : next)
-              }
+            <NotifySelect
+              colleagues={colleagues}
+              value={field.value ?? []}
+              onChange={field.onChange}
               onBlur={field.onBlur}
-              searchable
-              clearable
-              nothingFoundMessage="Nobody by that name"
             />
           )}
         />

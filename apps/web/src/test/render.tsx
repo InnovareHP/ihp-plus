@@ -25,5 +25,5 @@ export function render(ui: ReactElement) {
   return rtlRender(ui, { wrapper: Wrapper })
 }
 
-export { screen, waitFor, within } from '@testing-library/react'
+export { act, screen, waitFor, within } from '@testing-library/react'
 export { default as userEvent } from '@testing-library/user-event'

@@ -98,6 +98,7 @@ export async function createTask(values: TaskFormValues): Promise<TaskRow> {
       priority: priorityToProto(values.priority),
       dueDate: values.dueDate || undefined,
       assigneeIds: values.assigneeIds,
+      parentId: values.parentId || undefined,
     }),
   )
   return requiredTask(response.task)

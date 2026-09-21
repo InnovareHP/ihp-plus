@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import { render, screen, userEvent, waitFor } from '@/test/render'
+import { act, render, screen, userEvent, waitFor } from '@/test/render'
 import type { TaskCommentRow, TaskRow, TaskStatusRow } from '../schema'
 import { TaskDetailDrawer } from './task-detail-drawer'
 
 const rpc = vi.hoisted(() => ({
+  createTask: vi.fn(),
+  completeTask: vi.fn(),
+  deleteTask: vi.fn(),
   listConversation: vi.fn(),
   createComment: vi.fn(),
   updateComment: vi.fn(),
@@ -13,10 +16,12 @@ const rpc = vi.hoisted(() => ({
 }))
 
 const actions = vi.hoisted(() => ({ uploadTaskAttachment: vi.fn() }))
+const undo = vi.hoisted(() => ({ offerUndo: vi.fn() }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
 vi.mock('../actions', () => actions)
+vi.mock('@/lib/undo', () => undo)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 
 const STATUS: TaskStatusRow = {
@@ -47,6 +52,8 @@ const TASK: TaskRow = {
   updatedAt: '2026-09-01T00:00:00.000Z',
   commentCount: 1,
   attachmentCount: 1,
+  parentId: undefined,
+  subtasks: [],
 }
 
 const COMMENT: TaskCommentRow = {
@@ -64,9 +71,9 @@ const COMMENT: TaskCommentRow = {
 const VIEWER = { userId: 'user-1', name: 'Dana Reyes' }
 const COLLEAGUES = [{ userId: 'user-2', name: 'Grace Hopper' }]
 
-function renderDrawer() {
+function renderDrawer(task: TaskRow = TASK) {
   return render(
-    <TaskDetailDrawer task={TASK} viewer={VIEWER} colleagues={COLLEAGUES} onClose={vi.fn()} />,
+    <TaskDetailDrawer task={task} viewer={VIEWER} colleagues={COLLEAGUES} onClose={vi.fn()} />,
   )
 }
 
@@ -117,6 +124,52 @@ describe('TaskDetailDrawer', () => {
     expect(screen.getByText('Dana Reyes')).toBeInTheDocument()
 
     resolve?.({ ...COMMENT, id: 'comment-2', body: 'Chasing this today.' })
+  })
+
+  it('lists the subtasks with how far the work has got', async () => {
+    renderDrawer({
+      ...TASK,
+      subtasks: [
+        { id: 'subtask-1', name: 'Pull the figures', isDone: true, position: 1024 },
+        { id: 'subtask-2', name: 'Draft the letter', isDone: false, position: 2048 },
+      ],
+    })
+
+    expect(await screen.findByText('1 of 2 done')).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Draft the letter' })).not.toBeChecked()
+  })
+
+  it('files a new subtask under the task it is open on', async () => {
+    const user = userEvent.setup()
+    rpc.createTask.mockResolvedValue({ ...TASK, id: 'task-2', name: 'Book the courier' })
+
+    renderDrawer()
+    await user.type(await screen.findByLabelText('Add a subtask'), 'Book the courier')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    await waitFor(() =>
+      expect(rpc.createTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Book the courier',
+          parentId: 'task-1',
+          listId: 'list-1',
+        }),
+      ),
+    )
+  })
+
+  it('ticks a subtask off through the same call a task uses', async () => {
+    const user = userEvent.setup()
+    rpc.completeTask.mockResolvedValue({ ...TASK, id: 'subtask-1' })
+
+    renderDrawer({
+      ...TASK,
+      subtasks: [{ id: 'subtask-1', name: 'Pull the figures', isDone: false, position: 1024 }],
+    })
+
+    await user.click(await screen.findByRole('checkbox', { name: 'Pull the figures' }))
+
+    await waitFor(() => expect(rpc.completeTask).toHaveBeenCalledWith('subtask-1', true))
   })
 
   it('takes the comment back and says why when posting fails', async () => {
@@ -224,6 +277,103 @@ describe('TaskDetailDrawer', () => {
     )
   })
 
+  it('posts with ⌘ + Enter', async () => {
+    const user = userEvent.setup()
+    rpc.createComment.mockResolvedValue({ ...COMMENT, id: 'comment-2' })
+
+    renderDrawer()
+    await screen.findByText('The figures are confirmed.')
+
+    await user.type(screen.getByLabelText('Add a comment'), 'Chasing this today.')
+    await user.keyboard('{Meta>}{Enter}{/Meta}')
+
+    await waitFor(() =>
+      expect(rpc.createComment).toHaveBeenCalledWith(
+        expect.objectContaining({ body: 'Chasing this today.' }),
+      ),
+    )
+  })
+
+  it('holds a deleted comment back until the undo window closes', async () => {
+    const user = userEvent.setup()
+    rpc.listConversation.mockResolvedValue({
+      comments: [{ ...COMMENT, authorId: VIEWER.userId, authorName: VIEWER.name }],
+      attachments: [],
+    })
+
+    renderDrawer()
+    await screen.findByText('The figures are confirmed.')
+
+    await user.click(screen.getByRole('button', { name: 'Actions for your comment' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Delete' }))
+
+    await waitFor(() =>
+      expect(screen.queryByText('The figures are confirmed.')).not.toBeInTheDocument(),
+    )
+    expect(rpc.deleteComment).not.toHaveBeenCalled()
+
+    const offer = undo.offerUndo.mock.calls[0]?.[0]
+    await act(async () => offer.onUndo())
+
+    expect(await screen.findByText('The figures are confirmed.')).toBeInTheDocument()
+    expect(rpc.deleteComment).not.toHaveBeenCalled()
+  })
+
+  it('tells the server once the undo window has closed', async () => {
+    const user = userEvent.setup()
+    rpc.listConversation.mockResolvedValue({
+      comments: [{ ...COMMENT, authorId: VIEWER.userId, authorName: VIEWER.name }],
+      attachments: [],
+    })
+    rpc.deleteComment.mockResolvedValue(undefined)
+
+    renderDrawer()
+    await screen.findByText('The figures are confirmed.')
+
+    await user.click(screen.getByRole('button', { name: 'Actions for your comment' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Delete' }))
+
+    const offer = undo.offerUndo.mock.calls[0]?.[0]
+    await act(async () => offer.onCommit())
+
+    await waitFor(() => expect(rpc.deleteComment).toHaveBeenCalledWith('comment-1'))
+  })
+
+  it('keeps the edit open and says why when saving fails', async () => {
+    const user = userEvent.setup()
+    rpc.listConversation.mockResolvedValue({
+      comments: [{ ...COMMENT, authorId: VIEWER.userId, authorName: VIEWER.name }],
+      attachments: [],
+    })
+    rpc.updateComment.mockRejectedValue(new Error('That comment is no longer there.'))
+
+    renderDrawer()
+    await screen.findByText('The figures are confirmed.')
+
+    await user.click(screen.getByRole('button', { name: 'Actions for your comment' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Edit' }))
+    await user.type(screen.getByLabelText('Edit your comment'), ' Chased.')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(await screen.findByText('That comment is no longer there.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Edit your comment')).toHaveValue(
+      'The figures are confirmed. Chased.',
+    )
+  })
+
+  it('marks a comment that has not landed yet', async () => {
+    const user = userEvent.setup()
+    rpc.createComment.mockReturnValue(new Promise(() => {}))
+
+    renderDrawer()
+    await screen.findByText('The figures are confirmed.')
+
+    await user.type(screen.getByLabelText('Add a comment'), 'Chasing this today.')
+    await user.click(screen.getByRole('button', { name: 'Post comment' }))
+
+    expect(await screen.findByText('Sending…')).toBeInTheDocument()
+  })
+
   it('offers no edit or delete on someone else’s comment', async () => {
     renderDrawer()
     await screen.findByText('The figures are confirmed.')
@@ -236,6 +386,22 @@ describe('TaskDetailDrawer', () => {
   it('has no axe violations', async () => {
     const { container } = renderDrawer()
     await screen.findByText('The figures are confirmed.')
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('has no axe violations while a comment is being edited', async () => {
+    const user = userEvent.setup()
+    rpc.listConversation.mockResolvedValue({
+      comments: [{ ...COMMENT, authorId: VIEWER.userId, authorName: VIEWER.name }],
+      attachments: [],
+    })
+
+    const { container } = renderDrawer()
+    await screen.findByText('The figures are confirmed.')
+
+    await user.click(screen.getByRole('button', { name: 'Actions for your comment' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Edit' }))
+
     expect(await axe(container)).toHaveNoViolations()
   })
 })
