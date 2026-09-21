@@ -12,6 +12,7 @@
     "db:generate": "prisma migrate dev --create-only",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:clients": "tsx prisma/seed-clients.ts",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
     "typecheck": "tsc --noEmit",

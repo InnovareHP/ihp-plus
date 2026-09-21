@@ -24,6 +24,7 @@
     "rpc:generate": "pnpm --filter @ihp/proto generate",
     "rpc:lint": "pnpm --filter @ihp/proto lint",
     "db:seed": "dotenv -e .env -- pnpm --filter @ihp/db db:seed",
+    "db:seed:clients": "dotenv -e .env -- pnpm --filter @ihp/db db:seed:clients",
     "db:studio": "pnpm --filter @ihp/db db:studio",
     "db:push": "pnpm --filter @ihp/db db:push",
     "infra:up": "docker compose --env-file .env -f infra/compose.dev.yml up -d",
