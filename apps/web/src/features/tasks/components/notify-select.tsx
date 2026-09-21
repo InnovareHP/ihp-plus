@@ -1,6 +1,7 @@
 'use client'
 
 import { MultiSelect } from '@mantine/core'
+import { IconAt } from '@tabler/icons-react'
 import { MENTION_EVERYONE, MENTION_EVERYONE_LABEL, type TaskAssigneeRef } from '../schema'
 
 export interface NotifySelectProps {
@@ -10,12 +11,15 @@ export interface NotifySelectProps {
   onBlur?: () => void
 }
 
+/** The @ carries it: a labelled field would shout louder than the comment it decorates. */
 export function NotifySelect({ colleagues, value, onChange, onBlur }: NotifySelectProps) {
   return (
     <MultiSelect
-      label="Notify"
-      description="They get an email with this comment. @everyone reaches the whole team."
-      placeholder={value.length ? undefined : 'Nobody yet'}
+      aria-label="Notify"
+      size="sm"
+      variant="unstyled"
+      leftSection={<IconAt size={14} aria-hidden />}
+      placeholder={value.length ? undefined : 'Notify someone'}
       data={[
         { value: MENTION_EVERYONE, label: MENTION_EVERYONE_LABEL },
         ...colleagues.map((person) => ({ value: person.userId, label: person.name })),
