@@ -4,7 +4,13 @@ import { Accordion, Badge, Box, Divider, Group, Modal, Skeleton, Stack, Text } f
 import { useMediaQuery } from '@mantine/hooks'
 import { ActivityTimeline } from '@/components/activity-timeline'
 import { EmptyState } from '@/components/empty-state'
-import { useCompleteSubtask, useCreateSubtask, useDeleteSubtask } from '../hooks/use-tasks'
+import {
+  useCompleteSubtask,
+  useCreateSubtask,
+  useDeleteSubtask,
+  usePromoteSubtask,
+  useReorderTask,
+} from '../hooks/use-tasks'
 import {
   useConversation,
   useDeleteAttachment,
@@ -26,12 +32,20 @@ import { SubtaskList } from './subtask-list'
 
 export interface TaskDetailModalProps {
   task: TaskRow | null
+  /** Opening a subtask means opening the task it is. */
+  onOpenTask: (taskId: string) => void
   viewer: TaskAssigneeRef
   colleagues: readonly TaskAssigneeRef[]
   onClose: () => void
 }
 
-export function TaskDetailModal({ task, viewer, colleagues, onClose }: TaskDetailModalProps) {
+export function TaskDetailModal({
+  task,
+  viewer,
+  colleagues,
+  onClose,
+  onOpenTask,
+}: TaskDetailModalProps) {
   const taskId = task?.id
   // A dialog this tall has nowhere to go on a phone, so there it takes the screen.
   const narrow = useMediaQuery('(max-width: 48em)')
@@ -46,6 +60,8 @@ export function TaskDetailModal({ task, viewer, colleagues, onClose }: TaskDetai
   const addSubtask = useCreateSubtask()
   const completeSubtask = useCompleteSubtask()
   const deleteSubtask = useDeleteSubtask()
+  const reorderSubtask = useReorderTask()
+  const promote = usePromoteSubtask()
 
   const comments = conversation.data?.comments ?? []
 
@@ -99,6 +115,15 @@ export function TaskDetailModal({ task, viewer, colleagues, onClose }: TaskDetai
               completeSubtask.mutate({ subtaskId: subtask.id, completed })
             }
             onDelete={(subtask) => deleteSubtask.mutate({ subtaskId: subtask.id })}
+            onOpen={(subtask) => onOpenTask(subtask.id)}
+            onMove={(subtask, beforeSubtaskId) =>
+              reorderSubtask.mutate({
+                taskId: subtask.id,
+                listId: task.listId,
+                beforeTaskId: beforeSubtaskId,
+              })
+            }
+            onPromote={(subtask) => promote.mutate({ subtaskId: subtask.id })}
           />
 
           {/* Folded away: history is reference, the conversation is the reason the panel is open. */}

@@ -251,6 +251,24 @@ message ListTasksResponse {
   repeated Task tasks = 1;
 }
 
+// One task by id: a link to a task, or a subtask, has to stand on its own.
+message GetTaskRequest {
+  string task_id = 1;
+}
+
+message GetTaskResponse {
+  Task task = 1;
+}
+
+// A subtask that turned out to be work of its own leaves its parent and joins the board.
+message PromoteSubtaskRequest {
+  string task_id = 1;
+}
+
+message PromoteSubtaskResponse {
+  Task task = 1;
+}
+
 message CreateTaskRequest {
   string project_id = 1;
   string list_id = 2;
@@ -433,7 +451,9 @@ service TasksService {
   rpc DeleteStatus(DeleteStatusRequest) returns (DeleteStatusResponse);
 
   rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
   rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);
+  rpc PromoteSubtask(PromoteSubtaskRequest) returns (PromoteSubtaskResponse);
   rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
   rpc CompleteTask(CompleteTaskRequest) returns (CompleteTaskResponse);
   rpc ReorderTask(ReorderTaskRequest) returns (ReorderTaskResponse);

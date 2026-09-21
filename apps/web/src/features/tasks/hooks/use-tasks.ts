@@ -5,7 +5,16 @@ import { track, type EventName } from '@/lib/analytics'
 import { announceFailure } from '@/lib/announce'
 import { taskEvents } from '../events'
 import { taskKeys } from '../query-keys'
-import { completeTask, createTask, deleteTask, listTasks, reorderTask, updateTask } from '../rpc'
+import {
+  completeTask,
+  createTask,
+  deleteTask,
+  getTask,
+  listTasks,
+  promoteSubtask,
+  reorderTask,
+  updateTask,
+} from '../rpc'
 import type {
   ReorderTaskValues,
   TaskFormValues,
@@ -194,6 +203,28 @@ export function useCompleteTask() {
     },
     successEvent: taskEvents.completed,
     failureEvent: taskEvents.completeFailed,
+  })
+}
+
+/** A task reached by link rather than by board: a subtask, or a board filtered past it. */
+export function useTaskDetail(taskId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: taskKeys.detail(taskId),
+    queryFn: () => getTask(taskId),
+    enabled: enabled && Boolean(taskId),
+  })
+}
+
+export function usePromoteSubtask() {
+  return useBoardMutation<{ subtaskId: string }>({
+    mutationFn: ({ subtaskId }) => promoteSubtask(subtaskId),
+    apply: (rows, { subtaskId }) =>
+      rows.map((row) => ({
+        ...row,
+        subtasks: row.subtasks.filter((one) => one.id !== subtaskId),
+      })),
+    successEvent: taskEvents.subtaskPromoted,
+    failureEvent: taskEvents.subtaskPromoteFailed,
   })
 }
 

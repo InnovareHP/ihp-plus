@@ -13,6 +13,9 @@ const handlers = {
   onAdd: vi.fn(async () => {}),
   onToggle: vi.fn(),
   onDelete: vi.fn(),
+  onOpen: vi.fn(),
+  onMove: vi.fn(),
+  onPromote: vi.fn(),
 }
 
 function renderList(subtasks: TaskSubtaskRow[] = SUBTASKS) {
@@ -38,7 +41,7 @@ describe('SubtaskList', () => {
     const user = userEvent.setup()
     renderList()
 
-    await user.click(screen.getByRole('checkbox', { name: 'Draft the cover letter' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Complete Draft the cover letter' }))
 
     expect(handlers.onToggle).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'subtask-2' }),
@@ -83,9 +86,42 @@ describe('SubtaskList', () => {
     const user = userEvent.setup()
     renderList()
 
-    await user.click(screen.getByRole('button', { name: 'Delete Draft the cover letter' }))
+    await user.click(screen.getByRole('button', { name: 'Actions for Draft the cover letter' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Delete' }))
 
     expect(handlers.onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'subtask-2' }))
+  })
+
+  it('opens a subtask as the task it is', async () => {
+    const user = userEvent.setup()
+    renderList()
+
+    await user.click(screen.getByRole('button', { name: 'Draft the cover letter' }))
+
+    expect(handlers.onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'subtask-2' }))
+  })
+
+  it('moves one up by naming the row it lands before', async () => {
+    const user = userEvent.setup()
+    renderList()
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Draft the cover letter' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Move up' }))
+
+    expect(handlers.onMove).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'subtask-2' }),
+      'subtask-1',
+    )
+  })
+
+  it('promotes one that turned out to be work of its own', async () => {
+    const user = userEvent.setup()
+    renderList()
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Draft the cover letter' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Make it a task' }))
+
+    expect(handlers.onPromote).toHaveBeenCalledWith(expect.objectContaining({ id: 'subtask-2' }))
   })
 
   it('has no axe violations', async () => {

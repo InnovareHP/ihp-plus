@@ -74,7 +74,13 @@ const COLLEAGUES = [{ userId: 'user-2', name: 'Grace Hopper' }]
 
 function renderModal(task: TaskRow = TASK) {
   return render(
-    <TaskDetailModal task={task} viewer={VIEWER} colleagues={COLLEAGUES} onClose={vi.fn()} />,
+    <TaskDetailModal
+      task={task}
+      viewer={VIEWER}
+      colleagues={COLLEAGUES}
+      onClose={vi.fn()}
+      onOpenTask={vi.fn()}
+    />,
   )
 }
 
@@ -255,7 +261,7 @@ describe('TaskDetailModal', () => {
     })
 
     expect(await screen.findByText('1 of 2 done')).toBeInTheDocument()
-    expect(screen.getByRole('checkbox', { name: 'Draft the letter' })).not.toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Complete Draft the letter' })).not.toBeChecked()
   })
 
   it('files a new subtask under the task it is open on', async () => {
@@ -286,7 +292,7 @@ describe('TaskDetailModal', () => {
       subtasks: [{ id: 'subtask-1', name: 'Pull the figures', isDone: false, position: 1024 }],
     })
 
-    await user.click(await screen.findByRole('checkbox', { name: 'Pull the figures' }))
+    await user.click(await screen.findByRole('checkbox', { name: 'Complete Pull the figures' }))
 
     await waitFor(() => expect(rpc.completeTask).toHaveBeenCalledWith('subtask-1', true))
   })

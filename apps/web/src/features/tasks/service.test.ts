@@ -57,6 +57,7 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 
 const {
   createStatus,
+  promoteSubtask,
   loadTaskActivity,
   loadMentions,
   markAllMentionsRead,
@@ -503,6 +504,47 @@ describe('statuses', () => {
       expect.objectContaining({ data: { name: 'Up next' } }),
     )
     expect(row.name).toBe('Up next')
+  })
+})
+
+describe('promoteSubtask', () => {
+  it('refuses a task that is not a subtask', async () => {
+    prisma.task.findFirst.mockResolvedValue({ ...TASK_RECORD, parentId: null })
+
+    await expect(promoteSubtask('task-1')).rejects.toMatchObject({
+      code: Code.FailedPrecondition,
+    })
+  })
+
+  it('lands it at the end of the list it was already in', async () => {
+    prisma.task.findFirst.mockResolvedValue({ ...TASK_RECORD, parentId: 'task-parent' })
+    prisma.task.aggregate.mockResolvedValue({ _max: { position: 3072 } })
+    prisma.task.update.mockResolvedValue(TASK_RECORD)
+
+    await promoteSubtask('task-1')
+
+    expect(prisma.task.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { parentId: null, position: 3072 + 1024 },
+      }),
+    )
+  })
+})
+
+describe('reorderTask, inside a parent', () => {
+  it('orders a subtask against its siblings, not against the list', async () => {
+    prisma.task.findFirst.mockResolvedValue({ ...TASK_RECORD, parentId: 'task-parent' })
+    prisma.taskList.findFirst.mockResolvedValue({ id: 'list-1' })
+    prisma.task.findMany.mockResolvedValue([{ id: 'sub-2', position: 1024 }])
+    prisma.task.update.mockResolvedValue(TASK_RECORD)
+
+    await reorderTask({ taskId: 'task-1', listId: 'list-1', beforeTaskId: 'sub-2' })
+
+    expect(prisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { parentId: 'task-parent', id: { not: 'task-1' } },
+      }),
+    )
   })
 })
 

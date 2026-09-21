@@ -581,6 +581,34 @@ export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
   return tasks.map((task) => toTaskRow(task, names))
 }
 
+export async function getTask(taskId: string): Promise<TaskRow> {
+  const caller = await requireMember()
+  return hydrate(await taskOrThrow(caller, taskId))
+}
+
+/** Position is per list, so a promoted subtask lands at the end of the list it was already in. */
+export async function promoteSubtask(taskId: string): Promise<TaskRow> {
+  const caller = await requireMember()
+  const task = await taskOrThrow(caller, taskId)
+
+  if (!task.parentId) {
+    throw new ConnectError('That task is not a subtask.', Code.FailedPrecondition)
+  }
+
+  const last = await db.task.aggregate({
+    where: { listId: task.listId, parentId: null },
+    _max: { position: true },
+  })
+
+  const promoted = await db.task.update({
+    where: { id: task.id },
+    data: { parentId: null, position: (last._max.position ?? 0) + POSITION_STEP },
+    select: taskSelect,
+  })
+
+  return hydrate(promoted)
+}
+
 export async function createTask(values: TaskFormValues): Promise<TaskRow> {
   const caller = await requireMember()
   const parsed = taskFormSchema.parse(values)
@@ -764,8 +792,10 @@ export async function reorderTask(values: ReorderTaskValues): Promise<TaskRow> {
 
   const updated = await db.$transaction(async (tx) => {
     const siblings = await tx.task.findMany({
-      // Subtasks share their parent's list and are ordered inside it, never beside it.
-      where: { listId: values.listId, parentId: null, id: { not: task.id } },
+      // A subtask is ordered inside its parent; everything else is ordered inside its list.
+      where: task.parentId
+        ? { parentId: task.parentId, id: { not: task.id } }
+        : { listId: values.listId, parentId: null, id: { not: task.id } },
       select: { id: true, position: true },
       orderBy: { position: 'asc' },
     })

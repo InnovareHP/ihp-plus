@@ -147,6 +147,16 @@ export async function listTasks(query: TaskQuery): Promise<TaskRow[]> {
   return response.tasks.map(taskFromProto)
 }
 
+export async function getTask(taskId: string): Promise<TaskRow> {
+  const response = await call(() => browserClients.tasks.getTask({ taskId }))
+  return requiredTask(response.task)
+}
+
+export async function promoteSubtask(taskId: string): Promise<TaskRow> {
+  const response = await call(() => browserClients.tasks.promoteSubtask({ taskId }))
+  return requiredTask(response.task)
+}
+
 export async function createTask(values: TaskFormValues): Promise<TaskRow> {
   const response = await call(() =>
     browserClients.tasks.createTask({

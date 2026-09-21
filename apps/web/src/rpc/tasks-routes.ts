@@ -11,6 +11,7 @@ import {
   deleteList,
   deleteStatus,
   deleteTask,
+  getTask,
   loadConversation,
   loadLists,
   loadMentions,
@@ -20,6 +21,7 @@ import {
   loadTasks,
   markAllMentionsRead,
   markMentionRead,
+  promoteSubtask,
   reorderStatus,
   reorderTask,
   setTaskCompleted,
@@ -128,6 +130,12 @@ export const tasks: ServiceImpl<typeof TasksService> = {
     })
     return { tasks: rows.map(taskToProto) }
   },
+
+  getTask: async (request) => ({ task: taskToProto(await getTask(request.taskId)) }),
+
+  promoteSubtask: async (request) => ({
+    task: taskToProto(await promoteSubtask(request.taskId)),
+  }),
 
   createTask: async (request) => ({
     task: taskToProto(

@@ -16,6 +16,8 @@ export const taskEvents = {
   subtaskCreateFailed: 'tasks.subtask.create_failed',
   subtaskCompleted: 'tasks.subtask.completed',
   subtaskCompleteFailed: 'tasks.subtask.complete_failed',
+  subtaskPromoted: 'tasks.subtask.promoted',
+  subtaskPromoteFailed: 'tasks.subtask.promote_failed',
   subtaskDeleted: 'tasks.subtask.deleted',
   subtaskDeleteFailed: 'tasks.subtask.delete_failed',
   projectCreated: 'tasks.project.created',

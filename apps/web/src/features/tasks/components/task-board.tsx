@@ -25,6 +25,7 @@ import {
   useDeleteTask,
   useReorderTask,
   useTaskBoard,
+  useTaskDetail,
   useUpdateTask,
 } from '../hooks/use-tasks'
 import {
@@ -171,10 +172,14 @@ export function TaskBoard() {
     [people],
   )
 
-  const openTask = useMemo(
+  const boardTask = useMemo(
     () => tasks.find((task) => task.id === query.task) ?? null,
     [tasks, query.task],
   )
+
+  // A subtask, or a task the current filters hide, is still a link somebody can follow.
+  const fetchedTask = useTaskDetail(query.task, Boolean(query.task) && !boardTask)
+  const openTask = boardTask ?? fetchedTask.data ?? null
 
   const session = useSession()
   const viewer = useMemo(
@@ -455,6 +460,7 @@ export function TaskBoard() {
 
       <TaskDetailModal
         task={openTask}
+        onOpenTask={(taskId) => setQuery({ task: taskId })}
         viewer={viewer}
         colleagues={colleagues}
         onClose={() => setQuery({ task: '' })}
