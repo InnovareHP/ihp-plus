@@ -32,6 +32,10 @@ import {
   DEFAULT_BOARD_QUERY,
   TASK_ASSIGNEE_FILTERS,
   TASK_ASSIGNEE_FILTER_LABELS,
+  TASK_DUE_FILTERS,
+  TASK_DUE_FILTER_LABELS,
+  TASK_PRIORITIES,
+  TASK_PRIORITY_LABELS,
   TASK_VIEWS,
   TASK_VIEW_LABELS,
   type TaskFormValues,
@@ -51,9 +55,10 @@ import { TaskFormModal } from './task-form-modal'
 import { TaskListSection } from './task-list-section'
 import { TaskStats } from './task-stats'
 
-const parseBoardQuery = searchParamsParser(boardQuerySchema)
+// `priority` arrives as ?priority=urgent,high, so the parser is told it holds a list.
+const parseBoardQuery = searchParamsParser(boardQuerySchema, ['priority'])
 
-const BOARD_FILTERS: readonly FilterControl[] = [
+const STATIC_FILTERS: readonly FilterControl[] = [
   {
     kind: 'select',
     key: 'assignee',
@@ -61,6 +66,24 @@ const BOARD_FILTERS: readonly FilterControl[] = [
     options: TASK_ASSIGNEE_FILTERS.filter((filter) => filter !== 'all').map((filter) => ({
       value: filter,
       label: TASK_ASSIGNEE_FILTER_LABELS[filter],
+    })),
+  },
+  {
+    kind: 'multi',
+    key: 'priority',
+    label: 'Priority',
+    options: TASK_PRIORITIES.map((priority) => ({
+      value: priority,
+      label: TASK_PRIORITY_LABELS[priority],
+    })),
+  },
+  {
+    kind: 'select',
+    key: 'due',
+    label: 'Due',
+    options: TASK_DUE_FILTERS.filter((filter) => filter !== 'any').map((filter) => ({
+      value: filter,
+      label: TASK_DUE_FILTER_LABELS[filter],
     })),
   },
   {
@@ -101,6 +124,10 @@ export function TaskBoard() {
       assignee: query.assignee,
       search: query.search,
       includeArchived: query.archived,
+      assigneeUserId: query.person || undefined,
+      statusId: query.status || undefined,
+      priorities: query.priority,
+      due: query.due,
     },
     Boolean(projectId),
   )
@@ -117,6 +144,26 @@ export function TaskBoard() {
   const people = useMemo(
     () => (candidates.data ?? []).map((person) => ({ value: person.userId, label: person.name })),
     [candidates.data],
+  )
+
+  // Person and column are the organization's own rows, so those two filters are built from data.
+  const filters = useMemo<readonly FilterControl[]>(
+    () => [
+      ...STATIC_FILTERS,
+      {
+        kind: 'select',
+        key: 'person',
+        label: 'Person',
+        options: people,
+      },
+      {
+        kind: 'select',
+        key: 'status',
+        label: 'Column',
+        options: statusRows.map((status) => ({ value: status.id, label: status.name })),
+      },
+    ],
+    [people, statusRows],
   )
 
   const peopleById = useMemo(
@@ -289,7 +336,7 @@ export function TaskBoard() {
             query={query}
             setQuery={setQuery}
             clearFilters={clearFilters}
-            filters={BOARD_FILTERS}
+            filters={filters}
             action={
               <Group gap="sm">
                 {/* A background refresh dims rather than replaces: only a first load blanks a board. */}

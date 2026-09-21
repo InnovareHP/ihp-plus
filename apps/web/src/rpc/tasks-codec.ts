@@ -1,5 +1,6 @@
 import {
   TaskAssigneeFilter,
+  TaskDueFilter,
   TaskPriority,
   TaskStatusCategory,
   type Task as TaskMessage,
@@ -14,6 +15,7 @@ import type {
   TaskAssigneeFilter as AssigneeFilter,
   TaskAttachmentRow,
   TaskCommentRow,
+  TaskDueFilter as DueFilter,
   TaskListRow,
   TaskMentionRow,
   TaskPriority as Priority,
@@ -120,6 +122,31 @@ export function listFromProto(list: TaskListMessage): TaskListRow {
     name: list.name,
     sortOrder: list.sortOrder,
   }
+}
+
+const DUE_TO_PROTO: Record<DueFilter, TaskDueFilter> = {
+  any: TaskDueFilter.ANY,
+  overdue: TaskDueFilter.OVERDUE,
+  today: TaskDueFilter.TODAY,
+  week: TaskDueFilter.WEEK,
+  none: TaskDueFilter.NONE,
+}
+
+const DUE_FROM_PROTO: Record<TaskDueFilter, DueFilter> = {
+  [TaskDueFilter.UNSPECIFIED]: 'any',
+  [TaskDueFilter.ANY]: 'any',
+  [TaskDueFilter.OVERDUE]: 'overdue',
+  [TaskDueFilter.TODAY]: 'today',
+  [TaskDueFilter.WEEK]: 'week',
+  [TaskDueFilter.NONE]: 'none',
+}
+
+export function dueFilterToProto(due: DueFilter): TaskDueFilter {
+  return DUE_TO_PROTO[due]
+}
+
+export function dueFilterFromProto(due: TaskDueFilter): DueFilter {
+  return DUE_FROM_PROTO[due]
 }
 
 export function categoryToProto(category: StatusCategory): TaskStatusCategory {

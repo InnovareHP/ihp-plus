@@ -32,6 +32,7 @@ import {
 import {
   assigneeFilterFromProto,
   categoryFromProto,
+  dueFilterFromProto,
   commentToProto,
   listToProto,
   mentionToProto,
@@ -120,6 +121,10 @@ export const tasks: ServiceImpl<typeof TasksService> = {
       assignee: assigneeFilterFromProto(request.assignee),
       search: request.search,
       includeArchived: request.includeArchived,
+      assigneeUserId: request.assigneeUserId,
+      statusId: request.statusId,
+      priorities: request.priorities.map(priorityFromProto),
+      due: dueFilterFromProto(request.due),
     })
     return { tasks: rows.map(taskToProto) }
   },

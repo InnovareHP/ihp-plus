@@ -75,6 +75,10 @@ describe('boardQuerySchema', () => {
     ).toEqual({
       project: 'project-1',
       view: 'board',
+      person: '',
+      status: '',
+      priority: [],
+      due: 'any',
       task: '',
       list: '',
       assignee: 'mine',

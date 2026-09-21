@@ -130,6 +130,71 @@ describe('loadTasks', () => {
     ).rejects.toMatchObject({ code: Code.NotFound })
   })
 
+  it('narrows to one person, one column and a priority shortlist', async () => {
+    prisma.task.findMany.mockResolvedValue([])
+
+    await loadTasks({
+      projectId: 'project-1',
+      listId: undefined,
+      assignee: 'all',
+      search: '',
+      includeArchived: false,
+      assigneeUserId: 'user-2',
+      statusId: 'status-todo',
+      priorities: ['urgent', 'high'],
+      due: 'any',
+    })
+
+    expect(prisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          assignees: { some: { userId: 'user-2' } },
+          statusId: 'status-todo',
+          priority: { in: ['urgent', 'high'] },
+        }),
+      }),
+    )
+  })
+
+  it('counts a task late only while it is still open', async () => {
+    prisma.task.findMany.mockResolvedValue([])
+
+    await loadTasks({
+      projectId: 'project-1',
+      listId: undefined,
+      assignee: 'all',
+      search: '',
+      includeArchived: false,
+      due: 'overdue',
+    })
+
+    expect(prisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          dueDate: { lt: expect.any(Date) },
+          status: { category: 'active' },
+        }),
+      }),
+    )
+  })
+
+  it('asks for the tasks nobody has dated', async () => {
+    prisma.task.findMany.mockResolvedValue([])
+
+    await loadTasks({
+      projectId: 'project-1',
+      listId: undefined,
+      assignee: 'all',
+      search: '',
+      includeArchived: false,
+      due: 'none',
+    })
+
+    expect(prisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ dueDate: null }) }),
+    )
+  })
+
   it('filters to the caller when the board asks for their own work', async () => {
     prisma.task.findMany.mockResolvedValue([])
 

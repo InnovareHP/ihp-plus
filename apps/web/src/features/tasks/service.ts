@@ -23,6 +23,7 @@ import {
   type TaskAttachmentRow,
   type TaskCommentRow,
   type TaskConversation,
+  type TaskDueFilter,
   type TaskActivityRow,
   type TaskListRow,
   type TaskMentionFeed,
@@ -529,6 +530,26 @@ export async function loadStatuses(): Promise<TaskStatusRow[]> {
   return statuses.map(toStatusRow)
 }
 
+/** "Overdue" is a question about open work: a finished task cannot be late any more. */
+function dueWindow(due: TaskDueFilter | undefined): Prisma.TaskWhereInput {
+  if (!due || due === 'any') return {}
+  if (due === 'none') return { dueDate: null }
+
+  const now = new Date()
+  if (due === 'overdue') {
+    return { dueDate: { lt: now }, status: { category: 'active' } }
+  }
+
+  const end = new Date(now)
+  if (due === 'today') {
+    end.setHours(23, 59, 59, 999)
+  } else {
+    end.setDate(end.getDate() + 7)
+  }
+
+  return { dueDate: { not: null, lte: end } }
+}
+
 export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
   const caller = await requireMember()
   await projectOrThrow(caller, query.projectId)
@@ -545,6 +566,12 @@ export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
       ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
       ...(query.assignee === 'mine' ? { assignees: { some: { userId: caller.userId } } } : {}),
       ...(query.assignee === 'unassigned' ? { assignees: { none: {} } } : {}),
+      ...(query.assigneeUserId ? { assignees: { some: { userId: query.assigneeUserId } } } : {}),
+      ...(query.statusId ? { statusId: query.statusId } : {}),
+      ...(query.priorities && query.priorities.length > 0
+        ? { priority: { in: [...query.priorities] } }
+        : {}),
+      ...dueWindow(query.due),
     },
     select: taskSelect,
     orderBy: { position: 'asc' },

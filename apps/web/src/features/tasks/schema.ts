@@ -4,10 +4,12 @@ import { ALLOWED_UPLOAD_TYPES } from '@/features/bluebook/schema'
 export const TASK_PRIORITIES = ['urgent', 'high', 'normal', 'low'] as const
 export const TASK_STATUS_CATEGORIES = ['active', 'done', 'cancelled'] as const
 export const TASK_ASSIGNEE_FILTERS = ['all', 'mine', 'unassigned'] as const
+export const TASK_DUE_FILTERS = ['any', 'overdue', 'today', 'week', 'none'] as const
 
 export type TaskPriority = (typeof TASK_PRIORITIES)[number]
 export type TaskStatusCategory = (typeof TASK_STATUS_CATEGORIES)[number]
 export type TaskAssigneeFilter = (typeof TASK_ASSIGNEE_FILTERS)[number]
+export type TaskDueFilter = (typeof TASK_DUE_FILTERS)[number]
 
 export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {
   urgent: 'Urgent',
@@ -28,6 +30,14 @@ export const TASK_ASSIGNEE_FILTER_LABELS: Record<TaskAssigneeFilter, string> = {
   all: 'Everyone',
   mine: 'Mine',
   unassigned: 'Unassigned',
+}
+
+export const TASK_DUE_FILTER_LABELS: Record<TaskDueFilter, string> = {
+  any: 'Any time',
+  overdue: 'Overdue',
+  today: 'Due today',
+  week: 'Due this week',
+  none: 'No due date',
 }
 
 // Seeded the first time an organization opens the board, so a new company starts with columns
@@ -107,6 +117,10 @@ export const boardQuerySchema = z.object({
   task: z.string().trim().max(64).catch('').default(''),
   list: z.string().trim().max(64).catch('').default(''),
   assignee: z.enum(TASK_ASSIGNEE_FILTERS).catch('all').default('all'),
+  person: z.string().trim().max(64).catch('').default(''),
+  status: z.string().trim().max(64).catch('').default(''),
+  priority: z.array(z.enum(TASK_PRIORITIES)).catch([]).default([]),
+  due: z.enum(TASK_DUE_FILTERS).catch('any').default('any'),
   search: z.string().trim().max(100).catch('').default(''),
   archived: z
     .union([z.boolean(), z.literal('true'), z.literal('false')])
@@ -193,6 +207,10 @@ export interface TaskQuery {
   assignee: TaskAssigneeFilter
   search: string
   includeArchived: boolean
+  assigneeUserId?: string | undefined
+  statusId?: string | undefined
+  priorities?: readonly TaskPriority[]
+  due?: TaskDueFilter
 }
 
 export interface UpdateTaskValues {

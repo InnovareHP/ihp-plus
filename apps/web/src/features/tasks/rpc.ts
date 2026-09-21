@@ -5,6 +5,7 @@ import { browserClients } from '@/rpc/browser'
 import {
   assigneeFilterToProto,
   categoryToProto,
+  dueFilterToProto,
   commentFromProto,
   listFromProto,
   mentionFromProto,
@@ -137,6 +138,10 @@ export async function listTasks(query: TaskQuery): Promise<TaskRow[]> {
       assignee: assigneeFilterToProto(query.assignee),
       search: query.search,
       includeArchived: query.includeArchived,
+      assigneeUserId: query.assigneeUserId || undefined,
+      statusId: query.statusId || undefined,
+      priorities: (query.priorities ?? []).map(priorityToProto),
+      due: dueFilterToProto(query.due ?? 'any'),
     }),
   )
   return response.tasks.map(taskFromProto)

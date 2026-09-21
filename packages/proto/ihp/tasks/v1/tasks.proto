@@ -19,6 +19,16 @@ enum TaskStatusCategory {
   TASK_STATUS_CATEGORY_CANCELLED = 3;
 }
 
+// When a task is due, as a board filter rather than a stored field.
+enum TaskDueFilter {
+  TASK_DUE_FILTER_UNSPECIFIED = 0;
+  TASK_DUE_FILTER_ANY = 1;
+  TASK_DUE_FILTER_OVERDUE = 2;
+  TASK_DUE_FILTER_TODAY = 3;
+  TASK_DUE_FILTER_WEEK = 4;
+  TASK_DUE_FILTER_NONE = 5;
+}
+
 // Filter value: ALL is the board's default, and has no stored counterpart.
 enum TaskAssigneeFilter {
   TASK_ASSIGNEE_FILTER_UNSPECIFIED = 0;
@@ -230,6 +240,11 @@ message ListTasksRequest {
   TaskAssigneeFilter assignee = 3;
   string search = 4;
   bool include_archived = 5;
+  // Narrower than `assignee`: one person's work rather than a category of it.
+  optional string assignee_user_id = 6;
+  optional string status_id = 7;
+  repeated TaskPriority priorities = 8;
+  TaskDueFilter due = 9;
 }
 
 message ListTasksResponse {

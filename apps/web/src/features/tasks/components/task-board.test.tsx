@@ -232,6 +232,21 @@ describe('TaskBoard', () => {
     expect(screen.getByLabelText('1 files')).toBeInTheDocument()
   })
 
+  it('reads its filters out of the URL', async () => {
+    nav.search = 'view=list&priority=urgent,high&due=overdue&person=user-2&status=status-todo'
+
+    await renderBoard()
+
+    expect(rpc.listTasks).toHaveBeenCalledWith(
+      expect.objectContaining({
+        priorities: ['urgent', 'high'],
+        due: 'overdue',
+        assigneeUserId: 'user-2',
+        statusId: 'status-todo',
+      }),
+    )
+  })
+
   it('polls itself, because someone else moves the cards on a shared board', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     try {
