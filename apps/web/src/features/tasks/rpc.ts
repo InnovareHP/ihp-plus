@@ -15,6 +15,7 @@ import {
 } from '@/rpc/tasks-codec'
 import type {
   CommentFormValues,
+  TaskActivityRow,
   ListFormValues,
   ProjectFormValues,
   ReorderTaskValues,
@@ -203,6 +204,17 @@ export async function markMentionRead(commentId: string, read: boolean): Promise
 
 export async function markAllMentionsRead(): Promise<void> {
   await call(() => browserClients.tasks.markAllMentionsRead({}))
+}
+
+export async function listTaskActivity(taskId: string): Promise<TaskActivityRow[]> {
+  const response = await call(() => browserClients.tasks.listTaskActivity({ taskId }))
+  return response.entries.map((entry) => ({
+    id: entry.id,
+    label: entry.label,
+    actorName: entry.actorName,
+    detail: entry.detail,
+    createdAt: entry.createdAt,
+  }))
 }
 
 export async function listConversation(taskId: string): Promise<TaskConversation> {

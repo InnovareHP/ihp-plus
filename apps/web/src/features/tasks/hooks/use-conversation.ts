@@ -12,6 +12,7 @@ import {
   deleteAttachment,
   deleteComment,
   listConversation,
+  listTaskActivity,
   updateComment,
 } from '../rpc'
 import type {
@@ -25,6 +26,16 @@ const EMPTY: TaskConversation = { comments: [] }
 
 // A thread is a conversation: it is open precisely when someone may be answering on it.
 const CONVERSATION_POLL = 30 * 1000
+
+/** History only grows when something happened, so it is fetched once per open task. */
+export function useTaskActivity(taskId: string | undefined) {
+  return useQuery({
+    queryKey: taskKeys.activity(taskId ?? ''),
+    queryFn: () => listTaskActivity(taskId as string),
+    enabled: Boolean(taskId),
+    staleTime: 60 * 1000,
+  })
+}
 
 export function useConversation(taskId: string | undefined) {
   return useQuery({

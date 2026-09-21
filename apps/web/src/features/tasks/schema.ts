@@ -313,6 +313,14 @@ export interface TaskMentionFeed {
   unreadCount: number
 }
 
+export interface TaskActivityRow {
+  id: string
+  label: string
+  actorName: string
+  detail: string | undefined
+  createdAt: string
+}
+
 export interface TaskConversation {
   comments: TaskCommentRow[]
 }

@@ -8,36 +8,25 @@ import { Controller, useForm } from 'react-hook-form'
 import type { z } from 'zod'
 import { FormError } from '@/components/form-error'
 import {
+  attachmentProblem,
   commentFormSchema,
   type CommentFormValues,
   type TaskAssigneeRef,
-  type TaskAttachmentRow,
 } from '../schema'
 import { isSubmitShortcut } from '../utils/submit-shortcut'
-import { AttachmentChip } from './attachment-chip'
 import { NotifySelect } from './notify-select'
+import { StagedFileChip } from './staged-file-chip'
 
 export interface CommentComposerProps {
   colleagues: readonly TaskAssigneeRef[]
   isPosting: boolean
-  isUploading: boolean
-  onUpload: (file: File) => Promise<TaskAttachmentRow | undefined>
-  onPost: (values: {
-    body: string
-    mentionUserIds: string[]
-    attachments: TaskAttachmentRow[]
-  }) => Promise<void>
+  onPost: (values: { body: string; mentionUserIds: string[]; files: File[] }) => Promise<void>
 }
 
-export function CommentComposer({
-  colleagues,
-  isPosting,
-  isUploading,
-  onUpload,
-  onPost,
-}: CommentComposerProps) {
-  // Files exist on the server before the comment does, so they are held here until it posts.
-  const [pending, setPending] = useState<TaskAttachmentRow[]>([])
+export function CommentComposer({ colleagues, isPosting, onPost }: CommentComposerProps) {
+  // Held here, not uploaded: a file belongs to its comment, so nothing is stored until the
+  // comment is posted and a composer the user walks away from leaves nothing behind.
+  const [staged, setStaged] = useState<File[]>([])
 
   const {
     register,
@@ -53,22 +42,25 @@ export function CommentComposer({
     defaultValues: { body: '', mentionUserIds: [], attachmentIds: [] },
   })
 
-  async function attach(file: File | null) {
+  // The same rule the action enforces, said before the bytes travel rather than after.
+  function attach(file: File | null) {
     if (!file) return
-    const stored = await onUpload(file)
-    if (!stored) return
-    setPending((files) => [...files, stored])
+
+    const problem = attachmentProblem(file)
+    if (problem) {
+      setError('root', { message: problem })
+      return
+    }
+
+    setError('root', { message: '' })
+    setStaged((files) => [...files, file])
   }
 
   async function submit(values: CommentFormValues) {
     try {
-      await onPost({
-        body: values.body,
-        mentionUserIds: values.mentionUserIds,
-        attachments: pending,
-      })
+      await onPost({ body: values.body, mentionUserIds: values.mentionUserIds, files: staged })
       reset()
-      setPending([])
+      setStaged([])
     } catch (error) {
       setError('root', { message: error instanceof Error ? error.message : 'Could not post that.' })
     }
@@ -107,16 +99,16 @@ export function CommentComposer({
           )}
         />
 
-        {pending.length > 0 ? (
+        {staged.length > 0 ? (
           <Stack gap="xs">
             <Text size="sm" fw={500}>
               Attached to this comment
             </Text>
-            {pending.map((file) => (
-              <AttachmentChip
-                key={file.id}
+            {staged.map((file) => (
+              <StagedFileChip
+                key={`${file.name}-${file.lastModified}`}
                 file={file}
-                onRemove={() => setPending((files) => files.filter((one) => one.id !== file.id))}
+                onRemove={(one) => setStaged((files) => files.filter((each) => each !== one))}
               />
             ))}
           </Stack>
@@ -129,7 +121,6 @@ export function CommentComposer({
                 {...props}
                 type="button"
                 variant="default"
-                loading={isUploading}
                 leftSection={<IconPaperclip size={16} aria-hidden />}
               >
                 Attach a file

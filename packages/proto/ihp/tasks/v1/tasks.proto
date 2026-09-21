@@ -337,6 +337,23 @@ message MarkAllMentionsReadRequest {}
 
 message MarkAllMentionsReadResponse {}
 
+// The task's own history, in the words the shared timeline shows.
+message TaskActivityEntry {
+  string id = 1;
+  string label = 2;
+  string actor_name = 3;
+  optional string detail = 4;
+  string created_at = 5;
+}
+
+message ListTaskActivityRequest {
+  string task_id = 1;
+}
+
+message ListTaskActivityResponse {
+  repeated TaskActivityEntry entries = 1;
+}
+
 message ListCommentsRequest {
   string task_id = 1;
 }
@@ -409,6 +426,7 @@ service TasksService {
   rpc MarkMentionRead(MarkMentionReadRequest) returns (MarkMentionReadResponse);
   rpc MarkAllMentionsRead(MarkAllMentionsReadRequest) returns (MarkAllMentionsReadResponse);
 
+  rpc ListTaskActivity(ListTaskActivityRequest) returns (ListTaskActivityResponse);
   rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
   rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse);
   rpc UpdateComment(UpdateCommentRequest) returns (UpdateCommentResponse);

@@ -45,7 +45,7 @@ const prisma = vi.hoisted(() => ({
 }))
 
 const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
-const activity = vi.hoisted(() => ({ recordActivity: vi.fn() }))
+const activity = vi.hoisted(() => ({ recordActivity: vi.fn(), loadActivity: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/activity', () => activity)
@@ -57,6 +57,7 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 
 const {
   createStatus,
+  loadTaskActivity,
   loadMentions,
   markAllMentionsRead,
   markMentionRead,
@@ -209,6 +210,24 @@ describe('reorderTask', () => {
         statusId: 'status-gone',
       }),
     ).rejects.toMatchObject({ code: Code.NotFound })
+  })
+})
+
+describe('loadTaskActivity', () => {
+  it('checks the caller may see the task before handing over its history', async () => {
+    prisma.task.findFirst.mockResolvedValue(null)
+
+    await expect(loadTaskActivity('task-9')).rejects.toMatchObject({ code: Code.NotFound })
+    expect(activity.loadActivity).not.toHaveBeenCalled()
+  })
+
+  it('reads the history of that task alone', async () => {
+    prisma.task.findFirst.mockResolvedValue(TASK_RECORD)
+    activity.loadActivity.mockResolvedValue([])
+
+    await loadTaskActivity('task-1')
+
+    expect(activity.loadActivity).toHaveBeenCalledWith('org-1', 'task', 'task-1')
   })
 })
 

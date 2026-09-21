@@ -14,6 +14,7 @@ import {
   loadConversation,
   loadLists,
   loadMentions,
+  loadTaskActivity,
   loadProjects,
   loadStatuses,
   loadTasks,
@@ -189,6 +190,17 @@ export const tasks: ServiceImpl<typeof TasksService> = {
     await markAllMentionsRead()
     return {}
   },
+
+  listTaskActivity: async (request) => ({
+    entries: (await loadTaskActivity(request.taskId)).map((entry) => ({
+      $typeName: 'ihp.tasks.v1.TaskActivityEntry' as const,
+      id: entry.id,
+      label: entry.label,
+      actorName: entry.actorName,
+      detail: entry.detail,
+      createdAt: entry.createdAt,
+    })),
+  }),
 
   listComments: async (request) => {
     const conversation = await loadConversation(request.taskId)

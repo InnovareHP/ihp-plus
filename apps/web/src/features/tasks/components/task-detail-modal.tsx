@@ -1,7 +1,8 @@
 'use client'
 
-import { Badge, Box, Divider, Group, Modal, Skeleton, Stack, Text } from '@mantine/core'
+import { Accordion, Badge, Box, Divider, Group, Modal, Skeleton, Stack, Text } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
+import { ActivityTimeline } from '@/components/activity-timeline'
 import { EmptyState } from '@/components/empty-state'
 import { useCompleteSubtask, useCreateSubtask, useDeleteSubtask } from '../hooks/use-tasks'
 import {
@@ -10,7 +11,7 @@ import {
   useDeleteComment,
   useEditComment,
   usePostComment,
-  useUploadAttachment,
+  useTaskActivity,
 } from '../hooks/use-conversation'
 import {
   TASK_PRIORITY_COLORS,
@@ -19,7 +20,6 @@ import {
   type TaskRow,
 } from '../schema'
 import { resolveMentions } from '../utils/mentions'
-import { AttachmentChip } from './attachment-chip'
 import { CommentComposer } from './comment-composer'
 import { CommentItem } from './comment-item'
 import { SubtaskList } from './subtask-list'
@@ -36,20 +36,18 @@ export function TaskDetailModal({ task, viewer, colleagues, onClose }: TaskDetai
   // A dialog this tall has nowhere to go on a phone, so there it takes the screen.
   const narrow = useMediaQuery('(max-width: 48em)')
   const conversation = useConversation(taskId)
+  const activity = useTaskActivity(taskId)
 
   const post = usePostComment(taskId ?? '', viewer)
   const edit = useEditComment(taskId ?? '')
   const remove = useDeleteComment(taskId ?? '')
   const removeFile = useDeleteAttachment(taskId ?? '')
-  const upload = useUploadAttachment(taskId ?? '')
 
   const addSubtask = useCreateSubtask()
   const completeSubtask = useCompleteSubtask()
   const deleteSubtask = useDeleteSubtask()
 
   const comments = conversation.data?.comments ?? []
-  // Files posted inside a comment are shown there; this panel is the task's own shelf.
-  const taskFiles = (conversation.data?.attachments ?? []).filter((file) => !file.commentId)
 
   return (
     <Modal
@@ -103,24 +101,26 @@ export function TaskDetailModal({ task, viewer, colleagues, onClose }: TaskDetai
             onDelete={(subtask) => deleteSubtask.mutate({ subtaskId: subtask.id })}
           />
 
-          <Divider label="Files on this task" labelPosition="left" />
-
-          {taskFiles.length === 0 ? (
-            <Text size="sm" c="dimmed">
-              Nothing attached yet. Attach a file below and it lands here.
-            </Text>
-          ) : (
-            <Stack gap={6}>
-              {taskFiles.map((file) => (
-                <AttachmentChip
-                  key={file.id}
-                  file={file}
-                  isRemoving={removeFile.isPending}
-                  onRemove={() => void removeFile.remove(file.id)}
-                />
-              ))}
-            </Stack>
-          )}
+          {/* Folded away: history is reference, the conversation is the reason the panel is open. */}
+          <Accordion variant="contained" chevronPosition="left">
+            <Accordion.Item value="history">
+              <Accordion.Control>History</Accordion.Control>
+              <Accordion.Panel>
+                {activity.isPending ? (
+                  <Skeleton height={60} radius="md" aria-busy="true" />
+                ) : activity.isError ? (
+                  <Text size="sm" c="dimmed">
+                    Could not load the history of this task.
+                  </Text>
+                ) : (
+                  <ActivityTimeline
+                    items={activity.data ?? []}
+                    label={`History of task ${task.taskNumber}`}
+                  />
+                )}
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
 
           <Divider label="Conversation" labelPosition="left" />
 
@@ -173,15 +173,12 @@ export function TaskDetailModal({ task, viewer, colleagues, onClose }: TaskDetai
             <CommentComposer
               colleagues={colleagues}
               isPosting={post.isPending}
-              isUploading={upload.isPending}
-              onUpload={(file) => upload.mutateAsync(file).catch(() => undefined)}
               onPost={async (values) => {
                 await post.mutateAsync({
                   body: values.body,
                   mentionUserIds: values.mentionUserIds,
                   mentions: resolveMentions(values.mentionUserIds, colleagues),
-                  attachmentIds: values.attachments.map((file) => file.id),
-                  pendingFiles: values.attachments,
+                  files: values.files,
                 })
               }}
             />

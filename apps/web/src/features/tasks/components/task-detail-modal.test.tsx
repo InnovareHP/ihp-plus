@@ -9,6 +9,7 @@ const rpc = vi.hoisted(() => ({
   completeTask: vi.fn(),
   deleteTask: vi.fn(),
   listConversation: vi.fn(),
+  listTaskActivity: vi.fn(),
   createComment: vi.fn(),
   updateComment: vi.fn(),
   deleteComment: vi.fn(),
@@ -79,30 +80,111 @@ function renderModal(task: TaskRow = TASK) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  rpc.deleteAttachment.mockResolvedValue(undefined)
+  rpc.listTaskActivity.mockResolvedValue([
+    {
+      id: 'activity-1',
+      label: 'Task created',
+      actorName: 'Grace Hopper',
+      detail: 'Send the renewal pack',
+      createdAt: '2026-09-01T09:00:00.000Z',
+    },
+  ])
   rpc.listConversation.mockResolvedValue({
-    comments: [COMMENT],
-    attachments: [
+    comments: [
       {
-        id: 'file-1',
-        fileName: 'renewal-pack.pdf',
-        contentType: 'application/pdf',
-        fileSize: 48_000,
-        url: 'https://example.test/renewal-pack.pdf',
-        uploadedByName: 'Grace Hopper',
-        createdAt: '2026-09-02T00:00:00.000Z',
-        commentId: undefined,
+        ...COMMENT,
+        attachments: [
+          {
+            id: 'file-1',
+            fileName: 'renewal-pack.pdf',
+            contentType: 'application/pdf',
+            fileSize: 48_000,
+            url: 'https://example.test/renewal-pack.pdf',
+            uploadedByName: 'Grace Hopper',
+            createdAt: '2026-09-02T00:00:00.000Z',
+            commentId: 'comment-1',
+          },
+        ],
       },
     ],
   })
 })
 
 describe('TaskDetailModal', () => {
-  it('shows the task, its files and the conversation on it', async () => {
+  it('shows the conversation with each file under the comment it was posted in', async () => {
     renderModal()
 
-    expect(await screen.findByText('The figures are confirmed.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'renewal-pack.pdf' })).toBeInTheDocument()
-    expect(screen.getByText('47 KB · Grace Hopper')).toBeInTheDocument()
+    const body = await screen.findByText('The figures are confirmed.')
+    const comment = body.closest('li')
+    expect(comment).not.toBeNull()
+
+    expect(
+      within(comment as HTMLElement).getByRole('link', { name: 'renewal-pack.pdf' }),
+    ).toBeInTheDocument()
+    expect(within(comment as HTMLElement).getByText('47 KB · Grace Hopper')).toBeInTheDocument()
+    // The task has no shelf of its own any more: a file arrives with a comment or not at all.
+    expect(screen.queryByText('Files on this task')).not.toBeInTheDocument()
+  })
+
+  it('stores a picked file only once the comment carrying it is posted', async () => {
+    const user = userEvent.setup()
+    actions.uploadTaskAttachment.mockResolvedValue({ ok: true, data: { id: 'file-9' } })
+    rpc.createComment.mockResolvedValue({ ...COMMENT, id: 'comment-2' })
+
+    const { container } = renderModal()
+    await screen.findByText('The figures are confirmed.')
+
+    const picker = container.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(picker, new File(['pack'], 'renewal.pdf', { type: 'application/pdf' }))
+
+    // Held by the composer: nothing travels until there is a comment to attach it to.
+    expect(screen.getByText('renewal.pdf')).toBeInTheDocument()
+    expect(actions.uploadTaskAttachment).not.toHaveBeenCalled()
+
+    await user.type(screen.getByLabelText('Add a comment'), 'Here it is.')
+    await user.click(screen.getByRole('button', { name: 'Post comment' }))
+
+    await waitFor(() => expect(actions.uploadTaskAttachment).toHaveBeenCalledTimes(1))
+    await waitFor(() =>
+      expect(rpc.createComment).toHaveBeenCalledWith(
+        expect.objectContaining({ attachmentIds: ['file-9'] }),
+      ),
+    )
+  })
+
+  it('takes the stored file back when the comment it belonged to fails', async () => {
+    const user = userEvent.setup()
+    actions.uploadTaskAttachment.mockResolvedValue({ ok: true, data: { id: 'file-9' } })
+    rpc.createComment.mockRejectedValue(new Error('Could not post that comment.'))
+
+    const { container } = renderModal()
+    await screen.findByText('The figures are confirmed.')
+
+    const picker = container.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(picker, new File(['pack'], 'renewal.pdf', { type: 'application/pdf' }))
+    await user.type(screen.getByLabelText('Add a comment'), 'Here it is.')
+    await user.click(screen.getByRole('button', { name: 'Post comment' }))
+
+    // No comment means no file: the orphan the upload would leave is deleted again.
+    await waitFor(() => expect(rpc.deleteAttachment).toHaveBeenCalledWith('file-9'))
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Could not post that comment.')
+  })
+
+  it('refuses a file the storage rule would reject, before it travels', async () => {
+    const user = userEvent.setup()
+
+    const { container } = renderModal()
+    await screen.findByText('The figures are confirmed.')
+
+    const picker = container.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(picker, new File(['x'], 'macro.exe', { type: 'application/x-msdownload' }))
+
+    expect(
+      await screen.findByText('Attach a PDF, Office document, text file or image.'),
+    ).toBeInTheDocument()
+    expect(actions.uploadTaskAttachment).not.toHaveBeenCalled()
   })
 
   it('paints a comment before the server answers', async () => {
@@ -149,6 +231,18 @@ describe('TaskDetailModal', () => {
 
     expect(within(own as HTMLElement).getByText('You')).toBeInTheDocument()
     expect(within(theirs as HTMLElement).getByText('Grace Hopper')).toBeInTheDocument()
+  })
+
+  it("keeps the task's history one click away, folded", async () => {
+    const user = userEvent.setup()
+    renderModal()
+
+    const history = await screen.findByRole('button', { name: 'History' })
+    expect(history).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(history)
+
+    expect(await screen.findByText('Task created')).toBeInTheDocument()
   })
 
   it('lists the subtasks with how far the work has got', async () => {

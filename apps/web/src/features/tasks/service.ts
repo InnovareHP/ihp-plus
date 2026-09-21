@@ -2,7 +2,7 @@ import { db } from '@ihp/db'
 import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { getSession, membershipOf, readProfile } from '@/lib/auth-guard'
-import { recordActivity } from '@/lib/activity'
+import { loadActivity, recordActivity } from '@/lib/activity'
 import { deleteObject, objectUrl } from '@/lib/s3'
 import { notifyComment } from './notifications'
 import { mentionsEveryone } from './utils/mentions'
@@ -23,6 +23,7 @@ import {
   type TaskAttachmentRow,
   type TaskCommentRow,
   type TaskConversation,
+  type TaskActivityRow,
   type TaskListRow,
   type TaskMentionFeed,
   type TaskPriority,
@@ -1024,6 +1025,14 @@ export async function markAllMentionsRead(): Promise<void> {
     },
     data: { readAt: new Date() },
   })
+}
+
+/** History is per task and already recorded; this only checks the caller may see that task. */
+export async function loadTaskActivity(taskId: string): Promise<TaskActivityRow[]> {
+  const caller = await requireMember()
+  await taskOrThrow(caller, taskId)
+
+  return loadActivity(caller.organizationId, 'task', taskId)
 }
 
 export async function loadConversation(taskId: string): Promise<TaskConversation> {
