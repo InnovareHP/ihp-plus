@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import { act, render, screen, userEvent, waitFor } from '@/test/render'
+import { act, render, screen, userEvent, waitFor, within } from '@/test/render'
 import type { TaskCommentRow, TaskRow, TaskStatusRow } from '../schema'
-import { TaskDetailDrawer } from './task-detail-drawer'
+import { TaskDetailModal } from './task-detail-modal'
 
 const rpc = vi.hoisted(() => ({
   createTask: vi.fn(),
@@ -71,9 +71,9 @@ const COMMENT: TaskCommentRow = {
 const VIEWER = { userId: 'user-1', name: 'Dana Reyes' }
 const COLLEAGUES = [{ userId: 'user-2', name: 'Grace Hopper' }]
 
-function renderDrawer(task: TaskRow = TASK) {
+function renderModal(task: TaskRow = TASK) {
   return render(
-    <TaskDetailDrawer task={task} viewer={VIEWER} colleagues={COLLEAGUES} onClose={vi.fn()} />,
+    <TaskDetailModal task={task} viewer={VIEWER} colleagues={COLLEAGUES} onClose={vi.fn()} />,
   )
 }
 
@@ -96,9 +96,9 @@ beforeEach(() => {
   })
 })
 
-describe('TaskDetailDrawer', () => {
+describe('TaskDetailModal', () => {
   it('shows the task, its files and the conversation on it', async () => {
-    renderDrawer()
+    renderModal()
 
     expect(await screen.findByText('The figures are confirmed.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'renewal-pack.pdf' })).toBeInTheDocument()
@@ -114,20 +114,45 @@ describe('TaskDetailDrawer', () => {
       }),
     )
 
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.type(screen.getByLabelText('Add a comment'), 'Chasing this today.')
     await user.click(screen.getByRole('button', { name: 'Post comment' }))
 
     expect(await screen.findByText('Chasing this today.')).toBeInTheDocument()
-    expect(screen.getByText('Dana Reyes')).toBeInTheDocument()
+    // Own words are bylined "You", not with the viewer's own name back at them.
+    expect(screen.getByText('You')).toBeInTheDocument()
 
     resolve?.({ ...COMMENT, id: 'comment-2', body: 'Chasing this today.' })
   })
 
+  it("tells the viewer's own words apart from a colleague's", async () => {
+    rpc.listConversation.mockResolvedValue({
+      comments: [
+        COMMENT,
+        {
+          ...COMMENT,
+          id: 'comment-2',
+          authorId: VIEWER.userId,
+          authorName: VIEWER.name,
+          body: 'On it.',
+        },
+      ],
+      attachments: [],
+    })
+
+    renderModal()
+
+    const own = (await screen.findByText('On it.')).closest('li')
+    const theirs = screen.getByText('The figures are confirmed.').closest('li')
+
+    expect(within(own as HTMLElement).getByText('You')).toBeInTheDocument()
+    expect(within(theirs as HTMLElement).getByText('Grace Hopper')).toBeInTheDocument()
+  })
+
   it('lists the subtasks with how far the work has got', async () => {
-    renderDrawer({
+    renderModal({
       ...TASK,
       subtasks: [
         { id: 'subtask-1', name: 'Pull the figures', isDone: true, position: 1024 },
@@ -143,7 +168,7 @@ describe('TaskDetailDrawer', () => {
     const user = userEvent.setup()
     rpc.createTask.mockResolvedValue({ ...TASK, id: 'task-2', name: 'Book the courier' })
 
-    renderDrawer()
+    renderModal()
     await user.type(await screen.findByLabelText('Add a subtask'), 'Book the courier')
     await user.click(screen.getByRole('button', { name: 'Add' }))
 
@@ -162,7 +187,7 @@ describe('TaskDetailDrawer', () => {
     const user = userEvent.setup()
     rpc.completeTask.mockResolvedValue({ ...TASK, id: 'subtask-1' })
 
-    renderDrawer({
+    renderModal({
       ...TASK,
       subtasks: [{ id: 'subtask-1', name: 'Pull the figures', isDone: false, position: 1024 }],
     })
@@ -176,7 +201,7 @@ describe('TaskDetailDrawer', () => {
     const user = userEvent.setup()
     rpc.createComment.mockRejectedValue(new Error('The task is no longer there.'))
 
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.type(screen.getByLabelText('Add a comment'), 'Chasing this today.')
@@ -190,7 +215,7 @@ describe('TaskDetailDrawer', () => {
 
   it('refuses an empty comment and announces why', async () => {
     const user = userEvent.setup()
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.click(screen.getByRole('button', { name: 'Post comment' }))
@@ -203,7 +228,7 @@ describe('TaskDetailDrawer', () => {
     const user = userEvent.setup()
     rpc.createComment.mockResolvedValue({ ...COMMENT, id: 'comment-2' })
 
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.type(screen.getByLabelText('Add a comment'), 'Can you confirm')
@@ -225,7 +250,7 @@ describe('TaskDetailDrawer', () => {
     const user = userEvent.setup()
     rpc.createComment.mockResolvedValue({ ...COMMENT, id: 'comment-2' })
 
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.type(screen.getByLabelText('Add a comment'), 'Board review is Friday')
@@ -260,7 +285,7 @@ describe('TaskDetailDrawer', () => {
     })
     rpc.updateComment.mockResolvedValue({ ...COMMENT, body: 'The figures are signed off.' })
 
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
     expect(screen.getByText('Notified')).toBeInTheDocument()
 
@@ -281,7 +306,7 @@ describe('TaskDetailDrawer', () => {
     const user = userEvent.setup()
     rpc.createComment.mockResolvedValue({ ...COMMENT, id: 'comment-2' })
 
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.type(screen.getByLabelText('Add a comment'), 'Chasing this today.')
@@ -301,7 +326,7 @@ describe('TaskDetailDrawer', () => {
       attachments: [],
     })
 
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.click(screen.getByRole('button', { name: 'Actions for your comment' }))
@@ -327,7 +352,7 @@ describe('TaskDetailDrawer', () => {
     })
     rpc.deleteComment.mockResolvedValue(undefined)
 
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.click(screen.getByRole('button', { name: 'Actions for your comment' }))
@@ -347,7 +372,7 @@ describe('TaskDetailDrawer', () => {
     })
     rpc.updateComment.mockRejectedValue(new Error('That comment is no longer there.'))
 
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.click(screen.getByRole('button', { name: 'Actions for your comment' }))
@@ -365,7 +390,7 @@ describe('TaskDetailDrawer', () => {
     const user = userEvent.setup()
     rpc.createComment.mockReturnValue(new Promise(() => {}))
 
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.type(screen.getByLabelText('Add a comment'), 'Chasing this today.')
@@ -375,7 +400,7 @@ describe('TaskDetailDrawer', () => {
   })
 
   it('offers no edit or delete on someone else’s comment', async () => {
-    renderDrawer()
+    renderModal()
     await screen.findByText('The figures are confirmed.')
 
     expect(
@@ -384,7 +409,7 @@ describe('TaskDetailDrawer', () => {
   })
 
   it('has no axe violations', async () => {
-    const { container } = renderDrawer()
+    const { container } = renderModal()
     await screen.findByText('The figures are confirmed.')
     expect(await axe(container)).toHaveNoViolations()
   })
@@ -396,7 +421,7 @@ describe('TaskDetailDrawer', () => {
       attachments: [],
     })
 
-    const { container } = renderDrawer()
+    const { container } = renderModal()
     await screen.findByText('The figures are confirmed.')
 
     await user.click(screen.getByRole('button', { name: 'Actions for your comment' }))

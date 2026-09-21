@@ -1,6 +1,6 @@
 'use client'
 
-import { ActionIcon, Badge, Group, Menu, Paper, Stack, Text } from '@mantine/core'
+import { ActionIcon, Avatar, Badge, Group, Menu, Paper, Stack, Text } from '@mantine/core'
 import { IconDotsVertical, IconPencil, IconTrash } from '@tabler/icons-react'
 import { useState } from 'react'
 import { AttachmentChip } from './attachment-chip'
@@ -32,16 +32,34 @@ export function CommentItem({
   onRemoveAttachment,
 }: CommentItemProps) {
   const [editing, setEditing] = useState(false)
+  const own = comment.authorId === viewerId
   // A comment the server has not acknowledged has no id to edit or delete by yet.
-  const mine = comment.authorId === viewerId && !comment.isSending
+  const mine = own && !comment.isSending
 
   return (
-    <Paper component="li" withBorder radius="md" p="sm" opacity={comment.isSending ? 0.6 : 1}>
+    <Paper
+      component="li"
+      withBorder
+      radius="md"
+      p="sm"
+      opacity={comment.isSending ? 0.6 : 1}
+      // Tinted as well as named: the byline says "You", so the colour is not carrying it alone.
+      style={{
+        backgroundColor: own ? 'var(--mantine-color-brand-light)' : undefined,
+        borderColor: own ? 'var(--mantine-color-brand-light-hover)' : undefined,
+      }}
+    >
       <Stack gap="xs">
         <Group justify="space-between" wrap="nowrap" align="baseline">
-          <Group gap="xs" align="baseline" wrap="wrap">
+          <Group gap="xs" align="center" wrap="wrap">
+            <Avatar
+              size={24}
+              radius="xl"
+              color={own ? 'brand' : 'gray'}
+              name={comment.authorName}
+            />
             <Text size="sm" fw={600}>
-              {comment.authorName}
+              {own ? 'You' : comment.authorName}
             </Text>
             <Text size="xs" c="dimmed">
               {describeMoment(comment.createdAt)}

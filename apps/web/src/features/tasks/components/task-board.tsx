@@ -33,7 +33,7 @@ import {
   type TaskRow,
 } from '../schema'
 import { DeleteTaskModal } from './delete-task-modal'
-import { TaskDetailDrawer } from './task-detail-drawer'
+import { TaskDetailModal } from './task-detail-modal'
 import { TaskKanban } from './task-kanban'
 import { ListFormModal } from './list-form-modal'
 import { ProjectFormModal } from './project-form-modal'
@@ -358,7 +358,7 @@ export function TaskBoard() {
         </Stack>
       </PageSection>
 
-      <TaskDetailDrawer
+      <TaskDetailModal
         task={openTask}
         viewer={viewer}
         colleagues={colleagues}

@@ -1,6 +1,7 @@
 'use client'
 
-import { Badge, Box, Divider, Drawer, Group, Skeleton, Stack, Text } from '@mantine/core'
+import { Badge, Box, Divider, Group, Modal, Skeleton, Stack, Text } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { EmptyState } from '@/components/empty-state'
 import { useCompleteSubtask, useCreateSubtask, useDeleteSubtask } from '../hooks/use-tasks'
 import {
@@ -23,15 +24,17 @@ import { CommentComposer } from './comment-composer'
 import { CommentItem } from './comment-item'
 import { SubtaskList } from './subtask-list'
 
-export interface TaskDetailDrawerProps {
+export interface TaskDetailModalProps {
   task: TaskRow | null
   viewer: TaskAssigneeRef
   colleagues: readonly TaskAssigneeRef[]
   onClose: () => void
 }
 
-export function TaskDetailDrawer({ task, viewer, colleagues, onClose }: TaskDetailDrawerProps) {
+export function TaskDetailModal({ task, viewer, colleagues, onClose }: TaskDetailModalProps) {
   const taskId = task?.id
+  // A dialog this tall has nowhere to go on a phone, so there it takes the screen.
+  const narrow = useMediaQuery('(max-width: 48em)')
   const conversation = useConversation(taskId)
 
   const post = usePostComment(taskId ?? '', viewer)
@@ -49,13 +52,16 @@ export function TaskDetailDrawer({ task, viewer, colleagues, onClose }: TaskDeta
   const taskFiles = (conversation.data?.attachments ?? []).filter((file) => !file.commentId)
 
   return (
-    <Drawer
+    <Modal
       opened={task !== null}
       onClose={onClose}
-      position="right"
-      size="lg"
+      size="xl"
+      centered
+      fullScreen={narrow}
       title={task ? `#${task.taskNumber} ${task.name}` : 'Task'}
       closeButtonProps={{ 'aria-label': 'Close this task' }}
+      // The conversation grows without end; the dialog scrolls rather than the page behind it.
+      styles={{ content: { maxHeight: '85vh' } }}
     >
       {task ? (
         <Stack gap="md">
@@ -182,6 +188,6 @@ export function TaskDetailDrawer({ task, viewer, colleagues, onClose }: TaskDeta
           </Box>
         </Stack>
       ) : null}
-    </Drawer>
+    </Modal>
   )
 }
