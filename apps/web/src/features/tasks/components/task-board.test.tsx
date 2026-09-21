@@ -211,6 +211,25 @@ describe('TaskBoard', () => {
     ).not.toBeChecked()
   })
 
+  it('opens the task, and its conversation, from a row in the list view', async () => {
+    const user = userEvent.setup()
+    await renderBoard()
+
+    await user.click(screen.getByRole('button', { name: 'Send the renewal pack' }))
+
+    expect(nav.replace).toHaveBeenCalledWith(
+      expect.stringContaining('task=task-1'),
+      expect.anything(),
+    )
+  })
+
+  it('says on the row that a task carries a conversation', async () => {
+    await renderBoard()
+
+    expect(screen.getByLabelText('2 comments')).toBeInTheDocument()
+    expect(screen.getByLabelText('1 files')).toBeInTheDocument()
+  })
+
   it('asks before deleting, because a deleted task does not come back', async () => {
     const user = userEvent.setup()
     rpc.deleteTask.mockResolvedValue(undefined)

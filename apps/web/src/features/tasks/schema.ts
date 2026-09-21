@@ -253,6 +253,11 @@ export interface TaskConversation {
  * the body is left as typed — re-parsing a display name out of prose is how you mention the
  * wrong Grace.
  */
+/** The one mention that names nobody in particular: it stands for the whole organization. */
+export const MENTION_EVERYONE = 'everyone'
+
+export const MENTION_EVERYONE_LABEL = 'Everyone in this organization'
+
 export const MENTION_PATTERN = /@([\p{L}][\p{L}\p{N}'’.-]*(?: [\p{L}][\p{L}\p{N}'’.-]*)?)/gu
 
 export function mentionedNames(body: string): string[] {

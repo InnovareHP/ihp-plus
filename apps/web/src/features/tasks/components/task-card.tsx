@@ -48,10 +48,16 @@ export function TaskCard({
       p="sm"
       draggable
       onDragStart={() => onDragStart(task)}
+      onClick={(event) => {
+        // The menu and the name are controls of their own; anywhere else on the card opens it.
+        if ((event.target as HTMLElement).closest('button, a')) return
+        onOpen(task)
+      }}
+      style={{ cursor: 'pointer' }}
     >
       <Stack gap={6}>
         <Group justify="space-between" wrap="nowrap" align="flex-start" gap="xs">
-          {/* The whole card is not the control: a drag target that is also a button fires both. */}
+          {/* The name stays a real button: it is the keyboard path into the task. */}
           <Text
             component="button"
             type="button"

@@ -15,6 +15,7 @@ import {
 } from '../rpc'
 import type {
   CommentFormValues,
+  TaskAssigneeRef,
   TaskAttachmentRow,
   TaskCommentRow,
   TaskConversation,
@@ -69,7 +70,9 @@ function useConversationMutation<TVariables>(options: {
 }
 
 export function usePostComment(taskId: string, author: { userId: string; name: string }) {
-  return useConversationMutation<CommentFormValues & { pendingFiles: TaskAttachmentRow[] }>({
+  return useConversationMutation<
+    CommentFormValues & { pendingFiles: TaskAttachmentRow[]; mentions: TaskAssigneeRef[] }
+  >({
     taskId,
     mutationFn: (values) =>
       createComment({
@@ -87,7 +90,7 @@ export function usePostComment(taskId: string, author: { userId: string; name: s
         authorId: author.userId,
         authorName: author.name,
         body: values.body,
-        mentions: [],
+        mentions: values.mentions,
         attachments: values.pendingFiles.map((file) => ({ ...file, commentId: id })),
         editedAt: undefined,
         createdAt: new Date().toISOString(),
@@ -109,15 +112,25 @@ export function useEditComment(taskId: string) {
   return useConversationMutation<{
     commentId: string
     body: string
-    mentionUserIds: readonly string[]
+    mentions: readonly TaskAssigneeRef[]
   }>({
     taskId,
-    mutationFn: (values) => updateComment(values.commentId, values.body, values.mentionUserIds),
+    mutationFn: (values) =>
+      updateComment(
+        values.commentId,
+        values.body,
+        values.mentions.map((person) => person.userId),
+      ),
     apply: (conversation, values) => ({
       ...conversation,
       comments: conversation.comments.map((comment) =>
         comment.id === values.commentId
-          ? { ...comment, body: values.body, editedAt: new Date().toISOString() }
+          ? {
+              ...comment,
+              body: values.body,
+              mentions: [...values.mentions],
+              editedAt: new Date().toISOString(),
+            }
           : comment,
       ),
     }),

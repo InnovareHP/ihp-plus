@@ -94,6 +94,24 @@ describe('TaskKanban', () => {
     expect(handlers.onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'task-1' }))
   })
 
+  it('opens the task when the card itself is clicked, not only its name', async () => {
+    const user = userEvent.setup()
+    renderBoard([task()])
+
+    await user.click(screen.getByText('Unassigned'))
+
+    expect(handlers.onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'task-1' }))
+  })
+
+  it('leaves the card alone when its menu is used', async () => {
+    const user = userEvent.setup()
+    renderBoard([task()])
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Send the renewal pack' }))
+
+    expect(handlers.onOpen).not.toHaveBeenCalled()
+  })
+
   it('badges the conversation so a card says what is on it', () => {
     renderBoard([task({ commentCount: 3, attachmentCount: 2 })])
 

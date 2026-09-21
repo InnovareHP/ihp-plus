@@ -1,20 +1,21 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, FileButton, Group, Stack, Text, Textarea } from '@mantine/core'
+import { Button, FileButton, Group, MultiSelect, Stack, Text, Textarea } from '@mantine/core'
 import { IconPaperclip, IconSend } from '@tabler/icons-react'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import type { z } from 'zod'
 import { FormError } from '@/components/form-error'
 import {
   commentFormSchema,
+  MENTION_EVERYONE,
+  MENTION_EVERYONE_LABEL,
   type CommentFormValues,
   type TaskAssigneeRef,
   type TaskAttachmentRow,
 } from '../schema'
 import { AttachmentChip } from './attachment-chip'
-import { MentionPicker } from './mention-picker'
 
 export interface CommentComposerProps {
   colleagues: readonly TaskAssigneeRef[]
@@ -37,15 +38,13 @@ export function CommentComposer({
 }: CommentComposerProps) {
   // Files exist on the server before the comment does, so they are held here until it posts.
   const [pending, setPending] = useState<TaskAttachmentRow[]>([])
-  const [mentioned, setMentioned] = useState<TaskAssigneeRef[]>([])
 
   const {
     register,
     handleSubmit,
     reset,
-    setValue,
+    control,
     setError,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<z.input<typeof commentFormSchema>, unknown, CommentFormValues>({
     resolver: zodResolver(commentFormSchema),
@@ -53,22 +52,6 @@ export function CommentComposer({
     reValidateMode: 'onChange',
     defaultValues: { body: '', mentionUserIds: [], attachmentIds: [] },
   })
-
-  const body = watch('body')
-
-  function mention(person: TaskAssigneeRef) {
-    if (mentioned.some((one) => one.userId === person.userId)) return
-    const next = [...mentioned, person]
-    setMentioned(next)
-    setValue('body', `${body ? `${body.replace(/\s*$/, '')} ` : ''}@${person.name} `, {
-      shouldDirty: true,
-      shouldValidate: true,
-    })
-    setValue(
-      'mentionUserIds',
-      next.map((one) => one.userId),
-    )
-  }
 
   async function attach(file: File | null) {
     if (!file) return
@@ -81,15 +64,11 @@ export function CommentComposer({
     try {
       await onPost({
         body: values.body,
-        // Only the people still named in the body are notified, so deleting the @ undoes it.
-        mentionUserIds: mentioned
-          .filter((person) => values.body.includes(`@${person.name}`))
-          .map((person) => person.userId),
+        mentionUserIds: values.mentionUserIds,
         attachments: pending,
       })
       reset()
       setPending([])
-      setMentioned([])
     } catch (error) {
       setError('root', { message: error instanceof Error ? error.message : 'Could not post that.' })
     }
@@ -111,7 +90,30 @@ export function CommentComposer({
           errorProps={{ role: 'alert' }}
         />
 
-        <MentionPicker colleagues={colleagues} onPick={mention} />
+        <Controller
+          control={control}
+          name="mentionUserIds"
+          render={({ field }) => (
+            <MultiSelect
+              label="Notify"
+              description="They get an email with this comment. @everyone reaches the whole team."
+              placeholder={field.value?.length ? undefined : 'Nobody yet'}
+              data={[
+                { value: MENTION_EVERYONE, label: MENTION_EVERYONE_LABEL },
+                ...colleagues.map((person) => ({ value: person.userId, label: person.name })),
+              ]}
+              value={[...(field.value ?? [])]}
+              // Naming people on top of everyone reaches nobody extra, so the wider pick wins.
+              onChange={(next) =>
+                field.onChange(next.includes(MENTION_EVERYONE) ? [MENTION_EVERYONE] : next)
+              }
+              onBlur={field.onBlur}
+              searchable
+              clearable
+              nothingFoundMessage="Nobody by that name"
+            />
+          )}
+        />
 
         {pending.length > 0 ? (
           <Stack gap="xs">

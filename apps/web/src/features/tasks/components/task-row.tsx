@@ -5,6 +5,8 @@ import {
   IconArrowDown,
   IconArrowUp,
   IconDotsVertical,
+  IconMessage,
+  IconPaperclip,
   IconPencil,
   IconTrash,
 } from '@tabler/icons-react'
@@ -23,6 +25,7 @@ export interface TaskRowProps {
   /** Disabled at the ends of the list, so the order of the board is never ambiguous. */
   canMoveUp: boolean
   canMoveDown: boolean
+  onOpen: (task: Task) => void
   onToggleComplete: (task: Task, completed: boolean) => void
   onMoveUp: (task: Task) => void
   onMoveDown: (task: Task) => void
@@ -34,6 +37,7 @@ export function TaskRow({
   task,
   canMoveUp,
   canMoveDown,
+  onOpen,
   onToggleComplete,
   onMoveUp,
   onMoveDown,
@@ -55,10 +59,21 @@ export function TaskRow({
             mt={4}
           />
           <Stack gap={4} style={{ minWidth: 0 }}>
+            {/* The row's own control is its name: the checkbox and the menu sit beside it. */}
             <Text
+              component="button"
+              type="button"
               fw={500}
+              ta="left"
               td={done ? 'line-through' : undefined}
-              style={{ wordBreak: 'break-word' }}
+              onClick={() => onOpen(task)}
+              style={{
+                background: 'none',
+                border: 0,
+                padding: 0,
+                cursor: 'pointer',
+                wordBreak: 'break-word',
+              }}
             >
               {task.name}
             </Text>
@@ -83,6 +98,26 @@ export function TaskRow({
                 <Text size="xs" c="dimmed">
                   {assignees}
                 </Text>
+              ) : null}
+              {task.commentCount > 0 ? (
+                <Badge
+                  size="sm"
+                  variant="default"
+                  leftSection={<IconMessage size={12} aria-hidden />}
+                  aria-label={`${task.commentCount} comments`}
+                >
+                  {task.commentCount}
+                </Badge>
+              ) : null}
+              {task.attachmentCount > 0 ? (
+                <Badge
+                  size="sm"
+                  variant="default"
+                  leftSection={<IconPaperclip size={12} aria-hidden />}
+                  aria-label={`${task.attachmentCount} files`}
+                >
+                  {task.attachmentCount}
+                </Badge>
               ) : null}
             </Group>
           </Stack>
@@ -112,6 +147,12 @@ export function TaskRow({
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<IconMessage size={16} aria-hidden />}
+                onClick={() => onOpen(task)}
+              >
+                Open task
+              </Menu.Item>
               <Menu.Item
                 leftSection={<IconPencil size={16} aria-hidden />}
                 onClick={() => onEdit(task)}

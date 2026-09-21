@@ -12,6 +12,7 @@ export interface TaskListSectionProps {
   list: TaskListRow
   tasks: readonly Task[]
   onAdd: (list: TaskListRow) => void
+  onOpen: (task: Task) => void
   onToggleComplete: (task: Task, completed: boolean) => void
   onMove: (task: Task, direction: 'up' | 'down') => void
   onEdit: (task: Task) => void
@@ -22,6 +23,7 @@ export function TaskListSection({
   list,
   tasks,
   onAdd,
+  onOpen,
   onToggleComplete,
   onMove,
   onEdit,
@@ -69,6 +71,7 @@ export function TaskListSection({
               items={group.items}
               // Closed work is history; it stays folded away until someone asks for it.
               defaultOpen={group.status.category === 'active'}
+              onOpen={onOpen}
               onToggleComplete={onToggleComplete}
               onMove={onMove}
               onEdit={onEdit}

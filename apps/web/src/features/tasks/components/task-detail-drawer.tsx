@@ -11,6 +11,7 @@ import {
   useUploadAttachment,
 } from '../hooks/use-conversation'
 import {
+  MENTION_EVERYONE,
   TASK_PRIORITY_COLORS,
   TASK_PRIORITY_LABELS,
   type TaskAssigneeRef,
@@ -119,7 +120,7 @@ export function TaskDetailDrawer({ task, viewer, colleagues, onClose }: TaskDeta
                   comment={comment}
                   viewerId={viewer.userId}
                   isSaving={edit.isPending}
-                  onEdit={(commentId, body) => edit.mutate({ commentId, body, mentionUserIds: [] })}
+                  onEdit={(commentId, body, mentions) => edit.mutate({ commentId, body, mentions })}
                   onDelete={(one) => remove.mutate({ commentId: one.id })}
                   onRemoveAttachment={(file) => removeFile.mutate({ attachmentId: file.id })}
                 />
@@ -136,6 +137,10 @@ export function TaskDetailDrawer({ task, viewer, colleagues, onClose }: TaskDeta
               await post.mutateAsync({
                 body: values.body,
                 mentionUserIds: values.mentionUserIds,
+                // The server expands @everyone against the org; the thread shows who is loaded here.
+                mentions: values.mentionUserIds.includes(MENTION_EVERYONE)
+                  ? [...colleagues]
+                  : colleagues.filter((person) => values.mentionUserIds.includes(person.userId)),
                 attachmentIds: values.attachments.map((file) => file.id),
                 pendingFiles: values.attachments,
               })

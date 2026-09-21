@@ -5,11 +5,13 @@ import { getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { recordActivity } from '@/lib/activity'
 import { deleteObject, objectUrl } from '@/lib/s3'
 import { notifyComment } from './notifications'
+import { mentionsEveryone } from './utils/mentions'
 import {
   commentFormSchema,
   DEFAULT_TASK_LIST_NAME,
   DEFAULT_TASK_STATUSES,
   listFormSchema,
+  MENTION_EVERYONE,
   projectFormSchema,
   taskFormSchema,
   type CommentFormValues,
@@ -642,17 +644,24 @@ function requireAuthor(caller: Caller, authorId: string) {
 }
 
 // The ids the composer sent are checked against the organization rather than trusted: a mention
-// emails someone, so an id from anywhere else must never reach the mail queue.
-async function colleagueIds(caller: Caller, userIds: readonly string[]) {
-  const wanted = [...new Set(userIds)].filter((id) => id !== caller.userId)
-  if (wanted.length === 0) return []
+// emails someone, so an id from anywhere else must never reach the mail queue. "@everyone" is
+// expanded here rather than on the client, which only knows the people it happens to have loaded.
+async function colleagueIds(caller: Caller, userIds: readonly string[], body: string) {
+  const everyone = mentionsEveryone(body, userIds)
+  const wanted = [...new Set(userIds)].filter(
+    (id) => id !== caller.userId && id !== MENTION_EVERYONE,
+  )
+  if (!everyone && wanted.length === 0) return []
 
   const members = await db.member.findMany({
-    where: { organizationId: caller.organizationId, userId: { in: wanted } },
+    where: {
+      organizationId: caller.organizationId,
+      ...(everyone ? {} : { userId: { in: wanted } }),
+    },
     select: { userId: true },
   })
 
-  return members.map((member) => member.userId)
+  return members.map((member) => member.userId).filter((userId) => userId !== caller.userId)
 }
 
 async function readComment(commentId: string): Promise<TaskCommentRow> {
@@ -715,7 +724,7 @@ export async function createComment(
   }
 
   const task = await taskOrThrow(caller, values.taskId)
-  const mentionedIds = await colleagueIds(caller, parsed.data.mentionUserIds)
+  const mentionedIds = await colleagueIds(caller, parsed.data.mentionUserIds, parsed.data.body)
 
   const comment = await db.taskComment.create({
     data: {
@@ -787,7 +796,7 @@ export async function updateComment(
     )
   }
 
-  const mentionedIds = await colleagueIds(caller, parsed.data.mentionUserIds)
+  const mentionedIds = await colleagueIds(caller, parsed.data.mentionUserIds, parsed.data.body)
   const added = mentionedIds.filter(
     (userId) => !existing.mentions.some((mention) => mention.userId === userId),
   )

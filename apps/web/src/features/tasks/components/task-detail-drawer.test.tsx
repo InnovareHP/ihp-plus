@@ -146,7 +146,7 @@ describe('TaskDetailDrawer', () => {
     expect(rpc.createComment).not.toHaveBeenCalled()
   })
 
-  it('names a colleague in the body when they are mentioned', async () => {
+  it('notifies whoever the composer names, leaving the body as typed', async () => {
     const user = userEvent.setup()
     rpc.createComment.mockResolvedValue({ ...COMMENT, id: 'comment-2' })
 
@@ -154,17 +154,73 @@ describe('TaskDetailDrawer', () => {
     await screen.findByText('The figures are confirmed.')
 
     await user.type(screen.getByLabelText('Add a comment'), 'Can you confirm')
-    await user.click(screen.getByRole('button', { name: 'Mention someone' }))
-    await user.click(screen.getByRole('menuitem', { name: 'Grace Hopper' }))
+    await user.click(screen.getByRole('combobox', { name: 'Notify' }))
+    await user.click(await screen.findByRole('option', { name: 'Grace Hopper' }))
     await user.click(screen.getByRole('button', { name: 'Post comment' }))
 
     await waitFor(() =>
       expect(rpc.createComment).toHaveBeenCalledWith(
         expect.objectContaining({
-          body: 'Can you confirm @Grace Hopper',
+          body: 'Can you confirm',
           mentionUserIds: ['user-2'],
         }),
       ),
+    )
+  })
+
+  it('notifies the whole organization when everyone is picked', async () => {
+    const user = userEvent.setup()
+    rpc.createComment.mockResolvedValue({ ...COMMENT, id: 'comment-2' })
+
+    renderDrawer()
+    await screen.findByText('The figures are confirmed.')
+
+    await user.type(screen.getByLabelText('Add a comment'), 'Board review is Friday')
+    await user.click(screen.getByRole('combobox', { name: 'Notify' }))
+    await user.click(await screen.findByRole('option', { name: 'Grace Hopper' }))
+    await user.click(await screen.findByRole('option', { name: 'Everyone in this organization' }))
+    await user.click(screen.getByRole('button', { name: 'Post comment' }))
+
+    await waitFor(() =>
+      expect(rpc.createComment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: 'Board review is Friday',
+          // The wider pick replaces the names it already covers.
+          mentionUserIds: ['everyone'],
+        }),
+      ),
+    )
+  })
+
+  it('keeps the people a comment named when it is edited', async () => {
+    const user = userEvent.setup()
+    rpc.listConversation.mockResolvedValue({
+      comments: [
+        {
+          ...COMMENT,
+          authorId: VIEWER.userId,
+          authorName: VIEWER.name,
+          mentions: [{ userId: 'user-2', name: 'Grace Hopper' }],
+        },
+      ],
+      attachments: [],
+    })
+    rpc.updateComment.mockResolvedValue({ ...COMMENT, body: 'The figures are signed off.' })
+
+    renderDrawer()
+    await screen.findByText('The figures are confirmed.')
+    expect(screen.getByText('Notified')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Actions for your comment' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Edit' }))
+    await user.clear(screen.getByLabelText('Edit your comment'))
+    await user.type(screen.getByLabelText('Edit your comment'), 'The figures are signed off.')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    await waitFor(() =>
+      expect(rpc.updateComment).toHaveBeenCalledWith('comment-1', 'The figures are signed off.', [
+        'user-2',
+      ]),
     )
   })
 

@@ -340,6 +340,7 @@ export function TaskBoard() {
                   list={list}
                   tasks={tasksByList.get(list.id) ?? []}
                   onAdd={(target) => setComposing({ list: target, task: null })}
+                  onOpen={(task) => setQuery({ task: task.id })}
                   onToggleComplete={(task, completed) =>
                     complete.mutate({ taskId: task.id, completed, statuses: statusRows })
                   }
