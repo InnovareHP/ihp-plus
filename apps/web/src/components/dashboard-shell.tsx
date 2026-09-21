@@ -65,7 +65,7 @@ export function DashboardShell({
       padding={0}
       header={{ height: 60 }}
       navbar={{
-        width: 272,
+        width: 300,
         breakpoint: 'sm',
         collapsed: { mobile: !navOpened, desktop: !sidebarShown },
       }}
