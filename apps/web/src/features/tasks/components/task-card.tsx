@@ -13,6 +13,7 @@ import {
 } from '@tabler/icons-react'
 import {
   isTaskOverdue,
+  isTaskUpcoming,
   TASK_PRIORITY_COLORS,
   TASK_PRIORITY_LABELS,
   type TaskRow as Task,
@@ -54,6 +55,7 @@ export function TaskCard({
   onDropBefore,
 }: TaskCardProps) {
   const overdue = isTaskOverdue(task)
+  const upcoming = isTaskUpcoming(task)
 
   return (
     <Paper
@@ -143,6 +145,12 @@ export function TaskCard({
           <Badge size="sm" variant="light" color={TASK_PRIORITY_COLORS[task.priority]}>
             {TASK_PRIORITY_LABELS[task.priority]}
           </Badge>
+
+          {upcoming && task.startDate ? (
+            <Badge size="sm" variant="light" color="gray">
+              Starts {due.format(new Date(task.startDate))}
+            </Badge>
+          ) : null}
 
           {task.dueDate ? (
             <Badge size="sm" variant="light" color={overdue ? 'red' : 'gray'}>

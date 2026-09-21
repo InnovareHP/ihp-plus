@@ -126,11 +126,21 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
           />
 
           <TextInput
+            {...register('startDate')}
+            type="date"
+            label="Start date"
+            placeholder="mm/dd/yyyy"
+            error={errors.startDate?.message}
+            errorProps={{ role: 'alert' }}
+          />
+
+          <TextInput
             {...register('dueDate')}
             type="date"
             label="Due date"
             placeholder="mm/dd/yyyy"
             error={errors.dueDate?.message}
+            errorProps={{ role: 'alert' }}
           />
         </Group>
 

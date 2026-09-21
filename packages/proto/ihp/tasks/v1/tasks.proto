@@ -261,6 +261,7 @@ message CreateTaskRequest {
   repeated string assignee_ids = 7;
   // Present makes this a subtask, which takes its project and list from its parent.
   optional string parent_id = 8;
+  optional string start_date = 9;
 }
 
 message CreateTaskResponse {
@@ -278,6 +279,7 @@ message UpdateTaskRequest {
   optional bool is_archived = 7;
   // Absent leaves the assignees alone; an empty list clears them.
   optional AssigneeIds assignees = 8;
+  optional string start_date = 9;
 }
 
 message AssigneeIds {

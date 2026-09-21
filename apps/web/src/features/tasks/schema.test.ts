@@ -63,6 +63,36 @@ describe('taskFormSchema', () => {
   })
 })
 
+describe('taskFormSchema', () => {
+  const base = {
+    projectId: 'project-1',
+    listId: 'list-1',
+    name: 'Send the renewal pack',
+  }
+
+  it('refuses a due date before the start', () => {
+    const result = taskFormSchema.safeParse({
+      ...base,
+      startDate: '2026-10-02',
+      dueDate: '2026-10-01',
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]).toMatchObject({
+      path: ['dueDate'],
+      message: 'The due date cannot be before the start.',
+    })
+  })
+
+  it('takes a range, and either end on its own', () => {
+    expect(
+      taskFormSchema.safeParse({ ...base, startDate: '2026-10-01', dueDate: '2026-10-02' }).success,
+    ).toBe(true)
+    expect(taskFormSchema.safeParse({ ...base, startDate: '2026-10-01' }).success).toBe(true)
+    expect(taskFormSchema.safeParse({ ...base, dueDate: '2026-10-02' }).success).toBe(true)
+  })
+})
+
 describe('boardQuerySchema', () => {
   it('reads the board state out of the URL', () => {
     expect(

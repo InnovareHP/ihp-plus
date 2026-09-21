@@ -14,6 +14,7 @@ import {
 import {
   isTaskDone,
   isTaskOverdue,
+  isTaskUpcoming,
   TASK_PRIORITY_COLORS,
   TASK_PRIORITY_LABELS,
   type TaskRow as Task,
@@ -47,6 +48,7 @@ export function TaskRow({
 }: TaskRowProps) {
   const done = isTaskDone(task)
   const overdue = isTaskOverdue(task)
+  const upcoming = isTaskUpcoming(task)
   const assignees = task.assignees.map((assignee) => assignee.name).join(', ')
 
   return (
@@ -88,6 +90,11 @@ export function TaskRow({
               <Badge size="sm" variant="outline">
                 {task.status.name}
               </Badge>
+              {upcoming && task.startDate ? (
+                <Text size="xs" c="dimmed">
+                  Starts {due.format(new Date(task.startDate))}
+                </Text>
+              ) : null}
               {task.dueDate ? (
                 // Colour alone never carries "late", so the word is there too.
                 <Text size="xs" c={overdue ? 'red' : 'dimmed'}>

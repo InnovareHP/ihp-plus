@@ -78,22 +78,28 @@ export const statusFormSchema = z.object({
   category: z.enum(TASK_STATUS_CATEGORIES).default('active'),
 })
 
-export const taskFormSchema = z.object({
-  projectId: z.string().min(1),
-  listId: z.string().min(1, 'Pick a list.'),
-  name: z.string().trim().min(1, 'Say what has to be done.').max(200, 'Keep the title shorter.'),
-  description: z
-    .string()
-    .trim()
-    .max(2000, 'Keep the description under 2000 characters.')
-    .default(''),
-  priority: z.enum(TASK_PRIORITIES).default('normal'),
-  // Empty means no due date; the task simply has no deadline.
-  dueDate: z.string().trim().default(''),
-  assigneeIds: z.array(z.string().min(1)).default([]),
-  // Set makes this a subtask: it takes its project and list from the parent.
-  parentId: z.string().trim().default(''),
-})
+export const taskFormSchema = z
+  .object({
+    projectId: z.string().min(1),
+    listId: z.string().min(1, 'Pick a list.'),
+    name: z.string().trim().min(1, 'Say what has to be done.').max(200, 'Keep the title shorter.'),
+    description: z
+      .string()
+      .trim()
+      .max(2000, 'Keep the description under 2000 characters.')
+      .default(''),
+    priority: z.enum(TASK_PRIORITIES).default('normal'),
+    // Empty means the task has no date at either end.
+    startDate: z.string().trim().default(''),
+    dueDate: z.string().trim().default(''),
+    assigneeIds: z.array(z.string().min(1)).default([]),
+    // Set makes this a subtask: it takes its project and list from the parent.
+    parentId: z.string().trim().default(''),
+  })
+  .refine((values) => !values.startDate || !values.dueDate || values.startDate <= values.dueDate, {
+    message: 'The due date cannot be before the start.',
+    path: ['dueDate'],
+  })
 
 export const subtaskFormSchema = z.object({
   name: z.string().trim().min(1, 'Say what has to be done.').max(200, 'Keep the title shorter.'),
@@ -215,6 +221,7 @@ export interface TaskQuery {
 
 export interface UpdateTaskValues {
   taskId: string
+  startDate?: string
   name?: string
   description?: string
   priority?: TaskPriority
@@ -243,6 +250,11 @@ export interface ReorderTaskValues {
   beforeTaskId: string | undefined
   /** Set by a board drop: the column it landed in. */
   statusId?: string
+}
+
+/** Work dated to begin later: it is on the board, but nobody is expected on it yet. */
+export function isTaskUpcoming(task: TaskRow, now = new Date()) {
+  return Boolean(task.startDate) && new Date(task.startDate as string) > now
 }
 
 /** A task counts as done when its status says so, whatever the organization named that status. */

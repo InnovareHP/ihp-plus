@@ -222,6 +222,7 @@ export function TaskBoard() {
       name: values.name,
       description: values.description,
       priority: values.priority,
+      startDate: values.startDate,
       dueDate: values.dueDate,
       assigneeIds: values.assigneeIds,
       assignees: values.assigneeIds.map((userId) => ({
@@ -287,6 +288,7 @@ export function TaskBoard() {
         name: composing.task.name,
         description: composing.task.description,
         priority: composing.task.priority,
+        startDate: composing.task.startDate ? composing.task.startDate.slice(0, 10) : '',
         dueDate: composing.task.dueDate ? composing.task.dueDate.slice(0, 10) : '',
         assigneeIds: composing.task.assignees.map((assignee) => assignee.userId),
         parentId: '',
@@ -297,6 +299,7 @@ export function TaskBoard() {
         name: '',
         description: '',
         priority: 'normal',
+        startDate: '',
         dueDate: '',
         assigneeIds: [],
         parentId: '',

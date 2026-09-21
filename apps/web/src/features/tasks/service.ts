@@ -626,6 +626,7 @@ export async function createTask(values: TaskFormValues): Promise<TaskRow> {
         name: parsed.name,
         description: parsed.description || null,
         priority: parsed.priority,
+        startDate: parsed.startDate ? new Date(parsed.startDate) : null,
         dueDate: parsed.dueDate ? new Date(parsed.dueDate) : null,
         position: (last._max.position ?? 0) + POSITION_STEP,
         createdById: caller.userId,
@@ -676,6 +677,9 @@ export async function updateTask(values: UpdateTaskValues): Promise<TaskRow> {
   if (values.priority !== undefined) data.priority = values.priority
   if (values.isArchived !== undefined) data.isArchived = values.isArchived
   if (values.dueDate !== undefined) data.dueDate = values.dueDate ? new Date(values.dueDate) : null
+  if (values.startDate !== undefined) {
+    data.startDate = values.startDate ? new Date(values.startDate) : null
+  }
 
   if (values.statusId !== undefined) {
     const status = await db.taskStatus.findFirst({

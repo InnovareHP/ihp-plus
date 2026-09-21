@@ -211,6 +211,7 @@ export function useCreateSubtask() {
         name,
         description: '',
         priority: 'normal',
+        startDate: '',
         dueDate: '',
         assigneeIds: [],
         parentId: parent.id,
