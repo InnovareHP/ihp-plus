@@ -267,7 +267,13 @@ interface ReorderTaskContext extends ReorderTaskValues {
 
 export function useReorderTask() {
   return useBoardMutation<ReorderTaskContext>({
-    mutationFn: ({ status: _status, ...values }) => reorderTask(values),
+    mutationFn: (values) =>
+      reorderTask({
+        taskId: values.taskId,
+        listId: values.listId,
+        beforeTaskId: values.beforeTaskId,
+        statusId: values.statusId,
+      }),
     apply: (rows, values) => {
       const moving = rows.find((row) => row.id === values.taskId)
       if (!moving) return [...rows]

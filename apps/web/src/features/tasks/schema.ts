@@ -294,6 +294,25 @@ export interface TaskCommentRow {
   isSending?: boolean
 }
 
+/** One row of the header's bell: a comment that named the viewer, and whether they read it. */
+export interface TaskMentionRow {
+  commentId: string
+  taskId: string
+  taskNumber: number
+  taskName: string
+  projectId: string
+  authorName: string
+  excerpt: string
+  createdAt: string
+  isRead: boolean
+}
+
+export interface TaskMentionFeed {
+  mentions: TaskMentionRow[]
+  /** Counted over everything, not the page shown, so the badge never understates. */
+  unreadCount: number
+}
+
 export interface TaskConversation {
   comments: TaskCommentRow[]
 }

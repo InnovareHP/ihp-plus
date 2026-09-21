@@ -19,6 +19,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { useSignOut } from '@/features/auth/use-sign-out'
+import { MentionsMenu } from '@/features/tasks/components/mentions-menu'
 import { isNavItemActive, visibleSections } from '@/lib/navigation'
 import { routes } from '@/lib/routes'
 import { AppLogo } from './app-logo'
@@ -99,6 +100,7 @@ export function DashboardShell({
           </Group>
 
           <Group gap="sm" wrap="nowrap">
+            <MentionsMenu />
             <ColorSchemeToggle />
             <Menu position="bottom-end" withinPortal shadow="md" width={220}>
               <Menu.Target>

@@ -7,5 +7,7 @@ export const taskKeys = {
   statuses: () => [...taskKeys.all, 'statuses'] as const,
   board: (query: TaskQuery) => [...taskKeys.all, 'board', query] as const,
   boards: () => [...taskKeys.all, 'board'] as const,
+  mentions: (includeRead: boolean) => [...taskKeys.all, 'mentions', includeRead] as const,
+  mentionFeeds: () => [...taskKeys.all, 'mentions'] as const,
   conversation: (taskId: string) => [...taskKeys.all, 'conversation', taskId] as const,
 }

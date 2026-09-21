@@ -24,6 +24,7 @@ import {
   type TaskCommentRow,
   type TaskConversation,
   type TaskListRow,
+  type TaskMentionFeed,
   type TaskPriority,
   type TaskProjectRow,
   type TaskQuery,
@@ -933,6 +934,96 @@ async function readComment(commentId: string): Promise<TaskCommentRow> {
   ])
 
   return toCommentRow(comment, names, await toAttachmentRows(comment.attachments, names))
+}
+
+// The bell shows the last few; older mentions are found in the task itself.
+const MENTION_PAGE = 20
+const MENTION_EXCERPT = 140
+
+export async function loadMentions(includeRead: boolean): Promise<TaskMentionFeed> {
+  const caller = await requireMember()
+
+  const [rows, unreadCount] = await Promise.all([
+    db.taskCommentMention.findMany({
+      where: {
+        userId: caller.userId,
+        ...(includeRead ? {} : { readAt: null }),
+        comment: { organizationId: caller.organizationId },
+      },
+      select: {
+        readAt: true,
+        comment: {
+          select: {
+            id: true,
+            body: true,
+            authorId: true,
+            createdAt: true,
+            task: { select: { id: true, taskNumber: true, name: true, projectId: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: MENTION_PAGE,
+    }),
+    db.taskCommentMention.count({
+      where: {
+        userId: caller.userId,
+        readAt: null,
+        comment: { organizationId: caller.organizationId },
+      },
+    }),
+  ])
+
+  const names = await peopleNames(rows.map((row) => row.comment.authorId))
+
+  return {
+    unreadCount,
+    mentions: rows.map((row) => ({
+      commentId: row.comment.id,
+      taskId: row.comment.task.id,
+      taskNumber: row.comment.task.taskNumber,
+      taskName: row.comment.task.name,
+      projectId: row.comment.task.projectId,
+      authorName: names.get(row.comment.authorId) ?? 'Removed teammate',
+      excerpt: excerptOf(row.comment.body),
+      createdAt: row.comment.createdAt.toISOString(),
+      isRead: row.readAt !== null,
+    })),
+  }
+}
+
+function excerptOf(body: string) {
+  const flattened = body.replace(/\s+/g, ' ').trim()
+  return flattened.length > MENTION_EXCERPT
+    ? `${flattened.slice(0, MENTION_EXCERPT - 1)}\u2026`
+    : flattened
+}
+
+export async function markMentionRead(commentId: string, read: boolean): Promise<void> {
+  const caller = await requireMember()
+
+  // Scoped to the caller's own row: a mention is read by the person it named, nobody else.
+  await db.taskCommentMention.updateMany({
+    where: {
+      commentId,
+      userId: caller.userId,
+      comment: { organizationId: caller.organizationId },
+    },
+    data: { readAt: read ? new Date() : null },
+  })
+}
+
+export async function markAllMentionsRead(): Promise<void> {
+  const caller = await requireMember()
+
+  await db.taskCommentMention.updateMany({
+    where: {
+      userId: caller.userId,
+      readAt: null,
+      comment: { organizationId: caller.organizationId },
+    },
+    data: { readAt: new Date() },
+  })
 }
 
 export async function loadConversation(taskId: string): Promise<TaskConversation> {

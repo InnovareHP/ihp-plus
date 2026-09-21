@@ -13,9 +13,12 @@ import {
   deleteTask,
   loadConversation,
   loadLists,
+  loadMentions,
   loadProjects,
   loadStatuses,
   loadTasks,
+  markAllMentionsRead,
+  markMentionRead,
   reorderStatus,
   reorderTask,
   setTaskCompleted,
@@ -30,6 +33,7 @@ import {
   categoryFromProto,
   commentToProto,
   listToProto,
+  mentionToProto,
   priorityFromProto,
   projectToProto,
   statusToProto,
@@ -168,6 +172,21 @@ export const tasks: ServiceImpl<typeof TasksService> = {
 
   deleteTask: async (request) => {
     await deleteTask(request.taskId)
+    return {}
+  },
+
+  listMentions: async (request) => {
+    const feed = await loadMentions(request.includeRead)
+    return { mentions: feed.mentions.map(mentionToProto), unreadCount: feed.unreadCount }
+  },
+
+  markMentionRead: async (request) => {
+    await markMentionRead(request.commentId, request.read)
+    return {}
+  },
+
+  markAllMentionsRead: async () => {
+    await markAllMentionsRead()
     return {}
   },
 

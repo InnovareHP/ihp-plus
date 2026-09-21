@@ -303,6 +303,40 @@ message DeleteTaskRequest {
 
 message DeleteTaskResponse {}
 
+// What the bell in the header shows: one row per comment that named the viewer.
+message TaskMention {
+  string comment_id = 1;
+  string task_id = 2;
+  int32 task_number = 3;
+  string task_name = 4;
+  string project_id = 5;
+  string author_name = 6;
+  string excerpt = 7;
+  string created_at = 8;
+  bool is_read = 9;
+}
+
+message ListMentionsRequest {
+  bool include_read = 1;
+}
+
+message ListMentionsResponse {
+  repeated TaskMention mentions = 1;
+  // Counted over everything, not just the page returned, so the badge is honest.
+  int32 unread_count = 2;
+}
+
+message MarkMentionReadRequest {
+  string comment_id = 1;
+  bool read = 2;
+}
+
+message MarkMentionReadResponse {}
+
+message MarkAllMentionsReadRequest {}
+
+message MarkAllMentionsReadResponse {}
+
 message ListCommentsRequest {
   string task_id = 1;
 }
@@ -370,6 +404,10 @@ service TasksService {
   rpc CompleteTask(CompleteTaskRequest) returns (CompleteTaskResponse);
   rpc ReorderTask(ReorderTaskRequest) returns (ReorderTaskResponse);
   rpc DeleteTask(DeleteTaskRequest) returns (DeleteTaskResponse);
+
+  rpc ListMentions(ListMentionsRequest) returns (ListMentionsResponse);
+  rpc MarkMentionRead(MarkMentionReadRequest) returns (MarkMentionReadResponse);
+  rpc MarkAllMentionsRead(MarkAllMentionsReadRequest) returns (MarkAllMentionsReadResponse);
 
   rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
   rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse);

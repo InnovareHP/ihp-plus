@@ -42,6 +42,8 @@ export const taskEvents = {
   commentEditFailed: 'tasks.comment.edit_failed',
   commentDeleted: 'tasks.comment.deleted',
   commentDeleteFailed: 'tasks.comment.delete_failed',
+  mentionRead: 'tasks.mention.read',
+  mentionReadFailed: 'tasks.mention.read_failed',
   attached: 'tasks.attachment.created',
   attachFailed: 'tasks.attachment.create_failed',
   attachmentDeleted: 'tasks.attachment.deleted',

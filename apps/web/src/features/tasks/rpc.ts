@@ -7,6 +7,7 @@ import {
   categoryToProto,
   commentFromProto,
   listFromProto,
+  mentionFromProto,
   priorityToProto,
   projectFromProto,
   statusFromProto,
@@ -22,6 +23,7 @@ import type {
   TaskCommentRow,
   TaskConversation,
   TaskListRow,
+  TaskMentionFeed,
   TaskProjectRow,
   TaskQuery,
   TaskRow,
@@ -185,6 +187,22 @@ export async function reorderTask(values: ReorderTaskValues): Promise<TaskRow> {
 
 export async function deleteTask(taskId: string): Promise<void> {
   await call(() => browserClients.tasks.deleteTask({ taskId }))
+}
+
+export async function listMentions(includeRead: boolean): Promise<TaskMentionFeed> {
+  const response = await call(() => browserClients.tasks.listMentions({ includeRead }))
+  return {
+    mentions: response.mentions.map(mentionFromProto),
+    unreadCount: response.unreadCount,
+  }
+}
+
+export async function markMentionRead(commentId: string, read: boolean): Promise<void> {
+  await call(() => browserClients.tasks.markMentionRead({ commentId, read }))
+}
+
+export async function markAllMentionsRead(): Promise<void> {
+  await call(() => browserClients.tasks.markAllMentionsRead({}))
 }
 
 export async function listConversation(taskId: string): Promise<TaskConversation> {

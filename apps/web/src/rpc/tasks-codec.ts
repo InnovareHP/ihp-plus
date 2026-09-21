@@ -6,6 +6,7 @@ import {
   type TaskAttachmentFile as TaskAttachmentMessage,
   type TaskComment as TaskCommentMessage,
   type TaskList as TaskListMessage,
+  type TaskMention as TaskMentionMessage,
   type TaskProject as TaskProjectMessage,
   type TaskStatus as TaskStatusMessage,
 } from '@ihp/rpc/tasks'
@@ -14,6 +15,7 @@ import type {
   TaskAttachmentRow,
   TaskCommentRow,
   TaskListRow,
+  TaskMentionRow,
   TaskPriority as Priority,
   TaskProjectRow,
   TaskRow,
@@ -219,6 +221,35 @@ export function taskFromProto(task: TaskMessage): TaskRow {
       isDone: subtask.isDone,
       position: subtask.position,
     })),
+  }
+}
+
+export function mentionToProto(mention: TaskMentionRow): TaskMentionMessage {
+  return {
+    $typeName: 'ihp.tasks.v1.TaskMention',
+    commentId: mention.commentId,
+    taskId: mention.taskId,
+    taskNumber: mention.taskNumber,
+    taskName: mention.taskName,
+    projectId: mention.projectId,
+    authorName: mention.authorName,
+    excerpt: mention.excerpt,
+    createdAt: mention.createdAt,
+    isRead: mention.isRead,
+  }
+}
+
+export function mentionFromProto(mention: TaskMentionMessage): TaskMentionRow {
+  return {
+    commentId: mention.commentId,
+    taskId: mention.taskId,
+    taskNumber: mention.taskNumber,
+    taskName: mention.taskName,
+    projectId: mention.projectId,
+    authorName: mention.authorName,
+    excerpt: mention.excerpt,
+    createdAt: mention.createdAt,
+    isRead: mention.isRead,
   }
 }
 

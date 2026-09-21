@@ -36,6 +36,9 @@ const prisma = vi.hoisted(() => ({
     count: vi.fn(),
   },
   taskAssignee: { createMany: vi.fn(), deleteMany: vi.fn() },
+  taskCommentMention: { findMany: vi.fn(), count: vi.fn(), updateMany: vi.fn() },
+  taskComment: { findMany: vi.fn(), create: vi.fn() },
+  taskAttachment: { findMany: vi.fn(), updateMany: vi.fn() },
   member: { findMany: vi.fn() },
   user: { findMany: vi.fn() },
   $transaction: vi.fn(),
@@ -54,9 +57,13 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 
 const {
   createStatus,
+  loadMentions,
+  markAllMentionsRead,
+  markMentionRead,
   createTask,
   deleteList,
   deleteStatus,
+  loadConversation,
   loadTasks,
   reorderStatus,
   reorderTask,
@@ -202,6 +209,76 @@ describe('reorderTask', () => {
         statusId: 'status-gone',
       }),
     ).rejects.toMatchObject({ code: Code.NotFound })
+  })
+})
+
+describe('mentions', () => {
+  const MENTION = {
+    readAt: null,
+    comment: {
+      id: 'comment-1',
+      body: '  Can you confirm\n the figures?  ',
+      authorId: 'user-2',
+      createdAt: new Date('2026-09-20T09:00:00.000Z'),
+      task: { id: 'task-1', taskNumber: 14, name: 'Send the renewal pack', projectId: 'project-1' },
+    },
+  }
+
+  beforeEach(() => {
+    prisma.taskCommentMention.findMany.mockResolvedValue([MENTION])
+    prisma.taskCommentMention.count.mockResolvedValue(3)
+    prisma.user.findMany.mockResolvedValue([
+      { id: 'user-2', name: 'Grace Hopper', preferredName: null },
+    ])
+  })
+
+  it('counts every unread one, not just the page it returns', async () => {
+    const feed = await loadMentions(true)
+
+    expect(feed.unreadCount).toBe(3)
+    expect(feed.mentions).toHaveLength(1)
+    expect(feed.mentions[0]).toMatchObject({
+      authorName: 'Grace Hopper',
+      excerpt: 'Can you confirm the figures?',
+      isRead: false,
+      taskNumber: 14,
+    })
+  })
+
+  it("reads only the caller's own organization", async () => {
+    await loadMentions(false)
+
+    expect(prisma.taskCommentMention.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          userId: 'user-1',
+          readAt: null,
+          comment: { organizationId: 'org-1' },
+        }),
+      }),
+    )
+  })
+
+  it('marks one read as the person it named, nobody else', async () => {
+    await markMentionRead('comment-1', true)
+
+    expect(prisma.taskCommentMention.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ commentId: 'comment-1', userId: 'user-1' }),
+        data: { readAt: expect.any(Date) },
+      }),
+    )
+  })
+
+  it('clears the badge in one write', async () => {
+    await markAllMentionsRead()
+
+    expect(prisma.taskCommentMention.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: 'user-1', readAt: null }),
+        data: { readAt: expect.any(Date) },
+      }),
+    )
   })
 })
 
@@ -520,5 +597,54 @@ describe('reorderTask', () => {
     await expect(
       reorderTask({ taskId: 'task-1', listId: 'list-1', beforeTaskId: 'gone' }),
     ).rejects.toMatchObject({ code: Code.Aborted })
+  })
+})
+
+describe('loadConversation', () => {
+  beforeEach(() => {
+    prisma.task.findFirst.mockResolvedValue(TASK_RECORD)
+    prisma.taskComment.findMany.mockResolvedValue([])
+    prisma.taskAttachment.findMany.mockResolvedValue([])
+  })
+
+  it('reads only the files a comment claimed', async () => {
+    await loadConversation('task-1')
+
+    // An unclaimed row is an upload whose comment never posted, not something anyone said.
+    expect(prisma.taskAttachment.findMany.mock.calls[0]?.[0].where).toMatchObject({
+      taskId: 'task-1',
+      commentId: { not: null },
+    })
+  })
+
+  it('hands each file back inside the comment it was posted in', async () => {
+    prisma.taskComment.findMany.mockResolvedValue([
+      {
+        id: 'comment-1',
+        taskId: 'task-1',
+        authorId: 'user-1',
+        body: 'Here it is.',
+        editedAt: null,
+        createdAt: new Date('2026-09-02T00:00:00.000Z'),
+        mentions: [],
+        attachments: [],
+      },
+    ])
+    prisma.taskAttachment.findMany.mockResolvedValue([
+      {
+        id: 'file-1',
+        fileKey: 'org-1/task-1/renewal.pdf',
+        fileName: 'renewal.pdf',
+        contentType: 'application/pdf',
+        fileSize: 2048,
+        uploadedById: 'user-1',
+        commentId: 'comment-1',
+        createdAt: new Date('2026-09-02T00:00:00.000Z'),
+      },
+    ])
+
+    const conversation = await loadConversation('task-1')
+
+    expect(conversation.comments[0]?.attachments.map((file) => file.id)).toEqual(['file-1'])
   })
 })
