@@ -122,6 +122,63 @@ describe('loadTasks', () => {
   })
 })
 
+describe('reorderTask', () => {
+  beforeEach(() => {
+    prisma.task.findFirst.mockResolvedValue({ ...TASK_RECORD, completedAt: null })
+    prisma.taskList.findFirst.mockResolvedValue({ id: 'list-1' })
+    prisma.task.findMany.mockResolvedValue([
+      { id: 'task-2', position: 1024 },
+      { id: 'task-3', position: 2048 },
+    ])
+    prisma.task.update.mockResolvedValue(TASK_RECORD)
+  })
+
+  it('drops a card into a column and a place in it with one write', async () => {
+    prisma.taskStatus.findFirst.mockResolvedValue({ id: 'status-done', category: 'done' })
+
+    await reorderTask({
+      taskId: 'task-1',
+      listId: 'list-1',
+      beforeTaskId: 'task-3',
+      statusId: 'status-done',
+    })
+
+    expect(prisma.task.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          listId: 'list-1',
+          position: (1024 + 2048) / 2,
+          statusId: 'status-done',
+          completedAt: expect.any(Date),
+        }),
+      }),
+    )
+  })
+
+  it('orders against the list, not the subtasks inside it', async () => {
+    await reorderTask({ taskId: 'task-1', listId: 'list-1', beforeTaskId: undefined })
+
+    expect(prisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ listId: 'list-1', parentId: null }),
+      }),
+    )
+  })
+
+  it('refuses a column that is no longer there', async () => {
+    prisma.taskStatus.findFirst.mockResolvedValue(null)
+
+    await expect(
+      reorderTask({
+        taskId: 'task-1',
+        listId: 'list-1',
+        beforeTaskId: undefined,
+        statusId: 'status-gone',
+      }),
+    ).rejects.toMatchObject({ code: Code.NotFound })
+  })
+})
+
 describe('createTask', () => {
   beforeEach(() => {
     prisma.taskList.findFirst.mockResolvedValue({ id: 'list-1' })

@@ -197,6 +197,8 @@ export interface ReorderTaskValues {
   taskId: string
   listId: string
   beforeTaskId: string | undefined
+  /** Set by a board drop: the column it landed in. */
+  statusId?: string
 }
 
 /** A task counts as done when its status says so, whatever the organization named that status. */

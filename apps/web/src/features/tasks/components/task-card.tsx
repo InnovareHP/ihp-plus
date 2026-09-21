@@ -2,6 +2,8 @@
 
 import { ActionIcon, Badge, Group, Menu, Paper, Stack, Text } from '@mantine/core'
 import {
+  IconArrowDown,
+  IconArrowUp,
   IconDotsVertical,
   IconListCheck,
   IconMessage,
@@ -23,21 +25,33 @@ export interface TaskCardProps {
   task: Task
   /** Every other column, so the card can be moved without a mouse. */
   otherStatuses: readonly TaskStatusRow[]
+  /** Disabled at the ends of the column, so the order of the board is never ambiguous. */
+  canMoveUp: boolean
+  canMoveDown: boolean
   onOpen: (task: Task) => void
   onMoveTo: (task: Task, statusId: string) => void
+  onMoveUp: (task: Task) => void
+  onMoveDown: (task: Task) => void
   onEdit: (task: Task) => void
   onDelete: (task: Task) => void
   onDragStart: (task: Task) => void
+  /** A card dropped on this one lands above it. */
+  onDropBefore: (task: Task) => void
 }
 
 export function TaskCard({
   task,
   otherStatuses,
+  canMoveUp,
+  canMoveDown,
   onOpen,
   onMoveTo,
+  onMoveUp,
+  onMoveDown,
   onEdit,
   onDelete,
   onDragStart,
+  onDropBefore,
 }: TaskCardProps) {
   const overdue = isTaskOverdue(task)
 
@@ -49,6 +63,12 @@ export function TaskCard({
       p="sm"
       draggable
       onDragStart={() => onDragStart(task)}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        // The column behind would otherwise take the drop and send the card to the end.
+        event.stopPropagation()
+        onDropBefore(task)
+      }}
       onClick={(event) => {
         // The menu and the name are controls of their own; anywhere else on the card opens it.
         if ((event.target as HTMLElement).closest('button, a')) return
@@ -79,6 +99,22 @@ export function TaskCard({
             </Menu.Target>
 
             <Menu.Dropdown>
+              <Menu.Label>Order</Menu.Label>
+              <Menu.Item
+                leftSection={<IconArrowUp size={16} aria-hidden />}
+                disabled={!canMoveUp}
+                onClick={() => onMoveUp(task)}
+              >
+                Move up
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconArrowDown size={16} aria-hidden />}
+                disabled={!canMoveDown}
+                onClick={() => onMoveDown(task)}
+              >
+                Move down
+              </Menu.Item>
+              <Menu.Divider />
               <Menu.Label>Move to</Menu.Label>
               {otherStatuses.map((status) => (
                 <Menu.Item key={status.id} onClick={() => onMoveTo(task, status.id)}>

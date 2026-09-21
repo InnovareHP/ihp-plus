@@ -40,6 +40,7 @@ function task(overrides: Partial<TaskRow> = {}): TaskRow {
 const handlers = {
   onOpen: vi.fn(),
   onMoveTo: vi.fn(),
+  onReorder: vi.fn(),
   onEdit: vi.fn(),
   onDelete: vi.fn(),
 }
@@ -119,6 +120,33 @@ describe('TaskKanban', () => {
 
     expect(screen.getByLabelText('3 comments')).toBeInTheDocument()
     expect(screen.getByLabelText('2 files')).toBeInTheDocument()
+  })
+
+  it('moves a card up its column from the keyboard', async () => {
+    const user = userEvent.setup()
+    renderBoard([task(), task({ id: 'task-2', taskNumber: 15, name: 'Chase the signature' })])
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Chase the signature' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Move up' }))
+
+    // Landing before the card above it is what "up one" means to the server.
+    expect(handlers.onReorder).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'task-2' }),
+      'status-todo',
+      'task-1',
+    )
+  })
+
+  it('offers no move up on the first card of a column', async () => {
+    const user = userEvent.setup()
+    renderBoard([task(), task({ id: 'task-2', taskNumber: 15, name: 'Chase the signature' })])
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Send the renewal pack' }))
+
+    expect(screen.getByRole('menuitem', { name: 'Move up' })).toHaveAttribute(
+      'data-disabled',
+      'true',
+    )
   })
 
   it("badges how far a card's subtasks have got", () => {

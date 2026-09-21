@@ -516,9 +516,21 @@ export async function reorderTask(values: ReorderTaskValues): Promise<TaskRow> {
   })
   if (!list) throw new ConnectError('That list is not in this project.', Code.NotFound)
 
+  // A drop changes the column as well as the place in it, so both land in one write.
+  const status = values.statusId
+    ? await db.taskStatus.findFirst({
+        where: { id: values.statusId, organizationId: caller.organizationId },
+        select: { id: true, category: true },
+      })
+    : null
+  if (values.statusId && !status) {
+    throw new ConnectError('That status no longer exists.', Code.NotFound)
+  }
+
   const updated = await db.$transaction(async (tx) => {
     const siblings = await tx.task.findMany({
-      where: { listId: values.listId, id: { not: task.id } },
+      // Subtasks share their parent's list and are ordered inside it, never beside it.
+      where: { listId: values.listId, parentId: null, id: { not: task.id } },
       select: { id: true, position: true },
       orderBy: { position: 'asc' },
     })
@@ -546,7 +558,16 @@ export async function reorderTask(values: ReorderTaskValues): Promise<TaskRow> {
 
     return tx.task.update({
       where: { id: task.id },
-      data: { listId: values.listId, position },
+      data: {
+        listId: values.listId,
+        position,
+        ...(status
+          ? {
+              statusId: status.id,
+              completedAt: status.category === 'done' ? (task.completedAt ?? new Date()) : null,
+            }
+          : {}),
+      },
       select: taskSelect,
     })
   })

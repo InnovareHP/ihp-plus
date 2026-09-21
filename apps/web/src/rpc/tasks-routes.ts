@@ -105,6 +105,7 @@ export const tasks: ServiceImpl<typeof TasksService> = {
         taskId: request.taskId,
         listId: request.listId,
         beforeTaskId: request.beforeTaskId,
+        ...(request.statusId === undefined ? {} : { statusId: request.statusId }),
       }),
     ),
   }),

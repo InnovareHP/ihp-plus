@@ -10,29 +10,39 @@ export interface TaskKanbanProps {
   tasks: readonly Task[]
   onOpen: (task: Task) => void
   onMoveTo: (task: Task, statusId: string) => void
+  /** A drop carries both halves of the move: which column, and where in it. */
+  onReorder: (task: Task, statusId: string, beforeTaskId: string | undefined) => void
   onEdit: (task: Task) => void
   onDelete: (task: Task) => void
 }
 
 /**
- * Columns are the organization's statuses, so every project's board reads the same. Dragging is
- * an enhancement on top of the card's own "Move to" menu, which is the keyboard path.
+ * A column is a status and a card keeps its list, so the row a card lands before is the next one
+ * from its own list — ordering a column never shuffles a list the user cannot see.
  */
+function beforeInList(items: readonly Task[], from: number, listId: string) {
+  return items.slice(from).find((item) => item.listId === listId)?.id
+}
+
 export function TaskKanban({
   statuses,
   tasks,
   onOpen,
   onMoveTo,
+  onReorder,
   onEdit,
   onDelete,
 }: TaskKanbanProps) {
   const [dragging, setDragging] = useState<Task | null>(null)
   const [over, setOver] = useState<string | null>(null)
 
-  function drop(statusId: string) {
+  function drop(status: TaskStatusRow, items: readonly Task[], index: number) {
     setOver(null)
-    if (!dragging || dragging.statusId === statusId) return
-    onMoveTo(dragging, statusId)
+    if (!dragging) return
+
+    const rest = items.filter((item) => item.id !== dragging.id)
+    const cut = index > items.findIndex((item) => item.id === dragging.id) ? index - 1 : index
+    onReorder(dragging, status.id, beforeInList(rest, Math.max(cut, 0), dragging.listId))
     setDragging(null)
   }
 
@@ -60,7 +70,7 @@ export function TaskKanban({
                 setOver(status.id)
               }}
               onDragLeave={() => setOver((current) => (current === status.id ? null : current))}
-              onDrop={() => drop(status.id)}
+              onDrop={() => drop(status, items, items.length)}
             >
               <Stack gap="sm">
                 <Group justify="space-between" align="baseline" wrap="nowrap">
@@ -90,18 +100,32 @@ export function TaskKanban({
                     gap="xs"
                     style={{ listStyle: 'none', padding: 0, margin: 0 }}
                   >
-                    {items.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        otherStatuses={statuses.filter((one) => one.id !== status.id)}
-                        onOpen={onOpen}
-                        onMoveTo={onMoveTo}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        onDragStart={setDragging}
-                      />
-                    ))}
+                    {items.map((task, index) => {
+                      const siblings = items.filter((item) => item.listId === task.listId)
+                      const slot = siblings.findIndex((item) => item.id === task.id)
+
+                      return (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          otherStatuses={statuses.filter((one) => one.id !== status.id)}
+                          canMoveUp={slot > 0}
+                          canMoveDown={slot < siblings.length - 1}
+                          onOpen={onOpen}
+                          onMoveTo={onMoveTo}
+                          onMoveUp={() =>
+                            onReorder(task, status.id, siblings[slot - 1]?.id ?? undefined)
+                          }
+                          onMoveDown={() =>
+                            onReorder(task, status.id, siblings[slot + 2]?.id ?? undefined)
+                          }
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                          onDragStart={setDragging}
+                          onDropBefore={() => drop(status, items, index)}
+                        />
+                      )
+                    })}
                   </Stack>
                 )}
               </Stack>

@@ -223,6 +223,8 @@ message ReorderTaskRequest {
   string task_id = 1;
   string list_id = 2;
   optional string before_task_id = 3;
+  // A board drop lands in a column and at a place in it, which is one move, not two.
+  optional string status_id = 4;
 }
 
 message ReorderTaskResponse {

@@ -326,7 +326,22 @@ export function TaskBoard() {
               statuses={statusRows}
               tasks={tasks}
               onOpen={(task) => setQuery({ task: task.id })}
-              onMoveTo={(task, statusId) => update.mutate({ taskId: task.id, statusId })}
+              onMoveTo={(task, statusId) =>
+                update.mutate({
+                  taskId: task.id,
+                  statusId,
+                  status: statusRows.find((row) => row.id === statusId),
+                })
+              }
+              onReorder={(task, statusId, beforeTaskId) =>
+                reorder.mutate({
+                  taskId: task.id,
+                  listId: task.listId,
+                  beforeTaskId,
+                  statusId,
+                  status: statusRows.find((row) => row.id === statusId),
+                })
+              }
               onEdit={(task) => {
                 const list = listRows.find((row) => row.id === task.listId)
                 if (list) setComposing({ list, task })

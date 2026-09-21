@@ -260,15 +260,33 @@ export function useDeleteSubtask() {
   })
 }
 
+interface ReorderTaskContext extends ReorderTaskValues {
+  /** Resolved by the caller so a card repaints in its new column before the server answers. */
+  status?: TaskStatusRow
+}
+
 export function useReorderTask() {
-  return useBoardMutation<ReorderTaskValues>({
-    mutationFn: (values) => reorderTask(values),
+  return useBoardMutation<ReorderTaskContext>({
+    mutationFn: ({ status: _status, ...values }) => reorderTask(values),
     apply: (rows, values) => {
       const moving = rows.find((row) => row.id === values.taskId)
       if (!moving) return [...rows]
 
       const rest = rows.filter((row) => row.id !== values.taskId)
-      const moved = { ...moving, listId: values.listId }
+      const moved = {
+        ...moving,
+        listId: values.listId,
+        ...(values.status
+          ? {
+              status: values.status,
+              statusId: values.status.id,
+              completedAt:
+                values.status.category === 'done'
+                  ? (moving.completedAt ?? new Date().toISOString())
+                  : undefined,
+            }
+          : {}),
+      }
       if (!values.beforeTaskId) return [...rest, moved]
 
       const index = rest.findIndex((row) => row.id === values.beforeTaskId)
