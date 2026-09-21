@@ -57,6 +57,17 @@ export const listFormSchema = z.object({
   name: z.string().trim().min(1, 'Name the list.').max(80, 'Keep the name under 80 characters.'),
 })
 
+export const statusFormSchema = z.object({
+  name: z.string().trim().min(1, 'Name the column.').max(40, 'Keep the name under 40 characters.'),
+  // Hex, because a status colour is organization data rather than a theme token.
+  color: z
+    .string()
+    .trim()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'Pick a colour.')
+    .default('#64748b'),
+  category: z.enum(TASK_STATUS_CATEGORIES).default('active'),
+})
+
 export const taskFormSchema = z.object({
   projectId: z.string().min(1),
   listId: z.string().min(1, 'Pick a list.'),
@@ -110,6 +121,8 @@ export const DEFAULT_BOARD_QUERY: BoardQuery = boardQuerySchema.parse({})
 export type ProjectFormValues = z.infer<typeof projectFormSchema>
 export type ProjectFormInput = z.input<typeof projectFormSchema>
 export type ListFormValues = z.infer<typeof listFormSchema>
+export type StatusFormValues = z.infer<typeof statusFormSchema>
+export type StatusFormInput = z.input<typeof statusFormSchema>
 export type TaskFormValues = z.infer<typeof taskFormSchema>
 export type TaskFormInput = z.input<typeof taskFormSchema>
 export type SubtaskFormValues = z.infer<typeof subtaskFormSchema>
@@ -193,6 +206,19 @@ export interface UpdateTaskValues {
   assigneeIds?: readonly string[]
 }
 
+export interface UpdateProjectValues {
+  projectId: string
+  name?: string
+  color?: string
+  isArchived?: boolean
+}
+
+export interface UpdateStatusValues {
+  statusId: string
+  name?: string
+  color?: string
+}
+
 export interface ReorderTaskValues {
   taskId: string
   listId: string
@@ -270,8 +296,6 @@ export interface TaskCommentRow {
 
 export interface TaskConversation {
   comments: TaskCommentRow[]
-  /** Everything on the task, a comment's files included, for the attachments panel. */
-  attachments: TaskAttachmentRow[]
 }
 
 /**

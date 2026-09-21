@@ -12,7 +12,13 @@ import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 // RPC returning the same rows would only be a second cache to keep warm.
 import { useEvaluationCandidates } from '@/features/evaluations/hooks/use-evaluations'
 import { useSession } from '@/lib/auth-client'
-import { useTaskLists, useTaskProjects, useTaskStatuses } from '../hooks/use-task-projects'
+import {
+  useDeleteList,
+  useTaskLists,
+  useTaskProjects,
+  useTaskStatuses,
+  useUpdateProject,
+} from '../hooks/use-task-projects'
 import {
   useCompleteTask,
   useCreateTask,
@@ -30,14 +36,17 @@ import {
   TASK_VIEW_LABELS,
   type TaskFormValues,
   type TaskListRow,
+  type TaskProjectRow,
   type TaskRow,
 } from '../schema'
+import { DeleteListModal } from './delete-list-modal'
 import { DeleteTaskModal } from './delete-task-modal'
 import { TaskDetailModal } from './task-detail-modal'
 import { TaskKanban } from './task-kanban'
 import { ListFormModal } from './list-form-modal'
 import { ProjectFormModal } from './project-form-modal'
 import { ProjectSelect } from './project-select'
+import { StatusManagerModal } from './status-manager-modal'
 import { TaskFormModal } from './task-form-modal'
 import { TaskListSection } from './task-list-section'
 import { TaskStats } from './task-stats'
@@ -66,6 +75,10 @@ export function TaskBoard() {
   const { query, setQuery, clearFilters } = useUrlQuery(parseBoardQuery, DEFAULT_BOARD_QUERY)
   const [projectOpened, projectModal] = useDisclosure(false)
   const [listOpened, listModal] = useDisclosure(false)
+  const [columnsOpened, columnsModal] = useDisclosure(false)
+  const [renamingProject, setRenamingProject] = useState<TaskProjectRow | null>(null)
+  const [renamingList, setRenamingList] = useState<TaskListRow | null>(null)
+  const [deletingList, setDeletingList] = useState<TaskListRow | null>(null)
   const [composing, setComposing] = useState<{ list: TaskListRow; task: TaskRow | null } | null>(
     null,
   )
@@ -98,6 +111,8 @@ export function TaskBoard() {
   const complete = useCompleteTask()
   const reorder = useReorderTask()
   const remove = useDeleteTask()
+  const archiveProject = useUpdateProject()
+  const removeList = useDeleteList()
 
   const people = useMemo(
     () => (candidates.data ?? []).map((person) => ({ value: person.userId, label: person.name })),
@@ -247,6 +262,10 @@ export function TaskBoard() {
         value={projectId}
         onChange={(next) => setQuery({ project: next, list: '' })}
         onCreate={projectModal.open}
+        onRename={setRenamingProject}
+        onArchive={(project, archived) =>
+          archiveProject.mutate({ projectId: project.id, isArchived: archived })
+        }
       />
 
       <TaskStats tasks={tasks} />
@@ -273,6 +292,9 @@ export function TaskBoard() {
             filters={BOARD_FILTERS}
             action={
               <Group gap="sm">
+                <Button variant="default" onClick={columnsModal.open}>
+                  Columns
+                </Button>
                 <Button variant="default" onClick={listModal.open}>
                   New list
                 </Button>
@@ -357,6 +379,8 @@ export function TaskBoard() {
                   list={list}
                   tasks={tasksByList.get(list.id) ?? []}
                   onAdd={(target) => setComposing({ list: target, task: null })}
+                  onRenameList={setRenamingList}
+                  onDeleteList={setDeletingList}
                   onOpen={(task) => setQuery({ task: task.id })}
                   onToggleComplete={(task, completed) =>
                     complete.mutate({ taskId: task.id, completed, statuses: statusRows })
@@ -381,11 +405,38 @@ export function TaskBoard() {
       />
 
       <ProjectFormModal
-        opened={projectOpened}
-        onClose={projectModal.close}
+        opened={projectOpened || renamingProject !== null}
+        project={renamingProject}
+        onClose={() => {
+          projectModal.close()
+          setRenamingProject(null)
+        }}
         onCreated={(id) => setQuery({ project: id })}
       />
-      <ListFormModal opened={listOpened} onClose={listModal.close} projectId={projectId} />
+      <ListFormModal
+        opened={listOpened || renamingList !== null}
+        list={renamingList}
+        onClose={() => {
+          listModal.close()
+          setRenamingList(null)
+        }}
+        projectId={projectId}
+      />
+      <StatusManagerModal
+        opened={columnsOpened}
+        statuses={statusRows}
+        tasks={tasks}
+        onClose={columnsModal.close}
+      />
+      <DeleteListModal
+        list={deletingList}
+        taskCount={deletingList ? (tasksByList.get(deletingList.id)?.length ?? 0) : 0}
+        onCancel={() => setDeletingList(null)}
+        onConfirm={(list) => {
+          removeList.mutate({ listId: list.id })
+          setDeletingList(null)
+        }}
+      />
       <TaskFormModal
         opened={Boolean(composing)}
         onClose={() => setComposing(null)}

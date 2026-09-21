@@ -9,15 +9,31 @@ const prisma = vi.hoisted(() => ({
     create: vi.fn(),
     update: vi.fn(),
   },
-  taskList: { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), create: vi.fn() },
-  taskStatus: { findMany: vi.fn(), findFirst: vi.fn(), createMany: vi.fn() },
+  taskList: {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    count: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  taskStatus: {
+    findMany: vi.fn(),
+    findFirst: vi.fn(),
+    createMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
   task: {
     findFirst: vi.fn(),
     findMany: vi.fn(),
     aggregate: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
     delete: vi.fn(),
+    count: vi.fn(),
   },
   taskAssignee: { createMany: vi.fn(), deleteMany: vi.fn() },
   member: { findMany: vi.fn() },
@@ -36,7 +52,17 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...guard,
 }))
 
-const { createTask, loadTasks, reorderTask, setTaskCompleted } = await import('./service')
+const {
+  createStatus,
+  createTask,
+  deleteList,
+  deleteStatus,
+  loadTasks,
+  reorderStatus,
+  reorderTask,
+  setTaskCompleted,
+  updateStatus,
+} = await import('./service')
 
 const STATUSES = [
   { id: 'status-todo', name: 'To do', color: '#95E5DC', category: 'active', sortOrder: 1 },
@@ -176,6 +202,146 @@ describe('reorderTask', () => {
         statusId: 'status-gone',
       }),
     ).rejects.toMatchObject({ code: Code.NotFound })
+  })
+})
+
+describe('deleteList', () => {
+  it('refuses a list that still holds work', async () => {
+    prisma.taskList.findFirst.mockResolvedValue({
+      id: 'list-1',
+      projectId: 'project-1',
+      _count: { tasks: 3 },
+    })
+
+    await expect(deleteList('list-1')).rejects.toMatchObject({ code: Code.FailedPrecondition })
+    expect(prisma.taskList.delete).not.toHaveBeenCalled()
+  })
+
+  it('refuses the last list of a project, which could then hold nothing', async () => {
+    prisma.taskList.findFirst.mockResolvedValue({
+      id: 'list-1',
+      projectId: 'project-1',
+      _count: { tasks: 0 },
+    })
+    prisma.taskList.count.mockResolvedValue(1)
+
+    await expect(deleteList('list-1')).rejects.toMatchObject({ code: Code.FailedPrecondition })
+  })
+
+  it('deletes an empty list beside others', async () => {
+    prisma.taskList.findFirst.mockResolvedValue({
+      id: 'list-2',
+      projectId: 'project-1',
+      _count: { tasks: 0 },
+    })
+    prisma.taskList.count.mockResolvedValue(2)
+
+    await deleteList('list-2')
+
+    expect(prisma.taskList.delete).toHaveBeenCalledWith({ where: { id: 'list-2' } })
+  })
+})
+
+describe('statuses', () => {
+  beforeEach(() => {
+    prisma.taskStatus.findMany.mockResolvedValue(STATUSES)
+    prisma.taskStatus.findFirst.mockResolvedValue(STATUSES[0])
+  })
+
+  it('refuses a second column with the same name', async () => {
+    await expect(
+      createStatus({ name: 'to do', color: '#95E5DC', category: 'active' }),
+    ).rejects.toMatchObject({ code: Code.AlreadyExists })
+  })
+
+  it('numbers a new column after the ones already there', async () => {
+    prisma.taskStatus.create.mockResolvedValue({
+      id: 'status-review',
+      name: 'In review',
+      color: '#0B286B',
+      category: 'active',
+      sortOrder: 3,
+    })
+
+    await createStatus({ name: 'In review', color: '#0B286B', category: 'active' })
+
+    expect(prisma.taskStatus.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ sortOrder: 3 }) }),
+    )
+  })
+
+  it('renumbers every column on a move, so the order cannot drift', async () => {
+    prisma.taskStatus.findFirst.mockResolvedValue(STATUSES[1])
+    prisma.$transaction.mockResolvedValue([])
+
+    await reorderStatus('status-done', 'status-todo')
+
+    expect(prisma.taskStatus.update).toHaveBeenNthCalledWith(1, {
+      where: { id: 'status-done' },
+      data: { sortOrder: 1 },
+    })
+    expect(prisma.taskStatus.update).toHaveBeenNthCalledWith(2, {
+      where: { id: 'status-todo' },
+      data: { sortOrder: 2 },
+    })
+  })
+
+  it('will not delete the last column of its category', async () => {
+    await expect(deleteStatus('status-todo')).rejects.toMatchObject({
+      code: Code.FailedPrecondition,
+    })
+  })
+
+  it('asks where the work goes before deleting a column that holds any', async () => {
+    prisma.taskStatus.findMany.mockResolvedValue([
+      ...STATUSES,
+      {
+        id: 'status-doing',
+        name: 'In progress',
+        color: '#1346C5',
+        category: 'active',
+        sortOrder: 3,
+      },
+    ])
+    prisma.task.count.mockResolvedValue(2)
+
+    await expect(deleteStatus('status-todo')).rejects.toMatchObject({
+      code: Code.FailedPrecondition,
+    })
+    expect(prisma.taskStatus.delete).not.toHaveBeenCalled()
+  })
+
+  it('moves the work across, then deletes the column', async () => {
+    prisma.taskStatus.findMany.mockResolvedValue([
+      ...STATUSES,
+      {
+        id: 'status-doing',
+        name: 'In progress',
+        color: '#1346C5',
+        category: 'active',
+        sortOrder: 3,
+      },
+    ])
+    prisma.task.count.mockResolvedValue(2)
+
+    await deleteStatus('status-todo', 'status-doing')
+
+    expect(prisma.task.updateMany).toHaveBeenCalledWith({
+      where: { statusId: 'status-todo' },
+      data: { statusId: 'status-doing', completedAt: null },
+    })
+    expect(prisma.taskStatus.delete).toHaveBeenCalledWith({ where: { id: 'status-todo' } })
+  })
+
+  it('renames a column without touching the work in it', async () => {
+    prisma.taskStatus.update.mockResolvedValue({ ...STATUSES[0], name: 'Up next' })
+
+    const row = await updateStatus({ statusId: 'status-todo', name: '  Up next  ' })
+
+    expect(prisma.taskStatus.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { name: 'Up next' } }),
+    )
+    expect(row.name).toBe('Up next')
   })
 })
 

@@ -4,7 +4,7 @@ import { ConnectError } from '@ihp/rpc'
 import { browserClients } from '@/rpc/browser'
 import {
   assigneeFilterToProto,
-  attachmentFromProto,
+  categoryToProto,
   commentFromProto,
   listFromProto,
   priorityToProto,
@@ -17,6 +17,7 @@ import type {
   ListFormValues,
   ProjectFormValues,
   ReorderTaskValues,
+  StatusFormValues,
   TaskFormValues,
   TaskCommentRow,
   TaskConversation,
@@ -25,6 +26,8 @@ import type {
   TaskQuery,
   TaskRow,
   TaskStatusRow,
+  UpdateProjectValues,
+  UpdateStatusValues,
   UpdateTaskValues,
 } from './schema'
 
@@ -59,6 +62,12 @@ export async function createProject(values: ProjectFormValues): Promise<TaskProj
   return projectFromProto(response.project)
 }
 
+export async function updateProject(values: UpdateProjectValues): Promise<TaskProjectRow> {
+  const response = await call(() => browserClients.tasks.updateProject(values))
+  if (!response.project) throw new Error('The server did not return the project.')
+  return projectFromProto(response.project)
+}
+
 export async function listLists(projectId: string): Promise<TaskListRow[]> {
   const response = await call(() => browserClients.tasks.listLists({ projectId }))
   return response.lists.map(listFromProto)
@@ -68,6 +77,48 @@ export async function createList(values: ListFormValues): Promise<TaskListRow> {
   const response = await call(() => browserClients.tasks.createList(values))
   if (!response.list) throw new Error('The server did not return the list.')
   return listFromProto(response.list)
+}
+
+export async function updateList(listId: string, name: string): Promise<TaskListRow> {
+  const response = await call(() => browserClients.tasks.updateList({ listId, name }))
+  if (!response.list) throw new Error('The server did not return the list.')
+  return listFromProto(response.list)
+}
+
+export async function deleteList(listId: string): Promise<void> {
+  await call(() => browserClients.tasks.deleteList({ listId }))
+}
+
+export async function createStatus(values: StatusFormValues): Promise<TaskStatusRow> {
+  const response = await call(() =>
+    browserClients.tasks.createStatus({
+      name: values.name,
+      color: values.color,
+      category: categoryToProto(values.category),
+    }),
+  )
+  if (!response.status) throw new Error('The server did not return the column.')
+  return statusFromProto(response.status)
+}
+
+export async function updateStatus(values: UpdateStatusValues): Promise<TaskStatusRow> {
+  const response = await call(() => browserClients.tasks.updateStatus(values))
+  if (!response.status) throw new Error('The server did not return the column.')
+  return statusFromProto(response.status)
+}
+
+export async function reorderStatus(
+  statusId: string,
+  beforeStatusId: string | undefined,
+): Promise<TaskStatusRow[]> {
+  const response = await call(() =>
+    browserClients.tasks.reorderStatus({ statusId, beforeStatusId }),
+  )
+  return response.statuses.map(statusFromProto)
+}
+
+export async function deleteStatus(statusId: string, moveToStatusId?: string): Promise<void> {
+  await call(() => browserClients.tasks.deleteStatus({ statusId, moveToStatusId }))
 }
 
 export async function listStatuses(): Promise<TaskStatusRow[]> {
@@ -138,10 +189,7 @@ export async function deleteTask(taskId: string): Promise<void> {
 
 export async function listConversation(taskId: string): Promise<TaskConversation> {
   const response = await call(() => browserClients.tasks.listComments({ taskId }))
-  return {
-    comments: response.comments.map(commentFromProto),
-    attachments: response.attachments.map(attachmentFromProto),
-  }
+  return { comments: response.comments.map(commentFromProto) }
 }
 
 function requiredComment(comment: Parameters<typeof commentFromProto>[0] | undefined) {

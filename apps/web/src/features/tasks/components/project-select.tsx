@@ -1,7 +1,13 @@
 'use client'
 
-import { Button, Group, Select } from '@mantine/core'
-import { IconPlus } from '@tabler/icons-react'
+import { ActionIcon, Button, Group, Menu, Select } from '@mantine/core'
+import {
+  IconArchive,
+  IconArchiveOff,
+  IconDotsVertical,
+  IconPencil,
+  IconPlus,
+} from '@tabler/icons-react'
 import type { TaskProjectRow } from '../schema'
 
 export interface ProjectSelectProps {
@@ -9,9 +15,20 @@ export interface ProjectSelectProps {
   value: string
   onChange: (projectId: string) => void
   onCreate: () => void
+  onRename: (project: TaskProjectRow) => void
+  onArchive: (project: TaskProjectRow, archived: boolean) => void
 }
 
-export function ProjectSelect({ projects, value, onChange, onCreate }: ProjectSelectProps) {
+export function ProjectSelect({
+  projects,
+  value,
+  onChange,
+  onCreate,
+  onRename,
+  onArchive,
+}: ProjectSelectProps) {
+  const current = projects.find((project) => project.id === value)
+
   return (
     <Group gap="sm" align="flex-end" wrap="wrap">
       <Select
@@ -30,6 +47,41 @@ export function ProjectSelect({ projects, value, onChange, onCreate }: ProjectSe
       <Button variant="default" leftSection={<IconPlus size={16} aria-hidden />} onClick={onCreate}>
         New project
       </Button>
+
+      {current ? (
+        <Menu position="bottom-end" withinPortal>
+          <Menu.Target>
+            <ActionIcon
+              variant="default"
+              size="lg"
+              aria-label={`Actions for ${current.name}`}
+              mb={1}
+            >
+              <IconDotsVertical size={16} aria-hidden />
+            </ActionIcon>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              leftSection={<IconPencil size={16} aria-hidden />}
+              onClick={() => onRename(current)}
+            >
+              Rename project
+            </Menu.Item>
+            <Menu.Item
+              leftSection={
+                current.isArchived ? (
+                  <IconArchiveOff size={16} aria-hidden />
+                ) : (
+                  <IconArchive size={16} aria-hidden />
+                )
+              }
+              onClick={() => onArchive(current, !current.isArchived)}
+            >
+              {current.isArchived ? 'Restore project' : 'Archive project'}
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      ) : null}
     </Group>
   )
 }

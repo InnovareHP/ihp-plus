@@ -120,6 +120,14 @@ export function listFromProto(list: TaskListMessage): TaskListRow {
   }
 }
 
+export function categoryToProto(category: StatusCategory): TaskStatusCategory {
+  return CATEGORY_TO_PROTO[category]
+}
+
+export function categoryFromProto(category: TaskStatusCategory): StatusCategory {
+  return CATEGORY_FROM_PROTO[category]
+}
+
 export function statusToProto(status: TaskStatusRow): TaskStatusMessage {
   return {
     $typeName: 'ihp.tasks.v1.TaskStatus',

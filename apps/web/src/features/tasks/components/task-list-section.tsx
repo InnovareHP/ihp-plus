@@ -1,7 +1,7 @@
 'use client'
 
-import { Button, Group, Stack, Text, Title } from '@mantine/core'
-import { IconPlus } from '@tabler/icons-react'
+import { ActionIcon, Button, Group, Menu, Stack, Text, Title } from '@mantine/core'
+import { IconDotsVertical, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { EmptyState } from '@/components/empty-state'
 import type { TaskListRow, TaskRow as Task } from '../schema'
@@ -12,6 +12,8 @@ export interface TaskListSectionProps {
   list: TaskListRow
   tasks: readonly Task[]
   onAdd: (list: TaskListRow) => void
+  onRenameList: (list: TaskListRow) => void
+  onDeleteList: (list: TaskListRow) => void
   onOpen: (task: Task) => void
   onToggleComplete: (task: Task, completed: boolean) => void
   onMove: (task: Task, direction: 'up' | 'down') => void
@@ -23,6 +25,8 @@ export function TaskListSection({
   list,
   tasks,
   onAdd,
+  onRenameList,
+  onDeleteList,
   onOpen,
   onToggleComplete,
   onMove,
@@ -42,14 +46,38 @@ export function TaskListSection({
             {tasks.length === 1 ? '1 task' : `${tasks.length} tasks`}
           </Text>
         </Group>
-        <Button
-          variant="subtle"
-          size="sm"
-          leftSection={<IconPlus size={16} aria-hidden />}
-          onClick={() => onAdd(list)}
-        >
-          Add task
-        </Button>
+        <Group gap={4} wrap="nowrap">
+          <Button
+            variant="subtle"
+            size="sm"
+            leftSection={<IconPlus size={16} aria-hidden />}
+            onClick={() => onAdd(list)}
+          >
+            Add task
+          </Button>
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${list.name}`}>
+                <IconDotsVertical size={16} aria-hidden />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<IconPencil size={16} aria-hidden />}
+                onClick={() => onRenameList(list)}
+              >
+                Rename list
+              </Menu.Item>
+              <Menu.Item
+                color="red"
+                leftSection={<IconTrash size={16} aria-hidden />}
+                onClick={() => onDeleteList(list)}
+              >
+                Delete list
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
       </Group>
 
       {tasks.length === 0 ? (

@@ -133,6 +133,18 @@ message CreateProjectResponse {
   TaskProject project = 1;
 }
 
+// Every field is optional: the switcher renames, the menu archives, nothing sends the lot.
+message UpdateProjectRequest {
+  string project_id = 1;
+  optional string name = 2;
+  optional string color = 3;
+  optional bool is_archived = 4;
+}
+
+message UpdateProjectResponse {
+  TaskProject project = 1;
+}
+
 message ListListsRequest {
   string project_id = 1;
 }
@@ -149,6 +161,60 @@ message CreateListRequest {
 message CreateListResponse {
   TaskList list = 1;
 }
+
+message UpdateListRequest {
+  string list_id = 1;
+  string name = 2;
+}
+
+message UpdateListResponse {
+  TaskList list = 1;
+}
+
+// A list that still holds tasks is never deleted from under them.
+message DeleteListRequest {
+  string list_id = 1;
+}
+
+message DeleteListResponse {}
+
+message CreateStatusRequest {
+  string name = 1;
+  string color = 2;
+  TaskStatusCategory category = 3;
+}
+
+message CreateStatusResponse {
+  TaskStatus status = 1;
+}
+
+message UpdateStatusRequest {
+  string status_id = 1;
+  optional string name = 2;
+  optional string color = 3;
+}
+
+message UpdateStatusResponse {
+  TaskStatus status = 1;
+}
+
+// Columns are ordered by dropping one before another, the same move the board uses for cards.
+message ReorderStatusRequest {
+  string status_id = 1;
+  optional string before_status_id = 2;
+}
+
+message ReorderStatusResponse {
+  repeated TaskStatus statuses = 1;
+}
+
+message DeleteStatusRequest {
+  string status_id = 1;
+  // Where the work in that column goes; required while it still holds any.
+  optional string move_to_status_id = 2;
+}
+
+message DeleteStatusResponse {}
 
 message ListStatusesRequest {}
 
@@ -243,8 +309,8 @@ message ListCommentsRequest {
 
 message ListCommentsResponse {
   repeated TaskComment comments = 1;
-  // Everything on the task, including files posted inside a comment.
-  repeated TaskAttachmentFile attachments = 2;
+  // A file belongs to the comment it was posted in, so it travels inside TaskComment.
+  reserved 2;
 }
 
 message CreateCommentRequest {
@@ -253,7 +319,8 @@ message CreateCommentRequest {
   // Ids the composer resolved from the @names it offered; the server checks each is a
   // colleague before it notifies anyone.
   repeated string mention_user_ids = 3;
-  // Files uploaded by the attachment action beforehand, moved onto this comment on post.
+  // Files stored by the attachment action as this comment was posted, claimed here so no
+  // file is left on the task without a comment to explain it.
   repeated string attachment_ids = 4;
 }
 
@@ -286,9 +353,16 @@ message DeleteAttachmentResponse {}
 service TasksService {
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
   rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse);
   rpc ListLists(ListListsRequest) returns (ListListsResponse);
   rpc CreateList(CreateListRequest) returns (CreateListResponse);
+  rpc UpdateList(UpdateListRequest) returns (UpdateListResponse);
+  rpc DeleteList(DeleteListRequest) returns (DeleteListResponse);
   rpc ListStatuses(ListStatusesRequest) returns (ListStatusesResponse);
+  rpc CreateStatus(CreateStatusRequest) returns (CreateStatusResponse);
+  rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusResponse);
+  rpc ReorderStatus(ReorderStatusRequest) returns (ReorderStatusResponse);
+  rpc DeleteStatus(DeleteStatusRequest) returns (DeleteStatusResponse);
 
   rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
   rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);

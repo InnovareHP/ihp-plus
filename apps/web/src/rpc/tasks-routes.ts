@@ -4,23 +4,30 @@ import {
   createComment,
   createList,
   createProject,
+  createStatus,
   createTask,
   deleteAttachment,
   deleteComment,
+  deleteList,
+  deleteStatus,
   deleteTask,
   loadConversation,
   loadLists,
   loadProjects,
   loadStatuses,
   loadTasks,
+  reorderStatus,
   reorderTask,
   setTaskCompleted,
   updateComment,
+  updateList,
+  updateProject,
+  updateStatus,
   updateTask,
 } from '@/features/tasks/service'
 import {
   assigneeFilterFromProto,
-  attachmentToProto,
+  categoryFromProto,
   commentToProto,
   listToProto,
   priorityFromProto,
@@ -42,6 +49,17 @@ export const tasks: ServiceImpl<typeof TasksService> = {
     ),
   }),
 
+  updateProject: async (request) => ({
+    project: projectToProto(
+      await updateProject({
+        projectId: request.projectId,
+        ...(request.name === undefined ? {} : { name: request.name }),
+        ...(request.color === undefined ? {} : { color: request.color }),
+        ...(request.isArchived === undefined ? {} : { isArchived: request.isArchived }),
+      }),
+    ),
+  }),
+
   listLists: async (request) => ({
     lists: (await loadLists(request.projectId)).map(listToProto),
   }),
@@ -50,7 +68,45 @@ export const tasks: ServiceImpl<typeof TasksService> = {
     list: listToProto(await createList({ projectId: request.projectId, name: request.name })),
   }),
 
+  updateList: async (request) => ({
+    list: listToProto(await updateList(request.listId, request.name)),
+  }),
+
+  deleteList: async (request) => {
+    await deleteList(request.listId)
+    return {}
+  },
+
   listStatuses: async () => ({ statuses: (await loadStatuses()).map(statusToProto) }),
+
+  createStatus: async (request) => ({
+    status: statusToProto(
+      await createStatus({
+        name: request.name,
+        color: request.color,
+        category: categoryFromProto(request.category),
+      }),
+    ),
+  }),
+
+  updateStatus: async (request) => ({
+    status: statusToProto(
+      await updateStatus({
+        statusId: request.statusId,
+        ...(request.name === undefined ? {} : { name: request.name }),
+        ...(request.color === undefined ? {} : { color: request.color }),
+      }),
+    ),
+  }),
+
+  reorderStatus: async (request) => ({
+    statuses: (await reorderStatus(request.statusId, request.beforeStatusId)).map(statusToProto),
+  }),
+
+  deleteStatus: async (request) => {
+    await deleteStatus(request.statusId, request.moveToStatusId)
+    return {}
+  },
 
   listTasks: async (request) => {
     const rows = await loadTasks({
@@ -117,10 +173,7 @@ export const tasks: ServiceImpl<typeof TasksService> = {
 
   listComments: async (request) => {
     const conversation = await loadConversation(request.taskId)
-    return {
-      comments: conversation.comments.map(commentToProto),
-      attachments: conversation.attachments.map(attachmentToProto),
-    }
+    return { comments: conversation.comments.map(commentToProto) }
   },
 
   createComment: async (request) => ({

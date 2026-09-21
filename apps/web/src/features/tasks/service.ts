@@ -13,6 +13,7 @@ import {
   listFormSchema,
   MENTION_EVERYONE,
   projectFormSchema,
+  statusFormSchema,
   taskFormSchema,
   type CommentFormValues,
   type ListFormValues,
@@ -29,6 +30,9 @@ import {
   type TaskRow,
   type TaskStatusCategory,
   type TaskStatusRow,
+  type StatusFormValues,
+  type UpdateProjectValues,
+  type UpdateStatusValues,
   type UpdateTaskValues,
 } from './schema'
 
@@ -196,6 +200,15 @@ async function statusOfCategory(organizationId: string, category: TaskStatusCate
   return match
 }
 
+async function statusOrThrow(caller: Caller, statusId: string) {
+  const status = await db.taskStatus.findFirst({
+    where: { id: statusId, organizationId: caller.organizationId },
+    select: statusSelect,
+  })
+  if (!status) throw new ConnectError('That column no longer exists.', Code.NotFound)
+  return status
+}
+
 async function projectOrThrow(caller: Caller, projectId: string) {
   const project = await db.taskProject.findFirst({
     where: { id: projectId, organizationId: caller.organizationId },
@@ -288,6 +301,40 @@ export async function createProject(values: ProjectFormValues): Promise<TaskProj
   }
 }
 
+export async function updateProject(values: UpdateProjectValues): Promise<TaskProjectRow> {
+  const caller = await requireMember()
+  await projectOrThrow(caller, values.projectId)
+
+  const data: Prisma.TaskProjectUpdateInput = {}
+  if (values.name !== undefined) {
+    const name = values.name.trim()
+    if (!name) throw new ConnectError('Name the project.', Code.InvalidArgument)
+    data.name = name
+  }
+  if (values.color !== undefined) data.color = values.color.trim() || null
+  if (values.isArchived !== undefined) data.isArchived = values.isArchived
+
+  const project = await db.taskProject.update({
+    where: { id: values.projectId },
+    data,
+    select: {
+      id: true,
+      name: true,
+      color: true,
+      isArchived: true,
+      _count: { select: { tasks: { where: { isArchived: false } } } },
+    },
+  })
+
+  return {
+    id: project.id,
+    name: project.name,
+    color: project.color ?? undefined,
+    isArchived: project.isArchived,
+    taskCount: project._count.tasks,
+  }
+}
+
 export async function loadLists(projectId: string): Promise<TaskListRow[]> {
   const caller = await requireMember()
   await projectOrThrow(caller, projectId)
@@ -317,6 +364,161 @@ export async function createList(values: ListFormValues): Promise<TaskListRow> {
     },
     select: { id: true, projectId: true, name: true, sortOrder: true },
   })
+}
+
+export async function updateList(listId: string, name: string): Promise<TaskListRow> {
+  const caller = await requireMember()
+  const trimmed = name.trim()
+  if (!trimmed) throw new ConnectError('Name the list.', Code.InvalidArgument)
+
+  const list = await db.taskList.findFirst({
+    where: { id: listId, organizationId: caller.organizationId },
+    select: { id: true },
+  })
+  if (!list) throw new ConnectError('That list no longer exists.', Code.NotFound)
+
+  return db.taskList.update({
+    where: { id: list.id },
+    data: { name: trimmed },
+    select: { id: true, projectId: true, name: true, sortOrder: true },
+  })
+}
+
+export async function deleteList(listId: string): Promise<void> {
+  const caller = await requireMember()
+
+  const list = await db.taskList.findFirst({
+    where: { id: listId, organizationId: caller.organizationId },
+    select: { id: true, projectId: true, _count: { select: { tasks: true } } },
+  })
+  if (!list) throw new ConnectError('That list no longer exists.', Code.NotFound)
+
+  if (list._count.tasks > 0) {
+    throw new ConnectError(
+      'That list still holds tasks \u2014 move or delete them first.',
+      Code.FailedPrecondition,
+    )
+  }
+
+  // A project with no list can hold nothing, so the last one stays.
+  const siblings = await db.taskList.count({ where: { projectId: list.projectId } })
+  if (siblings <= 1) {
+    throw new ConnectError('A project keeps at least one list.', Code.FailedPrecondition)
+  }
+
+  await db.taskList.delete({ where: { id: list.id } })
+}
+
+export async function createStatus(values: StatusFormValues): Promise<TaskStatusRow> {
+  const caller = await requireMember()
+  const parsed = statusFormSchema.parse(values)
+  const existing = await ensureStatuses(caller.organizationId)
+
+  if (existing.some((status) => status.name.toLowerCase() === parsed.name.toLowerCase())) {
+    throw new ConnectError('A column already goes by that name.', Code.AlreadyExists)
+  }
+
+  const created = await db.taskStatus.create({
+    data: {
+      organizationId: caller.organizationId,
+      name: parsed.name,
+      color: parsed.color,
+      category: parsed.category,
+      sortOrder: existing.length + 1,
+    },
+    select: statusSelect,
+  })
+
+  return toStatusRow(created)
+}
+
+export async function updateStatus(values: UpdateStatusValues): Promise<TaskStatusRow> {
+  const caller = await requireMember()
+  const status = await statusOrThrow(caller, values.statusId)
+
+  const data: Prisma.TaskStatusUpdateInput = {}
+  if (values.name !== undefined) {
+    const name = values.name.trim()
+    if (!name) throw new ConnectError('Name the column.', Code.InvalidArgument)
+    data.name = name
+  }
+  if (values.color !== undefined) data.color = values.color.trim()
+
+  const updated = await db.taskStatus.update({
+    where: { id: status.id },
+    data,
+    select: statusSelect,
+  })
+
+  return toStatusRow(updated)
+}
+
+/** Columns are renumbered from one on every move, so their order never drifts apart. */
+export async function reorderStatus(
+  statusId: string,
+  beforeStatusId: string | undefined,
+): Promise<TaskStatusRow[]> {
+  const caller = await requireMember()
+  const status = await statusOrThrow(caller, statusId)
+  const statuses = await ensureStatuses(caller.organizationId)
+
+  const rest = statuses.filter((one) => one.id !== status.id)
+  const index = beforeStatusId ? rest.findIndex((one) => one.id === beforeStatusId) : rest.length
+  if (index === -1) throw new ConnectError('That column has moved \u2014 try again.', Code.Aborted)
+
+  const ordered = [...rest.slice(0, index), status, ...rest.slice(index)]
+
+  await db.$transaction(
+    ordered.map((one, slot) =>
+      db.taskStatus.update({ where: { id: one.id }, data: { sortOrder: slot + 1 } }),
+    ),
+  )
+
+  const refreshed = await db.taskStatus.findMany({
+    where: { organizationId: caller.organizationId },
+    select: statusSelect,
+    orderBy: { sortOrder: 'asc' },
+  })
+
+  return refreshed.map(toStatusRow)
+}
+
+export async function deleteStatus(statusId: string, moveToStatusId?: string): Promise<void> {
+  const caller = await requireMember()
+  const status = await statusOrThrow(caller, statusId)
+  const statuses = await ensureStatuses(caller.organizationId)
+
+  // Every category keeps one column: the app resolves "done" and "active" by category.
+  const sameCategory = statuses.filter((one) => one.category === status.category)
+  if (sameCategory.length <= 1) {
+    throw new ConnectError(
+      `"${status.name}" is the last ${status.category} column \u2014 rename it instead.`,
+      Code.FailedPrecondition,
+    )
+  }
+
+  const held = await db.task.count({ where: { statusId: status.id } })
+  if (held > 0) {
+    const target = moveToStatusId
+      ? statuses.find((one) => one.id === moveToStatusId && one.id !== status.id)
+      : undefined
+    if (!target) {
+      throw new ConnectError(
+        'Say which column that work moves to before deleting this one.',
+        Code.FailedPrecondition,
+      )
+    }
+
+    await db.task.updateMany({
+      where: { statusId: status.id },
+      data: {
+        statusId: target.id,
+        ...(target.category === 'done' ? {} : { completedAt: null }),
+      },
+    })
+  }
+
+  await db.taskStatus.delete({ where: { id: status.id } })
 }
 
 export async function loadStatuses(): Promise<TaskStatusRow[]> {
@@ -743,8 +945,9 @@ export async function loadConversation(taskId: string): Promise<TaskConversation
       select: commentSelect,
       orderBy: { createdAt: 'asc' },
     }),
+    // Only a claimed file: one whose comment never posted is a failed upload, not content.
     db.taskAttachment.findMany({
-      where: { taskId },
+      where: { taskId, commentId: { not: null } },
       select: attachmentSelect,
       orderBy: { createdAt: 'asc' },
     }),
@@ -758,10 +961,7 @@ export async function loadConversation(taskId: string): Promise<TaskConversation
 
   const files = await toAttachmentRows(attachments, names)
 
-  return {
-    comments: comments.map((comment) => toCommentRow(comment, names, files)),
-    attachments: files,
-  }
+  return { comments: comments.map((comment) => toCommentRow(comment, names, files)) }
 }
 
 export async function createComment(
