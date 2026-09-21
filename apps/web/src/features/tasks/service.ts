@@ -563,7 +563,20 @@ export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
       parentId: null,
       ...(query.listId ? { listId: query.listId } : {}),
       ...(query.includeArchived ? {} : { isArchived: false }),
-      ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
+      // Work is found by what was said about it as often as by what it was called.
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              { description: { contains: search, mode: 'insensitive' as const } },
+              {
+                comments: {
+                  some: { body: { contains: search, mode: 'insensitive' as const } },
+                },
+              },
+            ],
+          }
+        : {}),
       ...(query.assignee === 'mine' ? { assignees: { some: { userId: caller.userId } } } : {}),
       ...(query.assignee === 'unassigned' ? { assignees: { none: {} } } : {}),
       ...(query.assigneeUserId ? { assignees: { some: { userId: query.assigneeUserId } } } : {}),

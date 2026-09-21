@@ -409,7 +409,7 @@ export function TaskBoard() {
           {!board.isPending && !board.isError && tasks.length === 0 && query.search ? (
             <EmptyState
               title="No tasks match that search"
-              description="Nothing on this board has that in its name."
+              description="Nothing on this board has that in its name, its details or its comments."
               action={
                 <Button variant="default" onClick={clearFilters}>
                   Clear filters

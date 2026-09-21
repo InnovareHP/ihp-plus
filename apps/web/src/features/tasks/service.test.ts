@@ -212,7 +212,11 @@ describe('loadTasks', () => {
         where: expect.objectContaining({
           organizationId: 'org-1',
           isArchived: false,
-          name: { contains: 'renewal', mode: 'insensitive' },
+          OR: [
+            { name: { contains: 'renewal', mode: 'insensitive' } },
+            { description: { contains: 'renewal', mode: 'insensitive' } },
+            { comments: { some: { body: { contains: 'renewal', mode: 'insensitive' } } } },
+          ],
           assignees: { some: { userId: 'user-1' } },
           // Subtasks hang off their parent's panel, never a board row of their own.
           parentId: null,
