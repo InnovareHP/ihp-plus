@@ -1,7 +1,7 @@
 import { db } from '@ihp/db'
 import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
-import { getSession, membershipOf, readProfile } from '@/lib/auth-guard'
+import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { loadActivity, recordActivity } from '@/lib/activity'
 import { deleteObject, objectUrl } from '@/lib/s3'
 import { notifyComment } from './notifications'
@@ -11,10 +11,12 @@ import {
   DEFAULT_TASK_LIST_NAME,
   DEFAULT_TASK_STATUSES,
   listFormSchema,
+  logTimeSchema,
   MENTION_EVERYONE,
   projectFormSchema,
   statusFormSchema,
   taskFormSchema,
+  timeSettingsSchema,
   type CommentFormValues,
   type ListFormValues,
   type ProjectFormValues,
@@ -24,6 +26,8 @@ import {
   type TaskCommentRow,
   type TaskConversation,
   type TaskDueFilter,
+  type LogTimeValues,
+  type RunningTimerRow,
   type TaskActivityRow,
   type TaskListRow,
   type TaskMentionFeed,
@@ -33,6 +37,10 @@ import {
   type TaskRow,
   type TaskStatusCategory,
   type TaskStatusRow,
+  type TaskTimeEntryRow,
+  type TaskTimeLog,
+  type TaskTimeSettingsRow,
+  type TaskTimeSettingsView,
   type StatusFormValues,
   type UpdateProjectValues,
   type UpdateStatusValues,
@@ -60,6 +68,8 @@ async function requireMember() {
     userId: session.user.id,
     name: profile.preferredName ?? session.user.name,
     organizationId: membership.organizationId,
+    // Admins are the exception in a few places below: the clock rules, and other people's hours.
+    canManage: canManageOrganization(membership),
   }
 }
 
@@ -92,6 +102,7 @@ const taskSelect = {
   createdAt: true,
   updatedAt: true,
   _count: { select: { comments: true, attachments: true } },
+  timeEntries: { select: { seconds: true } },
   parentId: true,
   subtasks: {
     select: { id: true, name: true, completedAt: true, position: true },
@@ -136,6 +147,7 @@ function toTaskRow(task: TaskRecord, names: ReadonlyMap<string, string>): TaskRo
     updatedAt: task.updatedAt.toISOString(),
     commentCount: task._count.comments,
     attachmentCount: task._count.attachments,
+    trackedSeconds: task.timeEntries.reduce((total, entry) => total + entry.seconds, 0),
     parentId: task.parentId ?? undefined,
     subtasks: task.subtasks.map((subtask) => ({
       id: subtask.id,
@@ -1102,6 +1114,286 @@ export async function markAllMentionsRead(): Promise<void> {
 }
 
 /** History is per task and already recorded; this only checks the caller may see that task. */
+
+// Defaults live in the schema, so an organization that never opens the settings still has rules.
+const DEFAULT_TIME_SETTINGS: TaskTimeSettingsRow = {
+  allowManualEntry: true,
+  allowSelfEdit: true,
+  requireNote: false,
+  trackOnlyAssigned: false,
+  autoStopHours: 12,
+}
+
+const timeEntrySelect = {
+  id: true,
+  taskId: true,
+  userId: true,
+  startedAt: true,
+  endedAt: true,
+  seconds: true,
+  note: true,
+} satisfies Prisma.TaskTimeEntrySelect
+
+type TimeEntryRecord = Prisma.TaskTimeEntryGetPayload<{ select: typeof timeEntrySelect }>
+
+function toTimeEntryRow(
+  entry: TimeEntryRecord,
+  names: ReadonlyMap<string, string>,
+): TaskTimeEntryRow {
+  return {
+    id: entry.id,
+    taskId: entry.taskId,
+    userId: entry.userId,
+    userName: names.get(entry.userId) ?? 'Removed teammate',
+    startedAt: entry.startedAt.toISOString(),
+    endedAt: entry.endedAt?.toISOString(),
+    seconds: entry.seconds,
+    note: entry.note ?? undefined,
+    isRunning: entry.endedAt === null,
+  }
+}
+
+async function timeSettingsOf(organizationId: string): Promise<TaskTimeSettingsRow> {
+  const row = await db.taskTimeSettings.findUnique({
+    where: { organizationId },
+    select: {
+      allowManualEntry: true,
+      allowSelfEdit: true,
+      requireNote: true,
+      trackOnlyAssigned: true,
+      autoStopHours: true,
+    },
+  })
+
+  return row ?? DEFAULT_TIME_SETTINGS
+}
+
+export async function loadTimeSettings(): Promise<TaskTimeSettingsView> {
+  const caller = await requireMember()
+  return { settings: await timeSettingsOf(caller.organizationId), canManage: caller.canManage }
+}
+
+export async function saveTimeSettings(values: TaskTimeSettingsRow): Promise<TaskTimeSettingsRow> {
+  const caller = await requireMember()
+  if (!caller.canManage) {
+    throw new ConnectError('Only an admin sets the clock rules.', Code.PermissionDenied)
+  }
+
+  const parsed = timeSettingsSchema.parse(values)
+
+  const saved = await db.taskTimeSettings.upsert({
+    where: { organizationId: caller.organizationId },
+    create: { organizationId: caller.organizationId, ...parsed },
+    update: parsed,
+    select: {
+      allowManualEntry: true,
+      allowSelfEdit: true,
+      requireNote: true,
+      trackOnlyAssigned: true,
+      autoStopHours: true,
+    },
+  })
+
+  return saved
+}
+
+/**
+ * A timer nobody stopped is closed at the limit rather than left to grow overnight; the cap is
+ * applied on the way past, so no scheduled job is needed to keep the numbers honest.
+ */
+async function closeForgottenTimer(
+  entry: TimeEntryRecord,
+  autoStopHours: number,
+): Promise<TimeEntryRecord> {
+  if (entry.endedAt !== null || autoStopHours <= 0) return entry
+
+  const limit = autoStopHours * 3600
+  const ran = Math.floor((Date.now() - entry.startedAt.getTime()) / 1000)
+  if (ran < limit) return entry
+
+  return db.taskTimeEntry.update({
+    where: { id: entry.id },
+    data: {
+      endedAt: new Date(entry.startedAt.getTime() + limit * 1000),
+      seconds: limit,
+      note: entry.note ?? 'Stopped automatically.',
+    },
+    select: timeEntrySelect,
+  })
+}
+
+async function runningEntryOf(caller: Caller): Promise<TimeEntryRecord | null> {
+  const running = await db.taskTimeEntry.findFirst({
+    where: { userId: caller.userId, endedAt: null, organizationId: caller.organizationId },
+    select: timeEntrySelect,
+    orderBy: { startedAt: 'desc' },
+  })
+  if (!running) return null
+
+  const settled = await closeForgottenTimer(
+    running,
+    (await timeSettingsOf(caller.organizationId)).autoStopHours,
+  )
+  return settled.endedAt === null ? settled : null
+}
+
+export async function loadTimeLog(taskId: string): Promise<TaskTimeLog> {
+  const caller = await requireMember()
+  await taskOrThrow(caller, taskId)
+
+  const entries = await db.taskTimeEntry.findMany({
+    where: { taskId },
+    select: timeEntrySelect,
+    orderBy: { startedAt: 'desc' },
+  })
+
+  const names = await peopleNames(entries.map((entry) => entry.userId))
+
+  return {
+    entries: entries.map((entry) => toTimeEntryRow(entry, names)),
+    totalSeconds: entries.reduce((total, entry) => total + entry.seconds, 0),
+  }
+}
+
+export async function startTimer(taskId: string): Promise<TaskTimeEntryRow> {
+  const caller = await requireMember()
+  const task = await taskOrThrow(caller, taskId)
+  const settings = await timeSettingsOf(caller.organizationId)
+
+  if (settings.trackOnlyAssigned && !task.assignees.some((one) => one.userId === caller.userId)) {
+    throw new ConnectError(
+      'Your organization tracks time on assigned work only.',
+      Code.PermissionDenied,
+    )
+  }
+
+  // One clock per person: starting somewhere else closes the one already running.
+  const running = await runningEntryOf(caller)
+  if (running) await stopEntry(running, undefined)
+
+  const started = await db.taskTimeEntry.create({
+    data: {
+      organizationId: caller.organizationId,
+      taskId: task.id,
+      userId: caller.userId,
+      startedAt: new Date(),
+    },
+    select: timeEntrySelect,
+  })
+
+  return toTimeEntryRow(started, new Map([[caller.userId, caller.name]]))
+}
+
+async function stopEntry(entry: TimeEntryRecord, note: string | undefined) {
+  const endedAt = new Date()
+  const seconds = Math.max(Math.floor((endedAt.getTime() - entry.startedAt.getTime()) / 1000), 0)
+
+  return db.taskTimeEntry.update({
+    where: { id: entry.id },
+    data: { endedAt, seconds, ...(note ? { note } : {}) },
+    select: timeEntrySelect,
+  })
+}
+
+export async function stopTimer(note?: string): Promise<TaskTimeEntryRow | undefined> {
+  const caller = await requireMember()
+  const settings = await timeSettingsOf(caller.organizationId)
+  const running = await runningEntryOf(caller)
+  if (!running) return undefined
+
+  if (settings.requireNote && !note?.trim()) {
+    throw new ConnectError('Say what the time went on before stopping.', Code.InvalidArgument)
+  }
+
+  const stopped = await stopEntry(running, note?.trim() || undefined)
+  return toTimeEntryRow(stopped, new Map([[caller.userId, caller.name]]))
+}
+
+export async function loadRunningTimer(): Promise<RunningTimerRow | undefined> {
+  const caller = await requireMember()
+  const running = await runningEntryOf(caller)
+  if (!running) return undefined
+
+  const task = await db.task.findFirst({
+    where: { id: running.taskId },
+    select: { name: true, taskNumber: true, projectId: true },
+  })
+  if (!task) return undefined
+
+  return {
+    entry: toTimeEntryRow(running, new Map([[caller.userId, caller.name]])),
+    taskName: task.name,
+    taskNumber: task.taskNumber,
+    projectId: task.projectId,
+  }
+}
+
+export async function logTime(values: LogTimeValues): Promise<TaskTimeEntryRow> {
+  const caller = await requireMember()
+  const parsed = logTimeSchema.parse(values)
+  const task = await taskOrThrow(caller, parsed.taskId)
+  const settings = await timeSettingsOf(caller.organizationId)
+
+  if (!settings.allowManualEntry) {
+    throw new ConnectError(
+      'Your organization records time with the timer only.',
+      Code.PermissionDenied,
+    )
+  }
+
+  if (settings.trackOnlyAssigned && !task.assignees.some((one) => one.userId === caller.userId)) {
+    throw new ConnectError(
+      'Your organization tracks time on assigned work only.',
+      Code.PermissionDenied,
+    )
+  }
+
+  if (settings.requireNote && !parsed.note) {
+    throw new ConnectError('Say what the time went on.', Code.InvalidArgument)
+  }
+
+  // Dated entries land at the start of the day they belong to, so a day's hours group together.
+  const startedAt = parsed.spentOn ? new Date(`${parsed.spentOn}T09:00:00.000Z`) : new Date()
+
+  const entry = await db.taskTimeEntry.create({
+    data: {
+      organizationId: caller.organizationId,
+      taskId: task.id,
+      userId: caller.userId,
+      startedAt,
+      endedAt: new Date(startedAt.getTime() + parsed.seconds * 1000),
+      seconds: parsed.seconds,
+      note: parsed.note || null,
+    },
+    select: timeEntrySelect,
+  })
+
+  return toTimeEntryRow(entry, new Map([[caller.userId, caller.name]]))
+}
+
+export async function deleteTimeEntry(entryId: string): Promise<void> {
+  const caller = await requireMember()
+  const settings = await timeSettingsOf(caller.organizationId)
+
+  const entry = await db.taskTimeEntry.findFirst({
+    where: { id: entryId, organizationId: caller.organizationId },
+    select: { id: true, userId: true },
+  })
+  if (!entry) throw new ConnectError('That entry is no longer there.', Code.NotFound)
+
+  const own = entry.userId === caller.userId
+  if (!caller.canManage && (!own || !settings.allowSelfEdit)) {
+    throw new ConnectError(
+      own
+        ? 'Your organization keeps time entries once they are recorded.'
+        : 'You can only remove your own time.',
+      Code.PermissionDenied,
+    )
+  }
+
+  await db.taskTimeEntry.delete({ where: { id: entry.id } })
+}
+
 export async function loadTaskActivity(taskId: string): Promise<TaskActivityRow[]> {
   const caller = await requireMember()
   await taskOrThrow(caller, taskId)

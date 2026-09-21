@@ -21,6 +21,7 @@ const TASK: TaskRow = {
   updatedAt: '2026-09-01T00:00:00.000Z',
   commentCount: 0,
   attachmentCount: 0,
+  trackedSeconds: 0,
   parentId: undefined,
   subtasks: [],
 }
@@ -110,11 +111,17 @@ describe('boardQuerySchema', () => {
       priority: [],
       due: 'any',
       task: '',
+      tab: 'task',
       list: '',
       assignee: 'mine',
       search: 'renewal',
       archived: true,
     })
+  })
+
+  it('falls back to the first panel when the tab in the URL is not one of them', () => {
+    expect(boardQuerySchema.parse({ task: 'task-1', tab: 'files' }).tab).toBe('task')
+    expect(boardQuerySchema.parse({ task: 'task-1', tab: 'history' }).tab).toBe('history')
   })
 
   it('falls back rather than throwing on a hand-edited filter', () => {

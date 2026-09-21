@@ -141,6 +141,7 @@ export function useCreateTask() {
         updatedAt: now,
         commentCount: 0,
         attachmentCount: 0,
+        trackedSeconds: 0,
         parentId: undefined,
         subtasks: [],
       }

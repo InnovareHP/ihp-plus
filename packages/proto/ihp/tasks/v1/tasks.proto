@@ -89,6 +89,8 @@ message Task {
   // Set on a subtask; the board lists only the tasks without one.
   optional string parent_id = 20;
   repeated Subtask subtasks = 21;
+  // Card badge: hours already on this task, without loading a single entry.
+  int32 tracked_seconds = 22;
 }
 
 // A subtask carries only what a checklist line shows: the whole task is one query away.
@@ -351,6 +353,98 @@ message TaskMention {
   bool is_read = 9;
 }
 
+// An hour against a task, timed or typed. A running timer is one with no ended_at.
+message TaskTimeEntry {
+  string id = 1;
+  string task_id = 2;
+  string user_id = 3;
+  string user_name = 4;
+  string started_at = 5;
+  optional string ended_at = 6;
+  int32 seconds = 7;
+  optional string note = 8;
+  bool is_running = 9;
+}
+
+// How the organization runs its clock. Every member reads it; only an admin writes it.
+message TaskTimeSettings {
+  bool allow_manual_entry = 1;
+  bool allow_self_edit = 2;
+  bool require_note = 3;
+  bool track_only_assigned = 4;
+  // Hours after which a timer somebody left running is closed at that length; 0 never closes one.
+  int32 auto_stop_hours = 5;
+}
+
+message GetTimeSettingsRequest {}
+
+message GetTimeSettingsResponse {
+  TaskTimeSettings settings = 1;
+  // Whether this caller may change them, so the screen need not ask twice.
+  bool can_manage = 2;
+}
+
+message UpdateTimeSettingsRequest {
+  TaskTimeSettings settings = 1;
+}
+
+message UpdateTimeSettingsResponse {
+  TaskTimeSettings settings = 1;
+}
+
+message ListTimeEntriesRequest {
+  string task_id = 1;
+}
+
+message ListTimeEntriesResponse {
+  repeated TaskTimeEntry entries = 1;
+  int32 total_seconds = 2;
+}
+
+message StartTimerRequest {
+  string task_id = 1;
+}
+
+message StartTimerResponse {
+  TaskTimeEntry entry = 1;
+}
+
+message StopTimerRequest {
+  optional string note = 1;
+}
+
+message StopTimerResponse {
+  optional TaskTimeEntry entry = 1;
+}
+
+// What the header shows: the timer this person left running, if any.
+message GetRunningTimerRequest {}
+
+message GetRunningTimerResponse {
+  optional TaskTimeEntry entry = 1;
+  optional string task_name = 2;
+  optional int32 task_number = 3;
+  optional string project_id = 4;
+}
+
+message LogTimeRequest {
+  string task_id = 1;
+  int32 seconds = 2;
+  // The day the work happened, as yyyy-mm-dd; today when absent.
+  optional string spent_on = 3;
+  optional string note = 4;
+}
+
+message LogTimeResponse {
+  TaskTimeEntry entry = 1;
+}
+
+message DeleteTimeEntryRequest {
+  string entry_id = 1;
+}
+
+message DeleteTimeEntryResponse {}
+
 message ListMentionsRequest {
   bool include_read = 1;
 }
@@ -458,6 +552,15 @@ service TasksService {
   rpc CompleteTask(CompleteTaskRequest) returns (CompleteTaskResponse);
   rpc ReorderTask(ReorderTaskRequest) returns (ReorderTaskResponse);
   rpc DeleteTask(DeleteTaskRequest) returns (DeleteTaskResponse);
+
+  rpc GetTimeSettings(GetTimeSettingsRequest) returns (GetTimeSettingsResponse);
+  rpc UpdateTimeSettings(UpdateTimeSettingsRequest) returns (UpdateTimeSettingsResponse);
+  rpc ListTimeEntries(ListTimeEntriesRequest) returns (ListTimeEntriesResponse);
+  rpc StartTimer(StartTimerRequest) returns (StartTimerResponse);
+  rpc StopTimer(StopTimerRequest) returns (StopTimerResponse);
+  rpc GetRunningTimer(GetRunningTimerRequest) returns (GetRunningTimerResponse);
+  rpc LogTime(LogTimeRequest) returns (LogTimeResponse);
+  rpc DeleteTimeEntry(DeleteTimeEntryRequest) returns (DeleteTimeEntryResponse);
 
   rpc ListMentions(ListMentionsRequest) returns (ListMentionsResponse);
   rpc MarkMentionRead(MarkMentionReadRequest) returns (MarkMentionReadResponse);

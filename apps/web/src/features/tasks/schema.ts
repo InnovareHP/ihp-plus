@@ -108,8 +108,11 @@ export const subtaskFormSchema = z.object({
 // The board's own state — which project, which list, whose work, what was typed — lives in the
 // URL so a board someone is looking at can be linked to.
 export const TASK_VIEWS = ['board', 'list'] as const
+// The panels of the task dialog. Which one is open is a link somebody can send.
+export const TASK_TABS = ['task', 'comments', 'history'] as const
 
 export type TaskView = (typeof TASK_VIEWS)[number]
+export type TaskTab = (typeof TASK_TABS)[number]
 
 export const TASK_VIEW_LABELS: Record<TaskView, string> = {
   board: 'Board',
@@ -121,6 +124,7 @@ export const boardQuerySchema = z.object({
   view: z.enum(TASK_VIEWS).catch('board').default('board'),
   // The open task: a detail panel has to be linkable, so it is a query param, not local state.
   task: z.string().trim().max(64).catch('').default(''),
+  tab: z.enum(TASK_TABS).catch('task').default('task'),
   list: z.string().trim().max(64).catch('').default(''),
   assignee: z.enum(TASK_ASSIGNEE_FILTERS).catch('all').default('all'),
   person: z.string().trim().max(64).catch('').default(''),
@@ -203,6 +207,7 @@ export interface TaskRow {
   updatedAt: string
   commentCount: number
   attachmentCount: number
+  trackedSeconds: number
   parentId: string | undefined
   subtasks: TaskSubtaskRow[]
 }
@@ -342,6 +347,70 @@ export interface TaskMentionFeed {
   /** Counted over everything, not the page shown, so the badge never understates. */
   unreadCount: number
 }
+
+export interface TaskTimeEntryRow {
+  id: string
+  taskId: string
+  userId: string
+  userName: string
+  startedAt: string
+  endedAt: string | undefined
+  seconds: number
+  note: string | undefined
+  isRunning: boolean
+}
+
+export interface TaskTimeLog {
+  entries: TaskTimeEntryRow[]
+  totalSeconds: number
+}
+
+/** The organization's clock rules. Members read them; admins set them. */
+export interface TaskTimeSettingsRow {
+  allowManualEntry: boolean
+  allowSelfEdit: boolean
+  requireNote: boolean
+  trackOnlyAssigned: boolean
+  /** Hours after which a forgotten timer is closed at that length; 0 never closes one. */
+  autoStopHours: number
+}
+
+export interface TaskTimeSettingsView {
+  settings: TaskTimeSettingsRow
+  canManage: boolean
+}
+
+export interface RunningTimerRow {
+  entry: TaskTimeEntryRow
+  taskName: string
+  taskNumber: number
+  projectId: string
+}
+
+export const timeSettingsSchema = z.object({
+  allowManualEntry: z.boolean(),
+  allowSelfEdit: z.boolean(),
+  requireNote: z.boolean(),
+  trackOnlyAssigned: z.boolean(),
+  autoStopHours: z
+    .number()
+    .int()
+    .min(0, 'Use 0 to never stop a timer on its own.')
+    .max(24, 'A day is the longest a timer may run.'),
+})
+
+export const logTimeSchema = z.object({
+  taskId: z.string().min(1),
+  seconds: z
+    .number()
+    .int()
+    .min(60, 'Log at least a minute.')
+    .max(24 * 3600, 'A single entry cannot run past a day.'),
+  spentOn: z.string().trim().default(''),
+  note: z.string().trim().max(200, 'Keep the note under 200 characters.').default(''),
+})
+
+export type LogTimeValues = z.infer<typeof logTimeSchema>
 
 export interface TaskActivityRow {
   id: string

@@ -76,6 +76,7 @@ const TASK = {
   updatedAt: '2026-09-01T00:00:00.000Z',
   commentCount: 2,
   attachmentCount: 1,
+  trackedSeconds: 0,
   parentId: undefined,
   subtasks: [],
 }

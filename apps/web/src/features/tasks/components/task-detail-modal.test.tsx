@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { act, render, screen, userEvent, waitFor, within } from '@/test/render'
-import type { TaskCommentRow, TaskRow, TaskStatusRow } from '../schema'
+import type { TaskCommentRow, TaskRow, TaskStatusRow, TaskTab } from '../schema'
 import { TaskDetailModal } from './task-detail-modal'
 
 const rpc = vi.hoisted(() => ({
@@ -53,6 +53,7 @@ const TASK: TaskRow = {
   updatedAt: '2026-09-01T00:00:00.000Z',
   commentCount: 1,
   attachmentCount: 1,
+  trackedSeconds: 0,
   parentId: undefined,
   subtasks: [],
 }
@@ -72,10 +73,17 @@ const COMMENT: TaskCommentRow = {
 const VIEWER = { userId: 'user-1', name: 'Dana Reyes' }
 const COLLEAGUES = [{ userId: 'user-2', name: 'Grace Hopper' }]
 
-function renderModal(task: TaskRow = TASK) {
+// Most of what the dialog does lives in the conversation, so that is the panel under test
+// unless a case says otherwise.
+function renderModal(
+  task: TaskRow = TASK,
+  options: { tab?: TaskTab; onTabChange?: () => void } = {},
+) {
   return render(
     <TaskDetailModal
       task={task}
+      tab={options.tab ?? 'comments'}
+      onTabChange={options.onTabChange ?? vi.fn()}
       viewer={VIEWER}
       colleagues={COLLEAGUES}
       onClose={vi.fn()}
@@ -239,26 +247,62 @@ describe('TaskDetailModal', () => {
     expect(within(theirs as HTMLElement).getByText('Grace Hopper')).toBeInTheDocument()
   })
 
-  it("keeps the task's history one click away, folded", async () => {
+  it('names its three panels and says how much conversation there is', async () => {
+    renderModal({ ...TASK, commentCount: 3 }, { tab: 'task' })
+
+    const tabs = await screen.findAllByRole('tab')
+    expect(tabs.map((one) => one.textContent)).toEqual(['Task', 'Comments3', 'History'])
+    // The badge is a number beside a word; the name a screen reader reads is a sentence.
+    expect(screen.getByRole('tab', { name: 'Comments (3)' })).toBeInTheDocument()
+  })
+
+  it('keeps where the task stands visible on every panel', async () => {
+    renderModal(
+      { ...TASK, assignees: [{ userId: 'user-3', name: 'Ken Watts' }] },
+      { tab: 'history' },
+    )
+
+    // Status, priority and who has it are why the dialog was opened; a tab must not hide them.
+    expect(await screen.findByText('To do')).toBeInTheDocument()
+    expect(screen.getByText('Normal')).toBeInTheDocument()
+    expect(screen.getByText('Ken Watts')).toBeInTheDocument()
+  })
+
+  it('puts the panel someone is on in the URL rather than in local state', async () => {
+    const onTabChange = vi.fn()
     const user = userEvent.setup()
-    renderModal()
+    renderModal(TASK, { tab: 'task', onTabChange })
 
-    const history = await screen.findByRole('button', { name: 'History' })
-    expect(history).toHaveAttribute('aria-expanded', 'false')
+    await user.click(await screen.findByRole('tab', { name: 'History' }))
 
-    await user.click(history)
+    expect(onTabChange).toHaveBeenCalledWith('history')
+  })
+
+  it('reads the history only once that panel is the one open', async () => {
+    renderModal(TASK, { tab: 'comments' })
+    await screen.findByText('The figures are confirmed.')
+
+    expect(rpc.listTaskActivity).not.toHaveBeenCalled()
+  })
+
+  it('shows the history when that panel is the one open', async () => {
+    renderModal(TASK, { tab: 'history' })
 
     expect(await screen.findByText('Task created')).toBeInTheDocument()
+    expect(rpc.listTaskActivity).toHaveBeenCalledWith('task-1')
   })
 
   it('lists the subtasks with how far the work has got', async () => {
-    renderModal({
-      ...TASK,
-      subtasks: [
-        { id: 'subtask-1', name: 'Pull the figures', isDone: true, position: 1024 },
-        { id: 'subtask-2', name: 'Draft the letter', isDone: false, position: 2048 },
-      ],
-    })
+    renderModal(
+      {
+        ...TASK,
+        subtasks: [
+          { id: 'subtask-1', name: 'Pull the figures', isDone: true, position: 1024 },
+          { id: 'subtask-2', name: 'Draft the letter', isDone: false, position: 2048 },
+        ],
+      },
+      { tab: 'task' },
+    )
 
     expect(await screen.findByText('1 of 2 done')).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'Complete Draft the letter' })).not.toBeChecked()
@@ -268,7 +312,7 @@ describe('TaskDetailModal', () => {
     const user = userEvent.setup()
     rpc.createTask.mockResolvedValue({ ...TASK, id: 'task-2', name: 'Book the courier' })
 
-    renderModal()
+    renderModal(TASK, { tab: 'task' })
     await user.type(await screen.findByLabelText('Add a subtask'), 'Book the courier')
     await user.click(screen.getByRole('button', { name: 'Add' }))
 
@@ -287,10 +331,13 @@ describe('TaskDetailModal', () => {
     const user = userEvent.setup()
     rpc.completeTask.mockResolvedValue({ ...TASK, id: 'subtask-1' })
 
-    renderModal({
-      ...TASK,
-      subtasks: [{ id: 'subtask-1', name: 'Pull the figures', isDone: false, position: 1024 }],
-    })
+    renderModal(
+      {
+        ...TASK,
+        subtasks: [{ id: 'subtask-1', name: 'Pull the figures', isDone: false, position: 1024 }],
+      },
+      { tab: 'task' },
+    )
 
     await user.click(await screen.findByRole('checkbox', { name: 'Complete Pull the figures' }))
 

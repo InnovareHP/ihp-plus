@@ -494,10 +494,13 @@ export function TaskBoard() {
 
       <TaskDetailModal
         task={openTask}
-        onOpenTask={(taskId) => setQuery({ task: taskId })}
+        tab={query.tab}
+        onTabChange={(tab) => setQuery({ tab })}
+        // A different task starts on its own first panel rather than the one just left open.
+        onOpenTask={(taskId) => setQuery({ task: taskId, tab: 'task' })}
         viewer={viewer}
         colleagues={colleagues}
-        onClose={() => setQuery({ task: '' })}
+        onClose={() => setQuery({ task: '', tab: 'task' })}
       />
 
       <ProjectFormModal

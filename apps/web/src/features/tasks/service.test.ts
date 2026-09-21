@@ -37,6 +37,14 @@ const prisma = vi.hoisted(() => ({
   },
   taskAssignee: { createMany: vi.fn(), deleteMany: vi.fn() },
   taskCommentMention: { findMany: vi.fn(), count: vi.fn(), updateMany: vi.fn() },
+  taskTimeEntry: {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  taskTimeSettings: { findUnique: vi.fn(), upsert: vi.fn() },
   taskComment: { findMany: vi.fn(), create: vi.fn() },
   taskAttachment: { findMany: vi.fn(), updateMany: vi.fn() },
   member: { findMany: vi.fn() },
@@ -57,6 +65,11 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 
 const {
   createStatus,
+  deleteTimeEntry,
+  logTime,
+  saveTimeSettings,
+  startTimer,
+  stopTimer,
   promoteSubtask,
   loadTaskActivity,
   loadMentions,
@@ -97,6 +110,7 @@ const TASK_RECORD = {
   createdAt: new Date('2026-09-01T00:00:00.000Z'),
   updatedAt: new Date('2026-09-01T00:00:00.000Z'),
   _count: { comments: 0, attachments: 0 },
+  timeEntries: [],
   parentId: null,
   subtasks: [],
 }
@@ -298,6 +312,162 @@ describe('loadTaskActivity', () => {
     await loadTaskActivity('task-1')
 
     expect(activity.loadActivity).toHaveBeenCalledWith('org-1', 'task', 'task-1')
+  })
+})
+
+describe('time tracking', () => {
+  const ENTRY = {
+    id: 'entry-1',
+    taskId: 'task-1',
+    userId: 'user-1',
+    startedAt: new Date('2026-09-22T09:00:00.000Z'),
+    endedAt: null,
+    seconds: 0,
+    note: null,
+  }
+
+  beforeEach(() => {
+    prisma.task.findFirst.mockResolvedValue(TASK_RECORD)
+    prisma.taskTimeSettings.findUnique.mockResolvedValue(null)
+    prisma.taskTimeEntry.findFirst.mockResolvedValue(null)
+    prisma.taskTimeEntry.create.mockResolvedValue(ENTRY)
+    prisma.taskTimeEntry.update.mockResolvedValue({ ...ENTRY, endedAt: new Date(), seconds: 600 })
+  })
+
+  it('stops the clock already running before starting another', async () => {
+    prisma.taskTimeEntry.findFirst.mockResolvedValue({
+      ...ENTRY,
+      id: 'entry-old',
+      startedAt: new Date(Date.now() - 600_000),
+    })
+
+    await startTimer('task-1')
+
+    expect(prisma.taskTimeEntry.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'entry-old' },
+        data: expect.objectContaining({ endedAt: expect.any(Date), seconds: expect.any(Number) }),
+      }),
+    )
+    expect(prisma.taskTimeEntry.create).toHaveBeenCalled()
+  })
+
+  it('closes a timer somebody left running at the hour limit', async () => {
+    const twoDaysAgo = new Date(Date.now() - 48 * 3600 * 1000)
+    prisma.taskTimeEntry.findFirst.mockResolvedValue({ ...ENTRY, startedAt: twoDaysAgo })
+    prisma.taskTimeEntry.update.mockResolvedValue({
+      ...ENTRY,
+      startedAt: twoDaysAgo,
+      endedAt: new Date(twoDaysAgo.getTime() + 12 * 3600 * 1000),
+      seconds: 12 * 3600,
+    })
+
+    const stopped = await stopTimer()
+
+    // The forgotten one was capped, so there was nothing left to stop.
+    expect(stopped).toBeUndefined()
+    expect(prisma.taskTimeEntry.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ seconds: 12 * 3600 }) }),
+    )
+  })
+
+  it('refuses a typed entry when the organization tracks with the timer only', async () => {
+    prisma.taskTimeSettings.findUnique.mockResolvedValue({
+      allowManualEntry: false,
+      allowSelfEdit: true,
+      requireNote: false,
+      trackOnlyAssigned: false,
+      autoStopHours: 12,
+    })
+
+    await expect(
+      logTime({ taskId: 'task-1', seconds: 3600, spentOn: '', note: '' }),
+    ).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+  })
+
+  it('refuses time on work the person is not assigned, when that is the rule', async () => {
+    prisma.taskTimeSettings.findUnique.mockResolvedValue({
+      allowManualEntry: true,
+      allowSelfEdit: true,
+      requireNote: false,
+      trackOnlyAssigned: true,
+      autoStopHours: 12,
+    })
+
+    await expect(startTimer('task-1')).rejects.toMatchObject({ code: Code.PermissionDenied })
+  })
+
+  it('asks for the note the organization requires', async () => {
+    prisma.taskTimeSettings.findUnique.mockResolvedValue({
+      allowManualEntry: true,
+      allowSelfEdit: true,
+      requireNote: true,
+      trackOnlyAssigned: false,
+      autoStopHours: 12,
+    })
+
+    await expect(
+      logTime({ taskId: 'task-1', seconds: 3600, spentOn: '', note: '' }),
+    ).rejects.toMatchObject({ code: Code.InvalidArgument })
+  })
+
+  it('dates a typed entry to the day it belongs to', async () => {
+    await logTime({ taskId: 'task-1', seconds: 5400, spentOn: '2026-09-20', note: 'Drafting' })
+
+    expect(prisma.taskTimeEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          startedAt: new Date('2026-09-20T09:00:00.000Z'),
+          seconds: 5400,
+          note: 'Drafting',
+        }),
+      }),
+    )
+  })
+
+  it("keeps a member from deleting somebody else's hours", async () => {
+    prisma.taskTimeEntry.findFirst.mockResolvedValue({ id: 'entry-2', userId: 'user-9' })
+
+    await expect(deleteTimeEntry('entry-2')).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+  })
+
+  it('keeps a member from deleting their own when the organization says entries stand', async () => {
+    prisma.taskTimeSettings.findUnique.mockResolvedValue({
+      allowManualEntry: true,
+      allowSelfEdit: false,
+      requireNote: false,
+      trackOnlyAssigned: false,
+      autoStopHours: 12,
+    })
+    prisma.taskTimeEntry.findFirst.mockResolvedValue({ id: 'entry-1', userId: 'user-1' })
+
+    await expect(deleteTimeEntry('entry-1')).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+  })
+
+  it('lets a member take back their own when self-editing is allowed', async () => {
+    prisma.taskTimeEntry.findFirst.mockResolvedValue({ id: 'entry-1', userId: 'user-1' })
+
+    await deleteTimeEntry('entry-1')
+
+    expect(prisma.taskTimeEntry.delete).toHaveBeenCalledWith({ where: { id: 'entry-1' } })
+  })
+
+  it('lets nobody but an admin set the clock rules', async () => {
+    await expect(
+      saveTimeSettings({
+        allowManualEntry: false,
+        allowSelfEdit: false,
+        requireNote: true,
+        trackOnlyAssigned: true,
+        autoStopHours: 8,
+      }),
+    ).rejects.toMatchObject({ code: Code.PermissionDenied })
   })
 })
 

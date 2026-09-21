@@ -110,6 +110,7 @@ model Task {
   assignees   TaskAssignee[]
   comments    TaskComment[]
   attachments TaskAttachment[]
+  timeEntries TaskTimeEntry[]
 
   @@unique([projectId, taskNumber])
   @@index([organizationId, listId, isArchived])
@@ -159,6 +160,52 @@ model TaskComment {
   @@index([taskId, createdAt])
   @@index([organizationId])
   @@map("taskComment")
+  @@schema("tasks")
+}
+
+// How an organization runs its clock. One row per organization, created on first read, so a
+// company that never opens the settings still has the defaults every rule below is checked against.
+model TaskTimeSettings {
+  organizationId String @id
+
+  allowManualEntry  Boolean @default(true)
+  allowSelfEdit     Boolean @default(true)
+  requireNote       Boolean @default(false)
+  trackOnlyAssigned Boolean @default(false)
+  // Hours after which a timer somebody left running is closed at that length; 0 never closes one.
+  autoStopHours     Int     @default(12)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("taskTimeSettings")
+  @@schema("tasks")
+}
+
+// Hours against a task. A row with no endedAt is a timer still running; one with both ends is
+// work already recorded, whether it was timed or typed in afterwards.
+model TaskTimeEntry {
+  id             String @id @default(uuid())
+  organizationId String
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId String
+
+  startedAt DateTime
+  endedAt   DateTime?
+  // Stored rather than derived: a typed entry has no clock behind it, and a stopped timer must
+  // not change length if its timestamps are ever corrected.
+  seconds   Int       @default(0)
+  note      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId, startedAt])
+  // One running timer per person is a query by this pair.
+  @@index([userId, endedAt])
+  @@map("taskTimeEntry")
   @@schema("tasks")
 }
 

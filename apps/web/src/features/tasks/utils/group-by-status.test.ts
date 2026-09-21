@@ -38,6 +38,7 @@ function task(id: string, status: TaskStatusRow): TaskRow {
     updatedAt: '2026-09-01T00:00:00.000Z',
     commentCount: 0,
     attachmentCount: 0,
+    trackedSeconds: 0,
     parentId: undefined,
     subtasks: [],
   }

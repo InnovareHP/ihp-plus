@@ -8,6 +8,8 @@ import {
   type TaskComment as TaskCommentMessage,
   type TaskList as TaskListMessage,
   type TaskMention as TaskMentionMessage,
+  type TaskTimeEntry as TaskTimeEntryMessage,
+  type TaskTimeSettings as TaskTimeSettingsMessage,
   type TaskProject as TaskProjectMessage,
   type TaskStatus as TaskStatusMessage,
 } from '@ihp/rpc/tasks'
@@ -19,6 +21,8 @@ import type {
   TaskListRow,
   TaskMentionRow,
   TaskPriority as Priority,
+  TaskTimeEntryRow,
+  TaskTimeSettingsRow,
   TaskProjectRow,
   TaskRow,
   TaskStatusCategory as StatusCategory,
@@ -204,6 +208,7 @@ export function taskToProto(task: TaskRow): TaskMessage {
     updatedAt: task.updatedAt,
     commentCount: task.commentCount,
     attachmentCount: task.attachmentCount,
+    trackedSeconds: task.trackedSeconds,
     parentId: task.parentId,
     subtasks: task.subtasks.map((subtask) => ({
       $typeName: 'ihp.tasks.v1.Subtask' as const,
@@ -241,6 +246,7 @@ export function taskFromProto(task: TaskMessage): TaskRow {
     updatedAt: task.updatedAt,
     commentCount: task.commentCount,
     attachmentCount: task.attachmentCount,
+    trackedSeconds: task.trackedSeconds,
     parentId: task.parentId,
     subtasks: task.subtasks.map((subtask) => ({
       id: subtask.id,
@@ -248,6 +254,58 @@ export function taskFromProto(task: TaskMessage): TaskRow {
       isDone: subtask.isDone,
       position: subtask.position,
     })),
+  }
+}
+
+export function timeEntryToProto(entry: TaskTimeEntryRow): TaskTimeEntryMessage {
+  return {
+    $typeName: 'ihp.tasks.v1.TaskTimeEntry',
+    id: entry.id,
+    taskId: entry.taskId,
+    userId: entry.userId,
+    userName: entry.userName,
+    startedAt: entry.startedAt,
+    endedAt: entry.endedAt,
+    seconds: entry.seconds,
+    note: entry.note,
+    isRunning: entry.isRunning,
+  }
+}
+
+export function timeEntryFromProto(entry: TaskTimeEntryMessage): TaskTimeEntryRow {
+  return {
+    id: entry.id,
+    taskId: entry.taskId,
+    userId: entry.userId,
+    userName: entry.userName,
+    startedAt: entry.startedAt,
+    endedAt: entry.endedAt,
+    seconds: entry.seconds,
+    note: entry.note,
+    isRunning: entry.isRunning,
+  }
+}
+
+export function timeSettingsToProto(settings: TaskTimeSettingsRow): TaskTimeSettingsMessage {
+  return {
+    $typeName: 'ihp.tasks.v1.TaskTimeSettings',
+    allowManualEntry: settings.allowManualEntry,
+    allowSelfEdit: settings.allowSelfEdit,
+    requireNote: settings.requireNote,
+    trackOnlyAssigned: settings.trackOnlyAssigned,
+    autoStopHours: settings.autoStopHours,
+  }
+}
+
+export function timeSettingsFromProto(
+  settings: TaskTimeSettingsMessage | undefined,
+): TaskTimeSettingsRow {
+  return {
+    allowManualEntry: settings?.allowManualEntry ?? true,
+    allowSelfEdit: settings?.allowSelfEdit ?? true,
+    requireNote: settings?.requireNote ?? false,
+    trackOnlyAssigned: settings?.trackOnlyAssigned ?? false,
+    autoStopHours: settings?.autoStopHours ?? 12,
   }
 }
 

@@ -28,11 +28,12 @@ const EMPTY: TaskConversation = { comments: [] }
 const CONVERSATION_POLL = 30 * 1000
 
 /** History only grows when something happened, so it is fetched once per open task. */
-export function useTaskActivity(taskId: string | undefined) {
+/** `enabled` is how the history tab pays for itself: nothing is fetched until it is opened. */
+export function useTaskActivity(taskId: string | undefined, enabled = true) {
   return useQuery({
     queryKey: taskKeys.activity(taskId ?? ''),
     queryFn: () => listTaskActivity(taskId as string),
-    enabled: Boolean(taskId),
+    enabled: Boolean(taskId) && enabled,
     staleTime: 60 * 1000,
   })
 }

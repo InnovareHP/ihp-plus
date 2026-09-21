@@ -11,20 +11,28 @@ import {
   deleteList,
   deleteStatus,
   deleteTask,
+  deleteTimeEntry,
   getTask,
   loadConversation,
   loadLists,
   loadMentions,
+  loadRunningTimer,
   loadTaskActivity,
+  loadTimeLog,
+  loadTimeSettings,
   loadProjects,
   loadStatuses,
   loadTasks,
+  logTime,
   markAllMentionsRead,
   markMentionRead,
   promoteSubtask,
   reorderStatus,
   reorderTask,
+  saveTimeSettings,
   setTaskCompleted,
+  startTimer,
+  stopTimer,
   updateComment,
   updateList,
   updateProject,
@@ -39,6 +47,9 @@ import {
   listToProto,
   mentionToProto,
   priorityFromProto,
+  timeEntryToProto,
+  timeSettingsFromProto,
+  timeSettingsToProto,
   projectToProto,
   statusToProto,
   taskToProto,
@@ -188,6 +199,54 @@ export const tasks: ServiceImpl<typeof TasksService> = {
 
   deleteTask: async (request) => {
     await deleteTask(request.taskId)
+    return {}
+  },
+
+  getTimeSettings: async () => {
+    const view = await loadTimeSettings()
+    return { settings: timeSettingsToProto(view.settings), canManage: view.canManage }
+  },
+
+  updateTimeSettings: async (request) => ({
+    settings: timeSettingsToProto(await saveTimeSettings(timeSettingsFromProto(request.settings))),
+  }),
+
+  listTimeEntries: async (request) => {
+    const log = await loadTimeLog(request.taskId)
+    return { entries: log.entries.map(timeEntryToProto), totalSeconds: log.totalSeconds }
+  },
+
+  startTimer: async (request) => ({ entry: timeEntryToProto(await startTimer(request.taskId)) }),
+
+  stopTimer: async (request) => {
+    const stopped = await stopTimer(request.note)
+    return { entry: stopped ? timeEntryToProto(stopped) : undefined }
+  },
+
+  getRunningTimer: async () => {
+    const running = await loadRunningTimer()
+    if (!running) return {}
+    return {
+      entry: timeEntryToProto(running.entry),
+      taskName: running.taskName,
+      taskNumber: running.taskNumber,
+      projectId: running.projectId,
+    }
+  },
+
+  logTime: async (request) => ({
+    entry: timeEntryToProto(
+      await logTime({
+        taskId: request.taskId,
+        seconds: request.seconds,
+        spentOn: request.spentOn ?? '',
+        note: request.note ?? '',
+      }),
+    ),
+  }),
+
+  deleteTimeEntry: async (request) => {
+    await deleteTimeEntry(request.entryId)
     return {}
   },
 

@@ -10,12 +10,17 @@ import {
   listFromProto,
   mentionFromProto,
   priorityToProto,
+  timeEntryFromProto,
+  timeSettingsFromProto,
+  timeSettingsToProto,
   projectFromProto,
   statusFromProto,
   taskFromProto,
 } from '@/rpc/tasks-codec'
 import type {
   CommentFormValues,
+  LogTimeValues,
+  RunningTimerRow,
   TaskActivityRow,
   ListFormValues,
   ProjectFormValues,
@@ -30,6 +35,10 @@ import type {
   TaskQuery,
   TaskRow,
   TaskStatusRow,
+  TaskTimeEntryRow,
+  TaskTimeLog,
+  TaskTimeSettingsRow,
+  TaskTimeSettingsView,
   UpdateProjectValues,
   UpdateStatusValues,
   UpdateTaskValues,
@@ -204,6 +213,71 @@ export async function reorderTask(values: ReorderTaskValues): Promise<TaskRow> {
 
 export async function deleteTask(taskId: string): Promise<void> {
   await call(() => browserClients.tasks.deleteTask({ taskId }))
+}
+
+export async function getTimeSettings(): Promise<TaskTimeSettingsView> {
+  const response = await call(() => browserClients.tasks.getTimeSettings({}))
+  return {
+    settings: timeSettingsFromProto(response.settings),
+    canManage: response.canManage,
+  }
+}
+
+export async function updateTimeSettings(
+  settings: TaskTimeSettingsRow,
+): Promise<TaskTimeSettingsRow> {
+  const response = await call(() =>
+    browserClients.tasks.updateTimeSettings({ settings: timeSettingsToProto(settings) }),
+  )
+  return timeSettingsFromProto(response.settings)
+}
+
+export async function listTimeEntries(taskId: string): Promise<TaskTimeLog> {
+  const response = await call(() => browserClients.tasks.listTimeEntries({ taskId }))
+  return {
+    entries: response.entries.map(timeEntryFromProto),
+    totalSeconds: response.totalSeconds,
+  }
+}
+
+export async function startTimer(taskId: string): Promise<TaskTimeEntryRow> {
+  const response = await call(() => browserClients.tasks.startTimer({ taskId }))
+  if (!response.entry) throw new Error('The server did not return the timer.')
+  return timeEntryFromProto(response.entry)
+}
+
+export async function stopTimer(note?: string): Promise<TaskTimeEntryRow | undefined> {
+  const response = await call(() => browserClients.tasks.stopTimer({ note }))
+  return response.entry ? timeEntryFromProto(response.entry) : undefined
+}
+
+export async function getRunningTimer(): Promise<RunningTimerRow | undefined> {
+  const response = await call(() => browserClients.tasks.getRunningTimer({}))
+  if (!response.entry) return undefined
+
+  return {
+    entry: timeEntryFromProto(response.entry),
+    taskName: response.taskName ?? '',
+    taskNumber: response.taskNumber ?? 0,
+    projectId: response.projectId ?? '',
+  }
+}
+
+export async function logTime(values: LogTimeValues): Promise<TaskTimeEntryRow> {
+  const response = await call(() =>
+    browserClients.tasks.logTime({
+      taskId: values.taskId,
+      seconds: values.seconds,
+      spentOn: values.spentOn || undefined,
+      note: values.note || undefined,
+    }),
+  )
+  if (!response.entry) throw new Error('The server did not return the entry.')
+  return timeEntryFromProto(response.entry)
+}
+
+export async function deleteTimeEntry(entryId: string): Promise<void> {
+  await call(() => browserClients.tasks.deleteTimeEntry({ entryId }))
 }
 
 export async function listMentions(includeRead: boolean): Promise<TaskMentionFeed> {
