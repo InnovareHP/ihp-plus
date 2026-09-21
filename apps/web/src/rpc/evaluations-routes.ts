@@ -6,18 +6,29 @@ import {
   loadCandidates,
   loadEvaluation,
   loadEvaluationsPage,
-  loadMyEvaluations,
+  loadMyEvaluationsPage,
   submitEvaluation,
 } from '@/features/evaluations/service'
 import { candidateToProto, evaluationToProto, statusFilterFromProto } from './evaluations-codec'
 import { valuesFromProto } from './requests-codec'
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 
 // Thin by design: every implementation converts at the wire boundary and delegates to the
 // feature's service, so the business rules stay testable without a transport.
 export const evaluations: ServiceImpl<typeof EvaluationsService> = {
-  listMyEvaluations: async (request) => ({
-    rows: (await loadMyEvaluations(statusFilterFromProto(request.status))).map(evaluationToProto),
-  }),
+  listMyEvaluations: async (request) => {
+    const page = await loadMyEvaluationsPage({
+      status: statusFilterFromProto(request.status),
+      search: request.search,
+      page: request.page || 1,
+      pageSize: request.pageSize || DEFAULT_PAGE_SIZE,
+    })
+
+    return {
+      rows: page.rows.map(evaluationToProto),
+      pageInfo: { $typeName: 'ihp.requests.v1.PageInfo' as const, ...page.pageInfo },
+    }
+  },
 
   getEvaluation: async (request) => ({
     evaluation: evaluationToProto(await loadEvaluation(request.evaluationId)),
@@ -38,7 +49,7 @@ export const evaluations: ServiceImpl<typeof EvaluationsService> = {
       search: request.search,
       teamIds: request.teamIds,
       page: request.page || 1,
-      pageSize: request.pageSize || 25,
+      pageSize: request.pageSize || DEFAULT_PAGE_SIZE,
     })
 
     return {

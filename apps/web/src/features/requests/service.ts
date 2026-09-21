@@ -23,8 +23,11 @@ import {
   type FormDraftValues,
   type FormField,
   type FormKind,
+  type FormListQuery,
   type FormRow,
+  type FormsPage,
   type FormStatus,
+  type MyRequestQuery,
   type RequestQuery,
   type RequestRow,
   type RequestStatus,
@@ -125,17 +128,39 @@ const FORM_INCLUDE = {
   _count: { select: { submissions: true, evaluations: true } },
 } satisfies Prisma.RequestFormInclude
 
-export async function loadForms(kind: FormKind = 'request'): Promise<FormRow[]> {
+export async function loadFormsPage(query: FormListQuery): Promise<FormsPage> {
   const caller = await requireAdmin()
+
+  const where: Prisma.RequestFormWhereInput = {
+    organizationId: caller.organizationId,
+    kind: query.kind,
+    ...(query.status ? { status: query.status } : {}),
+    ...(query.teamIds.length > 0 ? { teams: { some: { teamId: { in: query.teamIds } } } } : {}),
+    ...(query.unplacedOnly ? { teams: { none: {} } } : {}),
+    ...(query.search
+      ? {
+          OR: [
+            { name: { contains: query.search, mode: 'insensitive' } },
+            { description: { contains: query.search, mode: 'insensitive' } },
+          ],
+        }
+      : {}),
+  }
+
+  const total = await db.requestForm.count({ where })
+  const pageInfo = pageInfoOf({ page: query.page, pageSize: query.pageSize, total })
+
   const [forms, names] = await Promise.all([
     db.requestForm.findMany({
-      where: { organizationId: caller.organizationId, kind },
+      where,
       orderBy: [{ status: 'asc' }, { name: 'asc' }],
       include: FORM_INCLUDE,
+      ...skipTake(pageInfo),
     }),
     teamNameMap(caller.organizationId),
   ])
-  return Promise.all(forms.map((form) => toFormRow(form, names)))
+
+  return { rows: await Promise.all(forms.map((form) => toFormRow(form, names))), pageInfo }
 }
 
 export async function loadForm(formId: string): Promise<FormRow> {
@@ -386,26 +411,35 @@ function canDecide(submission: SubmissionRecord, caller: Caller) {
   return Boolean(submission.teamId && caller.approverTeamIds.includes(submission.teamId))
 }
 
-export async function loadMyRequests(status: RequestQuery['status']): Promise<RequestRow[]> {
+export async function loadMyRequestsPage(query: MyRequestQuery): Promise<RequestsPage> {
   const caller = await requireRequester()
 
+  const where: Prisma.RequestSubmissionWhereInput = {
+    requesterId: caller.userId,
+    ...(query.status === 'all' ? {} : { status: query.status }),
+    ...(query.search ? { formName: { contains: query.search, mode: 'insensitive' } } : {}),
+  }
+
+  const total = await db.requestSubmission.count({ where })
+  const pageInfo = pageInfoOf({ page: query.page, pageSize: query.pageSize, total })
+
   const submissions = await db.requestSubmission.findMany({
-    where: {
-      requesterId: caller.userId,
-      ...(status === 'all' ? {} : { status }),
-    },
+    where,
     orderBy: { createdAt: 'desc' },
-    take: 200,
+    ...skipTake(pageInfo),
   })
 
   const names = await requesterNames(submissions)
-  return submissions.map((submission) =>
-    withDecider(
-      toRequestRow(submission, names.get(submission.requesterId) ?? 'Unknown', caller),
-      names,
-      submission,
+  return {
+    rows: submissions.map((submission) =>
+      withDecider(
+        toRequestRow(submission, names.get(submission.requesterId) ?? 'Unknown', caller),
+        names,
+        submission,
+      ),
     ),
-  )
+    pageInfo,
+  }
 }
 
 export async function withdrawRequest(submissionId: string): Promise<RequestRow> {

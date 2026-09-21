@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
+import { useClientPagination } from '@/lib/use-client-pagination'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 import { useApprovers } from '@/features/requests/hooks/use-approvers'
 import { useDepartmentLeads } from '@/features/teams/use-department-leads'
@@ -100,6 +101,7 @@ export function TeamsPanel() {
     ],
   )
   const isFiltered = term.length > 0 || query.emptyOnly || query.unledOnly || query.unapprovedOnly
+  const paged = useClientPagination(rows)
   const selected = teams.data?.find((team) => team.id === query.team)
 
   const columns: DataTableColumn<TeamRow>[] = [
@@ -227,7 +229,10 @@ export function TeamsPanel() {
       <DataTable
         label="Departments"
         columns={columns}
-        rows={rows}
+        rows={paged.rows}
+        pageInfo={paged.pageInfo}
+        onPageChange={paged.onPageChange}
+        onPageSizeChange={paged.onPageSizeChange}
         rowKey={(team) => team.id}
         isPending={teams.isPending}
         isError={teams.isError}

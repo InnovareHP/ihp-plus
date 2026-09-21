@@ -7,6 +7,7 @@ import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { formatBytes } from '@/lib/file-look'
 import { routes } from '@/lib/routes'
+import { useClientPagination } from '@/lib/use-client-pagination'
 import {
   useCreateLibraryFolder,
   useDeleteLibraryItem,
@@ -38,6 +39,8 @@ export function LibraryBrowser() {
   const createFolder = useCreateLibraryFolder(query)
   const rename = useRenameLibraryItem(query)
   const remove = useDeleteLibraryItem(query)
+
+  const paged = useClientPagination(folder.data?.entries)
 
   const [isNewFolderOpen, setNewFolderOpen] = useState(false)
   const [renaming, setRenaming] = useState<LibraryEntry | null>(null)
@@ -124,7 +127,10 @@ export function LibraryBrowser() {
       <DataTable
         label="Internal library"
         columns={columns}
-        rows={folder.data?.entries}
+        rows={paged.rows}
+        pageInfo={paged.pageInfo}
+        onPageChange={paged.onPageChange}
+        onPageSizeChange={paged.onPageSizeChange}
         rowKey={(entry) => entry.id}
         isPending={folder.isPending}
         isError={folder.isError}

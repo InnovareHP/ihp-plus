@@ -36,16 +36,30 @@ const ROW: EvaluationRow = {
   isMine: true,
 }
 
-const QUERY: MyEvaluationQuery = { search: '', status: 'pending' }
+const QUERY: MyEvaluationQuery = { search: '', status: 'pending', page: 1, pageSize: 25 }
+
+function pageOf(rows: EvaluationRow[]) {
+  return {
+    rows,
+    pageInfo: {
+      page: 1,
+      pageSize: 25,
+      total: rows.length,
+      pageCount: 1,
+      hasPrevious: false,
+      hasNext: false,
+    },
+  }
+}
 
 describe('MyEvaluationsTable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    rpc.listMyEvaluations.mockResolvedValue([ROW])
+    rpc.listMyEvaluations.mockResolvedValue(pageOf([ROW]))
   })
 
   it('shows who is being evaluated, where they stand, and the way in', async () => {
-    render(<MyEvaluationsTable query={QUERY} clearFilters={vi.fn()} />)
+    render(<MyEvaluationsTable query={QUERY} setQuery={vi.fn()} clearFilters={vi.fn()} />)
 
     expect(await screen.findByText('Grace Hopper')).toBeInTheDocument()
     expect(screen.getByText('Care Management · Probationary')).toBeInTheDocument()
@@ -55,16 +69,18 @@ describe('MyEvaluationsTable', () => {
   })
 
   it('says overdue in words, not only in colour', async () => {
-    render(<MyEvaluationsTable query={QUERY} clearFilters={vi.fn()} />)
+    render(<MyEvaluationsTable query={QUERY} setQuery={vi.fn()} clearFilters={vi.fn()} />)
 
     expect(await screen.findByText('Overdue')).toBeInTheDocument()
   })
 
   it('offers a submitted one to read rather than to fill in again', async () => {
-    rpc.listMyEvaluations.mockResolvedValue([
-      { ...ROW, status: 'submitted', canFill: false, submittedAt: '2026-01-10T00:00:00.000Z' },
-    ])
-    render(<MyEvaluationsTable query={QUERY} clearFilters={vi.fn()} />)
+    rpc.listMyEvaluations.mockResolvedValue(
+      pageOf([
+        { ...ROW, status: 'submitted', canFill: false, submittedAt: '2026-01-10T00:00:00.000Z' },
+      ]),
+    )
+    render(<MyEvaluationsTable query={QUERY} setQuery={vi.fn()} clearFilters={vi.fn()} />)
 
     expect(
       await screen.findByRole('link', { name: 'Read your Probationary review for Grace Hopper' }),
@@ -72,21 +88,29 @@ describe('MyEvaluationsTable', () => {
   })
 
   it('says what fills the list when there is nothing to evaluate', async () => {
-    rpc.listMyEvaluations.mockResolvedValue([])
-    render(<MyEvaluationsTable query={QUERY} clearFilters={vi.fn()} />)
+    rpc.listMyEvaluations.mockResolvedValue(pageOf([]))
+    render(<MyEvaluationsTable query={QUERY} setQuery={vi.fn()} clearFilters={vi.fn()} />)
 
     expect(await screen.findByText('Nothing to evaluate right now')).toBeInTheDocument()
   })
 
   it('keeps an empty filter apart from an empty list', async () => {
-    rpc.listMyEvaluations.mockResolvedValue([])
-    render(<MyEvaluationsTable query={{ ...QUERY, status: 'submitted' }} clearFilters={vi.fn()} />)
+    rpc.listMyEvaluations.mockResolvedValue(pageOf([]))
+    render(
+      <MyEvaluationsTable
+        query={{ ...QUERY, status: 'submitted' }}
+        setQuery={vi.fn()}
+        clearFilters={vi.fn()}
+      />,
+    )
 
     expect(await screen.findByText('Nothing matches those filters')).toBeInTheDocument()
   })
 
   it('has no axe violations', async () => {
-    const { container } = render(<MyEvaluationsTable query={QUERY} clearFilters={vi.fn()} />)
+    const { container } = render(
+      <MyEvaluationsTable query={QUERY} setQuery={vi.fn()} clearFilters={vi.fn()} />,
+    )
     await screen.findByText('Grace Hopper')
 
     expect(await axe(container)).toHaveNoViolations()

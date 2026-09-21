@@ -167,6 +167,7 @@ export function ContractsTable({
         minWidth={880}
         pageInfo={contracts.data?.pageInfo}
         onPageChange={(page) => setQuery({ page })}
+        onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
         isFiltered={isFilteredContractQuery(query)}
         sort={{ key: query.sortBy, direction: query.sortDirection }}
         onSortChange={(sort) =>

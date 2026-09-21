@@ -66,7 +66,18 @@ async function pickOption(person: ReturnType<typeof user>, name: RegExp, option:
 describe('AssignEvaluationForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    formsRpc.listForms.mockResolvedValue([FORM, { ...FORM, id: 'form-2', status: 'draft' }])
+    // The picker asks the server for the published catalogue, so that is what comes back.
+    formsRpc.listForms.mockResolvedValue({
+      rows: [FORM],
+      pageInfo: {
+        page: 1,
+        pageSize: 100,
+        total: 1,
+        pageCount: 1,
+        hasPrevious: false,
+        hasNext: false,
+      },
+    })
     rpc.listCandidates.mockResolvedValue(PEOPLE)
     rpc.assignEvaluations.mockResolvedValue([
       { id: 'eval-1', employeeName: 'Grace Hopper', status: 'pending' },
@@ -77,7 +88,11 @@ describe('AssignEvaluationForm', () => {
     const person = user()
     render(<AssignEvaluationForm onDone={vi.fn()} />)
 
-    await waitFor(() => expect(formsRpc.listForms).toHaveBeenCalledWith('evaluation'))
+    await waitFor(() =>
+      expect(formsRpc.listForms).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'evaluation', status: 'published' }),
+      ),
+    )
     await person.click(await screen.findByRole('combobox', { name: /Evaluation form/ }))
 
     expect(await screen.findAllByRole('option')).toHaveLength(1)

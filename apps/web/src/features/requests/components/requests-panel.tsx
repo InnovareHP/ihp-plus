@@ -41,7 +41,7 @@ export function RequestsPanel({ hasDepartment }: { hasDepartment: boolean }) {
             clearFilters={clearFilters}
             filters={MY_REQUEST_FILTERS}
           />
-          <MyRequestsTable query={query} clearFilters={clearFilters} />
+          <MyRequestsTable query={query} setQuery={setQuery} clearFilters={clearFilters} />
         </Stack>
       </PageSection>
     </>

@@ -20,6 +20,7 @@ import {
   type EvaluationRow,
   type EvaluationStatus,
   type EvaluationsPage,
+  type MyEvaluationQuery,
 } from './schema'
 
 // Deliberately not requireOnboarded(): that redirects, and a redirect thrown inside an RPC
@@ -144,23 +145,34 @@ async function rowsOf(rows: readonly EvaluationRecord[], caller: Caller) {
   return rows.map((row) => rowOf(row, people, caller))
 }
 
-export async function loadMyEvaluations(
-  status: EvaluationQuery['status'],
-): Promise<EvaluationRow[]> {
+export async function loadMyEvaluationsPage(query: MyEvaluationQuery): Promise<EvaluationsPage> {
   const caller = await requireCaller()
 
+  const where: Prisma.EvaluationAssignmentWhereInput = {
+    evaluatorId: caller.userId,
+    organizationId: caller.organizationId,
+    ...(query.status === 'all' ? {} : { status: query.status }),
+    ...(query.search
+      ? {
+          OR: [
+            { formName: { contains: query.search, mode: 'insensitive' } },
+            { employeeId: { in: await userIdsMatching(caller.organizationId, query.search) } },
+          ],
+        }
+      : {}),
+  }
+
+  const total = await db.evaluationAssignment.count({ where })
+  const pageInfo = pageInfoOf({ page: query.page, pageSize: query.pageSize, total })
+
   const rows = await db.evaluationAssignment.findMany({
-    where: {
-      evaluatorId: caller.userId,
-      organizationId: caller.organizationId,
-      ...(status === 'all' ? {} : { status }),
-    },
+    where,
     // The ones with a deadline come first; an evaluation with no due date never jumps the queue.
     orderBy: [{ dueAt: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
-    take: 200,
+    ...skipTake(pageInfo),
   })
 
-  return rowsOf(rows, caller)
+  return { rows: await rowsOf(rows, caller), pageInfo }
 }
 
 export async function loadEvaluation(evaluationId: string): Promise<EvaluationRow> {

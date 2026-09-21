@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pageQueryFields, type Paginated } from '@/lib/pagination'
 
 export const FIELD_TYPES = ['text', 'textarea', 'number', 'date', 'select', 'checkbox'] as const
 export const FORM_STATUSES = ['draft', 'published', 'archived'] as const
@@ -154,17 +155,8 @@ export interface DepartmentApproversRow {
   approvers: { userId: string; name: string; email: string }[]
 }
 
-export interface RequestsPage {
-  rows: RequestRow[]
-  pageInfo: {
-    page: number
-    pageSize: number
-    total: number
-    pageCount: number
-    hasPrevious: boolean
-    hasNext: boolean
-  }
-}
+export type RequestsPage = Paginated<RequestRow>
+export type FormsPage = Paginated<FormRow>
 
 export interface RequestQuery {
   status: RequestStatusFilter
@@ -269,12 +261,14 @@ export const formQuerySchema = z.object({
   status: z.string().trim().max(20).catch('').default(''),
   teamIds: csv,
   unplacedOnly: flag,
+  ...pageQueryFields,
 })
 
 /** List state for a requester's own list. */
 export const myRequestQuerySchema = z.object({
   search: z.string().trim().max(100).catch('').default(''),
   status: z.enum(REQUEST_STATUS_FILTERS).catch('all'),
+  ...pageQueryFields,
 })
 
 /** List state for the approvals queue, which is paged and filtered on the server. */
@@ -282,10 +276,12 @@ export const requestQuerySchema = z.object({
   search: z.string().trim().max(100).catch('').default(''),
   status: z.enum(REQUEST_STATUS_FILTERS).catch('pending'),
   teamIds: csv,
-  page: z.coerce.number().int().min(1).catch(1),
+  ...pageQueryFields,
 })
 
 export type FormQuery = z.infer<typeof formQuerySchema>
+/** The forms list is per catalogue, and the kind comes from the route rather than the URL. */
+export type FormListQuery = FormQuery & { kind: FormKind }
 export type MyRequestQuery = z.infer<typeof myRequestQuerySchema>
 export type RequestListQuery = z.infer<typeof requestQuerySchema>
 

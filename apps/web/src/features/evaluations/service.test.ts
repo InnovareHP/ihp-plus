@@ -38,8 +38,13 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...guard,
 }))
 
-const { assignEvaluations, cancelEvaluation, loadEvaluation, loadMyEvaluations, submitEvaluation } =
-  await import('./service')
+const {
+  assignEvaluations,
+  cancelEvaluation,
+  loadEvaluation,
+  loadMyEvaluationsPage,
+  submitEvaluation,
+} = await import('./service')
 
 const RATING = {
   id: 'rating',
@@ -276,14 +281,35 @@ describe('cancelling and listing', () => {
   })
 
   it('lists only the evaluations the caller has to fill in', async () => {
+    prisma.evaluationAssignment.count.mockResolvedValue(1)
     prisma.evaluationAssignment.findMany.mockResolvedValue([PENDING])
 
-    await loadMyEvaluations('pending')
+    const page = await loadMyEvaluationsPage({
+      status: 'pending',
+      search: '',
+      page: 1,
+      pageSize: 25,
+    })
 
     expect(prisma.evaluationAssignment.findMany.mock.calls[0]?.[0].where).toMatchObject({
       evaluatorId: 'user-1',
       organizationId: 'org-1',
       status: 'pending',
     })
+    // The page the server reports is what the footer counts, not the rows it happened to return.
+    expect(page.pageInfo).toMatchObject({ page: 1, pageSize: 25, total: 1, pageCount: 1 })
+  })
+
+  it('asks the database for only the rows on the page', async () => {
+    prisma.evaluationAssignment.count.mockResolvedValue(140)
+    prisma.evaluationAssignment.findMany.mockResolvedValue([])
+
+    const page = await loadMyEvaluationsPage({ status: 'all', search: '', page: 3, pageSize: 25 })
+
+    expect(prisma.evaluationAssignment.findMany.mock.calls[0]?.[0]).toMatchObject({
+      skip: 50,
+      take: 25,
+    })
+    expect(page.pageInfo).toMatchObject({ page: 3, pageCount: 6, hasPrevious: true, hasNext: true })
   })
 })

@@ -143,6 +143,7 @@ export function OrganizationAccessTable() {
         }
         pageInfo={access.data?.pageInfo}
         onPageChange={(page) => setQuery({ page })}
+        onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
         sort={{ key: query.sortBy, direction: query.sortDirection }}
         onSortChange={({ key, direction }) =>
           setQuery({ sortBy: key as AccessSortKey, sortDirection: direction })

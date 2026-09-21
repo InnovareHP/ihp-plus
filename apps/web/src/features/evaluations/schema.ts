@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pageQueryFields } from '@/lib/pagination'
 // The questions are a requests form of kind "evaluation", so the field and answer shapes are
 // the ones the form builder already speaks.
 import type { FormField, RequestValues } from '@/features/requests/schema'
@@ -102,6 +103,7 @@ const csv = z
 export const myEvaluationQuerySchema = z.object({
   search: z.string().trim().max(100).catch('').default(''),
   status: z.enum(EVALUATION_STATUS_FILTERS).catch('pending'),
+  ...pageQueryFields,
 })
 
 /** List state for the admin tracker, which is paged and filtered on the server. */
@@ -109,7 +111,7 @@ export const evaluationQuerySchema = z.object({
   search: z.string().trim().max(100).catch('').default(''),
   status: z.enum(EVALUATION_STATUS_FILTERS).catch('pending'),
   teamIds: csv,
-  page: z.coerce.number().int().min(1).catch(1),
+  ...pageQueryFields,
 })
 
 export type MyEvaluationQuery = z.infer<typeof myEvaluationQuerySchema>

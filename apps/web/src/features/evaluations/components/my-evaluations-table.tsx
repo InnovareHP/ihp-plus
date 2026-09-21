@@ -18,19 +18,16 @@ const dateOnly = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZon
 
 export function MyEvaluationsTable({
   query,
+  setQuery,
   clearFilters,
 }: {
   query: MyEvaluationQuery
+  setQuery: (patch: Partial<MyEvaluationQuery>) => void
   clearFilters: () => void
 }) {
-  const evaluations = useMyEvaluations(query.status)
+  const evaluations = useMyEvaluations(query)
 
-  const term = query.search.trim().toLowerCase()
-  const rows = evaluations.data?.filter(
-    (row) =>
-      row.employeeName.toLowerCase().includes(term) || row.formName.toLowerCase().includes(term),
-  )
-  const isFiltered = term.length > 0 || query.status !== 'pending'
+  const isFiltered = query.search.length > 0 || query.status !== 'pending'
 
   const columns: DataTableColumn<EvaluationRow>[] = [
     {
@@ -119,8 +116,11 @@ export function MyEvaluationsTable({
     <DataTable
       label="Your evaluations"
       columns={columns}
-      rows={rows}
+      rows={evaluations.data?.rows}
       rowKey={(row) => row.id}
+      pageInfo={evaluations.data?.pageInfo}
+      onPageChange={(page) => setQuery({ page })}
+      onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
       isPending={evaluations.isPending}
       isError={evaluations.isError}
       isFetching={evaluations.isFetching}

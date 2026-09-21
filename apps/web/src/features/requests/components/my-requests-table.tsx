@@ -17,17 +17,17 @@ const submitted = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeSt
 
 export function MyRequestsTable({
   query,
+  setQuery,
   clearFilters,
 }: {
   query: MyRequestQuery
+  setQuery: (patch: Partial<MyRequestQuery>) => void
   clearFilters: () => void
 }) {
-  const requests = useMyRequests(query.status)
-  const withdraw = useWithdrawRequest(query.status)
+  const requests = useMyRequests(query)
+  const withdraw = useWithdrawRequest()
 
-  const term = query.search.trim().toLowerCase()
-  const rows = requests.data?.filter((row) => row.formName.toLowerCase().includes(term))
-  const isFiltered = term.length > 0 || query.status !== 'all'
+  const isFiltered = query.search.length > 0 || query.status !== 'all'
 
   const columns: DataTableColumn<RequestRow>[] = [
     {
@@ -86,8 +86,11 @@ export function MyRequestsTable({
     <DataTable
       label="Your requests"
       columns={columns}
-      rows={rows}
+      rows={requests.data?.rows}
       rowKey={(row) => row.id}
+      pageInfo={requests.data?.pageInfo}
+      onPageChange={(page) => setQuery({ page })}
+      onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
       isPending={requests.isPending}
       isError={requests.isError}
       isFetching={requests.isFetching}

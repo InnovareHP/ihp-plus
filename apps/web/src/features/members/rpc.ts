@@ -3,6 +3,7 @@
 import { ConnectError } from '@ihp/rpc'
 import type { Member } from '@ihp/rpc/members'
 import { browserClients } from '@/rpc/browser'
+import { pageInfoFromProto } from '@/rpc/page-info'
 import {
   memberFromProto,
   organizationRoleToProto,
@@ -41,20 +42,9 @@ export async function listMembers(query: MemberQuery): Promise<MembersPage> {
   const response = await call(() =>
     browserClients.members.listMembers({ query: queryToProto(query) }),
   )
-  const pageInfo = response.pageInfo
-
-  if (!pageInfo) throw new Error('The server did not return page information.')
-
   return {
     rows: response.rows.map(memberFromProto),
-    pageInfo: {
-      page: pageInfo.page,
-      pageSize: pageInfo.pageSize,
-      total: pageInfo.total,
-      pageCount: pageInfo.pageCount,
-      hasPrevious: pageInfo.hasPrevious,
-      hasNext: pageInfo.hasNext,
-    },
+    pageInfo: pageInfoFromProto(response.pageInfo),
   }
 }
 

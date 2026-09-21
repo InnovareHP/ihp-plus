@@ -179,6 +179,7 @@ export function EvaluationTracker() {
         minWidth={900}
         pageInfo={tracker.data?.pageInfo}
         onPageChange={(page) => setQuery({ page })}
+        onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
         isFiltered={isFiltered}
         noResults={
           <EmptyState

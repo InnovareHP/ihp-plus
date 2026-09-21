@@ -156,6 +156,45 @@ describe('DataTable', () => {
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
   })
 
+  it('changes the rows per page from the footer', async () => {
+    const onPageSizeChange = vi.fn()
+    renderTable({
+      pageInfo: {
+        page: 1,
+        pageSize: 25,
+        total: 214,
+        pageCount: 9,
+        hasPrevious: false,
+        hasNext: true,
+      },
+      onPageChange: vi.fn(),
+      onPageSizeChange,
+    })
+
+    const person = userEvent.setup()
+    await person.click(screen.getByRole('combobox', { name: 'Rows per page of leads' }))
+    await person.click(await screen.findByRole('option', { name: '50 per page' }))
+
+    expect(onPageSizeChange).toHaveBeenCalledWith(50)
+  })
+
+  it('hides the rows-per-page control while everything fits in the smallest page', () => {
+    renderTable({
+      pageInfo: {
+        page: 1,
+        pageSize: 25,
+        total: 2,
+        pageCount: 1,
+        hasPrevious: false,
+        hasNext: false,
+      },
+      onPageChange: vi.fn(),
+      onPageSizeChange: vi.fn(),
+    })
+
+    expect(screen.queryByRole('combobox', { name: /Rows per page/ })).not.toBeInTheDocument()
+  })
+
   it('has no axe violations', async () => {
     const { container } = renderTable({
       sort: { key: 'name', direction: 'asc' },

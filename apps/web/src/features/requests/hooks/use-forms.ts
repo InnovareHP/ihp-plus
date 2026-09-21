@@ -2,16 +2,45 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { track } from '@/lib/analytics'
-import { useOptimisticListMutation } from '@/lib/optimistic'
+import { useOptimisticPagesMutation } from '@/lib/optimistic'
+import { MAX_PAGE_SIZE } from '@/lib/pagination'
 import { requestEvents } from '../events'
 import { requestKeys } from '../query-keys'
 import { deleteForm, getForm, listForms, saveForm, setFormStatus } from '../rpc'
-import type { FormDraftValues, FormKind, FormRow, FormStatus } from '../schema'
+import type {
+  FormDraftValues,
+  FormKind,
+  FormListQuery,
+  FormRow,
+  FormsPage,
+  FormStatus,
+} from '../schema'
 
-export function useForms(kind: FormKind = 'request') {
+export function useForms(query: FormListQuery) {
   return useQuery({
-    queryKey: requestKeys.forms(kind),
-    queryFn: () => listForms(kind),
+    queryKey: requestKeys.formsPage(query),
+    queryFn: () => listForms(query),
+    // A filtered list must not blank out between pages.
+    placeholderData: (previous) => previous,
+  })
+}
+
+/** The assign picker offers the published catalogue rather than a page of it. */
+export function usePublishedForms(kind: FormKind = 'request') {
+  return useQuery({
+    queryKey: requestKeys.publishedForms(kind),
+    queryFn: async () => {
+      const page = await listForms({
+        kind,
+        search: '',
+        status: 'published',
+        teamIds: [],
+        unplacedOnly: false,
+        page: 1,
+        pageSize: MAX_PAGE_SIZE,
+      })
+      return page.rows
+    },
   })
 }
 
@@ -42,27 +71,37 @@ export function useSaveForm() {
 }
 
 export function useSetFormStatus(kind: FormKind = 'request') {
-  return useOptimisticListMutation<FormRow, { formId: string; status: FormStatus }>({
+  return useOptimisticPagesMutation<FormsPage, { formId: string; status: FormStatus }>({
     queryKey: requestKeys.forms(kind),
     mutationFn: async (values) => {
       await setFormStatus(values)
     },
-    apply: (rows, values) =>
-      rows.map((row) => (row.id === values.formId ? { ...row, status: values.status } : row)),
+    apply: (page, values) => ({
+      ...page,
+      rows: page.rows.map((row: FormRow) =>
+        row.id === values.formId ? { ...row, status: values.status } : row,
+      ),
+    }),
     successEvent: requestEvents.formPublished,
     failureEvent: requestEvents.formPublishFailed,
-    alsoInvalidate: [requestKeys.available()],
+    alsoInvalidate: [requestKeys.available(), requestKeys.publishedForms(kind)],
   })
 }
 
 export function useDeleteForm(kind: FormKind = 'request') {
-  return useOptimisticListMutation<FormRow, { formId: string }>({
+  return useOptimisticPagesMutation<FormsPage, { formId: string }>({
     queryKey: requestKeys.forms(kind),
     mutationFn: async (values) => {
       await deleteForm(values.formId)
     },
-    apply: (rows, values) => rows.filter((row) => row.id !== values.formId),
+    // The total moves with the row, so the count under the table stays honest.
+    apply: (page, values) => ({
+      ...page,
+      rows: page.rows.filter((row: FormRow) => row.id !== values.formId),
+      pageInfo: { ...page.pageInfo, total: Math.max(0, page.pageInfo.total - 1) },
+    }),
     successEvent: requestEvents.formDeleted,
     failureEvent: requestEvents.formDeleteFailed,
+    alsoInvalidate: [requestKeys.publishedForms(kind)],
   })
 }

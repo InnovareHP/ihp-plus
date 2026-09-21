@@ -3,6 +3,7 @@
 import { ConnectError } from '@ihp/rpc'
 import type { ActivityTimelineItem } from '@/components/activity-timeline'
 import { browserClients } from '@/rpc/browser'
+import { pageInfoFromProto } from '@/rpc/page-info'
 import {
   activityFromProto,
   catalogFromProto,
@@ -45,19 +46,9 @@ export async function listContracts(query: ContractQuery): Promise<ContractsPage
   const response = await call(() =>
     browserClients.contracts.listContracts({ query: queryToProto(query) }),
   )
-  const pageInfo = response.pageInfo
-  if (!pageInfo) throw new Error('The server did not return page information.')
-
   return {
     rows: response.rows.map(contractFromProto),
-    pageInfo: {
-      page: pageInfo.page,
-      pageSize: pageInfo.pageSize,
-      total: pageInfo.total,
-      pageCount: pageInfo.pageCount,
-      hasPrevious: pageInfo.hasPrevious,
-      hasNext: pageInfo.hasNext,
-    },
+    pageInfo: pageInfoFromProto(response.pageInfo),
   }
 }
 

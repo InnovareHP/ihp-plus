@@ -5,6 +5,7 @@ import { useMemo } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
+import { useClientPagination } from '@/lib/use-client-pagination'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 import { useCancelInvitation, useInvitations, useResendInvitation } from '../hooks/use-invitations'
 import { DEFAULT_INVITATION_QUERY, invitationQuerySchema, type InvitationRow } from '../schema'
@@ -53,6 +54,7 @@ export function InvitationsTable() {
     [invitations.data, term, query.role, query.expiredOnly],
   )
   const isFiltered = term.length > 0 || Boolean(query.role) || query.expiredOnly
+  const paged = useClientPagination(rows)
 
   const columns: DataTableColumn<InvitationRow>[] = [
     {
@@ -145,7 +147,10 @@ export function InvitationsTable() {
       <DataTable
         label="Pending invitations"
         columns={columns}
-        rows={rows}
+        rows={paged.rows}
+        pageInfo={paged.pageInfo}
+        onPageChange={paged.onPageChange}
+        onPageSizeChange={paged.onPageSizeChange}
         rowKey={(row) => row.id}
         isPending={invitations.isPending}
         isError={invitations.isError}

@@ -24,8 +24,6 @@ import { DecisionFields } from './decision-fields'
 import { FormAnswers } from '@/components/form-answers'
 
 const submitted = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
-const PAGE_SIZE = 25
-
 const parseRequestQuery = searchParamsParser(requestQuerySchema, ['teamIds'])
 
 export function ApprovalsPanel() {
@@ -36,14 +34,8 @@ export function ApprovalsPanel() {
   } = useUrlQuery(parseRequestQuery, DEFAULT_REQUEST_QUERY)
   const teams = useTeams()
 
-  // The server does the filtering and the paging; pageSize is fixed rather than URL state.
-  const query: RequestQuery = {
-    status: listQuery.status,
-    search: listQuery.search.trim(),
-    teamIds: listQuery.teamIds,
-    page: listQuery.page,
-    pageSize: PAGE_SIZE,
-  }
+  // The server does the filtering and the paging; only the trimmed search differs from the URL.
+  const query: RequestQuery = { ...listQuery, search: listQuery.search.trim() }
 
   const filters: readonly FilterControl[] = [
     { kind: 'select', key: 'status', label: 'Status', options: REQUEST_STATUS_OPTIONS },
@@ -154,6 +146,7 @@ export function ApprovalsPanel() {
         minWidth={820}
         pageInfo={queue.data?.pageInfo}
         onPageChange={(page) => setQuery({ page })}
+        onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
         isFiltered={isFiltered}
         noResults={
           <EmptyState

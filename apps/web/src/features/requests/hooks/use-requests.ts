@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { track } from '@/lib/analytics'
 import { announceFailure } from '@/lib/announce'
-import { useOptimisticListMutation } from '@/lib/optimistic'
+import { useOptimisticPagesMutation } from '@/lib/optimistic'
 import { requestEvents } from '../events'
 import { requestKeys } from '../query-keys'
 import {
@@ -18,10 +18,11 @@ import {
 import type {
   DecisionValues,
   FormField,
+  MyRequestQuery,
   RequestQuery,
   RequestRow,
-  RequestStatusFilter,
   RequestValues,
+  RequestsPage,
 } from '../schema'
 
 export function useAvailableForms() {
@@ -31,10 +32,12 @@ export function useAvailableForms() {
   })
 }
 
-export function useMyRequests(status: RequestStatusFilter) {
+export function useMyRequests(query: MyRequestQuery) {
   return useQuery({
-    queryKey: requestKeys.mine(status),
-    queryFn: () => listMyRequests(status),
+    queryKey: requestKeys.mine(query),
+    queryFn: () => listMyRequests(query),
+    // A filtered list must not blank out between pages.
+    placeholderData: (previous) => previous,
   })
 }
 
@@ -74,18 +77,20 @@ export function useSubmitRequest() {
   })
 }
 
-export function useWithdrawRequest(status: RequestStatusFilter) {
-  return useOptimisticListMutation<RequestRow, { submissionId: string }>({
-    queryKey: requestKeys.mine(status),
+export function useWithdrawRequest() {
+  return useOptimisticPagesMutation<RequestsPage, { submissionId: string }>({
+    queryKey: requestKeys.mines(),
     mutationFn: async (values) => {
       await withdrawRequest(values.submissionId)
     },
-    apply: (rows, values) =>
-      rows.map((row) =>
+    apply: (page, values) => ({
+      ...page,
+      rows: page.rows.map((row: RequestRow) =>
         row.id === values.submissionId
           ? { ...row, status: 'withdrawn' as const, canDecide: false }
           : row,
       ),
+    }),
     successEvent: requestEvents.requestWithdrawn,
     failureEvent: requestEvents.requestWithdrawFailed,
     alsoInvalidate: [requestKeys.queues()],

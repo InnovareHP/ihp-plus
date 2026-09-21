@@ -20,14 +20,16 @@ import type {
   AssignEvaluationsValues,
   EvaluationListQuery,
   EvaluationRow,
-  EvaluationStatusFilter,
   EvaluationsPage,
+  MyEvaluationQuery,
 } from '../schema'
 
-export function useMyEvaluations(status: EvaluationStatusFilter) {
+export function useMyEvaluations(query: MyEvaluationQuery) {
   return useQuery({
-    queryKey: evaluationKeys.mine(status),
-    queryFn: () => listMyEvaluations(status),
+    queryKey: evaluationKeys.mine(query),
+    queryFn: () => listMyEvaluations(query),
+    // A filtered list must not blank out between pages.
+    placeholderData: (previous) => previous,
   })
 }
 

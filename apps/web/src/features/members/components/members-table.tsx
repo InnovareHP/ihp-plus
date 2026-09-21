@@ -236,6 +236,7 @@ export function MembersTable() {
         }
         pageInfo={members.data?.pageInfo}
         onPageChange={(page) => setQuery({ page })}
+        onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
         sort={{ key: query.sortBy, direction: query.sortDirection }}
         onSortChange={({ key, direction }) =>
           setQuery({ sortBy: key as MemberSortKey, sortDirection: direction })

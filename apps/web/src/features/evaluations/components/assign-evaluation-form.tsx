@@ -5,7 +5,7 @@ import { Button, Group, MultiSelect, Select, Stack, TextInput } from '@mantine/c
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { announceSuccess } from '@/lib/announce'
-import { useForms } from '@/features/requests/hooks/use-forms'
+import { usePublishedForms } from '@/features/requests/hooks/use-forms'
 import { useAssignEvaluations, useEvaluationCandidates } from '../hooks/use-evaluations'
 import {
   assignEvaluationsSchema,
@@ -20,7 +20,7 @@ function personLabel(person: EvaluationCandidate) {
 }
 
 export function AssignEvaluationForm({ onDone }: { onDone: () => void }) {
-  const forms = useForms('evaluation')
+  const forms = usePublishedForms('evaluation')
   const candidates = useEvaluationCandidates()
   const assign = useAssignEvaluations()
 
@@ -37,7 +37,7 @@ export function AssignEvaluationForm({ onDone }: { onDone: () => void }) {
     defaultValues: { formId: '', evaluatorId: '', employeeIds: [], dueAt: '' },
   })
 
-  const publishedForms = (forms.data ?? []).filter((form) => form.status === 'published')
+  const publishedForms = forms.data ?? []
   const people = candidates.data ?? []
 
   async function onSubmit(values: AssignEvaluationsValues) {

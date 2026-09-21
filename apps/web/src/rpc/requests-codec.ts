@@ -114,6 +114,15 @@ export function formStatusFromProto(status: FormStatus) {
   return FORM_STATUS_FROM_PROTO[status]
 }
 
+// The forms list's status filter has a fourth value the stored enum does not: any status.
+export function formStatusFilterToProto(status: string) {
+  return status ? FORM_STATUS_TO_PROTO[status as Status] : FormStatus.UNSPECIFIED
+}
+
+export function formStatusFilterFromProto(status: FormStatus): Status | '' {
+  return status === FormStatus.UNSPECIFIED ? '' : FORM_STATUS_FROM_PROTO[status]
+}
+
 export function formKindToProto(kind: Kind) {
   return FORM_KIND_TO_PROTO[kind]
 }

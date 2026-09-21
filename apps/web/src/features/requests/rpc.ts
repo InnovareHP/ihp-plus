@@ -2,11 +2,13 @@
 
 import { ConnectError } from '@ihp/rpc'
 import { browserClients } from '@/rpc/browser'
+import { pageInfoFromProto } from '@/rpc/page-info'
 import {
   approversFromProto,
   fieldToProto,
   formFromProto,
   formKindToProto,
+  formStatusFilterToProto,
   formStatusToProto,
   requestStatusToProto,
   statusFilterToProto,
@@ -18,12 +20,13 @@ import type {
   DepartmentApproversRow,
   FormDraftValues,
   FormField,
-  FormKind,
+  FormListQuery,
   FormRow,
+  FormsPage,
   FormStatus,
+  MyRequestQuery,
   RequestQuery,
   RequestRow,
-  RequestStatusFilter,
   RequestValues,
   RequestsPage,
   SetApproverValues,
@@ -54,11 +57,20 @@ function requiredSubmission(
   return submissionFromProto(submission)
 }
 
-export async function listForms(kind: FormKind = 'request'): Promise<FormRow[]> {
+export async function listForms(query: FormListQuery): Promise<FormsPage> {
   const response = await call(() =>
-    browserClients.requests.listForms({ kind: formKindToProto(kind) }),
+    browserClients.requests.listForms({
+      kind: formKindToProto(query.kind),
+      search: query.search,
+      status: formStatusFilterToProto(query.status),
+      teamIds: [...query.teamIds],
+      unplacedOnly: query.unplacedOnly,
+      page: query.page,
+      pageSize: query.pageSize,
+    }),
   )
-  return response.forms.map(formFromProto)
+
+  return { rows: response.forms.map(formFromProto), pageInfo: pageInfoFromProto(response.pageInfo) }
 }
 
 export async function getForm(formId: string): Promise<FormRow> {
@@ -116,11 +128,20 @@ export async function submitRequest(values: {
   return requiredSubmission(response.submission)
 }
 
-export async function listMyRequests(status: RequestStatusFilter): Promise<RequestRow[]> {
+export async function listMyRequests(query: MyRequestQuery): Promise<RequestsPage> {
   const response = await call(() =>
-    browserClients.requests.listMyRequests({ status: statusFilterToProto(status) }),
+    browserClients.requests.listMyRequests({
+      status: statusFilterToProto(query.status),
+      search: query.search,
+      page: query.page,
+      pageSize: query.pageSize,
+    }),
   )
-  return response.rows.map(submissionFromProto)
+
+  return {
+    rows: response.rows.map(submissionFromProto),
+    pageInfo: pageInfoFromProto(response.pageInfo),
+  }
 }
 
 export async function withdrawRequest(submissionId: string): Promise<RequestRow> {
@@ -139,19 +160,9 @@ export async function listRequests(query: RequestQuery): Promise<RequestsPage> {
     }),
   )
 
-  const pageInfo = response.pageInfo
-  if (!pageInfo) throw new Error('The server did not return page information.')
-
   return {
     rows: response.rows.map(submissionFromProto),
-    pageInfo: {
-      page: pageInfo.page,
-      pageSize: pageInfo.pageSize,
-      total: pageInfo.total,
-      pageCount: pageInfo.pageCount,
-      hasPrevious: pageInfo.hasPrevious,
-      hasNext: pageInfo.hasNext,
-    },
+    pageInfo: pageInfoFromProto(response.pageInfo),
   }
 }
 

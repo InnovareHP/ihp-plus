@@ -141,10 +141,18 @@ message DepartmentApprovers {
 message ListFormsRequest {
   // Which catalogue to list; UNSPECIFIED reads as REQUEST.
   FormKind kind = 1;
+  string search = 2;
+  // UNSPECIFIED is every status rather than a draft.
+  FormStatus status = 3;
+  repeated string team_ids = 4;
+  bool unplaced_only = 5;
+  int32 page = 6;
+  int32 page_size = 7;
 }
 
 message ListFormsResponse {
   repeated RequestForm forms = 1;
+  PageInfo page_info = 2;
 }
 
 message GetFormRequest {
@@ -201,10 +209,14 @@ message SubmitRequestResponse {
 
 message ListMyRequestsRequest {
   RequestStatusFilter status = 1;
+  string search = 2;
+  int32 page = 3;
+  int32 page_size = 4;
 }
 
 message ListMyRequestsResponse {
   repeated RequestSubmission rows = 1;
+  PageInfo page_info = 2;
 }
 
 message WithdrawRequestRequest {

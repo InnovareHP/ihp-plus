@@ -45,6 +45,8 @@ export interface DataTableProps<TRow> {
   /** Server-side paging: pass the page the server reported to get the footer and controls. */
   pageInfo?: PageInfo
   onPageChange?: (page: number) => void
+  /** Passing it puts the rows-per-page control in the footer. */
+  onPageSizeChange?: (pageSize: number) => void
   minWidth?: number
   /** 'comfortable' gives a document library room to breathe; 'compact' is the dense default. */
   density?: 'compact' | 'comfortable'
@@ -72,6 +74,7 @@ export function DataTable<TRow>({
   isFiltered = false,
   pageInfo,
   onPageChange,
+  onPageSizeChange,
   minWidth = 720,
   density = 'compact',
   stickyHeader = true,
@@ -170,7 +173,12 @@ export function DataTable<TRow>({
         </Table>
       </Table.ScrollContainer>
       {pageInfo ? (
-        <DataTableFooter label={label} pageInfo={pageInfo} onPageChange={onPageChange} />
+        <DataTableFooter
+          label={label}
+          pageInfo={pageInfo}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
       ) : null}
     </Stack>
   )

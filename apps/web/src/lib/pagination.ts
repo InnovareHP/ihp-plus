@@ -3,15 +3,19 @@ import { z } from 'zod'
 export const PAGE_SIZES = [10, 25, 50, 100] as const
 export const DEFAULT_PAGE_SIZE = 25
 // A hostile ?pageSize=100000 would otherwise read the whole table into memory.
-const MAX_PAGE_SIZE = 100
+export const MAX_PAGE_SIZE = 100
 
 export const sortDirectionSchema = z.enum(['asc', 'desc'])
 
-// .catch() rather than a strict parse: a stale or hand-edited URL falls back instead of erroring.
-export const paginationSchema = z.object({
+// The page and size fields a list's own URL schema spreads in, so every table reads them the
+// same way and a hand-edited value falls back rather than throwing.
+export const pageQueryFields = {
   page: z.coerce.number().int().min(1).catch(1),
   pageSize: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).catch(DEFAULT_PAGE_SIZE),
-})
+}
+
+// .catch() rather than a strict parse: a stale or hand-edited URL falls back instead of erroring.
+export const paginationSchema = z.object(pageQueryFields)
 
 export type SortDirection = z.infer<typeof sortDirectionSchema>
 export type PaginationQuery = z.infer<typeof paginationSchema>

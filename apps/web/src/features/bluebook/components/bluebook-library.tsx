@@ -408,6 +408,7 @@ export function BluebookLibrary() {
             }
             pageInfo={documents.data?.pageInfo}
             onPageChange={(page) => setQuery({ page })}
+            onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
             sort={{ key: query.sortBy, direction: query.sortDirection }}
             onSortChange={({ key, direction }) =>
               setQuery({ sortBy: key as BluebookSortKey, sortDirection: direction })

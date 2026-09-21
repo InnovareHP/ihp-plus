@@ -6,8 +6,8 @@ import {
   loadApprovers,
   loadAvailableForms,
   loadForm,
-  loadForms,
-  loadMyRequests,
+  loadFormsPage,
+  loadMyRequestsPage,
   loadRequest,
   loadRequestsPage,
   saveForm,
@@ -20,6 +20,7 @@ import {
   approversToProto,
   fieldFromProto,
   formKindFromProto,
+  formStatusFilterFromProto,
   formStatusFromProto,
   formToProto,
   requestStatusFromProto,
@@ -27,14 +28,28 @@ import {
   submissionToProto,
   valuesFromProto,
 } from './requests-codec'
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import type { Decision } from '@/features/requests/schema'
 
 // Thin by design: every implementation converts at the wire boundary and delegates to the
 // feature's service, so the business rules stay testable without a transport.
 export const requests: ServiceImpl<typeof RequestsService> = {
-  listForms: async (request) => ({
-    forms: (await loadForms(formKindFromProto(request.kind))).map(formToProto),
-  }),
+  listForms: async (request) => {
+    const page = await loadFormsPage({
+      kind: formKindFromProto(request.kind),
+      search: request.search,
+      status: formStatusFilterFromProto(request.status),
+      teamIds: request.teamIds,
+      unplacedOnly: request.unplacedOnly,
+      page: request.page || 1,
+      pageSize: request.pageSize || DEFAULT_PAGE_SIZE,
+    })
+
+    return {
+      forms: page.rows.map(formToProto),
+      pageInfo: { $typeName: 'ihp.requests.v1.PageInfo' as const, ...page.pageInfo },
+    }
+  },
 
   getForm: async (request) => ({ form: formToProto(await loadForm(request.formId)) }),
 
@@ -76,9 +91,19 @@ export const requests: ServiceImpl<typeof RequestsService> = {
     ),
   }),
 
-  listMyRequests: async (request) => ({
-    rows: (await loadMyRequests(statusFilterFromProto(request.status))).map(submissionToProto),
-  }),
+  listMyRequests: async (request) => {
+    const page = await loadMyRequestsPage({
+      status: statusFilterFromProto(request.status),
+      search: request.search,
+      page: request.page || 1,
+      pageSize: request.pageSize || DEFAULT_PAGE_SIZE,
+    })
+
+    return {
+      rows: page.rows.map(submissionToProto),
+      pageInfo: { $typeName: 'ihp.requests.v1.PageInfo' as const, ...page.pageInfo },
+    }
+  },
 
   withdrawRequest: async (request) => ({
     submission: submissionToProto(await withdrawRequest(request.submissionId)),
@@ -90,7 +115,7 @@ export const requests: ServiceImpl<typeof RequestsService> = {
       search: request.search,
       teamIds: request.teamIds,
       page: request.page || 1,
-      pageSize: request.pageSize || 25,
+      pageSize: request.pageSize || DEFAULT_PAGE_SIZE,
     })
 
     return {

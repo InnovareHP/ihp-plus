@@ -31,7 +31,12 @@ vi.mock('../hooks/use-library-query', async () => {
   )
   return { ...actual, useLibraryQuery: () => urlQuery }
 })
-vi.mock('next/navigation', () => ({ usePathname: () => '/library' }))
+// The rows-per-page control reads the URL, so the router hooks it uses are stubbed too.
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/library',
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn() }),
+}))
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
 vi.mock('@/lib/announce', () => announce)
 

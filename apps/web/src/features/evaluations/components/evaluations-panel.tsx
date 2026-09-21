@@ -36,7 +36,7 @@ export function EvaluationsPanel() {
           clearFilters={clearFilters}
           filters={MY_EVALUATION_FILTERS}
         />
-        <MyEvaluationsTable query={query} clearFilters={clearFilters} />
+        <MyEvaluationsTable query={query} setQuery={setQuery} clearFilters={clearFilters} />
       </Stack>
     </PageSection>
   )

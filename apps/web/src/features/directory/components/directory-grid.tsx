@@ -1,12 +1,12 @@
 'use client'
 
 import { Alert, Button, SimpleGrid, Stack, Text } from '@mantine/core'
+import { DataTableFooter } from '@/components/data-table-footer'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { EmptyState } from '@/components/empty-state'
 import { useDirectory, useDirectoryDepartments } from '../hooks/use-directory'
 import { useDirectoryQuery } from '../hooks/use-directory-query'
 import { isFilteredDirectoryQuery, UNASSIGNED } from '../schema'
-import { DirectoryFooter } from './directory-footer'
 import { DirectorySkeleton } from './directory-skeleton'
 import { PersonCard } from './person-card'
 
@@ -88,9 +88,11 @@ export function DirectoryGrid() {
             ))}
           </SimpleGrid>
 
-          <DirectoryFooter
+          <DataTableFooter
+            label="People"
             pageInfo={people.data.pageInfo}
             onPageChange={(page) => setQuery({ page })}
+            onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
           />
         </Stack>
       ) : null}

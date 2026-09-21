@@ -4,6 +4,7 @@ import { Button, Divider, Group, Select, Stack, Text } from '@mantine/core'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
+import { useClientPagination } from '@/lib/use-client-pagination'
 // Approvers belong to requests, but they are set per department, so they are set here.
 import { DepartmentApprovers } from '@/features/requests/components/department-approvers'
 import {
@@ -21,6 +22,8 @@ export function TeamMembersBody({ team }: { team: TeamRow }) {
   const assign = useAssignDepartment()
   const remove = useRemoveFromTeam(team.id)
   const [picked, setPicked] = useState<string | null>(null)
+  // Its own param: the departments table behind this drawer owns ?page.
+  const paged = useClientPagination(members.data, { key: 'memberPage', pageSize: 10 })
 
   const columns: DataTableColumn<TeamPersonRow>[] = [
     {
@@ -105,7 +108,9 @@ export function TeamMembersBody({ team }: { team: TeamRow }) {
       <DataTable
         label={`People in ${team.name}`}
         columns={columns}
-        rows={members.data}
+        rows={paged.rows}
+        pageInfo={paged.pageInfo}
+        onPageChange={paged.onPageChange}
         rowKey={(person) => person.userId}
         isPending={members.isPending}
         isError={members.isError}

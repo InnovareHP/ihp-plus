@@ -7,6 +7,7 @@ import {
   evaluationFromProto,
   statusFilterToProto,
 } from '@/rpc/evaluations-codec'
+import { pageInfoFromProto } from '@/rpc/page-info'
 import { valuesToProto } from '@/rpc/requests-codec'
 import type { FormField, RequestValues } from '@/features/requests/schema'
 import type {
@@ -14,8 +15,8 @@ import type {
   EvaluationCandidate,
   EvaluationListQuery,
   EvaluationRow,
-  EvaluationStatusFilter,
   EvaluationsPage,
+  MyEvaluationQuery,
 } from './schema'
 
 /**
@@ -38,11 +39,20 @@ function required(
   return evaluationFromProto(evaluation)
 }
 
-export async function listMyEvaluations(status: EvaluationStatusFilter): Promise<EvaluationRow[]> {
+export async function listMyEvaluations(query: MyEvaluationQuery): Promise<EvaluationsPage> {
   const response = await call(() =>
-    browserClients.evaluations.listMyEvaluations({ status: statusFilterToProto(status) }),
+    browserClients.evaluations.listMyEvaluations({
+      status: statusFilterToProto(query.status),
+      search: query.search,
+      page: query.page,
+      pageSize: query.pageSize,
+    }),
   )
-  return response.rows.map(evaluationFromProto)
+
+  return {
+    rows: response.rows.map(evaluationFromProto),
+    pageInfo: pageInfoFromProto(response.pageInfo),
+  }
 }
 
 export async function getEvaluation(evaluationId: string): Promise<EvaluationRow> {
@@ -71,23 +81,13 @@ export async function listEvaluations(query: EvaluationListQuery): Promise<Evalu
       search: query.search,
       teamIds: [...query.teamIds],
       page: query.page,
-      pageSize: 25,
+      pageSize: query.pageSize,
     }),
   )
 
-  const pageInfo = response.pageInfo
-  if (!pageInfo) throw new Error('The server did not return page information.')
-
   return {
     rows: response.rows.map(evaluationFromProto),
-    pageInfo: {
-      page: pageInfo.page,
-      pageSize: pageInfo.pageSize,
-      total: pageInfo.total,
-      pageCount: pageInfo.pageCount,
-      hasPrevious: pageInfo.hasPrevious,
-      hasNext: pageInfo.hasNext,
-    },
+    pageInfo: pageInfoFromProto(response.pageInfo),
   }
 }
 

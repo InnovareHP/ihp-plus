@@ -62,10 +62,14 @@ message EvaluationCandidate {
 
 message ListMyEvaluationsRequest {
   EvaluationStatusFilter status = 1;
+  string search = 2;
+  int32 page = 3;
+  int32 page_size = 4;
 }
 
 message ListMyEvaluationsResponse {
   repeated Evaluation rows = 1;
+  ihp.requests.v1.PageInfo page_info = 2;
 }
 
 message ListEvaluationsRequest {

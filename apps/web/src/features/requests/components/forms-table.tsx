@@ -3,7 +3,7 @@
 import { ActionIcon, Badge, Button, Group, Menu, Modal, Stack, Text } from '@mantine/core'
 import { IconDotsVertical, IconPlus } from '@tabler/icons-react'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LinkButton } from '@/components/link-button'
 import { EmptyState } from '@/components/empty-state'
@@ -67,12 +67,12 @@ export function FormsTable({ kind = 'request' }: FormsTableProps) {
   const isEvaluation = kind === 'evaluation'
   const newFormRoute = isEvaluation ? NEW_EVALUATION_FORM_ROUTE : NEW_REQUEST_FORM_ROUTE
   const editRoute = isEvaluation ? evaluationFormRoute : requestFormRoute
-  const forms = useForms(kind)
+  const { query, setQuery, clearFilters } = useUrlQuery(parseFormQuery, DEFAULT_FORM_QUERY)
+  const forms = useForms({ ...query, kind })
   const teams = useTeams()
   const setStatus = useSetFormStatus(kind)
   const deleteForm = useDeleteForm(kind)
   const [deleting, setDeleting] = useState<FormRow | null>(null)
-  const { query, setQuery, clearFilters } = useUrlQuery(parseFormQuery, DEFAULT_FORM_QUERY)
 
   const filters: readonly FilterControl[] = isEvaluation
     ? [{ kind: 'select', key: 'status', label: 'Status', options: FORM_STATUS_OPTIONS }]
@@ -92,22 +92,11 @@ export function FormsTable({ kind = 'request' }: FormsTableProps) {
         },
       ]
 
-  const term = query.search.trim().toLowerCase()
-  const rows = useMemo(
-    () =>
-      forms.data?.filter(
-        (form) =>
-          (form.name.toLowerCase().includes(term) ||
-            form.description.toLowerCase().includes(term)) &&
-          (!query.status || form.status === query.status) &&
-          (query.teamIds.length === 0 ||
-            form.teams.some((team) => query.teamIds.includes(team.id))) &&
-          (!query.unplacedOnly || form.teams.length === 0),
-      ),
-    [forms.data, term, query.status, query.teamIds, query.unplacedOnly],
-  )
   const isFiltered =
-    term.length > 0 || Boolean(query.status) || query.teamIds.length > 0 || query.unplacedOnly
+    query.search.length > 0 ||
+    Boolean(query.status) ||
+    query.teamIds.length > 0 ||
+    query.unplacedOnly
 
   const columns: DataTableColumn<FormRow>[] = [
     {
@@ -198,8 +187,11 @@ export function FormsTable({ kind = 'request' }: FormsTableProps) {
       <DataTable
         label={isEvaluation ? 'Evaluation forms' : 'Request forms'}
         columns={columns}
-        rows={rows}
+        rows={forms.data?.rows}
         rowKey={(form) => form.id}
+        pageInfo={forms.data?.pageInfo}
+        onPageChange={(page) => setQuery({ page })}
+        onPageSizeChange={(pageSize) => setQuery({ pageSize, page: 1 })}
         isPending={forms.isPending}
         isError={forms.isError}
         isFetching={forms.isFetching}

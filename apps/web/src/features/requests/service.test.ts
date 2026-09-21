@@ -9,7 +9,8 @@ const prisma = vi.hoisted(() => ({
     update: vi.fn(),
     create: vi.fn(),
   },
-  requestForm: { findFirst: vi.fn() },
+  requestForm: { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn() },
+  team: { findMany: vi.fn() },
   requestApprover: { findMany: vi.fn() },
   user: { findMany: vi.fn() },
 }))
@@ -38,8 +39,15 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...guard,
 }))
 
-const { decideRequest, loadRequest, loadRequestsPage, submitRequest, withdrawRequest } =
-  await import('./service')
+const {
+  decideRequest,
+  loadFormsPage,
+  loadMyRequestsPage,
+  loadRequest,
+  loadRequestsPage,
+  submitRequest,
+  withdrawRequest,
+} = await import('./service')
 
 const PENDING = {
   id: 'sub-1',
@@ -358,5 +366,84 @@ describe('reading one request', () => {
 
   it('keeps someone else out of a request that is not theirs', async () => {
     expect(await codeOf(() => loadRequest('sub-1'))).toBe(Code.PermissionDenied)
+  })
+})
+
+describe("a requester's own list", () => {
+  it("asks the database for one page of the caller's own requests", async () => {
+    prisma.requestSubmission.count.mockResolvedValue(64)
+    prisma.requestSubmission.findMany.mockResolvedValue([])
+
+    const page = await loadMyRequestsPage({ status: 'all', search: '', page: 3, pageSize: 10 })
+
+    expect(prisma.requestSubmission.findMany.mock.calls[0]?.[0]).toMatchObject({
+      where: { requesterId: 'user-1' },
+      skip: 20,
+      take: 10,
+    })
+    expect(page.pageInfo).toMatchObject({ page: 3, pageCount: 7, hasPrevious: true, hasNext: true })
+  })
+
+  it('searches by form name on the server rather than filtering the page in the browser', async () => {
+    prisma.requestSubmission.count.mockResolvedValue(0)
+    prisma.requestSubmission.findMany.mockResolvedValue([])
+
+    await loadMyRequestsPage({ status: 'pending', search: 'time off', page: 1, pageSize: 25 })
+
+    expect(prisma.requestSubmission.count.mock.calls[0]?.[0].where).toMatchObject({
+      status: 'pending',
+      formName: { contains: 'time off', mode: 'insensitive' },
+    })
+  })
+})
+
+describe('the forms catalogue', () => {
+  beforeEach(() => {
+    signedIn({ isAdmin: true })
+    prisma.requestForm.count.mockResolvedValue(0)
+    prisma.requestForm.findMany.mockResolvedValue([])
+    prisma.team.findMany.mockResolvedValue([])
+  })
+
+  const FORM_QUERY = {
+    kind: 'request' as const,
+    search: '',
+    status: '',
+    teamIds: [],
+    unplacedOnly: false,
+    page: 1,
+    pageSize: 25,
+  }
+
+  it('pages the catalogue on the server', async () => {
+    prisma.requestForm.count.mockResolvedValue(30)
+
+    const page = await loadFormsPage({ ...FORM_QUERY, page: 2 })
+
+    expect(prisma.requestForm.findMany.mock.calls[0]?.[0]).toMatchObject({ skip: 25, take: 25 })
+    expect(page.pageInfo).toMatchObject({ page: 2, total: 30, pageCount: 2, hasNext: false })
+  })
+
+  it('takes every filter into the query, including the one for a form nobody is offered', async () => {
+    await loadFormsPage({
+      ...FORM_QUERY,
+      search: 'leave',
+      status: 'published',
+      unplacedOnly: true,
+    })
+
+    expect(prisma.requestForm.count.mock.calls[0]?.[0].where).toMatchObject({
+      kind: 'request',
+      status: 'published',
+      teams: { none: {} },
+    })
+  })
+
+  it('keeps the forms of one department to that department', async () => {
+    await loadFormsPage({ ...FORM_QUERY, teamIds: ['team-1'] })
+
+    expect(prisma.requestForm.count.mock.calls[0]?.[0].where).toMatchObject({
+      teams: { some: { teamId: { in: ['team-1'] } } },
+    })
   })
 })
