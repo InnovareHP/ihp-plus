@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
+import { UNDO_WINDOW_MS } from '@/lib/undo'
 import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import { TaskBoard } from './task-board'
 
@@ -261,16 +262,33 @@ describe('TaskBoard', () => {
     }
   })
 
-  it('asks before deleting, because a deleted task does not come back', async () => {
+  it('deletes at once and offers the way back, rather than asking first', async () => {
     const user = userEvent.setup()
     rpc.deleteTask.mockResolvedValue(undefined)
 
     await renderBoard()
     await user.click(screen.getByRole('button', { name: 'Actions for Send the renewal pack' }))
     await user.click(screen.getByRole('menuitem', { name: 'Delete task' }))
-    await user.click(screen.getByRole('button', { name: 'Delete task' }))
 
-    await waitFor(() => expect(rpc.deleteTask).toHaveBeenCalledWith('task-1'))
+    // The row goes immediately; the server hears about it when the undo window closes.
+    await waitFor(() => expect(screen.queryByText('Send the renewal pack')).not.toBeInTheDocument())
+    expect(toast.show).toHaveBeenCalledWith(expect.objectContaining({ autoClose: UNDO_WINDOW_MS }))
+    expect(rpc.deleteTask).not.toHaveBeenCalled()
+  })
+
+  it('takes a selection out in one go, still undoably', async () => {
+    const user = userEvent.setup()
+    rpc.deleteTask.mockResolvedValue(undefined)
+
+    await renderBoard()
+    await user.click(screen.getByRole('checkbox', { name: 'Select Send the renewal pack' }))
+
+    const bar = within(screen.getByRole('region', { name: '1 selected' }))
+    expect(bar.getByText('1 task selected')).toBeInTheDocument()
+
+    await user.click(bar.getByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(screen.queryByText('Send the renewal pack')).not.toBeInTheDocument())
   })
 
   it('has no axe violations', async () => {

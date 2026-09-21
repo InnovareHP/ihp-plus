@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { track, type EventName } from '@/lib/analytics'
 import { announceFailure } from '@/lib/announce'
+import { offerUndo } from '@/lib/undo'
 import { taskEvents } from '../events'
 import { taskKeys } from '../query-keys'
 import {
@@ -40,6 +41,8 @@ export function useTaskBoard(query: TaskQuery, enabled: boolean) {
     refetchInterval: BOARD_POLL,
   })
 }
+
+type BoardSnapshot = [QueryKey, TaskRow[] | undefined][]
 
 interface BoardMutationOptions<TVariables> {
   mutationFn: (variables: TVariables) => Promise<unknown>
@@ -342,6 +345,62 @@ export function useReorderTask() {
     successEvent: taskEvents.reordered,
     failureEvent: taskEvents.reorderFailed,
   })
+}
+
+/**
+ * Deleting work the user can take back: the rows go at once, the server hears about it when the
+ * undo window closes, and undoing restores the exact boards that were snapshotted.
+ */
+export function useRemoveTasks() {
+  const queryClient = useQueryClient()
+
+  const commit = useMutation({
+    mutationFn: (variables: { ids: readonly string[]; previous: BoardSnapshot }) =>
+      Promise.all(variables.ids.map((id) => deleteTask(id))),
+    onError: (error: Error, variables) => {
+      for (const [key, rows] of variables.previous) {
+        queryClient.setQueryData(key, rows)
+      }
+      announceFailure(error.message)
+      track(taskEvents.deleteFailed, { reason: error.message })
+    },
+    onSuccess: () => track(taskEvents.deleted),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+    },
+  })
+
+  async function remove(tasks: readonly TaskRow[]) {
+    if (tasks.length === 0) return
+    const ids = tasks.map((task) => task.id)
+
+    // An in-flight refetch would put the rows straight back.
+    await queryClient.cancelQueries({ queryKey: taskKeys.boards() })
+    const previous: BoardSnapshot = queryClient.getQueriesData<TaskRow[]>({
+      queryKey: taskKeys.boards(),
+    })
+
+    for (const [key, rows] of previous) {
+      if (!rows) continue
+      queryClient.setQueryData<TaskRow[]>(
+        key,
+        rows.filter((row) => !ids.includes(row.id)),
+      )
+    }
+
+    offerUndo({
+      message: tasks.length === 1 ? `Deleted "${tasks[0]?.name}"` : `Deleted ${tasks.length} tasks`,
+      undoLabel: 'Undo',
+      onUndo: () => {
+        for (const [key, rows] of previous) {
+          queryClient.setQueryData(key, rows)
+        }
+      },
+      onCommit: () => commit.mutate({ ids, previous }),
+    })
+  }
+
+  return { remove, isPending: commit.isPending }
 }
 
 export function useDeleteTask() {

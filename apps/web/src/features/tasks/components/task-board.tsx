@@ -22,7 +22,7 @@ import {
 import {
   useCompleteTask,
   useCreateTask,
-  useDeleteTask,
+  useRemoveTasks,
   useReorderTask,
   useTaskBoard,
   useTaskDetail,
@@ -45,7 +45,6 @@ import {
   type TaskRow,
 } from '../schema'
 import { DeleteListModal } from './delete-list-modal'
-import { DeleteTaskModal } from './delete-task-modal'
 import { TaskDetailModal } from './task-detail-modal'
 import { TaskKanban } from './task-kanban'
 import { ListFormModal } from './list-form-modal'
@@ -54,6 +53,7 @@ import { ProjectSelect } from './project-select'
 import { StatusManagerModal } from './status-manager-modal'
 import { TaskFormModal } from './task-form-modal'
 import { TaskListSection } from './task-list-section'
+import { TaskSelectionBar } from './task-selection-bar'
 import { TaskStats } from './task-stats'
 
 // `priority` arrives as ?priority=urgent,high, so the parser is told it holds a list.
@@ -106,7 +106,7 @@ export function TaskBoard() {
   const [composing, setComposing] = useState<{ list: TaskListRow; task: TaskRow | null } | null>(
     null,
   )
-  const [deleting, setDeleting] = useState<TaskRow | null>(null)
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
 
   const projects = useTaskProjects()
   const projectRows = useMemo(() => projects.data ?? [], [projects.data])
@@ -138,7 +138,7 @@ export function TaskBoard() {
   const update = useUpdateTask()
   const complete = useCompleteTask()
   const reorder = useReorderTask()
-  const remove = useDeleteTask()
+  const remove = useRemoveTasks()
   const archiveProject = useUpdateProject()
   const removeList = useDeleteList()
 
@@ -194,6 +194,20 @@ export function TaskBoard() {
     () => people.map((person) => ({ userId: person.value, name: person.label })),
     [people],
   )
+
+  const selectedTasks = useMemo(
+    () => tasks.filter((task) => selected.has(task.id)),
+    [tasks, selected],
+  )
+
+  function toggleSelected(task: TaskRow, isSelected: boolean) {
+    setSelected((current) => {
+      const next = new Set(current)
+      if (isSelected) next.add(task.id)
+      else next.delete(task.id)
+      return next
+    })
+  }
 
   const tasksByList = useMemo(() => {
     const grouped = new Map<string, TaskRow[]>()
@@ -429,7 +443,7 @@ export function TaskBoard() {
                 const list = listRows.find((row) => row.id === task.listId)
                 if (list) setComposing({ list, task })
               }}
-              onDelete={setDeleting}
+              onDelete={(task) => void remove.remove([task])}
             />
           ) : null}
 
@@ -451,10 +465,30 @@ export function TaskBoard() {
                     const list = listRows.find((row) => row.id === task.listId)
                     if (list) setComposing({ list, task })
                   }}
-                  onDelete={setDeleting}
+                  onDelete={(task) => void remove.remove([task])}
+                  selected={selected}
+                  onSelect={toggleSelected}
                 />
               ))
             : null}
+
+          {query.view === 'list' ? (
+            <TaskSelectionBar
+              count={selectedTasks.length}
+              isBusy={remove.isPending || complete.isPending}
+              onComplete={() => {
+                for (const task of selectedTasks) {
+                  complete.mutate({ taskId: task.id, completed: true, statuses: statusRows })
+                }
+                setSelected(new Set())
+              }}
+              onDelete={() => {
+                void remove.remove(selectedTasks)
+                setSelected(new Set())
+              }}
+              onClear={() => setSelected(new Set())}
+            />
+          ) : null}
         </Stack>
       </PageSection>
 
@@ -508,14 +542,6 @@ export function TaskBoard() {
         people={people}
         defaults={defaults}
         onSave={handleSave}
-      />
-      <DeleteTaskModal
-        task={deleting}
-        onCancel={() => setDeleting(null)}
-        onConfirm={(task) => {
-          remove.mutate({ taskId: task.id })
-          setDeleting(null)
-        }}
       />
     </Stack>
   )

@@ -18,6 +18,8 @@ export interface TaskStatusGroupProps {
   status: TaskStatusRow
   items: readonly TaskStatusGroupItem[]
   defaultOpen: boolean
+  selected: ReadonlySet<string>
+  onSelect: (task: Task, selected: boolean) => void
   onOpen: (task: Task) => void
   onToggleComplete: (task: Task, completed: boolean) => void
   onMove: (task: Task, direction: 'up' | 'down') => void
@@ -29,6 +31,8 @@ export function TaskStatusGroup({
   status,
   items,
   defaultOpen,
+  selected,
+  onSelect,
   onOpen,
   onToggleComplete,
   onMove,
@@ -89,6 +93,8 @@ export function TaskStatusGroup({
               task={task}
               canMoveUp={canMoveUp}
               canMoveDown={canMoveDown}
+              isSelected={selected.has(task.id)}
+              onSelect={onSelect}
               onOpen={onOpen}
               onToggleComplete={onToggleComplete}
               onMoveUp={(row) => onMove(row, 'up')}

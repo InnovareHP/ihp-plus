@@ -27,6 +27,8 @@ export interface TaskRowProps {
   /** Disabled at the ends of the list, so the order of the board is never ambiguous. */
   canMoveUp: boolean
   canMoveDown: boolean
+  isSelected: boolean
+  onSelect: (task: Task, selected: boolean) => void
   onOpen: (task: Task) => void
   onToggleComplete: (task: Task, completed: boolean) => void
   onMoveUp: (task: Task) => void
@@ -39,6 +41,8 @@ export function TaskRow({
   task,
   canMoveUp,
   canMoveDown,
+  isSelected,
+  onSelect,
   onOpen,
   onToggleComplete,
   onMoveUp,
@@ -55,6 +59,13 @@ export function TaskRow({
     <Paper component="li" withBorder p="sm" radius="md">
       <Group justify="space-between" wrap="nowrap" align="flex-start" gap="sm">
         <Group wrap="nowrap" align="flex-start" gap="sm" style={{ minWidth: 0 }}>
+          {/* Two checkboxes, two jobs: one finishes the task, one picks it out of the list. */}
+          <Checkbox
+            checked={isSelected}
+            onChange={(event) => onSelect(task, event.currentTarget.checked)}
+            aria-label={`Select ${task.name}`}
+            mt={4}
+          />
           <Checkbox
             checked={done}
             onChange={(event) => onToggleComplete(task, event.currentTarget.checked)}
