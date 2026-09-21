@@ -1,6 +1,7 @@
 import { Box, Container, Group, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { AppLogo } from '@/components/app-logo'
+import { PAGE_WIDTH } from '@/components/page-shell'
 import { ColorSchemeToggle } from '@/components/color-scheme-toggle'
 import { SkipLink } from '@/components/skip-link'
 
@@ -9,7 +10,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <SkipLink />
-      <Container size="md" py={{ base: 'md', sm: 'xl' }}>
+      <Container size={PAGE_WIDTH} py={{ base: 'md', sm: 'xl' }}>
         <Stack gap="lg">
           <Group justify="space-between" align="center" data-print-hidden>
             <AppLogo />

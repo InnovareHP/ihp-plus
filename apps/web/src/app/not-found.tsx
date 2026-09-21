@@ -2,11 +2,12 @@
 
 import { Anchor, Button, Container, Stack, Text, Title } from '@mantine/core'
 import Link from 'next/link'
+import { PAGE_WIDTH } from '@/components/page-shell'
 import { routes } from '@/lib/routes'
 
 export default function NotFound() {
   return (
-    <Container size="sm" py="xl">
+    <Container size={PAGE_WIDTH} py="xl">
       <main id="main">
         <Stack gap="md">
           <Title order={1}>Page not found</Title>

@@ -1,10 +1,11 @@
 'use client'
 
 import { Alert, Button, Container, Group, Stack, Text, Title } from '@mantine/core'
+import { PAGE_WIDTH } from '@/components/page-shell'
 
 export default function GlobalError({ reset }: { error: Error; reset: () => void }) {
   return (
-    <Container size="sm" py="xl">
+    <Container size={PAGE_WIDTH} py="xl">
       <main id="main">
         <Stack gap="md">
           <Title order={1}>Something went wrong</Title>
