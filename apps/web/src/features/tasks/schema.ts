@@ -109,7 +109,7 @@ export const subtaskFormSchema = z.object({
 // URL so a board someone is looking at can be linked to.
 export const TASK_VIEWS = ['board', 'list'] as const
 // The panels of the task dialog. Which one is open is a link somebody can send.
-export const TASK_TABS = ['task', 'comments', 'history'] as const
+export const TASK_TABS = ['task', 'comments', 'time', 'history'] as const
 
 export type TaskView = (typeof TASK_VIEWS)[number]
 export type TaskTab = (typeof TASK_TABS)[number]

@@ -4,6 +4,7 @@ import { ActionIcon, Badge, Group, Menu, Paper, Stack, Text } from '@mantine/cor
 import {
   IconArrowDown,
   IconArrowUp,
+  IconClock,
   IconDotsVertical,
   IconListCheck,
   IconMessage,
@@ -19,6 +20,7 @@ import {
   type TaskRow as Task,
   type TaskStatusRow,
 } from '../schema'
+import { formatDuration } from '../utils/duration'
 
 const due = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
@@ -167,6 +169,17 @@ export function TaskCard({
               aria-label={`${task.subtasks.filter((one) => one.isDone).length} of ${task.subtasks.length} subtasks done`}
             >
               {task.subtasks.filter((one) => one.isDone).length}/{task.subtasks.length}
+            </Badge>
+          ) : null}
+
+          {task.trackedSeconds > 0 ? (
+            <Badge
+              size="sm"
+              variant="default"
+              leftSection={<IconClock size={12} aria-hidden />}
+              aria-label={`${formatDuration(task.trackedSeconds)} tracked`}
+            >
+              {formatDuration(task.trackedSeconds)}
             </Badge>
           ) : null}
 

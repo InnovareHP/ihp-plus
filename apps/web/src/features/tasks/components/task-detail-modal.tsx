@@ -9,9 +9,11 @@ import {
   type TaskRow,
   type TaskTab,
 } from '../schema'
+import { formatDuration } from '../utils/duration'
 import { TaskAboutPanel } from './task-about-panel'
 import { TaskCommentsPanel } from './task-comments-panel'
 import { TaskHistoryPanel } from './task-history-panel'
+import { TaskTimePanel } from './task-time-panel'
 
 export interface TaskDetailModalProps {
   task: TaskRow | null
@@ -92,6 +94,21 @@ export function TaskDetailModal({
             >
               Comments
             </Tabs.Tab>
+            <Tabs.Tab
+              value="time"
+              aria-label={
+                task.trackedSeconds > 0 ? `Time (${formatDuration(task.trackedSeconds)})` : 'Time'
+              }
+              rightSection={
+                task.trackedSeconds > 0 ? (
+                  <Badge size="sm" variant="light">
+                    {formatDuration(task.trackedSeconds)}
+                  </Badge>
+                ) : null
+              }
+            >
+              Time
+            </Tabs.Tab>
             <Tabs.Tab value="history">History</Tabs.Tab>
           </Tabs.List>
 
@@ -101,6 +118,10 @@ export function TaskDetailModal({
 
           <Tabs.Panel value="comments">
             <TaskCommentsPanel task={task} viewer={viewer} colleagues={colleagues} />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="time">
+            <TaskTimePanel task={task} viewerId={viewer.userId} />
           </Tabs.Panel>
 
           <Tabs.Panel value="history">

@@ -4,7 +4,8 @@ import type { ReactNode } from 'react'
 import { PageShell } from '@/components/page-shell'
 import { PageHeader } from '@/components/page-header'
 import { ContactDetailsForm } from '@/features/settings/components/contact-details-form'
-import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
+import { TimeSettingsForm } from '@/features/tasks/components/time-settings-form'
+import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 
 export const metadata: Metadata = { title: 'Settings' }
@@ -96,6 +97,16 @@ export default async function SettingsPage() {
           </Card>
         </Stack>
       </SimpleGrid>
+
+      {/* Renders nothing for a member: the component asks the server who is allowed to set these. */}
+      {canManageOrganization(membership) ? (
+        <Card component="section" padding="lg" aria-labelledby="time-rules-heading">
+          <Title order={2} size="h5" mb="sm" id="time-rules-heading">
+            Time tracking
+          </Title>
+          <TimeSettingsForm />
+        </Card>
+      ) : null}
     </PageShell>
   )
 }

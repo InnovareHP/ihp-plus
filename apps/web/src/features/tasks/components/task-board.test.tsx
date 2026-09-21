@@ -5,6 +5,13 @@ import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import { TaskBoard } from './task-board'
 
 const rpc = vi.hoisted(() => ({
+  getTimeSettings: vi.fn(),
+  listTimeEntries: vi.fn(),
+  getRunningTimer: vi.fn(),
+  startTimer: vi.fn(),
+  stopTimer: vi.fn(),
+  logTime: vi.fn(),
+  deleteTimeEntry: vi.fn(),
   listProjects: vi.fn(),
   createProject: vi.fn(),
   listLists: vi.fn(),
@@ -83,6 +90,18 @@ const TASK = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  rpc.getTimeSettings.mockResolvedValue({
+    settings: {
+      allowManualEntry: true,
+      allowSelfEdit: true,
+      requireNote: false,
+      trackOnlyAssigned: false,
+      autoStopHours: 12,
+    },
+    canManage: false,
+  })
+  rpc.listTimeEntries.mockResolvedValue({ entries: [], totalSeconds: 0 })
+  rpc.getRunningTimer.mockResolvedValue(undefined)
   // The board view is the default; these cases are about the list, so they ask for it.
   nav.search = 'view=list'
   rpc.listProjects.mockResolvedValue([PROJECT])

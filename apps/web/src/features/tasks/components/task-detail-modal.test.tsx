@@ -5,6 +5,13 @@ import type { TaskCommentRow, TaskRow, TaskStatusRow, TaskTab } from '../schema'
 import { TaskDetailModal } from './task-detail-modal'
 
 const rpc = vi.hoisted(() => ({
+  getTimeSettings: vi.fn(),
+  listTimeEntries: vi.fn(),
+  getRunningTimer: vi.fn(),
+  startTimer: vi.fn(),
+  stopTimer: vi.fn(),
+  logTime: vi.fn(),
+  deleteTimeEntry: vi.fn(),
   createTask: vi.fn(),
   completeTask: vi.fn(),
   deleteTask: vi.fn(),
@@ -94,6 +101,18 @@ function renderModal(
 
 beforeEach(() => {
   vi.clearAllMocks()
+  rpc.getTimeSettings.mockResolvedValue({
+    settings: {
+      allowManualEntry: true,
+      allowSelfEdit: true,
+      requireNote: false,
+      trackOnlyAssigned: false,
+      autoStopHours: 12,
+    },
+    canManage: false,
+  })
+  rpc.listTimeEntries.mockResolvedValue({ entries: [], totalSeconds: 0 })
+  rpc.getRunningTimer.mockResolvedValue(undefined)
   rpc.deleteAttachment.mockResolvedValue(undefined)
   rpc.listTaskActivity.mockResolvedValue([
     {
@@ -247,11 +266,16 @@ describe('TaskDetailModal', () => {
     expect(within(theirs as HTMLElement).getByText('Grace Hopper')).toBeInTheDocument()
   })
 
-  it('names its three panels and says how much conversation there is', async () => {
-    renderModal({ ...TASK, commentCount: 3 }, { tab: 'task' })
+  it('names its panels and says how much work and conversation there is', async () => {
+    renderModal({ ...TASK, commentCount: 3, trackedSeconds: 5400 }, { tab: 'task' })
 
     const tabs = await screen.findAllByRole('tab')
-    expect(tabs.map((one) => one.textContent)).toEqual(['Task', 'Comments3', 'History'])
+    expect(tabs.map((one) => one.textContent)).toEqual([
+      'Task',
+      'Comments3',
+      'Time1h 30m',
+      'History',
+    ])
     // The badge is a number beside a word; the name a screen reader reads is a sentence.
     expect(screen.getByRole('tab', { name: 'Comments (3)' })).toBeInTheDocument()
   })
