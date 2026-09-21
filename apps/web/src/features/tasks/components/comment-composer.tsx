@@ -27,6 +27,7 @@ export function CommentComposer({ colleagues, isPosting, onPost }: CommentCompos
   // Held here, not uploaded: a file belongs to its comment, so nothing is stored until the
   // comment is posted and a composer the user walks away from leaves nothing behind.
   const [staged, setStaged] = useState<File[]>([])
+  const [isOver, setOver] = useState(false)
 
   const {
     register,
@@ -67,8 +68,32 @@ export function CommentComposer({ colleagues, isPosting, onPost }: CommentCompos
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} noValidate>
+    <form
+      onSubmit={handleSubmit(submit)}
+      noValidate
+      // Dropping is the shortcut; the Attach button stays the keyboard path.
+      onDragOver={(event) => {
+        event.preventDefault()
+        setOver(true)
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(event) => {
+        event.preventDefault()
+        setOver(false)
+        for (const file of Array.from(event.dataTransfer?.files ?? [])) attach(file)
+      }}
+      style={{
+        borderRadius: 'var(--mantine-radius-md)',
+        outline: isOver ? '2px dashed var(--mantine-color-brand-filled)' : undefined,
+        outlineOffset: 4,
+      }}
+    >
       <Stack gap="sm">
+        {isOver ? (
+          <Text size="sm" c="dimmed">
+            Drop to attach to this comment.
+          </Text>
+        ) : null}
         <FormError message={errors.root?.message} title="Could not post your comment" />
 
         <Textarea

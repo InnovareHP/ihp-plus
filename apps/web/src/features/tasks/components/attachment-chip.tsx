@@ -1,6 +1,6 @@
 'use client'
 
-import { ActionIcon, Anchor, Group, Paper, Text } from '@mantine/core'
+import { ActionIcon, Anchor, Group, Image, Paper, Text } from '@mantine/core'
 import { IconFile, IconX } from '@tabler/icons-react'
 import type { TaskAttachmentRow } from '../schema'
 
@@ -27,7 +27,20 @@ export function AttachmentChip({ file, onRemove, isRemoving }: AttachmentChipPro
   return (
     <Paper withBorder radius="md" px="sm" py={6}>
       <Group gap="xs" wrap="nowrap">
-        <IconFile size={16} aria-hidden />
+        {/* Sized in the markup: a thumbnail that loads late must not shove the row around. */}
+        {file.contentType.startsWith('image/') && file.url ? (
+          <Image
+            src={file.url}
+            alt=""
+            w={36}
+            h={36}
+            radius="sm"
+            fit="cover"
+            style={{ flexShrink: 0 }}
+          />
+        ) : (
+          <IconFile size={16} aria-hidden />
+        )}
 
         <div style={{ minWidth: 0 }}>
           {/* An unsigned link means storage is unreachable, not that the file is gone. */}
