@@ -1,6 +1,6 @@
 'use client'
 
-import { Alert, Button, Group, SegmentedControl, Skeleton, Stack } from '@mantine/core'
+import { Alert, Button, Group, SegmentedControl, Skeleton, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconPlus } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
@@ -292,6 +292,12 @@ export function TaskBoard() {
             filters={BOARD_FILTERS}
             action={
               <Group gap="sm">
+                {/* A background refresh dims rather than replaces: only a first load blanks a board. */}
+                {board.isFetching && !board.isPending ? (
+                  <Text size="xs" c="dimmed" aria-hidden>
+                    Updating…
+                  </Text>
+                ) : null}
                 <Button variant="default" onClick={columnsModal.open}>
                   Columns
                 </Button>

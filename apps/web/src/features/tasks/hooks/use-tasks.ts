@@ -15,6 +15,10 @@ import type {
   UpdateTaskValues,
 } from '../schema'
 
+// A board is shared work: someone else moves a card while this tab is open, so it refreshes
+// on its own rather than waiting for a reload.
+const BOARD_POLL = 60 * 1000
+
 export function useTaskBoard(query: TaskQuery, enabled: boolean) {
   return useQuery({
     queryKey: taskKeys.board(query),
@@ -22,6 +26,9 @@ export function useTaskBoard(query: TaskQuery, enabled: boolean) {
     enabled,
     // A filtered board must not blank out while the next filter loads.
     placeholderData: (previous) => previous,
+    staleTime: 15 * 1000,
+    refetchOnWindowFocus: true,
+    refetchInterval: BOARD_POLL,
   })
 }
 

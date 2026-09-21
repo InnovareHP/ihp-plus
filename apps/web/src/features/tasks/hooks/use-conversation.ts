@@ -17,18 +17,23 @@ import {
 import type {
   CommentFormValues,
   TaskAssigneeRef,
-  TaskAttachmentRow,
   TaskCommentRow,
   TaskConversation,
 } from '../schema'
 
-const EMPTY: TaskConversation = { comments: [], attachments: [] }
+const EMPTY: TaskConversation = { comments: [] }
+
+// A thread is a conversation: it is open precisely when someone may be answering on it.
+const CONVERSATION_POLL = 30 * 1000
 
 export function useConversation(taskId: string | undefined) {
   return useQuery({
     queryKey: taskKeys.conversation(taskId ?? ''),
     queryFn: () => listConversation(taskId ?? ''),
     enabled: Boolean(taskId),
+    staleTime: 10 * 1000,
+    refetchOnWindowFocus: true,
+    refetchInterval: CONVERSATION_POLL,
   })
 }
 
@@ -70,18 +75,51 @@ function useConversationMutation<TVariables>(options: {
   })
 }
 
+/** Stored one at a time: the first refusal stops the rest rather than filling the bucket. */
+async function storeFiles(taskId: string, files: readonly File[]) {
+  const stored: string[] = []
+
+  for (const file of files) {
+    const body = new FormData()
+    body.set('taskId', taskId)
+    body.set('file', file)
+
+    const result = await uploadTaskAttachment(body)
+    if (!result.ok) {
+      await Promise.all(stored.map((id) => deleteAttachment(id).catch(() => undefined)))
+      throw new Error(result.message)
+    }
+    stored.push(result.data.id)
+  }
+
+  return stored
+}
+
 export function usePostComment(taskId: string, author: { userId: string; name: string }) {
   return useConversationMutation<
-    CommentFormValues & { pendingFiles: TaskAttachmentRow[]; mentions: TaskAssigneeRef[] }
+    Omit<CommentFormValues, 'attachmentIds'> & {
+      files: readonly File[]
+      mentions: TaskAssigneeRef[]
+    }
   >({
     taskId,
-    mutationFn: (values) =>
-      createComment({
-        taskId,
-        body: values.body,
-        mentionUserIds: values.mentionUserIds,
-        attachmentIds: values.attachmentIds,
-      }),
+    // The files are stored as the comment is posted, so a file never outlives a comment that
+    // was abandoned; a comment that then fails takes what was just stored with it.
+    mutationFn: async (values) => {
+      const attachmentIds = await storeFiles(taskId, values.files)
+
+      try {
+        return await createComment({
+          taskId,
+          body: values.body,
+          mentionUserIds: values.mentionUserIds,
+          attachmentIds,
+        })
+      } catch (error) {
+        await Promise.all(attachmentIds.map((id) => deleteAttachment(id).catch(() => undefined)))
+        throw error
+      }
+    },
     apply: (conversation, values) => {
       // Replaced by the server's row on settle; an index would collide the moment two land.
       const id = crypto.randomUUID()
@@ -92,18 +130,23 @@ export function usePostComment(taskId: string, author: { userId: string; name: s
         authorName: author.name,
         body: values.body,
         mentions: values.mentions,
-        attachments: values.pendingFiles.map((file) => ({ ...file, commentId: id })),
+        // Named from the picked file: the id and the link are the server's, and land on settle.
+        attachments: values.files.map((file) => ({
+          id: `pending-${file.name}`,
+          fileName: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+          url: '',
+          uploadedByName: author.name,
+          createdAt: new Date().toISOString(),
+          commentId: id,
+        })),
         editedAt: undefined,
         createdAt: new Date().toISOString(),
         isSending: true,
       }
 
-      return {
-        comments: [...conversation.comments, optimistic],
-        attachments: conversation.attachments.map((file) =>
-          values.attachmentIds.includes(file.id) ? { ...file, commentId: id } : file,
-        ),
-      }
+      return { comments: [...conversation.comments, optimistic] }
     },
     successEvent: taskEvents.commented,
     failureEvent: taskEvents.commentFailed,
@@ -196,7 +239,6 @@ export function useDeleteComment(taskId: string) {
     mutationFn: (commentId) => deleteComment(commentId),
     apply: (conversation, commentId) => ({
       comments: conversation.comments.filter((comment) => comment.id !== commentId),
-      attachments: conversation.attachments.filter((file) => file.commentId !== commentId),
     }),
     message: 'Comment deleted.',
     undoLabel: 'Undo',
@@ -214,40 +256,10 @@ export function useDeleteAttachment(taskId: string) {
         ...comment,
         attachments: comment.attachments.filter((file) => file.id !== attachmentId),
       })),
-      attachments: conversation.attachments.filter((file) => file.id !== attachmentId),
     }),
     message: 'File removed.',
     undoLabel: 'Undo',
     successEvent: taskEvents.attachmentDeleted,
     failureEvent: taskEvents.attachmentDeleteFailed,
-  })
-}
-
-/**
- * Not optimistic: the row only exists once the bytes are stored, and the id the composer needs
- * to attach it to a comment is the server's.
- */
-export function useUploadAttachment(taskId: string) {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (file: File) => {
-      const body = new FormData()
-      body.set('taskId', taskId)
-      body.set('file', file)
-
-      const result = await uploadTaskAttachment(body)
-      if (!result.ok) throw new Error(result.message)
-      return result.data
-    },
-    onSuccess: () => track(taskEvents.attached),
-    onError: (error: Error) => {
-      announceFailure(error.message)
-      track(taskEvents.attachFailed, { reason: error.message })
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: taskKeys.conversation(taskId) })
-      void queryClient.invalidateQueries({ queryKey: taskKeys.boards() })
-    },
   })
 }

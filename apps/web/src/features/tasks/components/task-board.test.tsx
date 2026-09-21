@@ -232,6 +232,20 @@ describe('TaskBoard', () => {
     expect(screen.getByLabelText('1 files')).toBeInTheDocument()
   })
 
+  it('polls itself, because someone else moves the cards on a shared board', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      await renderBoard()
+      expect(rpc.listTasks).toHaveBeenCalledTimes(1)
+
+      await vi.advanceTimersByTimeAsync(61 * 1000)
+
+      await waitFor(() => expect(rpc.listTasks).toHaveBeenCalledTimes(2))
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('asks before deleting, because a deleted task does not come back', async () => {
     const user = userEvent.setup()
     rpc.deleteTask.mockResolvedValue(undefined)
