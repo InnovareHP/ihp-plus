@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, NumberInput, Stack, TextInput } from '@mantine/core'
+import { Button, Divider, Group, Modal, NumberInput, Stack, Switch, TextInput } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { useSaveShift } from '../hooks/use-attendance-admin'
@@ -14,8 +14,8 @@ export interface ShiftModalProps {
   onClose: () => void
   /** Absent writes a new shift; present edits that one. */
   shift?: AttendanceShiftRow
-  /** The company hours, which a new shift starts from. */
-  defaults: { shiftStartMinutes: number; shiftEndMinutes: number; graceMinutes: number }
+  /** The company hours a new shift starts from. */
+  defaults: AttendanceShiftRow
 }
 
 /** A shift is written once here and handed out under the organization. */
@@ -39,6 +39,10 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
       shiftEndMinutes: shift?.shiftEndMinutes ?? defaults.shiftEndMinutes,
       graceMinutes: shift?.graceMinutes ?? defaults.graceMinutes,
       workdays: shift?.workdays ?? DEFAULT_WORKDAYS,
+      requireSelfie: shift?.requireSelfie ?? defaults.requireSelfie,
+      requireNote: shift?.requireNote ?? defaults.requireNote,
+      captureLocation: shift?.captureLocation ?? defaults.captureLocation,
+      autoClockOutHours: shift?.autoClockOutHours ?? defaults.autoClockOutHours,
     },
   })
 
@@ -148,6 +152,72 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
                 onChange={field.onChange}
                 onBlur={field.onBlur}
                 error={errors.workdays?.message}
+              />
+            )}
+          />
+
+          {/* The rules belong to the shift: a night shift can ask for a selfie, the office one not. */}
+          <Divider label="What the clock asks for" labelPosition="left" />
+
+          <Controller
+            control={control}
+            name="requireSelfie"
+            render={({ field }) => (
+              <Switch
+                label="A selfie at each end"
+                description="A photo is taken at clock in and clock out, and kept with that day."
+                checked={field.value}
+                onChange={(event) => field.onChange(event.currentTarget.checked)}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="captureLocation"
+            render={({ field }) => (
+              <Switch
+                label="Where the clock was pressed"
+                description="Coordinates ride along with the punch; a refused fix never blocks it."
+                checked={field.value}
+                onChange={(event) => field.onChange(event.currentTarget.checked)}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="requireNote"
+            render={({ field }) => (
+              <Switch
+                label="A note at clock out"
+                description="Asked for before the day is closed."
+                checked={field.value}
+                onChange={(event) => field.onChange(event.currentTarget.checked)}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="autoClockOutHours"
+            render={({ field }) => (
+              <NumberInput
+                label="Close a forgotten day after"
+                description="Hours. 0 never closes one on its own."
+                suffix=" hours"
+                min={0}
+                max={24}
+                clampBehavior="strict"
+                value={field.value}
+                onChange={(value) => field.onChange(typeof value === 'number' ? value : 0)}
+                onBlur={field.onBlur}
+                error={errors.autoClockOutHours?.message}
+                errorProps={{ role: 'alert' }}
+                w={220}
               />
             )}
           />

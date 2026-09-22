@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { render, screen, userEvent, waitFor } from '@/test/render'
-import type { AttendanceDayRow, AttendanceSettingsRow } from '../schema'
+import type { AttendanceDayRow, AttendanceSettingsRow, AttendanceShiftRow } from '../schema'
 import { TimeClockCard } from './time-clock-card'
 
 const rpc = vi.hoisted(() => ({
@@ -21,15 +21,23 @@ vi.mock('../rpc', () => rpc)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 
 const RULES: AttendanceSettingsRow = {
-  requireSelfie: false,
-  requireNote: false,
-  captureLocation: false,
-  autoClockOutHours: 16,
+  timeZone: 'UTC',
+  defaultShiftId: 'shift-1',
+}
+
+const SHIFT: AttendanceShiftRow = {
+  id: 'shift-1',
+  name: 'Company hours',
   shiftStartMinutes: 9 * 60,
   shiftEndMinutes: 18 * 60,
   graceMinutes: 15,
   workdays: '1,2,3,4,5',
-  timeZone: 'UTC',
+  assignedCount: 0,
+  requireSelfie: false,
+  requireNote: false,
+  captureLocation: false,
+  autoClockOutHours: 16,
+  isDefault: true,
 }
 
 const SCHEDULE = {
@@ -81,8 +89,8 @@ function withCamera(available: boolean) {
   return getUserMedia
 }
 
-function view(today: AttendanceDayRow | undefined, settings: AttendanceSettingsRow = RULES) {
-  return { today, settings, schedule: SCHEDULE, canManage: false }
+function view(today: AttendanceDayRow | undefined, shift: AttendanceShiftRow = SHIFT) {
+  return { today, settings: RULES, schedule: SCHEDULE, canManage: false, shift }
 }
 
 describe('TimeClockCard', () => {
@@ -116,7 +124,7 @@ describe('TimeClockCard', () => {
   it('puts the camera in front of the punch when a selfie is required', async () => {
     const user = userEvent.setup()
     withCamera(true)
-    rpc.getTimeClock.mockResolvedValue(view(undefined, { ...RULES, requireSelfie: true }))
+    rpc.getTimeClock.mockResolvedValue(view(undefined, { ...SHIFT, requireSelfie: true }))
     render(<TimeClockCard />)
 
     await user.click(await screen.findByRole('button', { name: 'Clock in' }))
@@ -128,7 +136,7 @@ describe('TimeClockCard', () => {
   it('offers a photo to pick when the camera will not open, rather than locking the day out', async () => {
     const user = userEvent.setup()
     withCamera(false)
-    rpc.getTimeClock.mockResolvedValue(view(undefined, { ...RULES, requireSelfie: true }))
+    rpc.getTimeClock.mockResolvedValue(view(undefined, { ...SHIFT, requireSelfie: true }))
     render(<TimeClockCard />)
 
     await user.click(await screen.findByRole('button', { name: 'Clock in' }))
@@ -172,7 +180,7 @@ describe('TimeClockCard', () => {
 
   it('will not close the day without the note the company asks for', async () => {
     const user = userEvent.setup()
-    rpc.getTimeClock.mockResolvedValue(view(day(), { ...RULES, requireNote: true }))
+    rpc.getTimeClock.mockResolvedValue(view(day(), { ...SHIFT, requireNote: true }))
     render(<TimeClockCard />)
 
     await user.click(await screen.findByRole('button', { name: 'Clock out' }))

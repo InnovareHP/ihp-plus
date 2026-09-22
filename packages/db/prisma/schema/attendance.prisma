@@ -2,24 +2,16 @@
 // time in tasks.prisma answers "what was this hour spent on"; this answers "was this person at
 // work today", which is the payroll question and a different table.
 
+// What is true of the whole company rather than of one shift: which midnight ends a day, and
+// which shift somebody works until they are given one of their own.
 model AttendanceSettings {
   organizationId String @id
 
-  // A selfie at each end proves who pressed the button; off is one tap.
-  requireSelfie     Boolean @default(false)
-  requireNote       Boolean @default(false)
-  captureLocation   Boolean @default(false)
-  // Hours after which a day nobody clocked out of is closed at that length; 0 never closes one.
-  autoClockOutHours Int     @default(16)
-
-  // The company shift, in minutes from midnight, unless a person's own schedule overrides it.
-  shiftStartMinutes Int    @default(540)
-  shiftEndMinutes   Int    @default(1080)
-  graceMinutes      Int    @default(15)
-  // Weekdays worked as a comma list, 0 being Sunday.
-  workdays          String @default("1,2,3,4,5")
   // The zone a working day is counted in, so midnight means the same thing to everyone here.
-  timeZone          String @default("UTC")
+  timeZone String @default("UTC")
+
+  defaultShiftId String?
+  defaultShift   AttendanceShift? @relation("DefaultShift", fields: [defaultShiftId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -28,7 +20,9 @@ model AttendanceSettings {
   @@schema("attendance")
 }
 
-// A named set of working hours, written once and given to as many people as work them.
+// A named set of working hours and the clock rules that go with them, written once and given to
+// as many people as work them. Rules belong here rather than to the company: a night shift can
+// ask for a selfie while the office shift does not.
 model AttendanceShift {
   id             String @id @default(uuid())
   organizationId String
@@ -41,10 +35,18 @@ model AttendanceShift {
   // Weekdays worked as a comma list, 0 being Sunday.
   workdays          String @default("1,2,3,4,5")
 
+  // A selfie at each end proves who pressed the button; off is one tap.
+  requireSelfie     Boolean @default(false)
+  requireNote       Boolean @default(false)
+  captureLocation   Boolean @default(false)
+  // Hours after which a day nobody clocked out of is closed at that length; 0 never closes one.
+  autoClockOutHours Int     @default(16)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  assignments AttendanceSchedule[]
+  assignments  AttendanceSchedule[]
+  defaultOf    AttendanceSettings[] @relation("DefaultShift")
 
   // Two shifts called "Morning" in one company is a naming mistake, not a second shift.
   @@unique([organizationId, name])

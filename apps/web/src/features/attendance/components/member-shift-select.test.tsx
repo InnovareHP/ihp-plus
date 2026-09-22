@@ -35,6 +35,11 @@ const MORNING = {
   graceMinutes: 10,
   workdays: '1,2,3,4,5',
   assignedCount: 2,
+  requireSelfie: false,
+  requireNote: false,
+  captureLocation: false,
+  autoClockOutHours: 16,
+  isDefault: false,
 }
 
 const ON_DEFAULT: AttendanceScheduleRow = {

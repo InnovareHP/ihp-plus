@@ -3,33 +3,56 @@ import {
   attendanceDaySchema,
   attendanceSettingsSchema,
   DEFAULT_ATTENDANCE_SETTINGS,
+  DEFAULT_SHIFT,
   selfieProblem,
+  shiftSchema,
 } from './schema'
 
 describe('attendanceSettingsSchema', () => {
-  it('accepts the rules an organization starts with', () => {
-    expect(attendanceSettingsSchema.parse(DEFAULT_ATTENDANCE_SETTINGS)).toMatchObject({
-      shiftStartMinutes: 540,
+  it('accepts the two things that are true of the whole company', () => {
+    expect(attendanceSettingsSchema.parse(DEFAULT_ATTENDANCE_SETTINGS)).toEqual({
+      timeZone: 'UTC',
+      defaultShiftId: '',
     })
   })
 
+  it('refuses a company with no zone to count its day in', () => {
+    expect(attendanceSettingsSchema.safeParse({ timeZone: '', defaultShiftId: '' }).success).toBe(
+      false,
+    )
+  })
+})
+
+describe('shiftSchema', () => {
+  const shift = {
+    name: 'Morning',
+    shiftStartMinutes: DEFAULT_SHIFT.shiftStartMinutes,
+    shiftEndMinutes: DEFAULT_SHIFT.shiftEndMinutes,
+    graceMinutes: 15,
+    workdays: '1,2,3,4,5',
+    requireSelfie: true,
+    requireNote: false,
+    captureLocation: false,
+    autoClockOutHours: 16,
+  }
+
+  it('carries the rules the clock runs under', () => {
+    expect(shiftSchema.parse(shift)).toMatchObject({ requireSelfie: true, autoClockOutHours: 16 })
+  })
+
   it('refuses a shift that starts and ends at the same minute', () => {
-    const result = attendanceSettingsSchema.safeParse({
-      ...DEFAULT_ATTENDANCE_SETTINGS,
-      shiftEndMinutes: DEFAULT_ATTENDANCE_SETTINGS.shiftStartMinutes,
-    })
+    const result = shiftSchema.safeParse({ ...shift, shiftEndMinutes: shift.shiftStartMinutes })
 
     expect(result.success).toBe(false)
     expect(result.error?.issues[0]?.path).toEqual(['shiftEndMinutes'])
   })
 
   it('refuses a week with no working days in it', () => {
-    const result = attendanceSettingsSchema.safeParse({
-      ...DEFAULT_ATTENDANCE_SETTINGS,
-      workdays: '',
-    })
+    expect(shiftSchema.safeParse({ ...shift, workdays: '' }).success).toBe(false)
+  })
 
-    expect(result.success).toBe(false)
+  it('refuses an auto-close longer than a day', () => {
+    expect(shiftSchema.safeParse({ ...shift, autoClockOutHours: 25 }).success).toBe(false)
   })
 })
 

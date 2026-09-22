@@ -46,6 +46,11 @@ export interface AttendanceShiftRow {
   graceMinutes: number
   workdays: string
   assignedCount: number
+  requireSelfie: boolean
+  requireNote: boolean
+  captureLocation: boolean
+  autoClockOutHours: number
+  isDefault: boolean
 }
 
 export interface AttendanceScheduleRow {
@@ -89,6 +94,8 @@ export interface TimeClockView {
   settings: AttendanceSettingsRow
   schedule: AttendanceScheduleRow
   canManage: boolean
+  /** The shift this person works, and the rules their clock runs under. */
+  shift: AttendanceShiftRow
 }
 
 export interface AttendanceSettingsView {
@@ -100,52 +107,34 @@ const workdaysField = z
   .string()
   .refine((value) => parseWorkdays(value).length > 0, 'Pick at least one working day.')
 
-export const attendanceSettingsSchema = z
-  .object({
-    requireSelfie: z.boolean(),
-    requireNote: z.boolean(),
-    captureLocation: z.boolean(),
-    autoClockOutHours: z
-      .number()
-      .int()
-      .min(0, 'Use 0 to never close a day on its own.')
-      .max(24, 'A day is the longest a clock may run.'),
-    shiftStartMinutes: z
-      .number()
-      .int()
-      .min(0)
-      .max(24 * 60 - 1),
-    shiftEndMinutes: z
-      .number()
-      .int()
-      .min(0)
-      .max(24 * 60 - 1),
-    graceMinutes: z
-      .number()
-      .int()
-      .min(0, 'Grace cannot be negative.')
-      .max(120, 'Two hours is the most grace allowed.'),
-    workdays: workdaysField,
-    timeZone: z.string().min(1, 'Pick the zone the working day is counted in.'),
-  })
-  .refine((values) => values.shiftStartMinutes !== values.shiftEndMinutes, {
-    message: 'A shift cannot start and end at the same minute.',
-    path: ['shiftEndMinutes'],
-  })
+/** What is left of company-wide settings once the rules moved onto the shifts they measure. */
+export const attendanceSettingsSchema = z.object({
+  timeZone: z.string().min(1, 'Pick the zone the working day is counted in.'),
+  /** Empty means nobody has named a default, so the built-in hours below apply. */
+  defaultShiftId: z.string(),
+})
 
 export type AttendanceSettingsRow = z.infer<typeof attendanceSettingsSchema>
 
-/** The rules an organization has before anybody opens the screen, and the form's first render. */
 export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettingsRow = {
-  requireSelfie: false,
-  requireNote: false,
-  captureLocation: false,
-  autoClockOutHours: 16,
+  timeZone: 'UTC',
+  defaultShiftId: '',
+}
+
+/** The hours and rules a company runs on before anybody writes a shift of its own. */
+export const DEFAULT_SHIFT: AttendanceShiftRow = {
+  id: '',
+  name: 'Company hours',
   shiftStartMinutes: 9 * 60,
   shiftEndMinutes: 18 * 60,
   graceMinutes: 15,
   workdays: DEFAULT_WORKDAYS,
-  timeZone: 'UTC',
+  assignedCount: 0,
+  requireSelfie: false,
+  requireNote: false,
+  captureLocation: false,
+  autoClockOutHours: 16,
+  isDefault: true,
 }
 
 export const shiftSchema = z
@@ -156,6 +145,14 @@ export const shiftSchema = z
       .trim()
       .min(1, 'Give the shift a name people will recognise.')
       .max(60, 'Keep the name under 60 characters.'),
+    requireSelfie: z.boolean(),
+    requireNote: z.boolean(),
+    captureLocation: z.boolean(),
+    autoClockOutHours: z
+      .number()
+      .int()
+      .min(0, 'Use 0 to never close a day on its own.')
+      .max(24, 'A day is the longest a clock may run.'),
     shiftStartMinutes: z
       .number()
       .int()

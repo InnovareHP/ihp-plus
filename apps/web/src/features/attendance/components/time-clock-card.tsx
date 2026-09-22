@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form'
 import { useEndBreak, useStartBreak, useTimeClock } from '../hooks/use-time-clock'
 import { useNow } from '../hooks/use-now'
 import { usePunch, type PunchKind } from '../hooks/use-punch'
-import type { AttendanceSettingsRow } from '../schema'
+import type { AttendanceSettingsRow, AttendanceShiftRow } from '../schema'
 import { formatHours, minutesToClock } from '../utils/clock'
 import { dayState, liveBreakSeconds, liveWorkedSeconds } from '../utils/day'
 import { ClockReading } from './clock-reading'
@@ -22,7 +22,7 @@ interface NoteForm {
 /** The screen a member uses every day: one big clock and one obvious next action. */
 export function TimeClockCard() {
   const clock = useTimeClock()
-  const punch = usePunch(clock.data?.settings)
+  const punch = usePunch(clock.data?.shift)
   const startBreak = useStartBreak()
   const endBreak = useEndBreak()
   const [selfieFor, setSelfieFor] = useState<PunchKind | undefined>(undefined)
@@ -62,12 +62,12 @@ export function TimeClockCard() {
     )
   }
 
-  const { settings, schedule } = clock.data
+  const { settings, shift } = clock.data
   const isBusy = punch.isPending || startBreak.isPending || endBreak.isPending
 
   async function run(which: PunchKind, selfieKey: string) {
     const note = getValues('note').trim()
-    if (which === 'out' && settings.requireNote && !note) {
+    if (which === 'out' && shift.requireNote && !note) {
       setSelfieFor(undefined)
       setError('note', { message: 'Say what you worked on before clocking out.' })
       return
@@ -95,7 +95,7 @@ export function TimeClockCard() {
               Your time clock
             </Title>
             <Text size="sm" c="dimmed">
-              {shiftLine(settings, schedule.shiftStartMinutes, schedule.shiftEndMinutes)}
+              {shiftLine(settings, shift)}
             </Text>
           </Stack>
           <ClockStateBadge state={state} />
@@ -122,9 +122,9 @@ export function TimeClockCard() {
         {state !== 'absent' && today?.isOpen ? (
           <Textarea
             label="What are you working on today?"
-            description={settings.requireNote ? undefined : 'Optional — it lands on today’s row.'}
-            required={settings.requireNote}
-            aria-required={settings.requireNote}
+            description={shift.requireNote ? undefined : 'Optional — it lands on today’s row.'}
+            required={shift.requireNote}
+            aria-required={shift.requireNote}
             error={errors.note?.message}
             errorProps={{ role: 'alert' }}
             autosize
@@ -193,7 +193,7 @@ export function TimeClockCard() {
   )
 }
 
-function shiftLine(settings: AttendanceSettingsRow, startMinutes: number, endMinutes: number) {
-  const shift = `${minutesToClock(startMinutes)}–${minutesToClock(endMinutes)}`
-  return `Your shift is ${shift} (${settings.timeZone}), with ${settings.graceMinutes} minutes' grace.`
+function shiftLine(settings: AttendanceSettingsRow, shift: AttendanceShiftRow) {
+  const hours = `${minutesToClock(shift.shiftStartMinutes)}–${minutesToClock(shift.shiftEndMinutes)}`
+  return `${shift.name}: ${hours} (${settings.timeZone}), with ${shift.graceMinutes} minutes' grace.`
 }

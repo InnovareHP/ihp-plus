@@ -1,7 +1,7 @@
 'use client'
 
 import { useClockIn, useClockOut } from './use-time-clock'
-import type { AttendanceSettingsRow } from '../schema'
+import type { AttendanceShiftRow } from '../schema'
 import { currentLocation } from '../utils/location'
 
 export type PunchKind = 'in' | 'out'
@@ -15,12 +15,12 @@ export interface Punch {
 }
 
 /** The mechanics behind both clocks — the card on the page and the chip in the header. */
-export function usePunch(settings: AttendanceSettingsRow | undefined): Punch {
+export function usePunch(shift: AttendanceShiftRow | undefined): Punch {
   const clockIn = useClockIn()
   const clockOut = useClockOut()
 
   async function punch(which: PunchKind, input: { selfieKey?: string; note?: string }) {
-    const location = settings?.captureLocation ? await currentLocation() : ''
+    const location = shift?.captureLocation ? await currentLocation() : ''
     const values = {
       selfieKey: input.selfieKey ?? '',
       location,
@@ -38,7 +38,7 @@ export function usePunch(settings: AttendanceSettingsRow | undefined): Punch {
   }
 
   return {
-    needsSelfie: Boolean(settings?.requireSelfie),
+    needsSelfie: Boolean(shift?.requireSelfie),
     isPending: clockIn.isPending || clockOut.isPending,
     punch,
   }

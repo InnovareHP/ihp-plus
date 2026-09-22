@@ -7,6 +7,7 @@ import type {
 } from '@ihp/rpc/attendance'
 import {
   DEFAULT_ATTENDANCE_SETTINGS,
+  DEFAULT_SHIFT,
   type AttendanceBoardRow,
   type AttendanceDayRow,
   type AttendanceScheduleRow,
@@ -96,15 +97,8 @@ export function dayFromProto(day: AttendanceDayMessage): AttendanceDayRow {
 export function settingsToProto(settings: AttendanceSettingsRow): AttendanceSettingsMessage {
   return {
     $typeName: 'ihp.attendance.v1.AttendanceSettings',
-    requireSelfie: settings.requireSelfie,
-    requireNote: settings.requireNote,
-    captureLocation: settings.captureLocation,
-    autoClockOutHours: settings.autoClockOutHours,
-    shiftStartMinutes: settings.shiftStartMinutes,
-    shiftEndMinutes: settings.shiftEndMinutes,
-    graceMinutes: settings.graceMinutes,
-    workdays: settings.workdays,
     timeZone: settings.timeZone,
+    defaultShiftId: settings.defaultShiftId || undefined,
   }
 }
 
@@ -114,15 +108,8 @@ export function settingsFromProto(
   if (!settings) return DEFAULT_ATTENDANCE_SETTINGS
 
   return {
-    requireSelfie: settings.requireSelfie,
-    requireNote: settings.requireNote,
-    captureLocation: settings.captureLocation,
-    autoClockOutHours: settings.autoClockOutHours,
-    shiftStartMinutes: settings.shiftStartMinutes,
-    shiftEndMinutes: settings.shiftEndMinutes,
-    graceMinutes: settings.graceMinutes,
-    workdays: settings.workdays || DEFAULT_ATTENDANCE_SETTINGS.workdays,
     timeZone: settings.timeZone || DEFAULT_ATTENDANCE_SETTINGS.timeZone,
+    defaultShiftId: settings.defaultShiftId ?? '',
   }
 }
 
@@ -136,10 +123,17 @@ export function shiftToProto(shift: AttendanceShiftRow): AttendanceShiftMessage 
     graceMinutes: shift.graceMinutes,
     workdays: shift.workdays,
     assignedCount: shift.assignedCount,
+    requireSelfie: shift.requireSelfie,
+    requireNote: shift.requireNote,
+    captureLocation: shift.captureLocation,
+    autoClockOutHours: shift.autoClockOutHours,
+    isDefault: shift.isDefault,
   }
 }
 
-export function shiftFromProto(shift: AttendanceShiftMessage): AttendanceShiftRow {
+export function shiftFromProto(shift: AttendanceShiftMessage | undefined): AttendanceShiftRow {
+  if (!shift) return DEFAULT_SHIFT
+
   return {
     id: shift.id,
     name: shift.name,
@@ -148,6 +142,11 @@ export function shiftFromProto(shift: AttendanceShiftMessage): AttendanceShiftRo
     graceMinutes: shift.graceMinutes,
     workdays: shift.workdays,
     assignedCount: shift.assignedCount,
+    requireSelfie: shift.requireSelfie,
+    requireNote: shift.requireNote,
+    captureLocation: shift.captureLocation,
+    autoClockOutHours: shift.autoClockOutHours,
+    isDefault: shift.isDefault,
   }
 }
 
@@ -170,14 +169,14 @@ export function scheduleToProto(schedule: AttendanceScheduleRow): AttendanceSche
 export function scheduleFromProto(
   schedule: AttendanceScheduleMessage | undefined,
 ): AttendanceScheduleRow {
-  const settings = settingsFromProto(undefined)
+  // The built-in hours stand in when the server sent nothing, which is a client older than this.
   return {
     userId: schedule?.userId ?? '',
     userName: schedule?.userName ?? '',
-    shiftStartMinutes: schedule?.shiftStartMinutes ?? settings.shiftStartMinutes,
-    shiftEndMinutes: schedule?.shiftEndMinutes ?? settings.shiftEndMinutes,
-    graceMinutes: schedule?.graceMinutes ?? settings.graceMinutes,
-    workdays: schedule?.workdays || settings.workdays,
+    shiftStartMinutes: schedule?.shiftStartMinutes ?? DEFAULT_SHIFT.shiftStartMinutes,
+    shiftEndMinutes: schedule?.shiftEndMinutes ?? DEFAULT_SHIFT.shiftEndMinutes,
+    graceMinutes: schedule?.graceMinutes ?? DEFAULT_SHIFT.graceMinutes,
+    workdays: schedule?.workdays || DEFAULT_SHIFT.workdays,
     isDefault: schedule?.isDefault ?? true,
     shiftId: schedule?.shiftId,
     shiftName: schedule?.shiftName,

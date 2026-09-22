@@ -1,34 +1,30 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  Button,
-  Group,
-  NumberInput,
-  Select,
-  Skeleton,
-  Stack,
-  Switch,
-  Text,
-  TextInput,
-} from '@mantine/core'
+import { Button, Group, Select, Skeleton, Stack, Text } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
+import { useShifts } from '../hooks/use-attendance-admin'
 import { useAttendanceSettings, useSaveAttendanceSettings } from '../hooks/use-time-clock'
 import {
   attendanceSettingsSchema,
   DEFAULT_ATTENDANCE_SETTINGS,
   type AttendanceSettingsRow,
 } from '../schema'
-import { clockToMinutes, minutesToClock } from '../utils/clock'
-import { WorkdaysField } from './workdays-field'
+import { minutesToClock } from '../utils/clock'
 
 // Every zone the platform knows, so a company counts its day the way it actually works.
 const TIME_ZONES = Intl.supportedValuesOf('timeZone')
 
-/** Only an admin sees this; a member's half of attendance is the clock on their own screen. */
+const BUILT_IN_HOURS = ''
+
+/**
+ * What is left of company-wide settings: which midnight ends a day, and which shift somebody
+ * works until they are given one of their own. The clock's rules live on the shifts themselves.
+ */
 export function AttendanceSettingsForm() {
   const settings = useAttendanceSettings()
+  const shifts = useShifts()
   const save = useSaveAttendanceSettings()
 
   const {
@@ -40,20 +36,28 @@ export function AttendanceSettingsForm() {
     resolver: zodResolver(attendanceSettingsSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    // A default per field from the first render: the switches and the day picker have no undefined state.
+    // A default per field from the first render: neither control has an undefined state.
     defaultValues: DEFAULT_ATTENDANCE_SETTINGS,
     values: settings.data?.settings,
   })
 
-  if (settings.isPending) return <Skeleton height={320} radius="md" aria-busy="true" />
+  if (settings.isPending) return <Skeleton height={180} radius="md" aria-busy="true" />
   if (!settings.data?.canManage) return null
+
+  const options = [
+    { value: BUILT_IN_HOURS, label: 'Built-in hours (09:00–18:00, Mon–Fri)' },
+    ...(shifts.data?.shifts ?? []).map((shift) => ({
+      value: shift.id,
+      label: `${shift.name} · ${minutesToClock(shift.shiftStartMinutes)}–${minutesToClock(shift.shiftEndMinutes)}`,
+    })),
+  ]
 
   async function submit(values: AttendanceSettingsRow) {
     try {
       await save.mutateAsync(values)
     } catch (error) {
       setError('root', {
-        message: error instanceof Error ? error.message : 'Could not save these rules.',
+        message: error instanceof Error ? error.message : 'Could not save these settings.',
       })
     }
   }
@@ -61,168 +65,54 @@ export function AttendanceSettingsForm() {
   return (
     <form onSubmit={handleSubmit(submit)} noValidate>
       <Stack gap="md">
-        <FormError message={errors.root?.message} title="Could not save the attendance rules" />
+        <FormError message={errors.root?.message} title="Could not save the attendance settings" />
 
         <Text size="sm" c="dimmed">
-          These apply to everyone in the company. Members clock in and out on the Time clock page;
-          only an admin records or corrects a day, including their own.
+          Selfies, notes, grace and the auto-close belong to a shift — write them on the shift
+          itself. These two are true of the whole company.
         </Text>
 
-        <Controller
-          control={control}
-          name="requireSelfie"
-          render={({ field }) => (
-            <Switch
-              label="A selfie is required at the clock"
-              description="A photo is taken at clock in and clock out, and kept with that day."
-              checked={field.value}
-              onChange={(event) => field.onChange(event.currentTarget.checked)}
-              onBlur={field.onBlur}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="captureLocation"
-          render={({ field }) => (
-            <Switch
-              label="Record where the clock was pressed"
-              description="Coordinates are stored with the punch; a refused fix never blocks it."
-              checked={field.value}
-              onChange={(event) => field.onChange(event.currentTarget.checked)}
-              onBlur={field.onBlur}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="requireNote"
-          render={({ field }) => (
-            <Switch
-              label="A note is required at clock out"
-              description="Asked for before the day is closed."
-              checked={field.value}
-              onChange={(event) => field.onChange(event.currentTarget.checked)}
-              onBlur={field.onBlur}
-            />
-          )}
-        />
-
         <Group grow align="flex-start">
           <Controller
             control={control}
-            name="shiftStartMinutes"
+            name="timeZone"
             render={({ field }) => (
-              <TextInput
-                type="time"
-                label="Company shift starts"
-                value={minutesToClock(field.value)}
-                onChange={(event) =>
-                  field.onChange(clockToMinutes(event.currentTarget.value) ?? field.value)
-                }
+              <Select
+                label="Working day counted in"
+                description="Which midnight ends a day for everyone here."
+                searchable
+                data={TIME_ZONES}
+                value={field.value}
+                onChange={(value) => field.onChange(value ?? field.value)}
                 onBlur={field.onBlur}
-                error={errors.shiftStartMinutes?.message}
+                error={errors.timeZone?.message}
                 errorProps={{ role: 'alert' }}
               />
             )}
           />
+
           <Controller
             control={control}
-            name="shiftEndMinutes"
+            name="defaultShiftId"
             render={({ field }) => (
-              <TextInput
-                type="time"
-                label="and ends"
-                value={minutesToClock(field.value)}
-                onChange={(event) =>
-                  field.onChange(clockToMinutes(event.currentTarget.value) ?? field.value)
-                }
+              <Select
+                label="Company hours"
+                description="Worked by anybody without a shift of their own."
+                data={options}
+                value={field.value}
+                allowDeselect={false}
+                onChange={(value) => field.onChange(value ?? BUILT_IN_HOURS)}
                 onBlur={field.onBlur}
-                error={errors.shiftEndMinutes?.message}
+                error={errors.defaultShiftId?.message}
                 errorProps={{ role: 'alert' }}
               />
             )}
           />
         </Group>
-
-        <Controller
-          control={control}
-          name="workdays"
-          render={({ field }) => (
-            <WorkdaysField
-              value={field.value}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.workdays?.message}
-            />
-          )}
-        />
-
-        <Group grow align="flex-start">
-          <Controller
-            control={control}
-            name="graceMinutes"
-            render={({ field }) => (
-              <NumberInput
-                label="Grace before late"
-                description="Minutes after the shift start."
-                suffix=" min"
-                min={0}
-                max={120}
-                clampBehavior="strict"
-                value={field.value}
-                onChange={(value) => field.onChange(typeof value === 'number' ? value : 0)}
-                onBlur={field.onBlur}
-                error={errors.graceMinutes?.message}
-                errorProps={{ role: 'alert' }}
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="autoClockOutHours"
-            render={({ field }) => (
-              <NumberInput
-                label="Close a forgotten day after"
-                description="Hours. 0 never closes one on its own."
-                suffix=" hours"
-                min={0}
-                max={24}
-                clampBehavior="strict"
-                value={field.value}
-                onChange={(value) => field.onChange(typeof value === 'number' ? value : 0)}
-                onBlur={field.onBlur}
-                error={errors.autoClockOutHours?.message}
-                errorProps={{ role: 'alert' }}
-              />
-            )}
-          />
-        </Group>
-
-        <Controller
-          control={control}
-          name="timeZone"
-          render={({ field }) => (
-            <Select
-              label="Working day counted in"
-              description="Which midnight ends a day for everyone here."
-              searchable
-              data={TIME_ZONES}
-              value={field.value}
-              onChange={(value) => field.onChange(value ?? field.value)}
-              onBlur={field.onBlur}
-              error={errors.timeZone?.message}
-              errorProps={{ role: 'alert' }}
-              w={320}
-            />
-          )}
-        />
 
         <Group justify="flex-end">
           <Button type="submit" loading={isSubmitting || save.isPending} disabled={!isDirty}>
-            {isSubmitting || save.isPending ? 'Saving…' : 'Save rules'}
+            {isSubmitting || save.isPending ? 'Saving…' : 'Save settings'}
           </Button>
         </Group>
       </Stack>

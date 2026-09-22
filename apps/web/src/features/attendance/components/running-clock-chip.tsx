@@ -69,6 +69,7 @@ export function RunningClockChip() {
           onClose={() => setConfirming(false)}
           day={today}
           settings={clock.data.settings}
+          shift={clock.data.shift}
         />
       ) : null}
     </>

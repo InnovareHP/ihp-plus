@@ -1,14 +1,15 @@
 'use client'
 
-import { Button, Card, Group, Stack, Text, Title } from '@mantine/core'
+import { Badge, Button, Card, Group, Stack, Text, Title } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { useDeleteShift, useShifts } from '../hooks/use-attendance-admin'
-import { DEFAULT_ATTENDANCE_SETTINGS, type AttendanceShiftRow } from '../schema'
+import { DEFAULT_SHIFT, type AttendanceShiftRow } from '../schema'
 import { formatWorkdays, minutesToClock } from '../utils/clock'
 import { ShiftModal } from './shift-modal'
+import { ShiftRules } from './shift-rules'
 
 /** The shift library: written here, given to people under the organization. */
 export function ShiftsPanel() {
@@ -16,7 +17,7 @@ export function ShiftsPanel() {
   const remove = useDeleteShift()
   const [editing, setEditing] = useState<AttendanceShiftRow | undefined>(undefined)
   const [writing, setWriting] = useState(false)
-  const settings = book.data?.settings ?? DEFAULT_ATTENDANCE_SETTINGS
+  const companyHours = book.data?.shifts.find((shift) => shift.isDefault) ?? DEFAULT_SHIFT
 
   const columns: DataTableColumn<AttendanceShiftRow>[] = [
     {
@@ -24,9 +25,16 @@ export function ShiftsPanel() {
       header: 'Shift',
       rowHeader: true,
       render: (row) => (
-        <Text size="sm" fw={500}>
-          {row.name}
-        </Text>
+        <Group gap="xs" wrap="nowrap">
+          <Text size="sm" fw={500}>
+            {row.name}
+          </Text>
+          {row.isDefault ? (
+            <Badge variant="light" color="gray">
+              Company hours
+            </Badge>
+          ) : null}
+        </Group>
       ),
     },
     {
@@ -37,6 +45,11 @@ export function ShiftsPanel() {
     },
     { key: 'grace', header: 'Grace', align: 'right', render: (row) => `${row.graceMinutes} min` },
     { key: 'days', header: 'Days', render: (row) => formatWorkdays(row.workdays) },
+    {
+      key: 'rules',
+      header: 'Asks for',
+      render: (row) => <ShiftRules shift={row} />,
+    },
     {
       key: 'assigned',
       header: 'People',
@@ -119,7 +132,7 @@ export function ShiftsPanel() {
               setEditing(undefined)
             }}
             shift={editing}
-            defaults={settings}
+            defaults={companyHours}
           />
         ) : null}
       </Stack>

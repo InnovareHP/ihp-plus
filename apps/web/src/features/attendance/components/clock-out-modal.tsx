@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNow } from '../hooks/use-now'
 import { usePunch } from '../hooks/use-punch'
-import type { AttendanceDayRow, AttendanceSettingsRow } from '../schema'
+import type { AttendanceDayRow, AttendanceSettingsRow, AttendanceShiftRow } from '../schema'
 import { formatHours, formatTimeOfDay } from '../utils/clock'
 import { liveBreakSeconds, liveWorkedSeconds } from '../utils/day'
 import { SelfieCapture } from './selfie-capture'
@@ -15,6 +15,7 @@ export interface ClockOutModalProps {
   onClose: () => void
   day: AttendanceDayRow
   settings: AttendanceSettingsRow
+  shift: AttendanceShiftRow
 }
 
 interface NoteForm {
@@ -25,8 +26,8 @@ interface NoteForm {
  * Clocking out ends the day, and only an admin can reopen one, so the header asks first —
  * the one place in this feature where a confirm beats an undo.
  */
-export function ClockOutModal({ opened, onClose, day, settings }: ClockOutModalProps) {
-  const punch = usePunch(settings)
+export function ClockOutModal({ opened, onClose, day, settings, shift }: ClockOutModalProps) {
+  const punch = usePunch(shift)
   const [takingSelfie, setTakingSelfie] = useState(false)
   // The summary keeps counting while the person decides, so the hours it quotes stay true.
   const now = useNow(opened && day.isOpen)
@@ -40,7 +41,7 @@ export function ClockOutModal({ opened, onClose, day, settings }: ClockOutModalP
 
   async function clockOut(selfieKey: string) {
     const note = getValues('note').trim()
-    if (settings.requireNote && !note) {
+    if (shift.requireNote && !note) {
       setTakingSelfie(false)
       setError('note', { message: 'Say what you worked on before clocking out.' })
       return
@@ -71,9 +72,9 @@ export function ClockOutModal({ opened, onClose, day, settings }: ClockOutModalP
 
         <Textarea
           label="What did you work on?"
-          description={settings.requireNote ? undefined : 'Optional — it lands on today’s row.'}
-          required={settings.requireNote}
-          aria-required={settings.requireNote}
+          description={shift.requireNote ? undefined : 'Optional — it lands on today’s row.'}
+          required={shift.requireNote}
+          aria-required={shift.requireNote}
           error={errors.note?.message}
           errorProps={{ role: 'alert' }}
           autosize

@@ -63,6 +63,7 @@ export async function getTimeClock(): Promise<TimeClockView> {
     settings: settingsFromProto(response.settings),
     schedule: scheduleFromProto(response.schedule),
     canManage: response.canManage,
+    shift: shiftFromProto(response.shift),
   }
 }
 
@@ -189,6 +190,10 @@ export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow
       shiftEndMinutes: values.shiftEndMinutes,
       graceMinutes: values.graceMinutes,
       workdays: values.workdays,
+      requireSelfie: values.requireSelfie,
+      requireNote: values.requireNote,
+      captureLocation: values.captureLocation,
+      autoClockOutHours: values.autoClockOutHours,
     }),
   )
   if (!response.shift) throw new Error('The server did not return the shift.')

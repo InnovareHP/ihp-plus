@@ -67,7 +67,7 @@ describe('TeamTimesheetPanel', () => {
     })
     rpc.listSchedules.mockResolvedValue({
       schedules: [],
-      settings: { timeZone: 'Asia/Manila' },
+      settings: { timeZone: 'Asia/Manila', defaultShiftId: '' },
       shifts: [],
     })
     rpc.deleteAttendanceDay.mockResolvedValue(undefined)

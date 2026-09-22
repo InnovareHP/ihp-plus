@@ -46,6 +46,7 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
       settings: settingsToProto(view.settings),
       schedule: scheduleToProto(view.schedule),
       canManage: view.canManage,
+      shift: shiftToProto(view.shift),
     }
   },
 
@@ -141,6 +142,10 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
         shiftEndMinutes: request.shiftEndMinutes,
         graceMinutes: request.graceMinutes,
         workdays: request.workdays,
+        requireSelfie: request.requireSelfie,
+        requireNote: request.requireNote,
+        captureLocation: request.captureLocation,
+        autoClockOutHours: request.autoClockOutHours,
       }),
     ),
   }),

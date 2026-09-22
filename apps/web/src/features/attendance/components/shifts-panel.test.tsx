@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { render, screen, userEvent, waitFor, within } from '@/test/render'
-import { DEFAULT_ATTENDANCE_SETTINGS, type AttendanceShiftRow } from '../schema'
+import { DEFAULT_ATTENDANCE_SETTINGS, DEFAULT_SHIFT, type AttendanceShiftRow } from '../schema'
 import { ShiftsPanel } from './shifts-panel'
 
 const rpc = vi.hoisted(() => ({
@@ -36,6 +36,11 @@ const MORNING: AttendanceShiftRow = {
   graceMinutes: 10,
   workdays: '1,2,3,4,5',
   assignedCount: 4,
+  requireSelfie: true,
+  requireNote: false,
+  captureLocation: false,
+  autoClockOutHours: 16,
+  isDefault: false,
 }
 
 describe('ShiftsPanel', () => {
@@ -78,7 +83,7 @@ describe('ShiftsPanel', () => {
       expect(rpc.saveShift).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Graveyard',
-          shiftStartMinutes: DEFAULT_ATTENDANCE_SETTINGS.shiftStartMinutes,
+          shiftStartMinutes: DEFAULT_SHIFT.shiftStartMinutes,
         }),
       ),
     )

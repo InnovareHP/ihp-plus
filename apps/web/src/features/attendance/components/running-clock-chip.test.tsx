@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { render, screen, userEvent, waitFor, within } from '@/test/render'
-import type { AttendanceDayRow, AttendanceSettingsRow } from '../schema'
+import type { AttendanceDayRow, AttendanceSettingsRow, AttendanceShiftRow } from '../schema'
 import { RunningClockChip } from './running-clock-chip'
 
 const rpc = vi.hoisted(() => ({
@@ -21,15 +21,23 @@ vi.mock('../rpc', () => rpc)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 
 const RULES: AttendanceSettingsRow = {
-  requireSelfie: false,
-  requireNote: false,
-  captureLocation: false,
-  autoClockOutHours: 16,
+  timeZone: 'UTC',
+  defaultShiftId: 'shift-1',
+}
+
+const SHIFT: AttendanceShiftRow = {
+  id: 'shift-1',
+  name: 'Company hours',
   shiftStartMinutes: 9 * 60,
   shiftEndMinutes: 18 * 60,
   graceMinutes: 15,
   workdays: '1,2,3,4,5',
-  timeZone: 'UTC',
+  assignedCount: 0,
+  requireSelfie: false,
+  requireNote: false,
+  captureLocation: false,
+  autoClockOutHours: 16,
+  isDefault: true,
 }
 
 function day(overrides: Partial<AttendanceDayRow> = {}): AttendanceDayRow {
@@ -57,10 +65,11 @@ function day(overrides: Partial<AttendanceDayRow> = {}): AttendanceDayRow {
   }
 }
 
-function view(today: AttendanceDayRow | undefined, settings: AttendanceSettingsRow = RULES) {
+function view(today: AttendanceDayRow | undefined, shift: AttendanceShiftRow = SHIFT) {
   return {
     today,
-    settings,
+    settings: RULES,
+    shift,
     schedule: {
       userId: 'user-1',
       userName: 'Grace',
@@ -146,7 +155,7 @@ describe('RunningClockChip', () => {
 
   it('carries the note the company asks for', async () => {
     const user = userEvent.setup()
-    rpc.getTimeClock.mockResolvedValue(view(day(), { ...RULES, requireNote: true }))
+    rpc.getTimeClock.mockResolvedValue(view(day(), { ...SHIFT, requireNote: true }))
     render(<RunningClockChip />)
 
     await user.click(await clockOutControl())

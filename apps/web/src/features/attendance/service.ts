@@ -9,6 +9,7 @@ import {
   attendanceSettingsSchema,
   clockActionSchema,
   DEFAULT_ATTENDANCE_SETTINGS,
+  DEFAULT_SHIFT,
   shiftSchema,
   type AssignShiftValues,
   type AttendanceBoard,
@@ -34,16 +35,19 @@ import {
   zonedInstant,
 } from './utils/clock'
 
-const SETTINGS_SELECT = {
-  requireSelfie: true,
-  requireNote: true,
-  captureLocation: true,
-  autoClockOutHours: true,
+const SETTINGS_SELECT = { timeZone: true, defaultShiftId: true } as const
+
+const shiftFields = {
+  id: true,
+  name: true,
   shiftStartMinutes: true,
   shiftEndMinutes: true,
   graceMinutes: true,
   workdays: true,
-  timeZone: true,
+  requireSelfie: true,
+  requireNote: true,
+  captureLocation: true,
+  autoClockOutHours: true,
 } as const
 
 async function requireMember() {
@@ -126,9 +130,59 @@ export async function settingsOf(organizationId: string): Promise<AttendanceSett
     where: { organizationId },
     select: SETTINGS_SELECT,
   })
+  if (!stored) return DEFAULT_ATTENDANCE_SETTINGS
 
-  // Defaults live here, so an organization that never opens the screen still has rules.
-  return stored ?? DEFAULT_ATTENDANCE_SETTINGS
+  return { timeZone: stored.timeZone, defaultShiftId: stored.defaultShiftId ?? '' }
+}
+
+interface ShiftFields {
+  id: string
+  name: string
+  shiftStartMinutes: number
+  shiftEndMinutes: number
+  graceMinutes: number
+  workdays: string
+  requireSelfie: boolean
+  requireNote: boolean
+  captureLocation: boolean
+  autoClockOutHours: number
+}
+
+function toShiftFields(shift: ShiftFields, assignedCount: number, isDefault: boolean) {
+  return { ...shift, assignedCount, isDefault }
+}
+
+/**
+ * The shift somebody is measured against: the one they were given, else the company's default,
+ * else the built-in hours. Its rules are the clock's rules — selfie, note, location, auto-close.
+ */
+async function shiftFor(
+  organizationId: string,
+  userId: string,
+  settings: AttendanceSettingsRow,
+): Promise<AttendanceShiftRow> {
+  const assignment = await db.attendanceSchedule.findUnique({
+    where: { organizationId_userId: { organizationId, userId } },
+    select: { shift: { select: shiftFields } },
+  })
+  if (assignment) return toShiftFields(assignment.shift, 0, false)
+
+  return defaultShiftOf(organizationId, settings)
+}
+
+async function defaultShiftOf(
+  organizationId: string,
+  settings: AttendanceSettingsRow,
+): Promise<AttendanceShiftRow> {
+  if (!settings.defaultShiftId) return DEFAULT_SHIFT
+
+  const shift = await db.attendanceShift.findFirst({
+    where: { id: settings.defaultShiftId, organizationId },
+    select: shiftFields,
+  })
+
+  // A default that was deleted leaves the built-in hours standing rather than no rules at all.
+  return shift ? toShiftFields(shift, 0, true) : DEFAULT_SHIFT
 }
 
 async function peopleNames(ids: readonly string[]) {
@@ -278,7 +332,7 @@ async function closeForgottenDay(day: DayRecord, hours: number): Promise<DayReco
   })
 }
 
-async function openDayOf(caller: Caller, settings: AttendanceSettingsRow) {
+async function openDayOf(caller: Caller, shift: AttendanceShiftRow) {
   const open = await db.attendanceDay.findFirst({
     where: { userId: caller.userId, organizationId: caller.organizationId, clockOutAt: null },
     select: daySelect,
@@ -286,45 +340,26 @@ async function openDayOf(caller: Caller, settings: AttendanceSettingsRow) {
   })
   if (!open) return null
 
-  const settled = await closeForgottenDay(open, settings.autoClockOutHours)
+  const settled = await closeForgottenDay(open, shift.autoClockOutHours)
   return settled.clockOutAt === null ? settled : null
 }
 
-const assignedShiftSelect = {
-  shift: {
-    select: {
-      id: true,
-      name: true,
-      shiftStartMinutes: true,
-      shiftEndMinutes: true,
-      graceMinutes: true,
-      workdays: true,
-    },
-  },
-} as const
-
-async function scheduleOf(
-  organizationId: string,
+function scheduleFrom(
   userId: string,
-  settings: AttendanceSettingsRow,
   userName: string,
-): Promise<AttendanceScheduleRow> {
-  const assignment = await db.attendanceSchedule.findUnique({
-    where: { organizationId_userId: { organizationId, userId } },
-    select: assignedShiftSelect,
-  })
-  const own = assignment?.shift
-
+  shift: AttendanceShiftRow,
+  assigned: boolean,
+): AttendanceScheduleRow {
   return {
     userId,
     userName,
-    shiftStartMinutes: own?.shiftStartMinutes ?? settings.shiftStartMinutes,
-    shiftEndMinutes: own?.shiftEndMinutes ?? settings.shiftEndMinutes,
-    graceMinutes: own?.graceMinutes ?? settings.graceMinutes,
-    workdays: own?.workdays ?? settings.workdays,
-    isDefault: !own,
-    shiftId: own?.id,
-    shiftName: own?.name,
+    shiftStartMinutes: shift.shiftStartMinutes,
+    shiftEndMinutes: shift.shiftEndMinutes,
+    graceMinutes: shift.graceMinutes,
+    workdays: shift.workdays,
+    isDefault: !assigned,
+    shiftId: assigned ? shift.id : undefined,
+    shiftName: assigned ? shift.name : undefined,
     jobTitle: undefined,
   }
 }
@@ -342,21 +377,30 @@ export async function saveAttendanceSettings(
 
   const parsed = attendanceSettingsSchema.parse(values)
 
-  return db.attendanceSettings.upsert({
+  if (parsed.defaultShiftId) {
+    const shift = await db.attendanceShift.findFirst({
+      where: { id: parsed.defaultShiftId, organizationId: caller.organizationId },
+      select: { id: true },
+    })
+    if (!shift) throw new ConnectError('That shift is no longer there.', Code.NotFound)
+  }
+
+  const data = { timeZone: parsed.timeZone, defaultShiftId: parsed.defaultShiftId || null }
+  const saved = await db.attendanceSettings.upsert({
     where: { organizationId: caller.organizationId },
-    create: { organizationId: caller.organizationId, ...parsed },
-    update: parsed,
+    create: { organizationId: caller.organizationId, ...data },
+    update: data,
     select: SETTINGS_SELECT,
   })
+
+  return { timeZone: saved.timeZone, defaultShiftId: saved.defaultShiftId ?? '' }
 }
 
 export async function loadTimeClock(): Promise<TimeClockView> {
   const caller = await requireMember()
   const settings = await settingsOf(caller.organizationId)
-  const [open, schedule] = await Promise.all([
-    openDayOf(caller, settings),
-    scheduleOf(caller.organizationId, caller.userId, settings, caller.name),
-  ])
+  const shift = await shiftFor(caller.organizationId, caller.userId, settings)
+  const open = await openDayOf(caller, shift)
 
   // A day already closed is still today's row: the screen shows the hours, not a fresh clock.
   const today =
@@ -376,15 +420,21 @@ export async function loadTimeClock(): Promise<TimeClockView> {
   return {
     today: today ? await toDayRow(today, names, caller) : undefined,
     settings,
-    schedule,
+    schedule: scheduleFrom(
+      caller.userId,
+      caller.name,
+      shift,
+      !shift.isDefault && Boolean(shift.id),
+    ),
     canManage: caller.canManage,
+    shift,
   }
 }
 
-function checkedClockValues(values: ClockActionValues, settings: AttendanceSettingsRow) {
+function checkedClockValues(values: ClockActionValues, shift: AttendanceShiftRow) {
   const parsed = clockActionSchema.parse(values)
-  if (settings.requireSelfie && !parsed.selfieKey) {
-    throw new ConnectError('Your company asks for a selfie at the clock.', Code.InvalidArgument)
+  if (shift.requireSelfie && !parsed.selfieKey) {
+    throw new ConnectError('Your shift asks for a selfie at the clock.', Code.InvalidArgument)
   }
   return parsed
 }
@@ -392,9 +442,10 @@ function checkedClockValues(values: ClockActionValues, settings: AttendanceSetti
 export async function clockIn(values: ClockActionValues): Promise<AttendanceDayRow> {
   const caller = await requireMember()
   const settings = await settingsOf(caller.organizationId)
-  const parsed = checkedClockValues(values, settings)
+  const shift = await shiftFor(caller.organizationId, caller.userId, settings)
+  const parsed = checkedClockValues(values, shift)
 
-  const open = await openDayOf(caller, settings)
+  const open = await openDayOf(caller, shift)
   if (open) throw new ConnectError('You are already clocked in.', Code.FailedPrecondition)
 
   const clockInAt = new Date()
@@ -410,8 +461,6 @@ export async function clockIn(values: ClockActionValues): Promise<AttendanceDayR
     )
   }
 
-  const schedule = await scheduleOf(caller.organizationId, caller.userId, settings, caller.name)
-
   const day = await db.attendanceDay.create({
     data: {
       organizationId: caller.organizationId,
@@ -425,8 +474,8 @@ export async function clockIn(values: ClockActionValues): Promise<AttendanceDayR
       clockInLocation: parsed.location || null,
       lateSeconds: lateSecondsFor({
         clockInAt,
-        shiftStartMinutes: schedule.shiftStartMinutes,
-        graceMinutes: schedule.graceMinutes,
+        shiftStartMinutes: shift.shiftStartMinutes,
+        graceMinutes: shift.graceMinutes,
         timeZone: settings.timeZone,
       }),
     },
@@ -439,12 +488,13 @@ export async function clockIn(values: ClockActionValues): Promise<AttendanceDayR
 export async function clockOut(values: ClockActionValues): Promise<AttendanceDayRow> {
   const caller = await requireMember()
   const settings = await settingsOf(caller.organizationId)
-  const parsed = checkedClockValues(values, settings)
-  if (settings.requireNote && !parsed.note) {
-    throw new ConnectError('Your company asks what you worked on today.', Code.InvalidArgument)
+  const shift = await shiftFor(caller.organizationId, caller.userId, settings)
+  const parsed = checkedClockValues(values, shift)
+  if (shift.requireNote && !parsed.note) {
+    throw new ConnectError('Your shift asks what you worked on today.', Code.InvalidArgument)
   }
 
-  const open = await openDayOf(caller, settings)
+  const open = await openDayOf(caller, shift)
   if (!open) throw new ConnectError('You are not clocked in.', Code.FailedPrecondition)
 
   const clockOutAt = new Date()
@@ -471,8 +521,9 @@ export async function clockOut(values: ClockActionValues): Promise<AttendanceDay
 export async function startBreak(): Promise<AttendanceDayRow> {
   const caller = await requireMember()
   const settings = await settingsOf(caller.organizationId)
+  const shift = await shiftFor(caller.organizationId, caller.userId, settings)
 
-  const open = await openDayOf(caller, settings)
+  const open = await openDayOf(caller, shift)
   if (!open) throw new ConnectError('Clock in before taking a break.', Code.FailedPrecondition)
   if (open.breaks.some((one) => one.endedAt === null)) {
     throw new ConnectError('You are already on a break.', Code.FailedPrecondition)
@@ -490,8 +541,9 @@ export async function startBreak(): Promise<AttendanceDayRow> {
 export async function endBreak(): Promise<AttendanceDayRow> {
   const caller = await requireMember()
   const settings = await settingsOf(caller.organizationId)
+  const shift = await shiftFor(caller.organizationId, caller.userId, settings)
 
-  const open = await openDayOf(caller, settings)
+  const open = await openDayOf(caller, shift)
   if (!open) throw new ConnectError('You are not clocked in.', Code.FailedPrecondition)
   if (!open.breaks.some((one) => one.endedAt === null)) {
     throw new ConnectError('You are not on a break.', Code.FailedPrecondition)
@@ -631,12 +683,7 @@ export async function saveAttendanceDay(values: AttendanceDayValues): Promise<At
       : typedOut
 
   const names = await peopleNames([parsed.userId, caller.userId])
-  const schedule = await scheduleOf(
-    caller.organizationId,
-    parsed.userId,
-    settings,
-    names.get(parsed.userId) ?? 'Someone',
-  )
+  const shift = await shiftFor(caller.organizationId, parsed.userId, settings)
 
   const breakSeconds = parsed.breakMinutes * 60
   const data = {
@@ -646,8 +693,8 @@ export async function saveAttendanceDay(values: AttendanceDayValues): Promise<At
     workedSeconds: clockOutAt ? workedSecondsFor(clockInAt, clockOutAt, breakSeconds) : 0,
     lateSeconds: lateSecondsFor({
       clockInAt,
-      shiftStartMinutes: schedule.shiftStartMinutes,
-      graceMinutes: schedule.graceMinutes,
+      shiftStartMinutes: shift.shiftStartMinutes,
+      graceMinutes: shift.graceMinutes,
       timeZone: settings.timeZone,
     }),
     status: clockOutAt ? 'recorded' : 'open',
@@ -712,36 +759,15 @@ export async function deleteAttendanceDay(dayId: string): Promise<void> {
   })
 }
 
-const shiftSelect = {
-  id: true,
-  name: true,
-  shiftStartMinutes: true,
-  shiftEndMinutes: true,
-  graceMinutes: true,
-  workdays: true,
-  _count: { select: { assignments: true } },
-} as const
+const shiftSelect = { ...shiftFields, _count: { select: { assignments: true } } } as const
 
-interface ShiftRecord {
-  id: string
-  name: string
-  shiftStartMinutes: number
-  shiftEndMinutes: number
-  graceMinutes: number
-  workdays: string
+interface ShiftRecord extends ShiftFields {
   _count: { assignments: number }
 }
 
-function toShiftRow(shift: ShiftRecord): AttendanceShiftRow {
-  return {
-    id: shift.id,
-    name: shift.name,
-    shiftStartMinutes: shift.shiftStartMinutes,
-    shiftEndMinutes: shift.shiftEndMinutes,
-    graceMinutes: shift.graceMinutes,
-    workdays: shift.workdays,
-    assignedCount: shift._count.assignments,
-  }
+function toShiftRow(shift: ShiftRecord, defaultShiftId: string): AttendanceShiftRow {
+  const { _count, ...fields } = shift
+  return toShiftFields(fields, _count.assignments, shift.id === defaultShiftId)
 }
 
 export interface ShiftBook {
@@ -763,7 +789,7 @@ export async function loadShifts(): Promise<ShiftBook> {
     }),
   ])
 
-  return { shifts: shifts.map(toShiftRow), settings }
+  return { shifts: shifts.map((shift) => toShiftRow(shift, settings.defaultShiftId)), settings }
 }
 
 export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow> {
@@ -784,12 +810,14 @@ export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow
     throw new ConnectError('A shift with that name already exists.', Code.AlreadyExists)
   }
 
+  const settings = await settingsOf(caller.organizationId)
+
   if (!shiftId) {
     const created = await db.attendanceShift.create({
       data: { organizationId: caller.organizationId, ...shift },
       select: shiftSelect,
     })
-    return toShiftRow(created)
+    return toShiftRow(created, settings.defaultShiftId)
   }
 
   const existing = await db.attendanceShift.findFirst({
@@ -804,7 +832,7 @@ export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow
     select: shiftSelect,
   })
 
-  return toShiftRow(updated)
+  return toShiftRow(updated, settings.defaultShiftId)
 }
 
 /** Deleting a shift would silently put its people back on the company hours, so it asks first. */
@@ -838,7 +866,7 @@ export async function loadSchedules(): Promise<ScheduleBook> {
   requireAdmin(caller, 'Only an admin sets shifts.')
 
   const settings = await settingsOf(caller.organizationId)
-  const [members, assignments, shifts] = await Promise.all([
+  const [members, assignments, shifts, fallback] = await Promise.all([
     db.member.findMany({
       where: { organizationId: caller.organizationId },
       select: {
@@ -848,36 +876,35 @@ export async function loadSchedules(): Promise<ScheduleBook> {
     }),
     db.attendanceSchedule.findMany({
       where: { organizationId: caller.organizationId },
-      select: { userId: true, ...assignedShiftSelect },
+      select: { userId: true, shift: { select: shiftFields } },
     }),
     db.attendanceShift.findMany({
       where: { organizationId: caller.organizationId },
       select: shiftSelect,
       orderBy: [{ shiftStartMinutes: 'asc' }, { name: 'asc' }],
     }),
+    defaultShiftOf(caller.organizationId, settings),
   ])
 
   const byUser = new Map(assignments.map((row) => [row.userId, row.shift]))
 
   const schedules = members
     .map((member) => {
-      const shift = byUser.get(member.userId)
+      const own = byUser.get(member.userId)
+      const shift = own ? toShiftFields(own, 0, false) : fallback
+      const name = member.user.preferredName ?? member.user.name
       return {
-        userId: member.userId,
-        userName: member.user.preferredName ?? member.user.name,
+        ...scheduleFrom(member.userId, name, shift, Boolean(own)),
         jobTitle: member.user.jobTitle ?? undefined,
-        shiftStartMinutes: shift?.shiftStartMinutes ?? settings.shiftStartMinutes,
-        shiftEndMinutes: shift?.shiftEndMinutes ?? settings.shiftEndMinutes,
-        graceMinutes: shift?.graceMinutes ?? settings.graceMinutes,
-        workdays: shift?.workdays ?? settings.workdays,
-        isDefault: !shift,
-        shiftId: shift?.id,
-        shiftName: shift?.name,
       }
     })
     .sort((a, b) => a.userName.localeCompare(b.userName))
 
-  return { schedules, settings, shifts: shifts.map(toShiftRow) }
+  return {
+    schedules,
+    settings,
+    shifts: shifts.map((shift) => toShiftRow(shift, settings.defaultShiftId)),
+  }
 }
 
 /** Assignment happens where people are managed; an empty shift puts them on the company hours. */
@@ -899,13 +926,16 @@ export async function assignShift(values: AssignShiftValues): Promise<Attendance
     await db.attendanceSchedule.deleteMany({
       where: { organizationId: caller.organizationId, userId },
     })
-    const schedule = await scheduleOf(caller.organizationId, userId, settings, userName)
-    return { ...schedule, jobTitle: member.user.jobTitle ?? undefined }
+    const fallback = await defaultShiftOf(caller.organizationId, settings)
+    return {
+      ...scheduleFrom(userId, userName, fallback, false),
+      jobTitle: member.user.jobTitle ?? undefined,
+    }
   }
 
   const shift = await db.attendanceShift.findFirst({
     where: { id: shiftId, organizationId: caller.organizationId },
-    select: { id: true },
+    select: shiftFields,
   })
   if (!shift) throw new ConnectError('That shift is no longer there.', Code.NotFound)
 
@@ -916,6 +946,8 @@ export async function assignShift(values: AssignShiftValues): Promise<Attendance
     select: { id: true },
   })
 
-  const schedule = await scheduleOf(caller.organizationId, userId, settings, userName)
-  return { ...schedule, jobTitle: member.user.jobTitle ?? undefined }
+  return {
+    ...scheduleFrom(userId, userName, toShiftFields(shift, 0, false), true),
+    jobTitle: member.user.jobTitle ?? undefined,
+  }
 }
