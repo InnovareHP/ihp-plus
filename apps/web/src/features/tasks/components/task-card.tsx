@@ -21,6 +21,7 @@ import {
   type TaskStatusRow,
 } from '../schema'
 import { formatDuration } from '../utils/duration'
+import { ParentTaskLine } from './parent-task-line'
 
 const due = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
@@ -142,6 +143,8 @@ export function TaskCard({
             </Menu.Dropdown>
           </Menu>
         </Group>
+
+        <ParentTaskLine task={task} />
 
         <Group gap={6} wrap="wrap">
           <Badge size="sm" variant="light" color={TASK_PRIORITY_COLORS[task.priority]}>

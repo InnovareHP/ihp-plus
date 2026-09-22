@@ -209,6 +209,8 @@ export interface TaskRow {
   attachmentCount: number
   trackedSeconds: number
   parentId: string | undefined
+  parentName: string | undefined
+  parentNumber: number | undefined
   subtasks: TaskSubtaskRow[]
 }
 

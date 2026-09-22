@@ -210,6 +210,8 @@ export function taskToProto(task: TaskRow): TaskMessage {
     attachmentCount: task.attachmentCount,
     trackedSeconds: task.trackedSeconds,
     parentId: task.parentId,
+    parentName: task.parentName,
+    parentNumber: task.parentNumber,
     subtasks: task.subtasks.map((subtask) => ({
       $typeName: 'ihp.tasks.v1.Subtask' as const,
       id: subtask.id,
@@ -248,6 +250,8 @@ export function taskFromProto(task: TaskMessage): TaskRow {
     attachmentCount: task.attachmentCount,
     trackedSeconds: task.trackedSeconds,
     parentId: task.parentId,
+    parentName: task.parentName,
+    parentNumber: task.parentNumber,
     subtasks: task.subtasks.map((subtask) => ({
       id: subtask.id,
       name: subtask.name,

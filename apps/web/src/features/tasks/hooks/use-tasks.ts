@@ -146,6 +146,8 @@ export function useCreateTask() {
         attachmentCount: 0,
         trackedSeconds: 0,
         parentId: undefined,
+        parentName: undefined,
+        parentNumber: undefined,
         subtasks: [],
       }
 

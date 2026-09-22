@@ -33,6 +33,8 @@ function task(overrides: Partial<TaskRow> = {}): TaskRow {
     attachmentCount: 0,
     trackedSeconds: 0,
     parentId: undefined,
+    parentName: undefined,
+    parentNumber: undefined,
     subtasks: [],
     ...overrides,
   }
@@ -52,6 +54,29 @@ function renderBoard(tasks: TaskRow[]) {
 
 describe('TaskKanban', () => {
   beforeEach(() => vi.clearAllMocks())
+
+  it('shows a subtask as a card that says what it belongs to', async () => {
+    render(
+      <TaskKanban
+        statuses={STATUSES}
+        tasks={[
+          task(),
+          task({
+            id: 'task-2',
+            taskNumber: 15,
+            name: 'Print the forms',
+            parentId: 'task-1',
+            parentName: 'Send the renewal pack',
+            parentNumber: 14,
+          }),
+        ]}
+        {...handlers}
+      />,
+    )
+
+    expect(await screen.findByText('#15 Print the forms')).toBeInTheDocument()
+    expect(screen.getByText(/Part of #14 Send the renewal pack/)).toBeInTheDocument()
+  })
 
   it('puts each task under the status it holds', () => {
     renderBoard([

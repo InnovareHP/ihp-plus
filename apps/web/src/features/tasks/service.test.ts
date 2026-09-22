@@ -232,8 +232,6 @@ describe('loadTasks', () => {
             { comments: { some: { body: { contains: 'renewal', mode: 'insensitive' } } } },
           ],
           assignees: { some: { userId: 'user-1' } },
-          // Subtasks hang off their parent's panel, never a board row of their own.
-          parentId: null,
         }),
       }),
     )
@@ -273,12 +271,12 @@ describe('reorderTask', () => {
     )
   })
 
-  it('orders against the list, not the subtasks inside it', async () => {
+  it('orders against the list it lands in', async () => {
     await reorderTask({ taskId: 'task-1', listId: 'list-1', beforeTaskId: undefined })
 
     expect(prisma.task.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ listId: 'list-1', parentId: null }),
+        where: expect.objectContaining({ listId: 'list-1', id: { not: 'task-1' } }),
       }),
     )
   })
@@ -705,20 +703,32 @@ describe('promoteSubtask', () => {
   })
 })
 
-describe('reorderTask, inside a parent', () => {
-  it('orders a subtask against its siblings, not against the list', async () => {
+describe('reorderTask, for a subtask', () => {
+  it('orders it against the list, the same as any other card', async () => {
     prisma.task.findFirst.mockResolvedValue({ ...TASK_RECORD, parentId: 'task-parent' })
-    prisma.taskList.findFirst.mockResolvedValue({ id: 'list-1' })
-    prisma.task.findMany.mockResolvedValue([{ id: 'sub-2', position: 1024 }])
+    prisma.taskList.findFirst.mockResolvedValue({ id: 'list-2' })
+    prisma.task.findMany.mockResolvedValue([{ id: 'task-9', position: 1024 }])
     prisma.task.update.mockResolvedValue(TASK_RECORD)
 
-    await reorderTask({ taskId: 'task-1', listId: 'list-1', beforeTaskId: 'sub-2' })
+    await reorderTask({ taskId: 'task-1', listId: 'list-2', beforeTaskId: 'task-9' })
 
     expect(prisma.task.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { parentId: 'task-parent', id: { not: 'task-1' } },
+        where: { listId: 'list-2', id: { not: 'task-1' } },
       }),
     )
+  })
+
+  it('keeps the parent it belongs to when it moves list', async () => {
+    prisma.task.findFirst.mockResolvedValue({ ...TASK_RECORD, parentId: 'task-parent' })
+    prisma.taskList.findFirst.mockResolvedValue({ id: 'list-2' })
+    prisma.task.findMany.mockResolvedValue([])
+    prisma.task.update.mockResolvedValue(TASK_RECORD)
+
+    await reorderTask({ taskId: 'task-1', listId: 'list-2', beforeTaskId: undefined })
+
+    const data = prisma.task.update.mock.calls[0]?.[0]?.data as Record<string, unknown>
+    expect(data).not.toHaveProperty('parentId')
   })
 })
 

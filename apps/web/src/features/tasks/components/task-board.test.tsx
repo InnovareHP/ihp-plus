@@ -85,6 +85,8 @@ const TASK = {
   attachmentCount: 1,
   trackedSeconds: 0,
   parentId: undefined,
+  parentName: undefined,
+  parentNumber: undefined,
   subtasks: [],
 }
 
@@ -257,7 +259,7 @@ describe('TaskBoard', () => {
 
     await renderBoard()
     await user.click(screen.getByRole('button', { name: 'New task' }))
-    const dialog = within(await screen.findByRole('dialog'))
+    await screen.findByRole('dialog')
 
     const file = new File(['x'], 'macro.exe', { type: 'application/x-msdownload' })
     await user.upload(filePicker(), file)

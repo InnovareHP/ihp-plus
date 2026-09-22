@@ -104,6 +104,7 @@ const taskSelect = {
   _count: { select: { comments: true, attachments: true } },
   timeEntries: { select: { seconds: true } },
   parentId: true,
+  parent: { select: { taskNumber: true, name: true } },
   subtasks: {
     select: { id: true, name: true, completedAt: true, position: true },
     orderBy: { position: 'asc' as const },
@@ -149,6 +150,8 @@ function toTaskRow(task: TaskRecord, names: ReadonlyMap<string, string>): TaskRo
     attachmentCount: task._count.attachments,
     trackedSeconds: task.timeEntries.reduce((total, entry) => total + entry.seconds, 0),
     parentId: task.parentId ?? undefined,
+    parentName: task.parent?.name,
+    parentNumber: task.parent?.taskNumber,
     subtasks: task.subtasks.map((subtask) => ({
       id: subtask.id,
       name: subtask.name,
@@ -571,8 +574,6 @@ export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
     where: {
       organizationId: caller.organizationId,
       projectId: query.projectId,
-      // Subtasks belong to their parent's panel, not to a column of their own.
-      parentId: null,
       ...(query.listId ? { listId: query.listId } : {}),
       ...(query.includeArchived ? {} : { isArchived: false }),
       // Work is found by what was said about it as often as by what it was called.
@@ -817,10 +818,9 @@ export async function reorderTask(values: ReorderTaskValues): Promise<TaskRow> {
 
   const updated = await db.$transaction(async (tx) => {
     const siblings = await tx.task.findMany({
-      // A subtask is ordered inside its parent; everything else is ordered inside its list.
-      where: task.parentId
-        ? { parentId: task.parentId, id: { not: task.id } }
-        : { listId: values.listId, parentId: null, id: { not: task.id } },
+      // Every card is ordered inside the list it sits in, subtask or not: the board is flat, so
+      // a subtask dragged into another list is ordered against what it lands among.
+      where: { listId: values.listId, id: { not: task.id } },
       select: { id: true, position: true },
       orderBy: { position: 'asc' },
     })

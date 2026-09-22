@@ -86,11 +86,14 @@ message Task {
   // Card badges: the board shows the counts without loading either collection.
   int32 comment_count = 18;
   int32 attachment_count = 19;
-  // Set on a subtask; the board lists only the tasks without one.
+  // Set on a subtask, which the board lists as a card of its own.
   optional string parent_id = 20;
   repeated Subtask subtasks = 21;
   // Card badge: hours already on this task, without loading a single entry.
   int32 tracked_seconds = 22;
+  // What the subtask's card says it belongs to, so a flat board still reads as a hierarchy.
+  optional string parent_name = 23;
+  optional int32 parent_number = 24;
 }
 
 // A subtask carries only what a checklist line shows: the whole task is one query away.

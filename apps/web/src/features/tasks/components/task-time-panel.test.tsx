@@ -49,6 +49,8 @@ const TASK: TaskRow = {
   attachmentCount: 0,
   trackedSeconds: 5400,
   parentId: undefined,
+  parentName: undefined,
+  parentNumber: undefined,
   subtasks: [],
 }
 
