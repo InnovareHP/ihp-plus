@@ -18,6 +18,7 @@ import { IconChevronDown, IconLogout, IconSettings } from '@tabler/icons-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
+import { RunningClockChip } from '@/features/attendance/components/running-clock-chip'
 import { useSignOut } from '@/features/auth/use-sign-out'
 import { MentionsMenu } from '@/features/tasks/components/mentions-menu'
 import {
@@ -104,6 +105,7 @@ export function DashboardShell({
           </Group>
 
           <Group gap="sm" wrap="nowrap">
+            <RunningClockChip />
             <RunningTimerChip />
             <RunningTimerButton />
             <MentionsMenu />

@@ -4,24 +4,16 @@ import { Alert, Button, Card, Group, Skeleton, Stack, Text, Textarea, Title } fr
 import { IconCoffee, IconPlayerStop, IconPlayerPlay } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import {
-  useClockIn,
-  useClockOut,
-  useEndBreak,
-  useStartBreak,
-  useTimeClock,
-} from '../hooks/use-time-clock'
+import { useEndBreak, useStartBreak, useTimeClock } from '../hooks/use-time-clock'
 import { useNow } from '../hooks/use-now'
+import { usePunch, type PunchKind } from '../hooks/use-punch'
 import type { AttendanceSettingsRow } from '../schema'
 import { formatHours, minutesToClock } from '../utils/clock'
 import { dayState, liveBreakSeconds, liveWorkedSeconds } from '../utils/day'
-import { currentLocation } from '../utils/location'
 import { ClockReading } from './clock-reading'
 import { ClockStateBadge } from './clock-state-badge'
 import { DayTotals } from './day-totals'
 import { SelfieCapture } from './selfie-capture'
-
-type Punch = 'in' | 'out'
 
 interface NoteForm {
   note: string
@@ -30,11 +22,10 @@ interface NoteForm {
 /** The screen a member uses every day: one big clock and one obvious next action. */
 export function TimeClockCard() {
   const clock = useTimeClock()
-  const clockIn = useClockIn()
-  const clockOut = useClockOut()
+  const punch = usePunch(clock.data?.settings)
   const startBreak = useStartBreak()
   const endBreak = useEndBreak()
-  const [selfieFor, setSelfieFor] = useState<Punch | undefined>(undefined)
+  const [selfieFor, setSelfieFor] = useState<PunchKind | undefined>(undefined)
 
   const {
     register,
@@ -72,36 +63,27 @@ export function TimeClockCard() {
   }
 
   const { settings, schedule } = clock.data
-  const isBusy =
-    clockIn.isPending || clockOut.isPending || startBreak.isPending || endBreak.isPending
+  const isBusy = punch.isPending || startBreak.isPending || endBreak.isPending
 
-  async function punch(which: Punch, selfieKey: string) {
+  async function run(which: PunchKind, selfieKey: string) {
     const note = getValues('note').trim()
     if (which === 'out' && settings.requireNote && !note) {
+      setSelfieFor(undefined)
       setError('note', { message: 'Say what you worked on before clocking out.' })
       return
     }
 
-    const location = settings.captureLocation ? await currentLocation() : ''
-    const values = { selfieKey, location, note }
-
-    try {
-      if (which === 'in') await clockIn.mutateAsync(values)
-      else await clockOut.mutateAsync(values)
-      reset({ note: '' })
-      setSelfieFor(undefined)
-    } catch {
-      // The mutation announces the reason; the buttons stay where they were.
-      setSelfieFor(undefined)
-    }
+    const done = await punch.punch(which, { selfieKey, note })
+    setSelfieFor(undefined)
+    if (done) reset({ note: '' })
   }
 
-  function press(which: Punch) {
-    if (settings.requireSelfie) {
+  function press(which: PunchKind) {
+    if (punch.needsSelfie) {
       setSelfieFor(which)
       return
     }
-    void punch(which, '')
+    void run(which, '')
   }
 
   return (
@@ -132,7 +114,7 @@ export function TimeClockCard() {
         {selfieFor ? (
           <SelfieCapture
             purpose={selfieFor === 'in' ? 'clock in' : 'clock out'}
-            onCaptured={(key) => void punch(selfieFor, key)}
+            onCaptured={(key) => void run(selfieFor, key)}
             onCancel={() => setSelfieFor(undefined)}
           />
         ) : null}
@@ -156,11 +138,11 @@ export function TimeClockCard() {
             <Button
               leftSection={<IconPlayerPlay size={18} />}
               onClick={() => press('in')}
-              loading={clockIn.isPending}
+              loading={punch.isPending}
               disabled={isBusy}
               size="md"
             >
-              {clockIn.isPending ? 'Clocking in…' : 'Clock in'}
+              {punch.isPending ? 'Clocking in…' : 'Clock in'}
             </Button>
           ) : null}
 
@@ -179,11 +161,11 @@ export function TimeClockCard() {
               <Button
                 leftSection={<IconPlayerStop size={18} />}
                 onClick={() => press('out')}
-                loading={clockOut.isPending}
+                loading={punch.isPending}
                 disabled={isBusy}
                 size="md"
               >
-                {clockOut.isPending ? 'Clocking out…' : 'Clock out'}
+                {punch.isPending ? 'Clocking out…' : 'Clock out'}
               </Button>
             </>
           ) : null}
