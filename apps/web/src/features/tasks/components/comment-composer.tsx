@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, FileButton, Group, Stack, Text, Textarea } from '@mantine/core'
+import { Button, FileButton, Group, Stack, Text } from '@mantine/core'
 import { IconPaperclip, IconSend } from '@tabler/icons-react'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -14,6 +14,7 @@ import {
   type TaskAssigneeRef,
 } from '../schema'
 import { isSubmitShortcut } from '../utils/submit-shortcut'
+import { MentionTextarea } from './mention-textarea'
 import { NotifySelect } from './notify-select'
 import { StagedFileChip } from './staged-file-chip'
 
@@ -30,10 +31,11 @@ export function CommentComposer({ colleagues, isPosting, onPost }: CommentCompos
   const [isOver, setOver] = useState(false)
 
   const {
-    register,
     handleSubmit,
     reset,
     control,
+    getValues,
+    setValue,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<z.input<typeof commentFormSchema>, unknown, CommentFormValues>({
@@ -96,19 +98,31 @@ export function CommentComposer({ colleagues, isPosting, onPost }: CommentCompos
         ) : null}
         <FormError message={errors.root?.message} title="Could not post your comment" />
 
-        <Textarea
-          {...register('body')}
-          label="Add a comment"
-          description="⌘/Ctrl + Enter posts it."
-          placeholder="Ask a question, or say what changed."
-          autosize
-          minRows={3}
-          maxRows={10}
-          error={errors.body?.message}
-          errorProps={{ role: 'alert' }}
-          onKeyDown={(event) => {
-            if (isSubmitShortcut(event)) void handleSubmit(submit)()
-          }}
+        <Controller
+          control={control}
+          name="body"
+          render={({ field }) => (
+            <MentionTextarea
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              // A name picked from the list is also somebody to notify, which is the same field.
+              onMention={(userId) => {
+                const notified = getValues('mentionUserIds') ?? []
+                if (!notified.includes(userId)) {
+                  setValue('mentionUserIds', [...notified, userId], { shouldDirty: true })
+                }
+              }}
+              colleagues={colleagues}
+              label="Add a comment"
+              description="Type @ to mention someone. ⌘/Ctrl + Enter posts it."
+              placeholder="Ask a question, or say what changed."
+              error={errors.body?.message}
+              onKeyDown={(event) => {
+                if (isSubmitShortcut(event)) void handleSubmit(submit)()
+              }}
+            />
+          )}
         />
 
         <Controller

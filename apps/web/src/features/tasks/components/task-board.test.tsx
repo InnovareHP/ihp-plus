@@ -216,6 +216,58 @@ describe('TaskBoard', () => {
     await waitFor(() => expect(rpc.createTask).toHaveBeenCalledTimes(1))
   })
 
+  // Mantine's FileButton hides its input, so the picker is found by type rather than by label.
+  function filePicker() {
+    return document.querySelector('input[type="file"]') as HTMLInputElement
+  }
+
+  it('sends a file up once the task it belongs to exists', async () => {
+    const user = userEvent.setup()
+    rpc.createTask.mockResolvedValue({
+      ...TASK,
+      id: 'task-2',
+      taskNumber: 2,
+      name: 'Book the kickoff',
+    })
+    actions.uploadTaskAttachment.mockResolvedValue({ ok: true, data: { id: 'file-1' } })
+
+    await renderBoard()
+    await user.click(screen.getByRole('button', { name: 'New task' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    await user.type(
+      dialog.getByRole('textbox', { name: /what has to be done/i }),
+      'Book the kickoff',
+    )
+
+    const file = new File(['agenda'], 'agenda.png', { type: 'image/png' })
+    await user.upload(filePicker(), file)
+    expect(await screen.findByText('agenda.png')).toBeInTheDocument()
+    // Nothing is stored while the task is still a form.
+    expect(actions.uploadTaskAttachment).not.toHaveBeenCalled()
+
+    await user.click(dialog.getByRole('button', { name: 'Add task' }))
+
+    await waitFor(() => expect(actions.uploadTaskAttachment).toHaveBeenCalledTimes(1))
+    const body = actions.uploadTaskAttachment.mock.calls[0]?.[0] as FormData
+    expect(body.get('taskId')).toBe('task-2')
+  })
+
+  it('turns away a file the bucket would refuse, before it travels', async () => {
+    const user = userEvent.setup()
+
+    await renderBoard()
+    await user.click(screen.getByRole('button', { name: 'New task' }))
+    const dialog = within(await screen.findByRole('dialog'))
+
+    const file = new File(['x'], 'macro.exe', { type: 'application/x-msdownload' })
+    await user.upload(filePicker(), file)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Attach a PDF, Office document, text file or image.',
+    )
+    expect(actions.uploadTaskAttachment).not.toHaveBeenCalled()
+  })
+
   it('restores the board and says why when completing a task fails', async () => {
     const user = userEvent.setup()
     rpc.completeTask.mockRejectedValue(new Error('Could not save that — try again.'))

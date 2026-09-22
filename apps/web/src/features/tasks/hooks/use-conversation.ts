@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { track } from '@/lib/analytics'
 import { announceFailure } from '@/lib/announce'
 import { offerUndo } from '@/lib/undo'
-import { uploadTaskAttachment } from '../actions'
+import { storeFiles } from '../attachments'
 import { taskEvents } from '../events'
 import { taskKeys } from '../query-keys'
 import {
@@ -85,26 +85,6 @@ function useConversationMutation<TVariables>(options: {
       void queryClient.invalidateQueries({ queryKey: taskKeys.boards() })
     },
   })
-}
-
-/** Stored one at a time: the first refusal stops the rest rather than filling the bucket. */
-async function storeFiles(taskId: string, files: readonly File[]) {
-  const stored: string[] = []
-
-  for (const file of files) {
-    const body = new FormData()
-    body.set('taskId', taskId)
-    body.set('file', file)
-
-    const result = await uploadTaskAttachment(body)
-    if (!result.ok) {
-      await Promise.all(stored.map((id) => deleteAttachment(id).catch(() => undefined)))
-      throw new Error(result.message)
-    }
-    stored.push(result.data.id)
-  }
-
-  return stored
 }
 
 export function usePostComment(taskId: string, author: { userId: string; name: string }) {

@@ -2,6 +2,7 @@
 
 import { Alert, Button, Group, SegmentedControl, Skeleton, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
+import { useQueryClient } from '@tanstack/react-query'
 import { IconPlus } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 import { EmptyState } from '@/components/empty-state'
@@ -44,6 +45,8 @@ import {
   type TaskProjectRow,
   type TaskRow,
 } from '../schema'
+import { storeFiles } from '../attachments'
+import { taskKeys } from '../query-keys'
 import { DeleteListModal } from './delete-list-modal'
 import { TaskDetailModal } from './task-detail-modal'
 import { TaskKanban } from './task-kanban'
@@ -101,6 +104,7 @@ export function TaskBoard() {
   const [projectOpened, projectModal] = useDisclosure(false)
   const [listOpened, listModal] = useDisclosure(false)
   const [columnsOpened, columnsModal] = useDisclosure(false)
+  const queryClient = useQueryClient()
   const [renamingProject, setRenamingProject] = useState<TaskProjectRow | null>(null)
   const [renamingList, setRenamingList] = useState<TaskListRow | null>(null)
   const [deletingList, setDeletingList] = useState<TaskListRow | null>(null)
@@ -230,11 +234,21 @@ export function TaskBoard() {
     })
   }
 
-  async function handleSave(values: TaskFormValues) {
+  async function handleSave(values: TaskFormValues, files: readonly File[]) {
     const editing = composing?.task
     if (!editing) {
-      await create.mutateAsync({ values, statuses: statusRows, people: peopleById })
+      const created = await create.mutateAsync({ values, statuses: statusRows, people: peopleById })
+      // The files wait for the id: an attachment has nowhere to live until the task does.
+      if (files.length > 0) {
+        await storeFiles(created.id, files)
+        await queryClient.invalidateQueries({ queryKey: taskKeys.boards() })
+      }
       return
+    }
+
+    if (files.length > 0) {
+      await storeFiles(editing.id, files)
+      await queryClient.invalidateQueries({ queryKey: taskKeys.detail(editing.id) })
     }
 
     await update.mutateAsync({

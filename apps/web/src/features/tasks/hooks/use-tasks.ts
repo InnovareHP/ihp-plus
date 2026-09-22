@@ -44,8 +44,8 @@ export function useTaskBoard(query: TaskQuery, enabled: boolean) {
 
 type BoardSnapshot = [QueryKey, TaskRow[] | undefined][]
 
-interface BoardMutationOptions<TVariables> {
-  mutationFn: (variables: TVariables) => Promise<unknown>
+interface BoardMutationOptions<TVariables, TResult> {
+  mutationFn: (variables: TVariables) => Promise<TResult>
   /** `query` is the board being patched: a create only belongs on the boards that would list it. */
   apply: (rows: readonly TaskRow[], variables: TVariables, query: TaskQuery) => TaskRow[]
   successEvent: EventName
@@ -56,7 +56,9 @@ interface BoardMutationOptions<TVariables> {
  * Every board CRUD writes into each cached board — the same task sits in the "everyone" board
  * and in the filtered one the user is looking at — and restores that exact snapshot on failure.
  */
-function useBoardMutation<TVariables>(options: BoardMutationOptions<TVariables>) {
+function useBoardMutation<TVariables, TResult = unknown>(
+  options: BoardMutationOptions<TVariables, TResult>,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -99,7 +101,8 @@ interface CreateTaskContext {
 }
 
 export function useCreateTask() {
-  return useBoardMutation<CreateTaskContext>({
+  // The created row is returned: whatever the caller does next — files, a redirect — needs its id.
+  return useBoardMutation<CreateTaskContext, TaskRow>({
     mutationFn: ({ values }) => createTask(values),
     apply: (rows, { values, statuses, people }, query) => {
       // A board filtered to another project, another list, or to someone else's work would not

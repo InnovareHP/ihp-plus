@@ -12,7 +12,7 @@ export interface TaskFormModalProps {
   lists: readonly TaskListRow[]
   people: readonly { value: string; label: string }[]
   defaults: TaskFormValues
-  onSave: (values: TaskFormValues) => Promise<void>
+  onSave: (values: TaskFormValues, files: readonly File[]) => Promise<void>
 }
 
 export function TaskFormModal({

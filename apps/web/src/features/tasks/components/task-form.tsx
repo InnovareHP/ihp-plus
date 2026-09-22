@@ -4,15 +4,20 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Alert,
   Button,
+  FileButton,
   Group,
   MultiSelect,
   Select,
   Stack,
+  Text,
   Textarea,
   TextInput,
 } from '@mantine/core'
+import { IconPaperclip } from '@tabler/icons-react'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
+  attachmentProblem,
   taskFormSchema,
   TASK_PRIORITIES,
   TASK_PRIORITY_LABELS,
@@ -20,6 +25,7 @@ import {
   type TaskFormValues,
   type TaskListRow,
 } from '../schema'
+import { StagedFileChip } from './staged-file-chip'
 
 const PRIORITY_OPTIONS = TASK_PRIORITIES.map((priority) => ({
   value: priority,
@@ -31,11 +37,15 @@ export interface TaskFormProps {
   people: readonly { value: string; label: string }[]
   defaults: TaskFormValues
   submitLabel: string
-  onSave: (values: TaskFormValues) => Promise<void>
+  /** The files go up once the task exists, so they travel with the values rather than alone. */
+  onSave: (values: TaskFormValues, files: readonly File[]) => Promise<void>
   onClose: () => void
 }
 
 export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose }: TaskFormProps) {
+  // Held, not uploaded: a file belongs to its task, so nothing is stored until one exists.
+  const [staged, setStaged] = useState<File[]>([])
+
   const {
     register,
     control,
@@ -49,9 +59,23 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
     defaultValues: defaults,
   })
 
+  // The same rule the action enforces, said before the bytes travel rather than after.
+  function attach(file: File | null) {
+    if (!file) return
+
+    const problem = attachmentProblem(file)
+    if (problem) {
+      setError('root', { message: problem })
+      return
+    }
+
+    setError('root', { message: '' })
+    setStaged((files) => [...files, file])
+  }
+
   async function onSubmit(values: TaskFormValues) {
     try {
-      await onSave(values)
+      await onSave(values, staged)
     } catch (error) {
       setError('root', {
         message: error instanceof Error ? error.message : 'Could not save this task.',
@@ -161,6 +185,38 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
             />
           )}
         />
+
+        <Stack gap="xs">
+          <Group gap="sm" align="center">
+            <FileButton onChange={attach}>
+              {(props) => (
+                <Button
+                  {...props}
+                  type="button"
+                  variant="default"
+                  leftSection={<IconPaperclip size={16} aria-hidden />}
+                >
+                  Attach a file
+                </Button>
+              )}
+            </FileButton>
+            <Text size="xs" c="dimmed">
+              Images and documents up to 25 MB. They upload once the task is saved.
+            </Text>
+          </Group>
+
+          {staged.length > 0 ? (
+            <Group gap="xs">
+              {staged.map((file, index) => (
+                <StagedFileChip
+                  key={`${file.name}-${index}`}
+                  file={file}
+                  onRemove={() => setStaged((files) => files.filter((_, at) => at !== index))}
+                />
+              ))}
+            </Group>
+          ) : null}
+        </Stack>
 
         <Group justify="flex-end">
           <Button variant="default" onClick={onClose} type="button">

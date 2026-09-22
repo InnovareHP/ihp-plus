@@ -235,7 +235,8 @@ describe('TaskDetailModal', () => {
     await user.type(screen.getByLabelText('Add a comment'), 'Chasing this today.')
     await user.click(screen.getByRole('button', { name: 'Post comment' }))
 
-    expect(await screen.findByText('Chasing this today.')).toBeInTheDocument()
+    // The composer holds the same words until the post lands, so this names the comment itself.
+    expect(await screen.findByText('Chasing this today.', { selector: 'p' })).toBeInTheDocument()
     // Own words are bylined "You", not with the viewer's own name back at them.
     expect(screen.getByText('You')).toBeInTheDocument()
 
@@ -378,7 +379,9 @@ describe('TaskDetailModal', () => {
     await user.type(screen.getByLabelText('Add a comment'), 'Chasing this today.')
     await user.click(screen.getByRole('button', { name: 'Post comment' }))
 
-    await waitFor(() => expect(screen.queryByText('Chasing this today.')).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.queryByText('Chasing this today.', { selector: 'p' })).not.toBeInTheDocument(),
+    )
     expect(toast.show).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'The task is no longer there.', autoClose: false }),
     )
