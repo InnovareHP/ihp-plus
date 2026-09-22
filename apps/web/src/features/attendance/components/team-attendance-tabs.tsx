@@ -7,7 +7,7 @@ import type { ReactNode } from 'react'
 import { ATTENDANCE_TABS, type AttendanceTab } from '@/lib/routes'
 import { useAttendanceSettings } from '../hooks/use-time-clock'
 import { AttendanceBoardPanel } from './attendance-board-panel'
-import { SchedulesPanel } from './schedules-panel'
+import { ShiftsPanel } from './shifts-panel'
 import { TeamTimesheetPanel } from './team-timesheet-panel'
 
 const TABS: { value: AttendanceTab; label: string; icon: ReactNode }[] = [
@@ -59,7 +59,7 @@ export function TeamAttendanceTabs() {
         <TeamTimesheetPanel timeZone={timeZone} />
       </Tabs.Panel>
       <Tabs.Panel value="shifts">
-        <SchedulesPanel />
+        <ShiftsPanel />
       </Tabs.Panel>
     </Tabs>
   )

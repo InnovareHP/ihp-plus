@@ -6,15 +6,17 @@ import { announceFailure } from '@/lib/announce'
 import { attendanceEvents } from '../events'
 import {
   approveAttendanceDay,
+  assignShift,
   deleteAttendanceDay,
-  deleteSchedule,
+  deleteShift,
   getAttendanceBoard,
   listSchedules,
+  listShifts,
   saveAttendanceDay,
-  saveSchedule,
+  saveShift,
 } from '../rpc'
 import { attendanceKeys } from '../query-keys'
-import type { AttendanceDayValues, ScheduleValues } from '../schema'
+import type { AssignShiftValues, AttendanceDayValues, ShiftValues } from '../schema'
 import { editLogs, restoreLogs, type LogSnapshot } from './use-attendance-cache'
 import { useAttendanceMutation } from './use-time-clock'
 
@@ -30,6 +32,10 @@ export function useAttendanceBoard(date: string) {
 
 export function useSchedules() {
   return useQuery({ queryKey: attendanceKeys.schedules(), queryFn: listSchedules })
+}
+
+export function useShifts() {
+  return useQuery({ queryKey: attendanceKeys.shifts(), queryFn: listShifts })
 }
 
 // Not optimistic: a correction is re-measured server-side — worked hours, lateness and whether
@@ -76,18 +82,27 @@ export function useDeleteAttendanceDay() {
   })
 }
 
-export function useSaveSchedule() {
+export function useSaveShift() {
   return useAttendanceMutation({
-    mutationFn: (values: ScheduleValues) => saveSchedule(values),
-    successEvent: attendanceEvents.scheduleSaved,
-    failureEvent: attendanceEvents.scheduleSaveFailed,
+    mutationFn: (values: ShiftValues) => saveShift(values),
+    successEvent: attendanceEvents.shiftSaved,
+    failureEvent: attendanceEvents.shiftSaveFailed,
   })
 }
 
-export function useClearSchedule() {
+export function useDeleteShift() {
   return useAttendanceMutation({
-    mutationFn: ({ userId }: { userId: string }) => deleteSchedule(userId),
-    successEvent: attendanceEvents.scheduleCleared,
-    failureEvent: attendanceEvents.scheduleClearFailed,
+    mutationFn: ({ shiftId }: { shiftId: string }) => deleteShift(shiftId),
+    successEvent: attendanceEvents.shiftDeleted,
+    failureEvent: attendanceEvents.shiftDeleteFailed,
+  })
+}
+
+/** Assigning is done under the organization, where the rest of a person's record is set. */
+export function useAssignShift() {
+  return useAttendanceMutation({
+    mutationFn: (values: AssignShiftValues) => assignShift(values),
+    successEvent: attendanceEvents.shiftAssigned,
+    failureEvent: attendanceEvents.shiftAssignFailed,
   })
 }

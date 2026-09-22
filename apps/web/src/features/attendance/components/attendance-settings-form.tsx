@@ -64,7 +64,8 @@ export function AttendanceSettingsForm() {
         <FormError message={errors.root?.message} title="Could not save the attendance rules" />
 
         <Text size="sm" c="dimmed">
-          These apply to everyone in the company. Members clock in and out on the Time clock page.
+          These apply to everyone in the company. Members clock in and out on the Time clock page;
+          only an admin records or corrects a day, including their own.
         </Text>
 
         <Controller
@@ -88,20 +89,6 @@ export function AttendanceSettingsForm() {
             <Switch
               label="Record where the clock was pressed"
               description="Coordinates are stored with the punch; a refused fix never blocks it."
-              checked={field.value}
-              onChange={(event) => field.onChange(event.currentTarget.checked)}
-              onBlur={field.onBlur}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="allowManualEntry"
-          render={({ field }) => (
-            <Switch
-              label="Members can write up their own day"
-              description="Off means the clock is the only way attendance is recorded, and an admin fixes the rest."
               checked={field.value}
               onChange={(event) => field.onChange(event.currentTarget.checked)}
               onBlur={field.onBlur}

@@ -8,4 +8,5 @@ export const attendanceKeys = {
   logs: () => [...attendanceKeys.all, 'log'] as const,
   board: (date: string) => [...attendanceKeys.all, 'board', date] as const,
   schedules: () => [...attendanceKeys.all, 'schedules'] as const,
+  shifts: () => [...attendanceKeys.all, 'shifts'] as const,
 }

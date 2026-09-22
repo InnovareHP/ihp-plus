@@ -3,6 +3,7 @@ import type {
   AttendanceDay as AttendanceDayMessage,
   AttendanceSchedule as AttendanceScheduleMessage,
   AttendanceSettings as AttendanceSettingsMessage,
+  AttendanceShift as AttendanceShiftMessage,
 } from '@ihp/rpc/attendance'
 import {
   DEFAULT_ATTENDANCE_SETTINGS,
@@ -10,6 +11,7 @@ import {
   type AttendanceDayRow,
   type AttendanceScheduleRow,
   type AttendanceSettingsRow,
+  type AttendanceShiftRow,
   type AttendanceSource,
   type AttendanceState,
   type AttendanceStatus,
@@ -97,7 +99,6 @@ export function settingsToProto(settings: AttendanceSettingsRow): AttendanceSett
   return {
     $typeName: 'ihp.attendance.v1.AttendanceSettings',
     requireSelfie: settings.requireSelfie,
-    allowManualEntry: settings.allowManualEntry,
     requireNote: settings.requireNote,
     captureLocation: settings.captureLocation,
     autoClockOutHours: settings.autoClockOutHours,
@@ -116,7 +117,6 @@ export function settingsFromProto(
 
   return {
     requireSelfie: settings.requireSelfie,
-    allowManualEntry: settings.allowManualEntry,
     requireNote: settings.requireNote,
     captureLocation: settings.captureLocation,
     autoClockOutHours: settings.autoClockOutHours,
@@ -125,6 +125,31 @@ export function settingsFromProto(
     graceMinutes: settings.graceMinutes,
     workdays: settings.workdays || DEFAULT_ATTENDANCE_SETTINGS.workdays,
     timeZone: settings.timeZone || DEFAULT_ATTENDANCE_SETTINGS.timeZone,
+  }
+}
+
+export function shiftToProto(shift: AttendanceShiftRow): AttendanceShiftMessage {
+  return {
+    $typeName: 'ihp.attendance.v1.AttendanceShift',
+    id: shift.id,
+    name: shift.name,
+    shiftStartMinutes: shift.shiftStartMinutes,
+    shiftEndMinutes: shift.shiftEndMinutes,
+    graceMinutes: shift.graceMinutes,
+    workdays: shift.workdays,
+    assignedCount: shift.assignedCount,
+  }
+}
+
+export function shiftFromProto(shift: AttendanceShiftMessage): AttendanceShiftRow {
+  return {
+    id: shift.id,
+    name: shift.name,
+    shiftStartMinutes: shift.shiftStartMinutes,
+    shiftEndMinutes: shift.shiftEndMinutes,
+    graceMinutes: shift.graceMinutes,
+    workdays: shift.workdays,
+    assignedCount: shift.assignedCount,
   }
 }
 
@@ -138,6 +163,9 @@ export function scheduleToProto(schedule: AttendanceScheduleRow): AttendanceSche
     graceMinutes: schedule.graceMinutes,
     workdays: schedule.workdays,
     isDefault: schedule.isDefault,
+    shiftId: schedule.shiftId,
+    shiftName: schedule.shiftName,
+    jobTitle: schedule.jobTitle,
   }
 }
 
@@ -153,6 +181,9 @@ export function scheduleFromProto(
     graceMinutes: schedule?.graceMinutes ?? settings.graceMinutes,
     workdays: schedule?.workdays || settings.workdays,
     isDefault: schedule?.isDefault ?? true,
+    shiftId: schedule?.shiftId,
+    shiftName: schedule?.shiftName,
+    jobTitle: schedule?.jobTitle,
   }
 }
 

@@ -17,8 +17,10 @@ const rpc = vi.hoisted(() => ({
   saveAttendanceDay: vi.fn(),
   approveAttendanceDay: vi.fn(),
   deleteAttendanceDay: vi.fn(),
-  saveSchedule: vi.fn(),
-  deleteSchedule: vi.fn(),
+  listShifts: vi.fn(),
+  saveShift: vi.fn(),
+  deleteShift: vi.fn(),
+  assignShift: vi.fn(),
 }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn(), hide: vi.fn() }))
@@ -65,7 +67,11 @@ describe('TeamTimesheetPanel', () => {
       totalBreakSeconds: 3600,
       totalLateSeconds: 0,
     })
-    rpc.listSchedules.mockResolvedValue({ schedules: [], settings: { timeZone: 'Asia/Manila' } })
+    rpc.listSchedules.mockResolvedValue({
+      schedules: [],
+      settings: { timeZone: 'Asia/Manila' },
+      shifts: [],
+    })
     rpc.approveAttendanceDay.mockResolvedValue({ ...DAY, status: 'approved' })
     rpc.deleteAttendanceDay.mockResolvedValue(undefined)
   })

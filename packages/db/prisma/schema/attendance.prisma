@@ -7,7 +7,6 @@ model AttendanceSettings {
 
   // A selfie at each end proves who pressed the button; off is one tap.
   requireSelfie     Boolean @default(false)
-  allowManualEntry  Boolean @default(false)
   requireNote       Boolean @default(false)
   captureLocation   Boolean @default(false)
   // Hours after which a day nobody clocked out of is closed at that length; 0 never closes one.
@@ -29,22 +28,46 @@ model AttendanceSettings {
   @@schema("attendance")
 }
 
-// One person's shift when it differs from the company's; absent means they work the default.
+// A named set of working hours, written once and given to as many people as work them.
+model AttendanceShift {
+  id             String @id @default(uuid())
+  organizationId String
+
+  name String
+
+  shiftStartMinutes Int
+  shiftEndMinutes   Int
+  graceMinutes      Int    @default(15)
+  // Weekdays worked as a comma list, 0 being Sunday.
+  workdays          String @default("1,2,3,4,5")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments AttendanceSchedule[]
+
+  // Two shifts called "Morning" in one company is a naming mistake, not a second shift.
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("attendanceShift")
+  @@schema("attendance")
+}
+
+// Who works which shift; absent means they work the company hours in Settings.
 model AttendanceSchedule {
   id             String @id @default(uuid())
   organizationId String
   userId         String
 
-  shiftStartMinutes Int
-  shiftEndMinutes   Int
-  graceMinutes      Int    @default(15)
-  workdays          String @default("1,2,3,4,5")
+  shiftId String
+  shift   AttendanceShift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([organizationId, userId])
   @@index([organizationId])
+  @@index([shiftId])
   @@map("attendanceSchedule")
   @@schema("attendance")
 }

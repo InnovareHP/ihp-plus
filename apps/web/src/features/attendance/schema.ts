@@ -39,6 +39,16 @@ export interface AttendanceDayRow {
   approvedByName: string | undefined
 }
 
+export interface AttendanceShiftRow {
+  id: string
+  name: string
+  shiftStartMinutes: number
+  shiftEndMinutes: number
+  graceMinutes: number
+  workdays: string
+  assignedCount: number
+}
+
 export interface AttendanceScheduleRow {
   userId: string
   userName: string
@@ -47,6 +57,9 @@ export interface AttendanceScheduleRow {
   graceMinutes: number
   workdays: string
   isDefault: boolean
+  shiftId: string | undefined
+  shiftName: string | undefined
+  jobTitle: string | undefined
 }
 
 export interface AttendanceBoardRow {
@@ -91,7 +104,6 @@ const workdaysField = z
 export const attendanceSettingsSchema = z
   .object({
     requireSelfie: z.boolean(),
-    allowManualEntry: z.boolean(),
     requireNote: z.boolean(),
     captureLocation: z.boolean(),
     autoClockOutHours: z
@@ -127,7 +139,6 @@ export type AttendanceSettingsRow = z.infer<typeof attendanceSettingsSchema>
 /** The rules an organization has before anybody opens the screen, and the form's first render. */
 export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettingsRow = {
   requireSelfie: false,
-  allowManualEntry: false,
   requireNote: false,
   captureLocation: false,
   autoClockOutHours: 16,
@@ -138,23 +149,41 @@ export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettingsRow = {
   timeZone: 'UTC',
 }
 
-export const scheduleSchema = z.object({
-  userId: z.string().min(1, 'Pick who this shift is for.'),
-  shiftStartMinutes: z
-    .number()
-    .int()
-    .min(0)
-    .max(24 * 60 - 1),
-  shiftEndMinutes: z
-    .number()
-    .int()
-    .min(0)
-    .max(24 * 60 - 1),
-  graceMinutes: z.number().int().min(0).max(120),
-  workdays: workdaysField,
+export const shiftSchema = z
+  .object({
+    shiftId: z.string().optional(),
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Give the shift a name people will recognise.')
+      .max(60, 'Keep the name under 60 characters.'),
+    shiftStartMinutes: z
+      .number()
+      .int()
+      .min(0)
+      .max(24 * 60 - 1),
+    shiftEndMinutes: z
+      .number()
+      .int()
+      .min(0)
+      .max(24 * 60 - 1),
+    graceMinutes: z.number().int().min(0, 'Grace cannot be negative.').max(120),
+    workdays: workdaysField,
+  })
+  .refine((values) => values.shiftStartMinutes !== values.shiftEndMinutes, {
+    message: 'A shift cannot start and end at the same minute.',
+    path: ['shiftEndMinutes'],
+  })
+
+export type ShiftValues = z.infer<typeof shiftSchema>
+
+export const assignShiftSchema = z.object({
+  userId: z.string().min(1, 'Pick who the shift is for.'),
+  /** Empty puts the person back on the company hours. */
+  shiftId: z.string(),
 })
 
-export type ScheduleValues = z.infer<typeof scheduleSchema>
+export type AssignShiftValues = z.infer<typeof assignShiftSchema>
 
 const dateKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-09-22.')
 

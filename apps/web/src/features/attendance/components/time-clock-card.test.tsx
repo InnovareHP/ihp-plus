@@ -22,7 +22,6 @@ vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }
 
 const RULES: AttendanceSettingsRow = {
   requireSelfie: false,
-  allowManualEntry: false,
   requireNote: false,
   captureLocation: false,
   autoClockOutHours: 16,

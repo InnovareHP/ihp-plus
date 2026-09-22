@@ -41,8 +41,10 @@ message AttendanceDay {
 
 // How the organization runs its clock. Every member reads it; only an admin writes it.
 message AttendanceSettings {
+  // 2 was allow_manual_entry, removed when writing a day became admin-only.
+  reserved 2;
+
   bool require_selfie = 1;
-  bool allow_manual_entry = 2;
   bool require_note = 3;
   bool capture_location = 4;
   // Hours after which a day nobody clocked out of is closed at that length; 0 never closes one.
@@ -55,7 +57,19 @@ message AttendanceSettings {
   string time_zone = 10;
 }
 
-// The shift one person works; absent means they work the company's.
+// A named set of hours, written once and given to as many people as work them.
+message AttendanceShift {
+  string id = 1;
+  string name = 2;
+  int32 shift_start_minutes = 3;
+  int32 shift_end_minutes = 4;
+  int32 grace_minutes = 5;
+  string workdays = 6;
+  // How many people work it, so a shift is never deleted blind.
+  int32 assigned_count = 7;
+}
+
+// The shift one person works; absent means they work the company hours in the settings.
 message AttendanceSchedule {
   string user_id = 1;
   string user_name = 2;
@@ -63,8 +77,11 @@ message AttendanceSchedule {
   int32 shift_end_minutes = 4;
   int32 grace_minutes = 5;
   string workdays = 6;
-  // True when nobody has set this person their own shift.
+  // True when nobody has assigned this person a shift.
   bool is_default = 7;
+  optional string shift_id = 8;
+  optional string shift_name = 9;
+  optional string job_title = 10;
 }
 
 message GetAttendanceSettingsRequest {}
@@ -202,26 +219,45 @@ message ListSchedulesRequest {}
 message ListSchedulesResponse {
   repeated AttendanceSchedule schedules = 1;
   AttendanceSettings settings = 2;
+  repeated AttendanceShift shifts = 3;
 }
 
-message SaveScheduleRequest {
+message ListShiftsRequest {}
+
+message ListShiftsResponse {
+  repeated AttendanceShift shifts = 1;
+  AttendanceSettings settings = 2;
+}
+
+message SaveShiftRequest {
+  // Empty creates the shift.
+  optional string shift_id = 1;
+  string name = 2;
+  int32 shift_start_minutes = 3;
+  int32 shift_end_minutes = 4;
+  int32 grace_minutes = 5;
+  string workdays = 6;
+}
+
+message SaveShiftResponse {
+  AttendanceShift shift = 1;
+}
+
+message DeleteShiftRequest {
+  string shift_id = 1;
+}
+
+message DeleteShiftResponse {}
+
+// Assigning is done where people are managed; an empty shift_id puts them back on the default.
+message AssignShiftRequest {
   string user_id = 1;
-  int32 shift_start_minutes = 2;
-  int32 shift_end_minutes = 3;
-  int32 grace_minutes = 4;
-  string workdays = 5;
+  optional string shift_id = 2;
 }
 
-message SaveScheduleResponse {
+message AssignShiftResponse {
   AttendanceSchedule schedule = 1;
 }
-
-// Puts the person back on the company shift.
-message DeleteScheduleRequest {
-  string user_id = 1;
-}
-
-message DeleteScheduleResponse {}
 
 service AttendanceService {
   rpc GetAttendanceSettings(GetAttendanceSettingsRequest) returns (GetAttendanceSettingsResponse);
@@ -237,6 +273,8 @@ service AttendanceService {
   rpc ApproveAttendanceDay(ApproveAttendanceDayRequest) returns (ApproveAttendanceDayResponse);
   rpc DeleteAttendanceDay(DeleteAttendanceDayRequest) returns (DeleteAttendanceDayResponse);
   rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);
-  rpc SaveSchedule(SaveScheduleRequest) returns (SaveScheduleResponse);
-  rpc DeleteSchedule(DeleteScheduleRequest) returns (DeleteScheduleResponse);
+  rpc ListShifts(ListShiftsRequest) returns (ListShiftsResponse);
+  rpc SaveShift(SaveShiftRequest) returns (SaveShiftResponse);
+  rpc DeleteShift(DeleteShiftRequest) returns (DeleteShiftResponse);
+  rpc AssignShift(AssignShiftRequest) returns (AssignShiftResponse);
 }

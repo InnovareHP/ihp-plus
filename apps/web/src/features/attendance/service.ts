@@ -4,11 +4,13 @@ import { recordActivity } from '@/lib/activity'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { deleteObject, objectUrl } from '@/lib/s3'
 import {
+  assignShiftSchema,
   attendanceDaySchema,
   attendanceSettingsSchema,
   clockActionSchema,
   DEFAULT_ATTENDANCE_SETTINGS,
-  scheduleSchema,
+  shiftSchema,
+  type AssignShiftValues,
   type AttendanceBoard,
   type AttendanceDayRow,
   type AttendanceDayValues,
@@ -16,11 +18,12 @@ import {
   type AttendanceScheduleRow,
   type AttendanceSettingsRow,
   type AttendanceSettingsView,
+  type AttendanceShiftRow,
   type AttendanceSource,
   type AttendanceState,
   type AttendanceStatus,
   type ClockActionValues,
-  type ScheduleValues,
+  type ShiftValues,
   type TimeClockView,
 } from './schema'
 import {
@@ -33,7 +36,6 @@ import {
 
 const SETTINGS_SELECT = {
   requireSelfie: true,
-  allowManualEntry: true,
   requireNote: true,
   captureLocation: true,
   autoClockOutHours: true,
@@ -181,14 +183,16 @@ function dateOf(workDate: string) {
   return new Date(`${workDate}T00:00:00.000Z`)
 }
 
-/** A selfie is the person's own business and the admin's; nobody else is handed the link. */
+/**
+ * Photos and coordinates are what the clock collects about a person, so only an admin is handed
+ * them — a member reads their own hours, not the evidence behind them.
+ */
 async function toDayRow(
   day: DayRecord,
   names: Map<string, string>,
   viewer: Caller,
 ): Promise<AttendanceDayRow> {
-  const maySeePhotos = viewer.canManage || viewer.userId === day.userId
-  const [clockInSelfieUrl, clockOutSelfieUrl] = maySeePhotos
+  const [clockInSelfieUrl, clockOutSelfieUrl] = viewer.canManage
     ? await Promise.all([signedUrl(day.clockInSelfieKey), signedUrl(day.clockOutSelfieKey)])
     : [undefined, undefined]
 
@@ -207,8 +211,8 @@ async function toDayRow(
     note: day.note ?? undefined,
     clockInSelfieUrl,
     clockOutSelfieUrl,
-    clockInLocation: day.clockInLocation ?? undefined,
-    clockOutLocation: day.clockOutLocation ?? undefined,
+    clockInLocation: viewer.canManage ? (day.clockInLocation ?? undefined) : undefined,
+    clockOutLocation: viewer.canManage ? (day.clockOutLocation ?? undefined) : undefined,
     isOpen: day.clockOutAt === null,
     onBreak: day.breaks.some((one) => one.endedAt === null),
     breaks: day.breaks.map((one) => ({
@@ -289,21 +293,30 @@ async function openDayOf(caller: Caller, settings: AttendanceSettingsRow) {
   return settled.clockOutAt === null ? settled : null
 }
 
+const assignedShiftSelect = {
+  shift: {
+    select: {
+      id: true,
+      name: true,
+      shiftStartMinutes: true,
+      shiftEndMinutes: true,
+      graceMinutes: true,
+      workdays: true,
+    },
+  },
+} as const
+
 async function scheduleOf(
   organizationId: string,
   userId: string,
   settings: AttendanceSettingsRow,
   userName: string,
 ): Promise<AttendanceScheduleRow> {
-  const own = await db.attendanceSchedule.findUnique({
+  const assignment = await db.attendanceSchedule.findUnique({
     where: { organizationId_userId: { organizationId, userId } },
-    select: {
-      shiftStartMinutes: true,
-      shiftEndMinutes: true,
-      graceMinutes: true,
-      workdays: true,
-    },
+    select: assignedShiftSelect,
   })
+  const own = assignment?.shift
 
   return {
     userId,
@@ -313,6 +326,9 @@ async function scheduleOf(
     graceMinutes: own?.graceMinutes ?? settings.graceMinutes,
     workdays: own?.workdays ?? settings.workdays,
     isDefault: !own,
+    shiftId: own?.id,
+    shiftName: own?.name,
+    jobTitle: undefined,
   }
 }
 
@@ -586,31 +602,25 @@ function instantOf(workDate: string, time: string, timeZone: string): Date {
   return at
 }
 
-/** A member may only touch their own row; anyone else's is an admin's business. */
 async function dayToEdit(caller: Caller, dayId: string) {
   const day = await db.attendanceDay.findFirst({
     where: { id: dayId, organizationId: caller.organizationId },
-    select: { id: true, userId: true },
+    select: { id: true },
   })
   if (!day) throw new ConnectError('That day is no longer there.', Code.NotFound)
-  if (day.userId !== caller.userId) requireAdmin(caller, 'Only an admin edits somebody else’s day.')
   return day.id
 }
 
+/**
+ * Only an admin writes a day, including their own: a clock nobody can edit is the whole point of
+ * one, and a member who needs a correction asks for it.
+ */
 export async function saveAttendanceDay(values: AttendanceDayValues): Promise<AttendanceDayRow> {
   const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin records or corrects a day.')
+
   const settings = await settingsOf(caller.organizationId)
   const parsed = attendanceDaySchema.parse(values)
-
-  if (parsed.userId !== caller.userId) {
-    requireAdmin(caller, 'Only an admin edits somebody else’s day.')
-  }
-  if (!caller.canManage && !settings.allowManualEntry) {
-    throw new ConnectError(
-      'Your company records attendance by the clock only.',
-      Code.PermissionDenied,
-    )
-  }
 
   const clockInAt = instantOf(parsed.workDate, parsed.clockInTime, settings.timeZone)
   const typedOut = parsed.clockOutTime
@@ -737,9 +747,125 @@ export async function deleteAttendanceDay(dayId: string): Promise<void> {
   })
 }
 
+const shiftSelect = {
+  id: true,
+  name: true,
+  shiftStartMinutes: true,
+  shiftEndMinutes: true,
+  graceMinutes: true,
+  workdays: true,
+  _count: { select: { assignments: true } },
+} as const
+
+interface ShiftRecord {
+  id: string
+  name: string
+  shiftStartMinutes: number
+  shiftEndMinutes: number
+  graceMinutes: number
+  workdays: string
+  _count: { assignments: number }
+}
+
+function toShiftRow(shift: ShiftRecord): AttendanceShiftRow {
+  return {
+    id: shift.id,
+    name: shift.name,
+    shiftStartMinutes: shift.shiftStartMinutes,
+    shiftEndMinutes: shift.shiftEndMinutes,
+    graceMinutes: shift.graceMinutes,
+    workdays: shift.workdays,
+    assignedCount: shift._count.assignments,
+  }
+}
+
+export interface ShiftBook {
+  shifts: AttendanceShiftRow[]
+  settings: AttendanceSettingsRow
+}
+
+/** The shift library, written in the time clock and handed out under the organization. */
+export async function loadShifts(): Promise<ShiftBook> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin sets shifts.')
+
+  const [settings, shifts] = await Promise.all([
+    settingsOf(caller.organizationId),
+    db.attendanceShift.findMany({
+      where: { organizationId: caller.organizationId },
+      select: shiftSelect,
+      orderBy: [{ shiftStartMinutes: 'asc' }, { name: 'asc' }],
+    }),
+  ])
+
+  return { shifts: shifts.map(toShiftRow), settings }
+}
+
+export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin sets shifts.')
+
+  const { shiftId, ...shift } = shiftSchema.parse(values)
+
+  const clash = await db.attendanceShift.findFirst({
+    where: {
+      organizationId: caller.organizationId,
+      name: shift.name,
+      ...(shiftId ? { NOT: { id: shiftId } } : {}),
+    },
+    select: { id: true },
+  })
+  if (clash) {
+    throw new ConnectError('A shift with that name already exists.', Code.AlreadyExists)
+  }
+
+  if (!shiftId) {
+    const created = await db.attendanceShift.create({
+      data: { organizationId: caller.organizationId, ...shift },
+      select: shiftSelect,
+    })
+    return toShiftRow(created)
+  }
+
+  const existing = await db.attendanceShift.findFirst({
+    where: { id: shiftId, organizationId: caller.organizationId },
+    select: { id: true },
+  })
+  if (!existing) throw new ConnectError('That shift is no longer there.', Code.NotFound)
+
+  const updated = await db.attendanceShift.update({
+    where: { id: existing.id },
+    data: shift,
+    select: shiftSelect,
+  })
+
+  return toShiftRow(updated)
+}
+
+/** Deleting a shift would silently put its people back on the company hours, so it asks first. */
+export async function deleteShift(shiftId: string): Promise<void> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin sets shifts.')
+
+  const shift = await db.attendanceShift.findFirst({
+    where: { id: shiftId, organizationId: caller.organizationId },
+    select: { id: true, _count: { select: { assignments: true } } },
+  })
+  if (!shift) throw new ConnectError('That shift is no longer there.', Code.NotFound)
+  if (shift._count.assignments > 0) {
+    throw new ConnectError(
+      'People still work that shift — move them to another one first.',
+      Code.FailedPrecondition,
+    )
+  }
+
+  await db.attendanceShift.delete({ where: { id: shift.id } })
+}
+
 export interface ScheduleBook {
   schedules: AttendanceScheduleRow[]
   settings: AttendanceSettingsRow
+  shifts: AttendanceShiftRow[]
 }
 
 export async function loadSchedules(): Promise<ScheduleBook> {
@@ -747,24 +873,26 @@ export async function loadSchedules(): Promise<ScheduleBook> {
   requireAdmin(caller, 'Only an admin sets shifts.')
 
   const settings = await settingsOf(caller.organizationId)
-  const [members, own] = await Promise.all([
+  const [members, assignments, shifts] = await Promise.all([
     db.member.findMany({
-      where: { organizationId: caller.organizationId },
-      select: { userId: true, user: { select: { name: true, preferredName: true } } },
-    }),
-    db.attendanceSchedule.findMany({
       where: { organizationId: caller.organizationId },
       select: {
         userId: true,
-        shiftStartMinutes: true,
-        shiftEndMinutes: true,
-        graceMinutes: true,
-        workdays: true,
+        user: { select: { name: true, preferredName: true, jobTitle: true } },
       },
+    }),
+    db.attendanceSchedule.findMany({
+      where: { organizationId: caller.organizationId },
+      select: { userId: true, ...assignedShiftSelect },
+    }),
+    db.attendanceShift.findMany({
+      where: { organizationId: caller.organizationId },
+      select: shiftSelect,
+      orderBy: [{ shiftStartMinutes: 'asc' }, { name: 'asc' }],
     }),
   ])
 
-  const byUser = new Map(own.map((row) => [row.userId, row]))
+  const byUser = new Map(assignments.map((row) => [row.userId, row.shift]))
 
   const schedules = members
     .map((member) => {
@@ -772,54 +900,57 @@ export async function loadSchedules(): Promise<ScheduleBook> {
       return {
         userId: member.userId,
         userName: member.user.preferredName ?? member.user.name,
+        jobTitle: member.user.jobTitle ?? undefined,
         shiftStartMinutes: shift?.shiftStartMinutes ?? settings.shiftStartMinutes,
         shiftEndMinutes: shift?.shiftEndMinutes ?? settings.shiftEndMinutes,
         graceMinutes: shift?.graceMinutes ?? settings.graceMinutes,
         workdays: shift?.workdays ?? settings.workdays,
         isDefault: !shift,
+        shiftId: shift?.id,
+        shiftName: shift?.name,
       }
     })
     .sort((a, b) => a.userName.localeCompare(b.userName))
 
-  return { schedules, settings }
+  return { schedules, settings, shifts: shifts.map(toShiftRow) }
 }
 
-export async function saveSchedule(values: ScheduleValues): Promise<AttendanceScheduleRow> {
+/** Assignment happens where people are managed; an empty shift puts them on the company hours. */
+export async function assignShift(values: AssignShiftValues): Promise<AttendanceScheduleRow> {
   const caller = await requireMember()
   requireAdmin(caller, 'Only an admin sets shifts.')
 
-  const { userId, ...shift } = scheduleSchema.parse(values)
+  const { userId, shiftId } = assignShiftSchema.parse(values)
   const member = await db.member.findFirst({
     where: { organizationId: caller.organizationId, userId },
-    select: { user: { select: { name: true, preferredName: true } } },
+    select: { user: { select: { name: true, preferredName: true, jobTitle: true } } },
   })
   if (!member) throw new ConnectError('That person is not in this organization.', Code.NotFound)
 
-  const saved = await db.attendanceSchedule.upsert({
-    where: { organizationId_userId: { organizationId: caller.organizationId, userId } },
-    create: { organizationId: caller.organizationId, userId, ...shift },
-    update: shift,
-    select: {
-      shiftStartMinutes: true,
-      shiftEndMinutes: true,
-      graceMinutes: true,
-      workdays: true,
-    },
-  })
+  const settings = await settingsOf(caller.organizationId)
+  const userName = member.user.preferredName ?? member.user.name
 
-  return {
-    userId,
-    userName: member.user.preferredName ?? member.user.name,
-    ...saved,
-    isDefault: false,
+  if (!shiftId) {
+    await db.attendanceSchedule.deleteMany({
+      where: { organizationId: caller.organizationId, userId },
+    })
+    const schedule = await scheduleOf(caller.organizationId, userId, settings, userName)
+    return { ...schedule, jobTitle: member.user.jobTitle ?? undefined }
   }
-}
 
-export async function deleteSchedule(userId: string): Promise<void> {
-  const caller = await requireMember()
-  requireAdmin(caller, 'Only an admin sets shifts.')
-
-  await db.attendanceSchedule.deleteMany({
-    where: { organizationId: caller.organizationId, userId },
+  const shift = await db.attendanceShift.findFirst({
+    where: { id: shiftId, organizationId: caller.organizationId },
+    select: { id: true },
   })
+  if (!shift) throw new ConnectError('That shift is no longer there.', Code.NotFound)
+
+  await db.attendanceSchedule.upsert({
+    where: { organizationId_userId: { organizationId: caller.organizationId, userId } },
+    create: { organizationId: caller.organizationId, userId, shiftId: shift.id },
+    update: { shiftId: shift.id },
+    select: { id: true },
+  })
+
+  const schedule = await scheduleOf(caller.organizationId, userId, settings, userName)
+  return { ...schedule, jobTitle: member.user.jobTitle ?? undefined }
 }

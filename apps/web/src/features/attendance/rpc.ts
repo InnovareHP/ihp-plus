@@ -7,6 +7,7 @@ import {
   scheduleFromProto,
   settingsFromProto,
   settingsToProto,
+  shiftFromProto,
 } from '@/rpc/attendance-codec'
 import { browserClients } from '@/rpc/browser'
 import type {
@@ -17,8 +18,10 @@ import type {
   AttendanceScheduleRow,
   AttendanceSettingsRow,
   AttendanceSettingsView,
+  AttendanceShiftRow,
+  AssignShiftValues,
   ClockActionValues,
-  ScheduleValues,
+  ShiftValues,
   TimeClockView,
 } from './schema'
 
@@ -162,6 +165,7 @@ export async function deleteAttendanceDay(dayId: string): Promise<void> {
 export interface ScheduleBookView {
   schedules: AttendanceScheduleRow[]
   settings: AttendanceSettingsRow
+  shifts: AttendanceShiftRow[]
 }
 
 export async function listSchedules(): Promise<ScheduleBookView> {
@@ -169,14 +173,48 @@ export async function listSchedules(): Promise<ScheduleBookView> {
   return {
     schedules: response.schedules.map(scheduleFromProto),
     settings: settingsFromProto(response.settings),
+    shifts: response.shifts.map(shiftFromProto),
   }
 }
 
-export async function saveSchedule(values: ScheduleValues): Promise<AttendanceScheduleRow> {
-  const response = await call(() => browserClients.attendance.saveSchedule(values))
-  return scheduleFromProto(response.schedule)
+export interface ShiftBookView {
+  shifts: AttendanceShiftRow[]
+  settings: AttendanceSettingsRow
 }
 
-export async function deleteSchedule(userId: string): Promise<void> {
-  await call(() => browserClients.attendance.deleteSchedule({ userId }))
+export async function listShifts(): Promise<ShiftBookView> {
+  const response = await call(() => browserClients.attendance.listShifts({}))
+  return {
+    shifts: response.shifts.map(shiftFromProto),
+    settings: settingsFromProto(response.settings),
+  }
+}
+
+export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow> {
+  const response = await call(() =>
+    browserClients.attendance.saveShift({
+      shiftId: values.shiftId,
+      name: values.name,
+      shiftStartMinutes: values.shiftStartMinutes,
+      shiftEndMinutes: values.shiftEndMinutes,
+      graceMinutes: values.graceMinutes,
+      workdays: values.workdays,
+    }),
+  )
+  if (!response.shift) throw new Error('The server did not return the shift.')
+  return shiftFromProto(response.shift)
+}
+
+export async function deleteShift(shiftId: string): Promise<void> {
+  await call(() => browserClients.attendance.deleteShift({ shiftId }))
+}
+
+export async function assignShift(values: AssignShiftValues): Promise<AttendanceScheduleRow> {
+  const response = await call(() =>
+    browserClients.attendance.assignShift({
+      userId: values.userId,
+      shiftId: values.shiftId || undefined,
+    }),
+  )
+  return scheduleFromProto(response.schedule)
 }

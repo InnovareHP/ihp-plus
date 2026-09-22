@@ -1,9 +1,16 @@
 'use client'
 
 import { Tabs } from '@mantine/core'
-import { IconBuilding, IconMailForward, IconUserCog, IconUsersGroup } from '@tabler/icons-react'
+import {
+  IconBuilding,
+  IconCalendarTime,
+  IconMailForward,
+  IconUserCog,
+  IconUsersGroup,
+} from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
+import { ShiftAssignmentPanel } from '@/features/attendance/components/shift-assignment-panel'
 import { MembersTable } from '@/features/members/components/members-table'
 import { ORGANIZATION_TABS, type OrganizationTab } from '@/lib/routes'
 import { InvitationsPanel } from './invitations-panel'
@@ -14,6 +21,7 @@ const TABS: { value: OrganizationTab; label: string; icon: ReactNode }[] = [
   { value: 'overview', label: 'Overview', icon: <IconBuilding size={16} aria-hidden /> },
   { value: 'members', label: 'Members', icon: <IconUserCog size={16} aria-hidden /> },
   { value: 'departments', label: 'Departments', icon: <IconUsersGroup size={16} aria-hidden /> },
+  { value: 'shifts', label: 'Shifts', icon: <IconCalendarTime size={16} aria-hidden /> },
   { value: 'invitations', label: 'Invitations', icon: <IconMailForward size={16} aria-hidden /> },
 ]
 
@@ -58,6 +66,9 @@ export function OrganizationTabs({ invitedBy }: { invitedBy: string }) {
       </Tabs.Panel>
       <Tabs.Panel value="departments">
         <TeamsPanel />
+      </Tabs.Panel>
+      <Tabs.Panel value="shifts">
+        <ShiftAssignmentPanel />
       </Tabs.Panel>
       <Tabs.Panel value="invitations">
         <InvitationsPanel invitedBy={invitedBy} />

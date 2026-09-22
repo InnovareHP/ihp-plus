@@ -4,40 +4,45 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Group, Modal, NumberInput, Stack, TextInput } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
-import { useSaveSchedule } from '../hooks/use-attendance-admin'
-import { scheduleSchema, type AttendanceScheduleRow, type ScheduleValues } from '../schema'
-import { clockToMinutes, minutesToClock } from '../utils/clock'
+import { useSaveShift } from '../hooks/use-attendance-admin'
+import { shiftSchema, type AttendanceShiftRow, type ShiftValues } from '../schema'
+import { clockToMinutes, DEFAULT_WORKDAYS, minutesToClock } from '../utils/clock'
 import { WorkdaysField } from './workdays-field'
 
-export interface ScheduleModalProps {
+export interface ShiftModalProps {
   opened: boolean
   onClose: () => void
-  schedule: AttendanceScheduleRow
+  /** Absent writes a new shift; present edits that one. */
+  shift?: AttendanceShiftRow
+  /** The company hours, which a new shift starts from. */
+  defaults: { shiftStartMinutes: number; shiftEndMinutes: number; graceMinutes: number }
 }
 
-/** One person's shift: when it starts, when it ends, how much grace, which days. */
-export function ScheduleModal({ opened, onClose, schedule }: ScheduleModalProps) {
-  const save = useSaveSchedule()
+/** A shift is written once here and handed out under the organization. */
+export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps) {
+  const save = useSaveShift()
 
   const {
     control,
     handleSubmit,
+    register,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<ScheduleValues>({
-    resolver: zodResolver(scheduleSchema),
+  } = useForm<ShiftValues>({
+    resolver: zodResolver(shiftSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
     values: {
-      userId: schedule.userId,
-      shiftStartMinutes: schedule.shiftStartMinutes,
-      shiftEndMinutes: schedule.shiftEndMinutes,
-      graceMinutes: schedule.graceMinutes,
-      workdays: schedule.workdays,
+      shiftId: shift?.id,
+      name: shift?.name ?? '',
+      shiftStartMinutes: shift?.shiftStartMinutes ?? defaults.shiftStartMinutes,
+      shiftEndMinutes: shift?.shiftEndMinutes ?? defaults.shiftEndMinutes,
+      graceMinutes: shift?.graceMinutes ?? defaults.graceMinutes,
+      workdays: shift?.workdays ?? DEFAULT_WORKDAYS,
     },
   })
 
-  async function submit(values: ScheduleValues) {
+  async function submit(values: ShiftValues) {
     try {
       await save.mutateAsync(values)
       onClose()
@@ -49,10 +54,26 @@ export function ScheduleModal({ opened, onClose, schedule }: ScheduleModalProps)
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title={`Shift for ${schedule.userName}`} centered>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={shift ? `Edit ${shift.name}` : 'New shift'}
+      centered
+    >
       <form onSubmit={handleSubmit(submit)} noValidate>
         <Stack gap="md">
           <FormError message={errors.root?.message} title="Could not save that shift" />
+
+          <TextInput
+            label="Name"
+            description="What people call it — Morning, Mid, Graveyard."
+            placeholder="Morning"
+            required
+            aria-required="true"
+            error={errors.name?.message}
+            errorProps={{ role: 'alert' }}
+            {...register('name')}
+          />
 
           <Group grow align="flex-start">
             <Controller
@@ -81,6 +102,7 @@ export function ScheduleModal({ opened, onClose, schedule }: ScheduleModalProps)
                 <TextInput
                   type="time"
                   label="Ends"
+                  description="Earlier than the start means it runs past midnight."
                   required
                   aria-required="true"
                   value={minutesToClock(field.value)}

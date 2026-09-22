@@ -2,19 +2,21 @@ import type { ServiceImpl } from '@ihp/rpc'
 import { AttendanceService } from '@ihp/rpc/attendance'
 import {
   approveAttendanceDay,
+  assignShift,
   clockIn,
   clockOut,
   deleteAttendanceDay,
-  deleteSchedule,
+  deleteShift,
   endBreak,
   loadAttendance,
   loadAttendanceSettings,
   loadBoard,
   loadSchedules,
+  loadShifts,
   loadTimeClock,
   saveAttendanceDay,
   saveAttendanceSettings,
-  saveSchedule,
+  saveShift,
   startBreak,
 } from '@/features/attendance/service'
 import {
@@ -23,6 +25,7 @@ import {
   scheduleToProto,
   settingsFromProto,
   settingsToProto,
+  shiftToProto,
 } from './attendance-codec'
 
 // Thin by design: every implementation converts at the wire boundary and delegates to the
@@ -125,13 +128,20 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
     return {
       schedules: book.schedules.map(scheduleToProto),
       settings: settingsToProto(book.settings),
+      shifts: book.shifts.map(shiftToProto),
     }
   },
 
-  saveSchedule: async (request) => ({
-    schedule: scheduleToProto(
-      await saveSchedule({
-        userId: request.userId,
+  listShifts: async () => {
+    const book = await loadShifts()
+    return { shifts: book.shifts.map(shiftToProto), settings: settingsToProto(book.settings) }
+  },
+
+  saveShift: async (request) => ({
+    shift: shiftToProto(
+      await saveShift({
+        shiftId: request.shiftId,
+        name: request.name,
         shiftStartMinutes: request.shiftStartMinutes,
         shiftEndMinutes: request.shiftEndMinutes,
         graceMinutes: request.graceMinutes,
@@ -140,8 +150,14 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
     ),
   }),
 
-  deleteSchedule: async (request) => {
-    await deleteSchedule(request.userId)
+  deleteShift: async (request) => {
+    await deleteShift(request.shiftId)
     return {}
   },
+
+  assignShift: async (request) => ({
+    schedule: scheduleToProto(
+      await assignShift({ userId: request.userId, shiftId: request.shiftId ?? '' }),
+    ),
+  }),
 }

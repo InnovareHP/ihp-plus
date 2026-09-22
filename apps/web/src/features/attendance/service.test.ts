@@ -9,6 +9,13 @@ const prisma = vi.hoisted(() => ({
     upsert: vi.fn(),
     deleteMany: vi.fn(),
   },
+  attendanceShift: {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
   attendanceDay: {
     findFirst: vi.fn(),
     findMany: vi.fn(),
@@ -45,15 +52,16 @@ const {
   endBreak,
   loadAttendance,
   loadBoard,
+  assignShift,
+  deleteShift,
   saveAttendanceDay,
   saveAttendanceSettings,
-  saveSchedule,
+  saveShift,
   startBreak,
 } = await import('./service')
 
 const RULES = {
   requireSelfie: false,
-  allowManualEntry: false,
   requireNote: false,
   captureLocation: false,
   autoClockOutHours: 16,
@@ -250,25 +258,132 @@ describe('what only an admin may do', () => {
     })
   })
 
-  it('lets an admin set somebody a shift', async () => {
+  it('will not let a member write up their own day', async () => {
+    await expect(
+      saveAttendanceDay({
+        userId: 'user-1',
+        workDate: '2026-09-22',
+        clockInTime: '09:00',
+        clockOutTime: '18:00',
+        breakMinutes: 60,
+        note: '',
+      }),
+    ).rejects.toMatchObject({ code: Code.PermissionDenied })
+  })
+
+  it('keeps the selfie and the coordinates for an admin', async () => {
+    storage.objectUrl.mockResolvedValue('https://example.test/selfie.jpg')
+    prisma.attendanceDay.findMany.mockResolvedValue([
+      dayRecord({
+        clockOutAt: new Date('2026-09-22T18:00:00.000Z'),
+        clockInSelfieKey: 'attendance/org-1/user-1/in.jpg',
+        clockInLocation: '14.59950,120.98420',
+      }),
+    ])
+
+    const asMember = await loadAttendance({ from: '2026-09-01', to: '2026-09-22' })
+    expect(asMember.days[0]?.clockInSelfieUrl).toBeUndefined()
+    expect(asMember.days[0]?.clockInLocation).toBeUndefined()
+
     signedInAs('admin')
-    prisma.member.findFirst.mockResolvedValue({ user: { name: 'Ana Cruz', preferredName: null } })
-    prisma.attendanceSchedule.upsert.mockResolvedValue({
+    const asAdmin = await loadAttendance({ from: '2026-09-01', to: '2026-09-22' })
+    expect(asAdmin.days[0]?.clockInSelfieUrl).toBe('https://example.test/selfie.jpg')
+    expect(asAdmin.days[0]?.clockInLocation).toBe('14.59950,120.98420')
+  })
+
+  it('writes a shift once, by name', async () => {
+    signedInAs('admin')
+    prisma.attendanceShift.findFirst.mockResolvedValue(null)
+    prisma.attendanceShift.create.mockResolvedValue({
+      id: 'shift-1',
+      name: 'Morning',
+      shiftStartMinutes: 600,
+      shiftEndMinutes: 1140,
+      graceMinutes: 10,
+      workdays: '1,2,3,4,5,6',
+      _count: { assignments: 0 },
+    })
+
+    const saved = await saveShift({
+      name: 'Morning',
       shiftStartMinutes: 600,
       shiftEndMinutes: 1140,
       graceMinutes: 10,
       workdays: '1,2,3,4,5,6',
     })
 
-    const saved = await saveSchedule({
-      userId: 'user-2',
-      shiftStartMinutes: 600,
-      shiftEndMinutes: 1140,
-      graceMinutes: 10,
-      workdays: '1,2,3,4,5,6',
+    expect(saved).toMatchObject({ id: 'shift-1', name: 'Morning', assignedCount: 0 })
+  })
+
+  it('refuses a second shift with the same name', async () => {
+    signedInAs('admin')
+    prisma.attendanceShift.findFirst.mockResolvedValue({ id: 'shift-9' })
+
+    await expect(
+      saveShift({
+        name: 'Morning',
+        shiftStartMinutes: 600,
+        shiftEndMinutes: 1140,
+        graceMinutes: 10,
+        workdays: '1,2,3,4,5',
+      }),
+    ).rejects.toMatchObject({ code: Code.AlreadyExists })
+  })
+
+  it('will not delete a shift people still work', async () => {
+    signedInAs('admin')
+    prisma.attendanceShift.findFirst.mockResolvedValue({
+      id: 'shift-1',
+      _count: { assignments: 3 },
     })
 
-    expect(saved).toMatchObject({ userName: 'Ana Cruz', isDefault: false })
+    await expect(deleteShift('shift-1')).rejects.toMatchObject({
+      code: Code.FailedPrecondition,
+    })
+    expect(prisma.attendanceShift.delete).not.toHaveBeenCalled()
+  })
+
+  it('assigns a shift, and takes it back off again', async () => {
+    signedInAs('admin')
+    prisma.member.findFirst.mockResolvedValue({
+      user: { name: 'Ana Cruz', preferredName: null, jobTitle: 'Nurse' },
+    })
+    prisma.attendanceShift.findFirst.mockResolvedValue({ id: 'shift-1' })
+    prisma.attendanceSchedule.upsert.mockResolvedValue({ id: 'assignment-1' })
+    prisma.attendanceSchedule.findUnique.mockResolvedValue({
+      shift: {
+        id: 'shift-1',
+        name: 'Morning',
+        shiftStartMinutes: 600,
+        shiftEndMinutes: 1140,
+        graceMinutes: 10,
+        workdays: '1,2,3,4,5,6',
+      },
+    })
+
+    const assigned = await assignShift({ userId: 'user-2', shiftId: 'shift-1' })
+    expect(assigned).toMatchObject({ shiftName: 'Morning', isDefault: false, jobTitle: 'Nurse' })
+
+    prisma.attendanceSchedule.findUnique.mockResolvedValue(null)
+    const cleared = await assignShift({ userId: 'user-2', shiftId: '' })
+
+    expect(prisma.attendanceSchedule.deleteMany).toHaveBeenCalled()
+    expect(cleared).toMatchObject({ isDefault: true, shiftStartMinutes: RULES.shiftStartMinutes })
+  })
+
+  it('keeps the shift library out of a member’s hands', async () => {
+    await expect(
+      saveShift({
+        name: 'Morning',
+        shiftStartMinutes: 600,
+        shiftEndMinutes: 1140,
+        graceMinutes: 10,
+        workdays: '1,2,3,4,5',
+      }),
+    ).rejects.toMatchObject({ code: Code.PermissionDenied })
+    await expect(assignShift({ userId: 'user-2', shiftId: 'shift-1' })).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
   })
 
   it('takes the selfies with the day it removes', async () => {
