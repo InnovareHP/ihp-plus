@@ -81,8 +81,8 @@ export function ShiftsPanel() {
               Shifts
             </Title>
             <Text size="sm" c="dimmed">
-              A shift decides what counts as late. Give one to a person under Organization → Shifts;
-              anyone without one works the company hours in Settings.
+              A shift decides what counts as late. Give one to a person on their row under
+              Organization → Members; anyone without one works the company hours in Settings.
             </Text>
           </Stack>
           <Button leftSection={<IconPlus size={18} />} onClick={() => setWriting(true)}>
@@ -105,7 +105,7 @@ export function ShiftsPanel() {
           empty={
             <EmptyState
               title="No shifts yet"
-              description="Write the hours your people actually work, then hand them out under Organization."
+              description="Write the hours your people actually work, then give them out on the members table."
               action={<Button onClick={() => setWriting(true)}>New shift</Button>}
             />
           }

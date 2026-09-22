@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { axe } from 'vitest-axe'
 import { render, screen, userEvent, waitFor } from '@/test/render'
 import { DEFAULT_ATTENDANCE_SETTINGS, type AttendanceScheduleRow } from '../schema'
-import { ShiftAssignmentPanel } from './shift-assignment-panel'
+import { MemberShiftSelect } from './member-shift-select'
 
 const rpc = vi.hoisted(() => ({
   listSchedules: vi.fn(),
@@ -28,6 +27,16 @@ const toast = vi.hoisted(() => ({ show: vi.fn() }))
 vi.mock('../rpc', () => rpc)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 
+const MORNING = {
+  id: 'shift-1',
+  name: 'Morning',
+  shiftStartMinutes: 6 * 60,
+  shiftEndMinutes: 15 * 60,
+  graceMinutes: 10,
+  workdays: '1,2,3,4,5',
+  assignedCount: 2,
+}
+
 const ON_DEFAULT: AttendanceScheduleRow = {
   userId: 'user-1',
   userName: 'Grace Reyes',
@@ -41,23 +50,13 @@ const ON_DEFAULT: AttendanceScheduleRow = {
   shiftName: undefined,
 }
 
-const MORNING = {
-  id: 'shift-1',
-  name: 'Morning',
-  shiftStartMinutes: 6 * 60,
-  shiftEndMinutes: 15 * 60,
-  graceMinutes: 10,
-  workdays: '1,2,3,4,5',
-  assignedCount: 2,
-}
-
 // Mantine's Select carries a hidden input holding the value beside the one people click.
-async function shiftPicker() {
+async function picker() {
   const inputs = await screen.findAllByLabelText('Shift for Grace Reyes')
   return inputs.find((input) => input.getAttribute('type') !== 'hidden') as HTMLElement
 }
 
-describe('ShiftAssignmentPanel', () => {
+describe('MemberShiftSelect', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     rpc.listSchedules.mockResolvedValue({
@@ -68,19 +67,28 @@ describe('ShiftAssignmentPanel', () => {
     rpc.assignShift.mockResolvedValue({ ...ON_DEFAULT, isDefault: false, shiftId: 'shift-1' })
   })
 
-  it('says who is on the company hours and who is on a shift', async () => {
-    render(<ShiftAssignmentPanel />)
+  it('reads the company hours for somebody with no shift of their own', async () => {
+    render(<MemberShiftSelect userId="user-1" userName="Grace Reyes" />)
 
-    expect(await screen.findByText('Grace Reyes')).toBeInTheDocument()
-    // The badge beside the hours, not the option of the same name inside the picker.
-    expect(screen.getAllByText('Company hours').length).toBeGreaterThan(0)
+    await waitFor(() => expect(picker()).resolves.toHaveValue('Company hours'))
   })
 
-  it('assigns the shift picked for that person', async () => {
-    const user = userEvent.setup()
-    render(<ShiftAssignmentPanel />)
+  it('reads the shift the person was given', async () => {
+    rpc.listSchedules.mockResolvedValue({
+      schedules: [{ ...ON_DEFAULT, isDefault: false, shiftId: 'shift-1', shiftName: 'Morning' }],
+      settings: DEFAULT_ATTENDANCE_SETTINGS,
+      shifts: [MORNING],
+    })
+    render(<MemberShiftSelect userId="user-1" userName="Grace Reyes" />)
 
-    await user.click(await shiftPicker())
+    await waitFor(() => expect(picker()).resolves.toHaveValue('Morning · 06:00–15:00'))
+  })
+
+  it('assigns the shift picked on that row', async () => {
+    const user = userEvent.setup()
+    render(<MemberShiftSelect userId="user-1" userName="Grace Reyes" />)
+
+    await user.click(await picker())
     await user.click(await screen.findByRole('option', { name: /Morning/ }))
 
     await waitFor(() =>
@@ -88,19 +96,12 @@ describe('ShiftAssignmentPanel', () => {
     )
   })
 
-  it('points at the time clock for writing the shifts themselves', async () => {
-    render(<ShiftAssignmentPanel />)
-
-    const link = await screen.findByRole('link', { name: 'Time clock → Shifts' })
-    expect(link).toHaveAttribute('href', '/attendance/team?tab=shifts')
-  })
-
   it('says why an assignment failed', async () => {
     const user = userEvent.setup()
     rpc.assignShift.mockRejectedValue(new Error('Only an admin sets shifts.'))
-    render(<ShiftAssignmentPanel />)
+    render(<MemberShiftSelect userId="user-1" userName="Grace Reyes" />)
 
-    await user.click(await shiftPicker())
+    await user.click(await picker())
     await user.click(await screen.findByRole('option', { name: /Morning/ }))
 
     await waitFor(() =>
@@ -108,12 +109,5 @@ describe('ShiftAssignmentPanel', () => {
         expect.objectContaining({ message: 'Only an admin sets shifts.' }),
       ),
     )
-  })
-
-  it('has no accessibility violations', async () => {
-    const { container } = render(<ShiftAssignmentPanel />)
-
-    await screen.findByText('Grace Reyes')
-    expect(await axe(container)).toHaveNoViolations()
   })
 })

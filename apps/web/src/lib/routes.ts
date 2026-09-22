@@ -36,13 +36,7 @@ export type Route = (typeof routes)[keyof typeof routes]
  * departments and invitations are all the same subject, and splitting them meant four page
  * loads to do one job. The tab is a query param so each is still a deep link.
  */
-export const ORGANIZATION_TABS = [
-  'overview',
-  'members',
-  'departments',
-  'shifts',
-  'invitations',
-] as const
+export const ORGANIZATION_TABS = ['overview', 'members', 'departments', 'invitations'] as const
 
 export type OrganizationTab = (typeof ORGANIZATION_TABS)[number]
 

@@ -2,6 +2,7 @@
 
 import { Badge, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { MemberShiftSelect } from '@/features/attendance/components/member-shift-select'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { useMemberFilterOptions } from '../hooks/use-members'
 import {
@@ -111,6 +112,11 @@ export function MembersTable() {
       key: 'team',
       header: 'Department',
       render: (row) => <Text size="sm">{row.team ?? '—'}</Text>,
+    },
+    {
+      key: 'shift',
+      header: 'Shift',
+      render: (row) => <MemberShiftSelect userId={row.userId} userName={row.name} />,
     },
     {
       key: 'employmentStatus',
