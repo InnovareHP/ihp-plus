@@ -1,4 +1,5 @@
 import type { ConnectRouter, ServiceImpl } from '@ihp/rpc'
+import { AttendanceService } from '@ihp/rpc/attendance'
 import { ContractsService } from '@ihp/rpc/contracts'
 import { DirectoryService } from '@ihp/rpc/directory'
 import { EvaluationsService } from '@ihp/rpc/evaluations'
@@ -20,6 +21,7 @@ import {
   portalRoleFromProto,
   queryFromProto,
 } from './members-codec'
+import { attendance } from './attendance-routes'
 import { contracts } from './contracts-routes'
 import { directory } from './directory-routes'
 import { evaluations } from './evaluations-routes'
@@ -91,4 +93,5 @@ export function registerRoutes(router: ConnectRouter) {
   router.service(DirectoryService, directory)
   router.service(EvaluationsService, evaluations)
   router.service(TasksService, tasks)
+  router.service(AttendanceService, attendance)
 }

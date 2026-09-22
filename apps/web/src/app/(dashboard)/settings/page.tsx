@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { PageShell } from '@/components/page-shell'
 import { PageHeader } from '@/components/page-header'
+import { AttendanceSettingsForm } from '@/features/attendance/components/attendance-settings-form'
 import { ContactDetailsForm } from '@/features/settings/components/contact-details-form'
 import { TimeSettingsForm } from '@/features/tasks/components/time-settings-form'
 import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
@@ -100,12 +101,21 @@ export default async function SettingsPage() {
 
       {/* Renders nothing for a member: the component asks the server who is allowed to set these. */}
       {canManageOrganization(membership) ? (
-        <Card component="section" padding="lg" aria-labelledby="time-rules-heading">
-          <Title order={2} size="h5" mb="sm" id="time-rules-heading">
-            Time tracking
-          </Title>
-          <TimeSettingsForm />
-        </Card>
+        <>
+          <Card component="section" padding="lg" aria-labelledby="attendance-rules-heading">
+            <Title order={2} size="h5" mb="sm" id="attendance-rules-heading">
+              Attendance
+            </Title>
+            <AttendanceSettingsForm />
+          </Card>
+
+          <Card component="section" padding="lg" aria-labelledby="time-rules-heading">
+            <Title order={2} size="h5" mb="sm" id="time-rules-heading">
+              Task time tracking
+            </Title>
+            <TimeSettingsForm />
+          </Card>
+        </>
       ) : null}
     </PageShell>
   )

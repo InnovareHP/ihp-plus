@@ -5,6 +5,7 @@ import {
   IconBook2,
   IconBuilding,
   IconClipboardList,
+  IconClockHour4,
   IconFolderOpen,
   IconFolders,
   IconLayoutDashboard,
@@ -74,6 +75,25 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Tasks',
         description: 'Projects and what is left to do',
         icon: IconListCheck,
+      },
+      {
+        href: routes.attendance,
+        label: 'Time clock',
+        description: 'Clock in, take a break, see your hours',
+        icon: IconClockHour4,
+        children: [
+          {
+            href: routes.attendance,
+            label: 'My time clock',
+            description: 'Clock in, take a break, see your hours',
+          },
+          {
+            href: routes.attendanceTeam,
+            label: 'Team attendance',
+            description: 'Who is in, timesheets and shifts',
+            manageOnly: true,
+          },
+        ],
       },
       {
         href: routes.bluebook,

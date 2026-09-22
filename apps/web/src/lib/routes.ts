@@ -9,6 +9,8 @@ export const routes = {
   bluebook: '/bluebook',
   library: '/library',
   tasks: '/tasks',
+  attendance: '/attendance',
+  attendanceTeam: '/attendance/team',
   onboarding: '/onboarding',
   requests: '/requests',
   requestApprovals: '/requests/approvals',
@@ -37,6 +39,11 @@ export type Route = (typeof routes)[keyof typeof routes]
 export const ORGANIZATION_TABS = ['overview', 'members', 'departments', 'invitations'] as const
 
 export type OrganizationTab = (typeof ORGANIZATION_TABS)[number]
+
+/** The admin half of attendance is one screen of tabs: today, the timesheets, the shifts. */
+export const ATTENDANCE_TABS = ['today', 'timesheets', 'shifts'] as const
+
+export type AttendanceTab = (typeof ATTENDANCE_TABS)[number]
 
 /** Clients splits the same way: the book of clients, what they signed, and what it costs. */
 export const CLIENT_TABS = ['clients', 'contracts', 'rates'] as const

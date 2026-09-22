@@ -1,0 +1,65 @@
+import type { AttendanceDayRow } from '../schema'
+
+const HEADERS = [
+  'Employee',
+  'Date',
+  'Clock in',
+  'Clock out',
+  'Worked hours',
+  'Break hours',
+  'Late minutes',
+  'Status',
+  'Source',
+  'Note',
+] as const
+
+// A leading =, +, - or @ makes a spreadsheet treat the text as a formula, so it is defused.
+function cell(value: string | number | undefined): string {
+  const text = String(value ?? '')
+  const safe = /^[=+\-@]/.test(text) ? `'${text}` : text
+  return /[",\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe
+}
+
+function hours(seconds: number) {
+  return (seconds / 3600).toFixed(2)
+}
+
+function timeOf(value: string | undefined, timeZone: string) {
+  if (!value) return ''
+  return new Date(value).toLocaleTimeString('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/** The timesheet as payroll reads it: one row per person per day, hours in decimals. */
+export function timesheetCsv(days: readonly AttendanceDayRow[], timeZone: string): string {
+  const rows = days.map((day) =>
+    [
+      day.userName,
+      day.workDate,
+      timeOf(day.clockInAt, timeZone),
+      timeOf(day.clockOutAt, timeZone),
+      hours(day.workedSeconds),
+      hours(day.breakSeconds),
+      String(Math.round(day.lateSeconds / 60)),
+      day.status,
+      day.source,
+      day.note ?? '',
+    ]
+      .map(cell)
+      .join(','),
+  )
+
+  return [HEADERS.join(','), ...rows].join('\n')
+}
+
+export function downloadCsv(fileName: string, content: string) {
+  const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  link.click()
+  URL.revokeObjectURL(url)
+}

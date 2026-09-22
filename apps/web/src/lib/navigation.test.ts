@@ -36,6 +36,7 @@ describe('navigation', () => {
       routes.directory,
       routes.clients,
       routes.tasks,
+      routes.attendance,
       routes.bluebook,
       routes.library,
     ])

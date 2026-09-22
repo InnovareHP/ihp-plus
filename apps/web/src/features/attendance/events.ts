@@ -1,0 +1,28 @@
+import type { EventName } from '@/lib/analytics'
+
+export const attendanceEvents = {
+  clockInStarted: 'attendance.clock.in_started',
+  clockedIn: 'attendance.clock.in',
+  clockInFailed: 'attendance.clock.in_failed',
+  clockedOut: 'attendance.clock.out',
+  clockOutFailed: 'attendance.clock.out_failed',
+  breakStarted: 'attendance.break.started',
+  breakStartFailed: 'attendance.break.start_failed',
+  breakEnded: 'attendance.break.ended',
+  breakEndFailed: 'attendance.break.end_failed',
+  selfieCaptured: 'attendance.selfie.captured',
+  selfieFailed: 'attendance.selfie.failed',
+  dayEdited: 'attendance.day.edited',
+  dayEditFailed: 'attendance.day.edit_failed',
+  dayApproved: 'attendance.day.approved',
+  dayApproveFailed: 'attendance.day.approve_failed',
+  dayDeleted: 'attendance.day.deleted',
+  dayDeleteFailed: 'attendance.day.delete_failed',
+  scheduleSaved: 'attendance.schedule.saved',
+  scheduleSaveFailed: 'attendance.schedule.save_failed',
+  scheduleCleared: 'attendance.schedule.cleared',
+  scheduleClearFailed: 'attendance.schedule.clear_failed',
+  settingsSaved: 'attendance.settings.saved',
+  settingsSaveFailed: 'attendance.settings.save_failed',
+  exported: 'attendance.timesheet.exported',
+} as const satisfies Record<string, EventName>

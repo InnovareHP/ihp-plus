@@ -26,11 +26,13 @@ export const ACTIVITY_LABELS = {
   'task.deleted': 'Task deleted',
   'task.commented': 'Commented',
   'task.attached': 'File attached',
+  'attendance.day.edited': 'Attendance corrected',
+  'attendance.day.deleted': 'Attendance removed',
 } as const
 
 export type ActivityAction = keyof typeof ACTIVITY_LABELS
 
-export type ActivitySubject = 'contract' | 'request' | 'evaluation' | 'task'
+export type ActivitySubject = 'contract' | 'request' | 'evaluation' | 'task' | 'attendance'
 
 export interface ActivityInput {
   organizationId: string

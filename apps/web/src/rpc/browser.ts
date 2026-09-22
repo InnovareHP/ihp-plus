@@ -1,4 +1,5 @@
 import { browserTransport, createClient } from '@ihp/rpc'
+import { AttendanceService } from '@ihp/rpc/attendance'
 import { ContractsService } from '@ihp/rpc/contracts'
 import { DirectoryService } from '@ihp/rpc/directory'
 import { EvaluationsService } from '@ihp/rpc/evaluations'
@@ -10,6 +11,7 @@ import { TasksService } from '@ihp/rpc/tasks'
 // Only the generated contract and the transport, so none of the server graph follows it
 // into the client bundle.
 export const browserClients = {
+  attendance: createClient(AttendanceService, browserTransport),
   contracts: createClient(ContractsService, browserTransport),
   directory: createClient(DirectoryService, browserTransport),
   evaluations: createClient(EvaluationsService, browserTransport),
