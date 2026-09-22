@@ -139,7 +139,7 @@ export function DocumentForm({
           <MultiSelect
             label="Filed under"
             placeholder="Pick one or more shelves"
-            description="Every department that should find it. One document can sit on several shelves."
+            description="Every department that should find it."
             data={shelves.map((shelf) => ({ value: shelf.value, label: shelf.label }))}
             value={picked}
             searchable

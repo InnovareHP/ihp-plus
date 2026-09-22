@@ -118,14 +118,14 @@ export function QuestionCard({
             {...register(`fields.${index}.help`)}
             label="Help text"
             placeholder="Shown under the question"
-            description="Shown under the label, before anyone makes a mistake."
+            description="Shown under the label."
           />
 
           <TextInput
             {...register(`fields.${index}.placeholder`)}
             label="Placeholder"
             placeholder="An example answer"
-            description="Shown inside the empty field. Leave blank for the default."
+            description="Shown inside the empty field."
           />
         </Group>
 

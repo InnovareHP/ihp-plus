@@ -83,6 +83,7 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
                 <TextInput
                   type="time"
                   label="Starts"
+                  description="When the shift begins."
                   required
                   aria-required="true"
                   value={minutesToClock(field.value)}
@@ -102,7 +103,7 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
                 <TextInput
                   type="time"
                   label="Ends"
-                  description="Earlier than the start means it runs past midnight."
+                  description="Earlier means past midnight."
                   required
                   aria-required="true"
                   value={minutesToClock(field.value)}

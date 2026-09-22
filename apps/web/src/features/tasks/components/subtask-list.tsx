@@ -172,7 +172,8 @@ export function SubtaskList({
       )}
 
       <form onSubmit={handleSubmit(submit)} noValidate>
-        <Group gap="xs" align="flex-start" wrap="nowrap">
+        {/* flex-end, not a top margin: the button meets the input whatever the label does. */}
+        <Group gap="xs" align="flex-end" wrap="nowrap">
           <TextInput
             {...register('name')}
             label="Add a subtask"
@@ -184,7 +185,6 @@ export function SubtaskList({
           <Button
             type="submit"
             variant="default"
-            mt={25}
             loading={isSubmitting || isAdding}
             leftSection={<IconPlus size={16} aria-hidden />}
           >

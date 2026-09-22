@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Alert, Button, Group, Stack, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { EMPTY_SHARE_FOLDER, shareFolderSchema, type ShareFolderValues } from '../schema'
 
@@ -45,11 +45,16 @@ export function ShareFolderForm({ clientName, onShare }: ShareFolderFormProps) {
           </Alert>
         ) : null}
 
+        <Text size="sm" c="dimmed">
+          They sign in with the address below to open {clientName}&apos;s folder.
+        </Text>
+
+        {/* Both fields carry one line of description, so the inputs line up. */}
         <Group grow align="flex-start">
           <TextInput
             {...register('email')}
             label="Email address"
-            description={`They sign in with this address to open ${clientName}'s folder.`}
+            description="Their sign-in address."
             placeholder="name@company.com"
             type="email"
             inputMode="email"

@@ -148,6 +148,15 @@ No `useState` per field, no manual `onChange` wiring, no ad-hoc validation.
   submit run, then move focus to the first invalid field or the error summary.
 - One column, label above the input, related fields in a `fieldset`. Multi-column
   forms cost more scanning than they save in scrolling.
+- **Fields on one line share one anatomy.** Help text sits above the input, so a field
+  with a description stands lower than a field without one — every field in a `Group`
+  or `SimpleGrid` row therefore carries a description, or none does, and each is short
+  enough to stay on one line at that column's width. A note too long for that goes
+  above the row as its own `Text`.
+- **No magic margin to line a button up with an input.** A row of several fields puts
+  its action on its own `Group justify="flex-end"` line; a single-field inline add
+  (`subtask-list.tsx`) uses `align="flex-end"` so the button meets the input whatever
+  the label does. `mt={25}` is a guess that breaks the moment a label wraps.
 - Ask for the minimum. Every optional field is a decision billed to the user; if the
   owner needs it, mark it required (asterisk only, per
   `.claude/rules/accessibility.md`) and say why in help text.

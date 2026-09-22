@@ -227,7 +227,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
               <Select
                 label="Billing"
                 placeholder="Choose a billing cycle"
-                description="Whether it recurs or is billed once."
+                description="Recurring or one-off."
                 data={BILLING_CYCLES.map((cycle) => ({
                   value: cycle,
                   label: BILLING_CYCLE_LABELS[cycle],
@@ -252,7 +252,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
               {...register('endDate')}
               label="End date"
               placeholder="mm/dd/yyyy"
-              description="Optional; leave blank for open-ended."
+              description="Optional; blank is open-ended."
               type="date"
             />
           </Group>

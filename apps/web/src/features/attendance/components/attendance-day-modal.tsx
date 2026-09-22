@@ -86,6 +86,7 @@ export function AttendanceDayModal({
             <TextInput
               type="time"
               label="Clocked in"
+              description="When the shift started."
               required
               aria-required="true"
               error={errors.clockInTime?.message}
@@ -95,7 +96,7 @@ export function AttendanceDayModal({
             <TextInput
               type="time"
               label="Clocked out"
-              description="Leave empty to leave the day running."
+              description="Empty leaves it running."
               error={errors.clockOutTime?.message}
               errorProps={{ role: 'alert' }}
               {...register('clockOutTime')}

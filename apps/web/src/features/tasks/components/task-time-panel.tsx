@@ -167,37 +167,47 @@ export function TaskTimePanel({ task, viewerId }: TaskTimePanelProps) {
         </Text>
       ) : (
         <form onSubmit={handleSubmit(submit)} noValidate>
-          <Group align="flex-start" gap="sm" wrap="wrap">
-            <TextInput
-              {...register('duration')}
-              label="Log time"
-              placeholder="1h 30m"
-              description="45m, 1h 30m or 1.5h."
-              error={errors.duration?.message}
-              errorProps={{ role: 'alert' }}
-              w={{ base: '100%', xs: 160 }}
-            />
-            <TextInput
-              {...register('spentOn')}
-              type="date"
-              label="Day"
-              error={errors.spentOn?.message}
-              w={{ base: '100%', xs: 170 }}
-            />
-            <TextInput
-              {...register('note')}
-              label="Note"
-              placeholder={rules?.requireNote ? 'What the time went on' : 'Optional'}
-              required={rules?.requireNote}
-              aria-required={rules?.requireNote ? 'true' : undefined}
-              error={errors.note?.message}
-              flex={1}
-              miw={160}
-            />
-            <Button type="submit" variant="default" mt={25} loading={isSubmitting || add.isPending}>
-              Add
-            </Button>
-          </Group>
+          <Stack gap="sm">
+            {/* Every field in the row carries one line of description, so the inputs line up. */}
+            <Group align="flex-start" gap="sm" wrap="wrap">
+              <TextInput
+                {...register('duration')}
+                label="Log time"
+                placeholder="1h 30m"
+                description="45m, 1h 30m or 1.5h."
+                error={errors.duration?.message}
+                errorProps={{ role: 'alert' }}
+                w={{ base: '100%', xs: 160 }}
+              />
+              <TextInput
+                {...register('spentOn')}
+                type="date"
+                label="Day"
+                description="Defaults to today."
+                error={errors.spentOn?.message}
+                errorProps={{ role: 'alert' }}
+                w={{ base: '100%', xs: 170 }}
+              />
+              <TextInput
+                {...register('note')}
+                label="Note"
+                placeholder={rules?.requireNote ? 'What the time went on' : 'Optional'}
+                description={rules?.requireNote ? 'Required here.' : 'Optional.'}
+                required={rules?.requireNote}
+                aria-required={rules?.requireNote ? 'true' : undefined}
+                error={errors.note?.message}
+                errorProps={{ role: 'alert' }}
+                flex={1}
+                miw={160}
+              />
+            </Group>
+
+            <Group justify="flex-end">
+              <Button type="submit" variant="default" loading={isSubmitting || add.isPending}>
+                Add
+              </Button>
+            </Group>
+          </Stack>
         </form>
       )}
 

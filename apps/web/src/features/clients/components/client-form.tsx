@@ -159,7 +159,7 @@ export function ClientForm({
           <Select
             label="Account owner"
             placeholder="Choose an owner"
-            description="Who on the team handles this client."
+            description="Who handles this client."
             data={owners}
             value={watch('ownerId')}
             clearable
