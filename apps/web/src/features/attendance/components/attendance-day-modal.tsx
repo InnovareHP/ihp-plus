@@ -6,6 +6,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { useSaveAttendanceDay } from '../hooks/use-attendance-admin'
 import { attendanceDaySchema, type AttendanceDayRow, type AttendanceDayValues } from '../schema'
+import { formatTimeOfDay } from '../utils/clock'
 
 export interface AttendanceDayModalProps {
   opened: boolean
@@ -15,16 +16,6 @@ export interface AttendanceDayModalProps {
   workDate: string
   timeZone: string
   day?: AttendanceDayRow
-}
-
-function timeIn(value: string | undefined, timeZone: string) {
-  if (!value) return ''
-  return new Date(value).toLocaleTimeString('en-GB', {
-    timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
 }
 
 /** An admin correcting a day: a forgotten clock out, a late start, a break nobody logged. */
@@ -52,8 +43,8 @@ export function AttendanceDayModal({
       dayId: day?.id,
       userId: person.userId,
       workDate: day?.workDate ?? workDate,
-      clockInTime: timeIn(day?.clockInAt, timeZone) || '09:00',
-      clockOutTime: timeIn(day?.clockOutAt, timeZone),
+      clockInTime: day?.clockInAt ? formatTimeOfDay(day.clockInAt, timeZone) : '09:00',
+      clockOutTime: day?.clockOutAt ? formatTimeOfDay(day.clockOutAt, timeZone) : '',
       breakMinutes: Math.round((day?.breakSeconds ?? 0) / 60),
       note: day?.note ?? '',
     },

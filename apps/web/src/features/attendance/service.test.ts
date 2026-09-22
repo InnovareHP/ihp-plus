@@ -26,7 +26,7 @@ const prisma = vi.hoisted(() => ({
 
 const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
 const activity = vi.hoisted(() => ({ recordActivity: vi.fn(), loadActivity: vi.fn() }))
-const storage = vi.hoisted(() => ({ objectUrl: vi.fn() }))
+const storage = vi.hoisted(() => ({ objectUrl: vi.fn(), deleteObject: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/activity', () => activity)
@@ -41,9 +41,11 @@ const {
   approveAttendanceDay,
   clockIn,
   clockOut,
+  deleteAttendanceDay,
   endBreak,
   loadAttendance,
   loadBoard,
+  saveAttendanceDay,
   saveAttendanceSettings,
   saveSchedule,
   startBreak,
@@ -267,6 +269,43 @@ describe('what only an admin may do', () => {
     })
 
     expect(saved).toMatchObject({ userName: 'Ana Cruz', isDefault: false })
+  })
+
+  it('takes the selfies with the day it removes', async () => {
+    signedInAs('admin')
+    prisma.attendanceDay.findFirst.mockResolvedValue({
+      id: 'day-1',
+      workDate: new Date('2026-09-22T00:00:00.000Z'),
+      clockInSelfieKey: 'attendance/org-1/user-1/in.jpg',
+      clockOutSelfieKey: null,
+    })
+    prisma.attendanceDay.delete.mockResolvedValue({})
+
+    await deleteAttendanceDay('day-1')
+
+    expect(storage.deleteObject).toHaveBeenCalledWith('attendance/org-1/user-1/in.jpg')
+    expect(storage.deleteObject).toHaveBeenCalledTimes(1)
+  })
+
+  it('puts a night shift that ends after midnight on the next date', async () => {
+    signedInAs('admin')
+    prisma.attendanceSettings.findUnique.mockResolvedValue({ ...RULES, timeZone: 'Asia/Manila' })
+    prisma.attendanceSchedule.findUnique.mockResolvedValue(null)
+    prisma.attendanceDay.upsert.mockImplementation(
+      ({ create }: { create: Record<string, unknown> }) => Promise.resolve(dayRecord(create)),
+    )
+
+    const day = await saveAttendanceDay({
+      userId: 'user-1',
+      workDate: '2026-09-22',
+      clockInTime: '22:00',
+      clockOutTime: '06:00',
+      breakMinutes: 60,
+      note: '',
+    })
+
+    // 22:00 to 06:00 in Manila is eight hours, one of them a break.
+    expect(day.workedSeconds).toBe(7 * 3600)
   })
 
   it('answers an unknown day with not_found rather than a silent no-op', async () => {

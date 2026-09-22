@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import type { AttendanceDayRow } from '../schema'
-import { formatHours } from '../utils/clock'
+import { formatHours, formatTimeOfDay } from '../utils/clock'
 import { AttendanceStatusBadge } from './attendance-status-badge'
 import { SelfieLinks } from './selfie-links'
 
@@ -19,10 +19,9 @@ export interface AttendanceLogTableProps {
   actions?: (day: AttendanceDayRow) => ReactNode
   showPerson?: boolean
   emptyHint: string
+  /** Times are read in the organization's zone, never the reader's own. */
+  timeZone: string
 }
-
-const clockTime = (value: string | undefined) =>
-  value ? new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'
 
 const dayLabel = (value: string) =>
   new Date(`${value}T00:00:00Z`).toLocaleDateString([], {
@@ -42,6 +41,7 @@ export function AttendanceLogTable({
   actions,
   showPerson = false,
   emptyHint,
+  timeZone,
 }: AttendanceLogTableProps) {
   const columns: DataTableColumn<AttendanceDayRow>[] = [
     {
@@ -63,8 +63,8 @@ export function AttendanceLogTable({
           },
         ]
       : []),
-    { key: 'in', header: 'In', render: (day) => clockTime(day.clockInAt) },
-    { key: 'out', header: 'Out', render: (day) => clockTime(day.clockOutAt) },
+    { key: 'in', header: 'In', render: (day) => formatTimeOfDay(day.clockInAt, timeZone) },
+    { key: 'out', header: 'Out', render: (day) => formatTimeOfDay(day.clockOutAt, timeZone) },
     {
       key: 'worked',
       header: 'Worked',

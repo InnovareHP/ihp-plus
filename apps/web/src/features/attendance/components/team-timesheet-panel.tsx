@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, Group, Select, Stack, Title } from '@mantine/core'
+import { Card, Group, Select, Stack, Text, Title } from '@mantine/core'
 import { useState } from 'react'
 import { useSchedules } from '../hooks/use-attendance-admin'
 import { useAttendanceRange } from '../hooks/use-attendance-range'
@@ -34,9 +34,14 @@ export function TeamTimesheetPanel({ timeZone }: TeamTimesheetPanelProps) {
     <Card padding="lg" component="section" aria-labelledby="team-timesheet-heading">
       <Stack gap="md">
         <Group justify="space-between" align="flex-end" wrap="wrap">
-          <Title order={2} size="h5" id="team-timesheet-heading">
-            Timesheets
-          </Title>
+          <Stack gap={2}>
+            <Title order={2} size="h5" id="team-timesheet-heading">
+              Timesheets
+            </Title>
+            <Text size="xs" c="dimmed">
+              Times are shown in the company zone, {timeZone}.
+            </Text>
+          </Stack>
           <Group gap="sm" align="flex-end" wrap="wrap">
             <Select
               label="Employee"
@@ -73,6 +78,7 @@ export function TeamTimesheetPanel({ timeZone }: TeamTimesheetPanelProps) {
           isFetching={log.isFetching}
           onRetry={() => void log.refetch()}
           showPerson={!range.userId}
+          timeZone={timeZone}
           actions={(day) => <AttendanceDayActions day={day} onCorrect={setCorrecting} />}
           emptyHint="Nobody clocked in over this range — widen the dates or add a day by hand."
         />

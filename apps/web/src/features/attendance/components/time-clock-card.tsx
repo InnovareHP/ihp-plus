@@ -119,7 +119,7 @@ export function TimeClockCard() {
           <ClockStateBadge state={state} />
         </Group>
 
-        <ClockReading day={today} now={now} state={state} />
+        <ClockReading day={today} now={now} state={state} timeZone={settings.timeZone} />
 
         {today ? (
           <DayTotals

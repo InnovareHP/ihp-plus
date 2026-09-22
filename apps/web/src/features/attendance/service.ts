@@ -2,7 +2,7 @@ import { db } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { recordActivity } from '@/lib/activity'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
-import { objectUrl } from '@/lib/s3'
+import { deleteObject, objectUrl } from '@/lib/s3'
 import {
   attendanceDaySchema,
   attendanceSettingsSchema,
@@ -23,7 +23,13 @@ import {
   type ScheduleValues,
   type TimeClockView,
 } from './schema'
-import { clockToMinutes, lateSecondsFor, workDateKey, workedSecondsFor } from './utils/clock'
+import {
+  lateSecondsFor,
+  shiftDateKey,
+  workDateKey,
+  workedSecondsFor,
+  zonedInstant,
+} from './utils/clock'
 
 const SETTINGS_SELECT = {
   requireSelfie: true,
@@ -135,6 +141,17 @@ async function peopleNames(ids: readonly string[]) {
   })
 
   return new Map(people.map((person) => [person.id, person.preferredName ?? person.name]))
+}
+
+/** Storage failing must not strand a delete the database has already accepted. */
+async function forgetSelfies(keys: readonly (string | null)[]) {
+  for (const key of keys.filter((one): one is string => Boolean(one))) {
+    try {
+      await deleteObject(key)
+    } catch {
+      // The row is gone either way; an unreachable bucket must not fail the delete.
+    }
+  }
 }
 
 // Storage being unconfigured must not blank the row: the day still reads, the photo just cannot
@@ -564,15 +581,9 @@ export async function loadBoard(date?: string): Promise<AttendanceBoard> {
 
 /** Pins a typed time of day to the work date, in the zone the organization counts days in. */
 function instantOf(workDate: string, time: string, timeZone: string): Date {
-  const minutes = clockToMinutes(time)
-  if (minutes === undefined) throw new ConnectError('Use a time like 09:00.', Code.InvalidArgument)
-
-  const hours = String(Math.floor(minutes / 60)).padStart(2, '0')
-  const wall = new Date(`${workDate}T${hours}:${String(minutes % 60).padStart(2, '0')}:00.000Z`)
-  // Reading the same wall clock back in the target zone gives the offset to take out of it.
-  const shown = new Date(wall.toLocaleString('en-US', { timeZone }))
-  const asUtc = new Date(wall.toLocaleString('en-US', { timeZone: 'UTC' }))
-  return new Date(wall.getTime() + (asUtc.getTime() - shown.getTime()))
+  const at = zonedInstant(workDate, time, timeZone)
+  if (!at) throw new ConnectError('Use a time like 09:00.', Code.InvalidArgument)
+  return at
 }
 
 /** A member may only touch their own row; anyone else's is an admin's business. */
@@ -605,10 +616,11 @@ export async function saveAttendanceDay(values: AttendanceDayValues): Promise<At
   const typedOut = parsed.clockOutTime
     ? instantOf(parsed.workDate, parsed.clockOutTime, settings.timeZone)
     : null
-  // An end before its start ran past midnight, which is a night shift's ordinary day.
+  // An end before its start ran past midnight, so it is that wall clock on the next date —
+  // pinned again rather than shifted by 24 hours, which a clock change would make wrong.
   const clockOutAt =
     typedOut && typedOut.getTime() <= clockInAt.getTime()
-      ? new Date(typedOut.getTime() + 24 * 3600 * 1000)
+      ? instantOf(shiftDateKey(parsed.workDate, 1), parsed.clockOutTime, settings.timeZone)
       : typedOut
 
   const names = await peopleNames([parsed.userId, caller.userId])
@@ -706,11 +718,13 @@ export async function deleteAttendanceDay(dayId: string): Promise<void> {
 
   const day = await db.attendanceDay.findFirst({
     where: { id: dayId, organizationId: caller.organizationId },
-    select: { id: true, workDate: true },
+    select: { id: true, workDate: true, clockInSelfieKey: true, clockOutSelfieKey: true },
   })
   if (!day) throw new ConnectError('That day is no longer there.', Code.NotFound)
 
   await db.attendanceDay.delete({ where: { id: day.id } })
+  // The photos outlive nothing: the row they belonged to is gone, so the objects follow it.
+  await forgetSelfies([day.clockInSelfieKey, day.clockOutSelfieKey])
 
   await recordActivity({
     organizationId: caller.organizationId,

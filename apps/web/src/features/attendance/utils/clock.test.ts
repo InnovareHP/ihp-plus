@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   clockToMinutes,
+  formatTimeOfDay,
   formatElapsed,
   formatHours,
   formatWorkdays,
@@ -12,6 +13,7 @@ import {
   shiftDateKey,
   workDateKey,
   workedSecondsFor,
+  zonedInstant,
 } from './clock'
 
 describe('workdays', () => {
@@ -61,6 +63,47 @@ describe('durations', () => {
   it('reads a running clock as a clock', () => {
     expect(formatElapsed(3661)).toBe('01:01:01')
     expect(formatElapsed(-5)).toBe('00:00:00')
+  })
+})
+
+describe('zonedInstant', () => {
+  it('pins a typed time to the zone the company counts days in', () => {
+    expect(zonedInstant('2026-09-22', '09:00', 'UTC')?.toISOString()).toBe(
+      '2026-09-22T09:00:00.000Z',
+    )
+    expect(zonedInstant('2026-09-22', '09:00', 'Asia/Manila')?.toISOString()).toBe(
+      '2026-09-22T01:00:00.000Z',
+    )
+  })
+
+  it('uses the offset in force on the day, not the one in force today', () => {
+    // New York is UTC-5 in January and UTC-4 in July; the same wall clock is two instants.
+    expect(zonedInstant('2026-01-15', '09:00', 'America/New_York')?.toISOString()).toBe(
+      '2026-01-15T14:00:00.000Z',
+    )
+    expect(zonedInstant('2026-07-15', '09:00', 'America/New_York')?.toISOString()).toBe(
+      '2026-07-15T13:00:00.000Z',
+    )
+  })
+
+  it('lands on the right side of a clock change', () => {
+    // Clocks go forward at 02:00 on 8 March 2026, so 03:00 that day is already UTC-4.
+    expect(zonedInstant('2026-03-08', '03:00', 'America/New_York')?.toISOString()).toBe(
+      '2026-03-08T07:00:00.000Z',
+    )
+    // And back at 02:00 on 1 November, where 01:00 is the first, still-daylight pass.
+    expect(zonedInstant('2026-11-01', '00:30', 'America/New_York')?.toISOString()).toBe(
+      '2026-11-01T04:30:00.000Z',
+    )
+  })
+
+  it('refuses a time that is not one', () => {
+    expect(zonedInstant('2026-09-22', 'lunch', 'UTC')).toBeUndefined()
+  })
+
+  it('reads an instant back in the company zone, never the browser one', () => {
+    expect(formatTimeOfDay('2026-09-22T01:05:00.000Z', 'Asia/Manila')).toBe('09:05')
+    expect(formatTimeOfDay(undefined, 'Asia/Manila')).toBe('—')
   })
 })
 

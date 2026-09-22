@@ -89,6 +89,67 @@ export function minutesOfDay(at: Date, timeZone: string): number {
   return parsed ?? 0
 }
 
+/** An instant read as a time of day in the organization's zone, never the reader's own. */
+export function formatTimeOfDay(at: Date | string | undefined, timeZone: string): string {
+  if (!at) return '—'
+  return clockFormatter(timeZone).format(typeof at === 'string' ? new Date(at) : at)
+}
+
+const partsFormat = new Map<string, Intl.DateTimeFormat>()
+
+function partsFormatter(timeZone: string) {
+  const cached = partsFormat.get(timeZone)
+  if (cached) return cached
+
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+  partsFormat.set(timeZone, formatter)
+  return formatter
+}
+
+/** How far the zone runs ahead of UTC at that instant, which is what DST changes. */
+function zoneOffsetMs(at: Date, timeZone: string): number {
+  const parts = partsFormatter(timeZone).formatToParts(at)
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value ?? '0')
+
+  // Midnight formats as hour 24 in en-US, which Date.UTC would roll into the next day.
+  const hour = read('hour') % 24
+  const wall = Date.UTC(
+    read('year'),
+    read('month') - 1,
+    read('day'),
+    hour,
+    read('minute'),
+    read('second'),
+  )
+  return wall - at.getTime()
+}
+
+/**
+ * The instant a wall clock reading names in the organization's zone. Two passes because the
+ * offset to subtract is the one in force at the answer, not the one at the guess — an hour
+ * that matters twice a year.
+ */
+export function zonedInstant(dateKey: string, time: string, timeZone: string): Date | undefined {
+  const minutes = clockToMinutes(time)
+  if (minutes === undefined) return undefined
+
+  const wall = Date.parse(`${dateKey}T${minutesToClock(minutes)}:00.000Z`)
+  if (Number.isNaN(wall)) return undefined
+
+  const first = wall - zoneOffsetMs(new Date(wall), timeZone)
+  return new Date(wall - zoneOffsetMs(new Date(first), timeZone))
+}
+
 export function lateSecondsFor(input: {
   clockInAt: Date
   shiftStartMinutes: number

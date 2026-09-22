@@ -197,11 +197,22 @@ export const clockActionSchema = z.object({
 
 export type ClockActionValues = z.infer<typeof clockActionSchema>
 
-export const MAX_SELFIE_BYTES = 2 * 1024 * 1024
+export const MAX_SELFIE_BYTES = 5 * 1024 * 1024
 
-/** The camera hands back a JPEG; anything else is a file picker the panel never opens. */
+// The camera hands back a JPEG; a picked file, the way in when the camera will not open, may be
+// any of these.
+export const SELFIE_TYPES: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+
+export function extensionFor(contentType: string): string {
+  return SELFIE_TYPES[contentType] ?? 'jpg'
+}
+
 export function selfieProblem(file: File): string | undefined {
-  if (file.type !== 'image/jpeg') return 'A selfie must be a JPEG photo.'
-  if (file.size > MAX_SELFIE_BYTES) return 'That photo is too large — try again.'
+  if (!(file.type in SELFIE_TYPES)) return 'A selfie must be a JPEG, PNG or WebP photo.'
+  if (file.size > MAX_SELFIE_BYTES) return 'That photo is too large — take or pick a smaller one.'
   return undefined
 }

@@ -69,6 +69,20 @@ function day(overrides: Partial<AttendanceDayRow> = {}): AttendanceDayRow {
   }
 }
 
+// jsdom has no camera; a stub is what tells the panel one is there at all.
+function withCamera(available: boolean) {
+  const getUserMedia = available
+    ? vi.fn().mockResolvedValue({ getTracks: () => [] })
+    : vi.fn().mockRejectedValue(new Error('denied'))
+
+  Object.defineProperty(navigator, 'mediaDevices', {
+    configurable: true,
+    value: { getUserMedia },
+  })
+
+  return getUserMedia
+}
+
 function view(today: AttendanceDayRow | undefined, settings: AttendanceSettingsRow = RULES) {
   return { today, settings, schedule: SCHEDULE, canManage: false }
 }
@@ -103,6 +117,7 @@ describe('TimeClockCard', () => {
 
   it('puts the camera in front of the punch when a selfie is required', async () => {
     const user = userEvent.setup()
+    withCamera(true)
     rpc.getTimeClock.mockResolvedValue(view(undefined, { ...RULES, requireSelfie: true }))
     render(<TimeClockCard />)
 
@@ -110,6 +125,20 @@ describe('TimeClockCard', () => {
 
     expect(await screen.findByRole('button', { name: 'Take photo' })).toBeInTheDocument()
     expect(rpc.clockIn).not.toHaveBeenCalled()
+  })
+
+  it('offers a photo to pick when the camera will not open, rather than locking the day out', async () => {
+    const user = userEvent.setup()
+    withCamera(false)
+    rpc.getTimeClock.mockResolvedValue(view(undefined, { ...RULES, requireSelfie: true }))
+    render(<TimeClockCard />)
+
+    await user.click(await screen.findByRole('button', { name: 'Clock in' }))
+
+    expect(await screen.findByRole('button', { name: 'Choose a photo' })).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This browser will not open the camera',
+    )
   })
 
   it('offers a break and a way out while the clock runs', async () => {

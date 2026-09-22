@@ -2,7 +2,7 @@
 
 import { getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { putObject, S3NotConfiguredError } from '@/lib/s3'
-import { selfieProblem } from './schema'
+import { extensionFor, selfieProblem } from './schema'
 
 export type SelfieUpload = { ok: true; key: string } | { ok: false; message: string }
 
@@ -26,11 +26,11 @@ export async function uploadSelfie(formData: FormData): Promise<SelfieUpload> {
   const problem = selfieProblem(file)
   if (problem) return { ok: false, message: problem }
 
-  // Keyed by person and day so a stored photo is traceable to the punch it belongs to.
-  const key = `attendance/${organizationId}/${session.user.id}/${crypto.randomUUID()}.jpg`
+  // Keyed by person so a stored photo is traceable to the punch it belongs to.
+  const key = `attendance/${organizationId}/${session.user.id}/${crypto.randomUUID()}.${extensionFor(file.type)}`
 
   try {
-    await putObject(key, new Uint8Array(await file.arrayBuffer()), 'image/jpeg')
+    await putObject(key, new Uint8Array(await file.arrayBuffer()), file.type)
   } catch (error) {
     if (error instanceof S3NotConfiguredError) return { ok: false, message: NO_STORAGE }
     return { ok: false, message: 'Could not store that photo — try again.' }

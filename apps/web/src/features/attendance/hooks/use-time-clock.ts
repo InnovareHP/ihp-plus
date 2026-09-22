@@ -17,6 +17,7 @@ import {
   type AttendanceRange,
 } from '../rpc'
 import type { AttendanceSettingsRow, ClockActionValues } from '../schema'
+import { editClock, restoreClock, type ClockSnapshot } from './use-attendance-cache'
 
 /**
  * The clock polls: the auto close an admin set is applied server-side on the way past, and a
@@ -69,6 +70,8 @@ export function useAttendanceMutation<TVariables, TResult>(options: {
   })
 }
 
+// Not optimistic: the server decides the work date, the lateness and the hours, and a punch the
+// client drew itself would be a different day's row half the time.
 export function useClockIn() {
   return useAttendanceMutation({
     mutationFn: (values: ClockActionValues) => clockIn(values),
@@ -85,17 +88,70 @@ export function useClockOut() {
   })
 }
 
+/** Breaks move the UI first: whether a break is running is the client's own to draw. */
+function useBreakMutation(options: {
+  mutationFn: () => Promise<unknown>
+  apply: (now: number) => Parameters<typeof editClock>[1]
+  successEvent: EventName
+  failureEvent: EventName
+}) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: options.mutationFn,
+    onMutate: async () => ({ previous: await editClock(queryClient, options.apply(Date.now())) }),
+    onSuccess: () => track(options.successEvent),
+    onError: (error: Error, _variables, context: { previous: ClockSnapshot } | undefined) => {
+      restoreClock(queryClient, context?.previous)
+      track(options.failureEvent, { reason: error.message })
+      announceFailure(error.message)
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
+    },
+  })
+}
+
 export function useStartBreak() {
-  return useAttendanceMutation({
+  return useBreakMutation({
     mutationFn: () => startBreak(),
+    apply: (now) => (day) => ({
+      ...day,
+      onBreak: true,
+      breaks: [
+        ...day.breaks,
+        {
+          // Replaced by the server's row on settle; a list row is never keyed by its index.
+          id: `pending-${now}`,
+          startedAt: new Date(now).toISOString(),
+          endedAt: undefined,
+          seconds: 0,
+          isRunning: true,
+        },
+      ],
+    }),
     successEvent: attendanceEvents.breakStarted,
     failureEvent: attendanceEvents.breakStartFailed,
   })
 }
 
 export function useEndBreak() {
-  return useAttendanceMutation({
+  return useBreakMutation({
     mutationFn: () => endBreak(),
+    apply: (now) => (day) => ({
+      ...day,
+      onBreak: false,
+      breaks: day.breaks.map((one) =>
+        one.isRunning
+          ? {
+              ...one,
+              endedAt: new Date(now).toISOString(),
+              seconds: Math.max(Math.floor((now - Date.parse(one.startedAt)) / 1000), 0),
+              isRunning: false,
+            }
+          : one,
+      ),
+    }),
     successEvent: attendanceEvents.breakEnded,
     failureEvent: attendanceEvents.breakEndFailed,
   })

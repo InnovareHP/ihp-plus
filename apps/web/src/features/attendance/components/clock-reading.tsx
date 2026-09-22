@@ -2,17 +2,18 @@
 
 import { Stack, Text } from '@mantine/core'
 import type { AttendanceDayRow, AttendanceState } from '../schema'
-import { formatElapsed } from '../utils/clock'
+import { formatElapsed, formatTimeOfDay } from '../utils/clock'
 import { liveWorkedSeconds, runningBreakStartedAt } from '../utils/day'
 
 export interface ClockReadingProps {
   day: AttendanceDayRow | undefined
   now: number
   state: AttendanceState
+  timeZone: string
 }
 
 /** The big number on the clock: hours worked, or the break's own stopwatch while one runs. */
-export function ClockReading({ day, now, state }: ClockReadingProps) {
+export function ClockReading({ day, now, state, timeZone }: ClockReadingProps) {
   if (!day) {
     return (
       <Text fz={44} fw={700} lh={1.1} ff="monospace">
@@ -34,10 +35,7 @@ export function ClockReading({ day, now, state }: ClockReadingProps) {
       </Text>
       <Text size="xs" c="dimmed">
         {state === 'break' ? 'On break since' : 'Since'}{' '}
-        {new Date(breakStartedAt ?? Date.parse(day.clockInAt)).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
+        {formatTimeOfDay(new Date(breakStartedAt ?? Date.parse(day.clockInAt)), timeZone)}
       </Text>
     </Stack>
   )

@@ -4,7 +4,7 @@ import { Button, Group } from '@mantine/core'
 import { useQueryClient } from '@tanstack/react-query'
 import { offerUndo } from '@/lib/undo'
 import { useApproveAttendanceDay, useDeleteAttendanceDay } from '../hooks/use-attendance-admin'
-import { attendanceKeys } from '../query-keys'
+import { editLogs, restoreLogs } from '../hooks/use-attendance-cache'
 import type { AttendanceDayRow } from '../schema'
 
 export interface AttendanceDayActionsProps {
@@ -18,12 +18,14 @@ export function AttendanceDayActions({ day, onCorrect }: AttendanceDayActionsPro
   const remove = useDeleteAttendanceDay()
   const queryClient = useQueryClient()
 
-  function drop() {
-    // Undo over confirm: the row goes at once and the call is only made when the toast closes.
+  async function drop() {
+    // Undo over confirm: the row goes at once, and the server is only told when the toast closes.
+    const previous = await editLogs(queryClient, (days) => days.filter((row) => row.id !== day.id))
+
     offerUndo({
       message: `Removed ${day.userName}'s ${day.workDate}`,
       undoLabel: 'Undo',
-      onUndo: () => queryClient.invalidateQueries({ queryKey: attendanceKeys.all }),
+      onUndo: () => restoreLogs(queryClient, previous),
       onCommit: () => remove.mutate({ dayId: day.id }),
     })
   }
@@ -52,7 +54,7 @@ export function AttendanceDayActions({ day, onCorrect }: AttendanceDayActionsPro
         variant="subtle"
         color="red"
         size="compact-sm"
-        onClick={drop}
+        onClick={() => void drop()}
         aria-label={`Remove ${day.userName}'s ${day.workDate}`}
       >
         Remove

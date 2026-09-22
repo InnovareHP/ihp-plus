@@ -67,7 +67,7 @@ describe('selfieProblem', () => {
 
   it('turns away anything else', () => {
     expect(selfieProblem(new File(['x'], 'scan.pdf', { type: 'application/pdf' }))).toBe(
-      'A selfie must be a JPEG photo.',
+      'A selfie must be a JPEG, PNG or WebP photo.',
     )
   })
 })

@@ -1,4 +1,5 @@
 import type { AttendanceDayRow } from '../schema'
+import { formatTimeOfDay } from './clock'
 
 const HEADERS = [
   'Employee',
@@ -24,23 +25,14 @@ function hours(seconds: number) {
   return (seconds / 3600).toFixed(2)
 }
 
-function timeOf(value: string | undefined, timeZone: string) {
-  if (!value) return ''
-  return new Date(value).toLocaleTimeString('en-GB', {
-    timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
 /** The timesheet as payroll reads it: one row per person per day, hours in decimals. */
 export function timesheetCsv(days: readonly AttendanceDayRow[], timeZone: string): string {
   const rows = days.map((day) =>
     [
       day.userName,
       day.workDate,
-      timeOf(day.clockInAt, timeZone),
-      timeOf(day.clockOutAt, timeZone),
+      day.clockInAt ? formatTimeOfDay(day.clockInAt, timeZone) : '',
+      day.clockOutAt ? formatTimeOfDay(day.clockOutAt, timeZone) : '',
       hours(day.workedSeconds),
       hours(day.breakSeconds),
       String(Math.round(day.lateSeconds / 60)),

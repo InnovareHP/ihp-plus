@@ -8,16 +8,13 @@ import { StatCard } from '@/components/stat-card'
 import { useAttendanceBoard } from '../hooks/use-attendance-admin'
 import { useAttendanceRange } from '../hooks/use-attendance-range'
 import type { AttendanceBoardRow } from '../schema'
-import { formatHours } from '../utils/clock'
+import { formatHours, formatTimeOfDay } from '../utils/clock'
 import { AttendanceDayModal } from './attendance-day-modal'
 import { ClockStateBadge } from './clock-state-badge'
 
 export interface AttendanceBoardPanelProps {
   timeZone: string
 }
-
-const clockTime = (value: string | undefined) =>
-  value ? new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'
 
 /** Who is in, who is late, who never showed — the screen an admin keeps open. */
 export function AttendanceBoardPanel({ timeZone }: AttendanceBoardPanelProps) {
@@ -44,8 +41,12 @@ export function AttendanceBoardPanel({ timeZone }: AttendanceBoardPanelProps) {
       ),
     },
     { key: 'state', header: 'State', render: (row) => <ClockStateBadge state={row.state} /> },
-    { key: 'in', header: 'In', render: (row) => clockTime(row.day?.clockInAt) },
-    { key: 'out', header: 'Out', render: (row) => clockTime(row.day?.clockOutAt) },
+    { key: 'in', header: 'In', render: (row) => formatTimeOfDay(row.day?.clockInAt, timeZone) },
+    {
+      key: 'out',
+      header: 'Out',
+      render: (row) => formatTimeOfDay(row.day?.clockOutAt, timeZone),
+    },
     {
       key: 'worked',
       header: 'Worked',
@@ -88,9 +89,14 @@ export function AttendanceBoardPanel({ timeZone }: AttendanceBoardPanelProps) {
     <Card padding="lg" component="section" aria-labelledby="attendance-board-heading">
       <Stack gap="md">
         <Group justify="space-between" align="flex-end" wrap="wrap">
-          <Title order={2} size="h5" id="attendance-board-heading">
-            Who is in
-          </Title>
+          <Stack gap={2}>
+            <Title order={2} size="h5" id="attendance-board-heading">
+              Who is in
+            </Title>
+            <Text size="xs" c="dimmed">
+              Times are shown in the company zone, {timeZone}.
+            </Text>
+          </Stack>
           <TextInput
             type="date"
             label="Day"
