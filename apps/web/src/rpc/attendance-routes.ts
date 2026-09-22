@@ -1,7 +1,6 @@
 import type { ServiceImpl } from '@ihp/rpc'
 import { AttendanceService } from '@ihp/rpc/attendance'
 import {
-  approveAttendanceDay,
   assignShift,
   clockIn,
   clockOut,
@@ -112,10 +111,6 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
         note: request.note ?? '',
       }),
     ),
-  }),
-
-  approveAttendanceDay: async (request) => ({
-    day: dayToProto(await approveAttendanceDay(request.dayId, request.approved)),
   }),
 
   deleteAttendanceDay: async (request) => {

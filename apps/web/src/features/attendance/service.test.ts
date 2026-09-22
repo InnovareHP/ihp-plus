@@ -1,4 +1,4 @@
-import { Code, ConnectError } from '@ihp/rpc'
+import { Code } from '@ihp/rpc'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const prisma = vi.hoisted(() => ({
@@ -45,7 +45,6 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 }))
 
 const {
-  approveAttendanceDay,
   clockIn,
   clockOut,
   deleteAttendanceDay,
@@ -99,7 +98,6 @@ function dayRecord(overrides: Record<string, unknown> = {}) {
     clockOutSelfieKey: null,
     clockInLocation: null,
     clockOutLocation: null,
-    approvedById: null,
     breaks: [],
     ...overrides,
   }
@@ -247,15 +245,6 @@ describe('what only an admin may do', () => {
       expect.objectContaining({ where: expect.objectContaining({ userId: 'user-1' }) }),
     )
     expect(log.totalWorkedSeconds).toBe(8 * 3600)
-  })
-
-  it('will not sign off a day that is still running', async () => {
-    signedInAs('admin')
-    prisma.attendanceDay.findFirst.mockResolvedValue({ id: 'day-1', clockOutAt: null })
-
-    await expect(approveAttendanceDay('day-1', true)).rejects.toMatchObject({
-      code: Code.FailedPrecondition,
-    })
   })
 
   it('will not let a member write up their own day', async () => {
@@ -421,12 +410,5 @@ describe('what only an admin may do', () => {
 
     // 22:00 to 06:00 in Manila is eight hours, one of them a break.
     expect(day.workedSeconds).toBe(7 * 3600)
-  })
-
-  it('answers an unknown day with not_found rather than a silent no-op', async () => {
-    signedInAs('admin')
-    prisma.attendanceDay.findFirst.mockResolvedValue(null)
-
-    await expect(approveAttendanceDay('missing', true)).rejects.toBeInstanceOf(ConnectError)
   })
 })

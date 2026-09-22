@@ -13,6 +13,9 @@ message AttendanceBreak {
 
 // One person's working day: when they clocked in, the breaks they took, when they left.
 message AttendanceDay {
+  // 20 was approved_by_name, removed with the per-day sign-off.
+  reserved 20;
+
   string id = 1;
   string user_id = 2;
   string user_name = 3;
@@ -23,7 +26,7 @@ message AttendanceDay {
   int32 worked_seconds = 7;
   int32 break_seconds = 8;
   int32 late_seconds = 9;
-  // open, recorded or approved.
+  // open while the clock runs, recorded once it stops.
   string status = 10;
   // clock when the buttons produced it, manual when somebody wrote it up.
   string source = 11;
@@ -36,7 +39,6 @@ message AttendanceDay {
   bool is_open = 17;
   bool on_break = 18;
   repeated AttendanceBreak breaks = 19;
-  optional string approved_by_name = 20;
 }
 
 // How the organization runs its clock. Every member reads it; only an admin writes it.
@@ -199,15 +201,6 @@ message SaveAttendanceDayResponse {
   AttendanceDay day = 1;
 }
 
-message ApproveAttendanceDayRequest {
-  string day_id = 1;
-  bool approved = 2;
-}
-
-message ApproveAttendanceDayResponse {
-  AttendanceDay day = 1;
-}
-
 message DeleteAttendanceDayRequest {
   string day_id = 1;
 }
@@ -270,7 +263,6 @@ service AttendanceService {
   rpc ListAttendance(ListAttendanceRequest) returns (ListAttendanceResponse);
   rpc GetAttendanceBoard(GetAttendanceBoardRequest) returns (GetAttendanceBoardResponse);
   rpc SaveAttendanceDay(SaveAttendanceDayRequest) returns (SaveAttendanceDayResponse);
-  rpc ApproveAttendanceDay(ApproveAttendanceDayRequest) returns (ApproveAttendanceDayResponse);
   rpc DeleteAttendanceDay(DeleteAttendanceDayRequest) returns (DeleteAttendanceDayResponse);
   rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);
   rpc ListShifts(ListShiftsRequest) returns (ListShiftsResponse);

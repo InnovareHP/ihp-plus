@@ -20,7 +20,7 @@ import {
 // The wire carries the words the database stores; the UI keeps its unions, and an unknown value
 // from an older client falls back rather than throwing.
 function statusOf(value: string): AttendanceStatus {
-  return value === 'open' || value === 'approved' ? value : 'recorded'
+  return value === 'open' ? 'open' : 'recorded'
 }
 
 function sourceOf(value: string): AttendanceSource {
@@ -52,7 +52,6 @@ export function dayToProto(day: AttendanceDayRow): AttendanceDayMessage {
     clockOutLocation: day.clockOutLocation,
     isOpen: day.isOpen,
     onBreak: day.onBreak,
-    approvedByName: day.approvedByName,
     breaks: day.breaks.map((one) => ({
       $typeName: 'ihp.attendance.v1.AttendanceBreak' as const,
       id: one.id,
@@ -84,7 +83,6 @@ export function dayFromProto(day: AttendanceDayMessage): AttendanceDayRow {
     clockOutLocation: day.clockOutLocation,
     isOpen: day.isOpen,
     onBreak: day.onBreak,
-    approvedByName: day.approvedByName,
     breaks: day.breaks.map((one) => ({
       id: one.id,
       startedAt: one.startedAt,

@@ -11,11 +11,9 @@ export function AttendanceStatusBadge({ day }: { day: AttendanceDayRow }) {
     )
   }
 
-  const manual = day.source === 'manual'
-
   return (
-    <Badge color={day.status === 'approved' ? 'brand' : 'gray'} variant="light">
-      {day.status === 'approved' ? 'Approved' : manual ? 'Entered by hand' : 'Recorded'}
+    <Badge color="gray" variant="light">
+      {day.source === 'manual' ? 'Entered by hand' : 'Recorded'}
     </Badge>
   )
 }

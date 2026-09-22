@@ -22,7 +22,6 @@ const DAY: AttendanceDayRow = {
   isOpen: false,
   onBreak: false,
   breaks: [],
-  approvedByName: undefined,
 }
 
 describe('timesheetCsv', () => {

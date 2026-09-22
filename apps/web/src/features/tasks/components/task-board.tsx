@@ -51,6 +51,7 @@ import { ListFormModal } from './list-form-modal'
 import { ProjectFormModal } from './project-form-modal'
 import { ProjectSelect } from './project-select'
 import { StatusManagerModal } from './status-manager-modal'
+import { TimeRulesButton } from './time-rules-button'
 import { TaskFormModal } from './task-form-modal'
 import { TaskListSection } from './task-list-section'
 import { TaskSelectionBar } from './task-selection-bar'
@@ -367,6 +368,7 @@ export function TaskBoard() {
                     Updating…
                   </Text>
                 ) : null}
+                <TimeRulesButton />
                 <Button variant="default" onClick={columnsModal.open}>
                   Columns
                 </Button>

@@ -3,7 +3,7 @@
 import { Button, Group } from '@mantine/core'
 import { useQueryClient } from '@tanstack/react-query'
 import { offerUndo } from '@/lib/undo'
-import { useApproveAttendanceDay, useDeleteAttendanceDay } from '../hooks/use-attendance-admin'
+import { useDeleteAttendanceDay } from '../hooks/use-attendance-admin'
 import { editLogs, restoreLogs } from '../hooks/use-attendance-cache'
 import type { AttendanceDayRow } from '../schema'
 
@@ -12,9 +12,8 @@ export interface AttendanceDayActionsProps {
   onCorrect: (day: AttendanceDayRow) => void
 }
 
-/** Sign a day off, correct it, or take it out — the three things an admin does to a row. */
+/** Correct a day or take it out — the two things an admin does to a row. */
 export function AttendanceDayActions({ day, onCorrect }: AttendanceDayActionsProps) {
-  const approve = useApproveAttendanceDay()
   const remove = useDeleteAttendanceDay()
   const queryClient = useQueryClient()
 
@@ -39,16 +38,6 @@ export function AttendanceDayActions({ day, onCorrect }: AttendanceDayActionsPro
         aria-label={`Correct ${day.userName}'s ${day.workDate}`}
       >
         Correct
-      </Button>
-      <Button
-        variant="subtle"
-        size="compact-sm"
-        loading={approve.isPending}
-        disabled={day.isOpen}
-        onClick={() => approve.mutate({ dayId: day.id, approved: day.status !== 'approved' })}
-        aria-label={`${day.status === 'approved' ? 'Unapprove' : 'Approve'} ${day.userName}'s ${day.workDate}`}
-      >
-        {day.status === 'approved' ? 'Unapprove' : 'Approve'}
       </Button>
       <Button
         variant="subtle"

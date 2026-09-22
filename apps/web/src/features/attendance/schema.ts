@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { clockToMinutes, DEFAULT_WORKDAYS, parseWorkdays } from './utils/clock'
 
-export type AttendanceStatus = 'open' | 'recorded' | 'approved'
+export type AttendanceStatus = 'open' | 'recorded'
 
 export type AttendanceSource = 'clock' | 'manual'
 
@@ -36,7 +36,6 @@ export interface AttendanceDayRow {
   isOpen: boolean
   onBreak: boolean
   breaks: AttendanceBreakRow[]
-  approvedByName: string | undefined
 }
 
 export interface AttendanceShiftRow {

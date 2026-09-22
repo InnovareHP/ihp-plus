@@ -1,11 +1,8 @@
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { track } from '@/lib/analytics'
-import { announceFailure } from '@/lib/announce'
+import { useQuery } from '@tanstack/react-query'
 import { attendanceEvents } from '../events'
 import {
-  approveAttendanceDay,
   assignShift,
   deleteAttendanceDay,
   deleteShift,
@@ -17,7 +14,6 @@ import {
 } from '../rpc'
 import { attendanceKeys } from '../query-keys'
 import type { AssignShiftValues, AttendanceDayValues, ShiftValues } from '../schema'
-import { editLogs, restoreLogs, type LogSnapshot } from './use-attendance-cache'
 import { useAttendanceMutation } from './use-time-clock'
 
 /** Who is in right now, so the board keeps up with a clock pressed on the floor. */
@@ -45,32 +41,6 @@ export function useSaveAttendanceDay() {
     mutationFn: (values: AttendanceDayValues) => saveAttendanceDay(values),
     successEvent: attendanceEvents.dayEdited,
     failureEvent: attendanceEvents.dayEditFailed,
-  })
-}
-
-/** Signing a day off is a flag flip, so the badge moves on the click rather than on the answer. */
-export function useApproveAttendanceDay() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({ dayId, approved }: { dayId: string; approved: boolean }) =>
-      approveAttendanceDay(dayId, approved),
-    onMutate: async ({ dayId, approved }) => ({
-      previous: await editLogs(queryClient, (days) =>
-        days.map((day) =>
-          day.id === dayId ? { ...day, status: approved ? 'approved' : 'recorded' } : day,
-        ),
-      ),
-    }),
-    onSuccess: () => track(attendanceEvents.dayApproved),
-    onError: (error: Error, _variables, context: { previous: LogSnapshot } | undefined) => {
-      restoreLogs(queryClient, context?.previous)
-      track(attendanceEvents.dayApproveFailed, { reason: error.message })
-      announceFailure(error.message)
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
-    },
   })
 }
 

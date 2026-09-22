@@ -88,7 +88,7 @@ model AttendanceDay {
   breakSeconds  Int @default(0)
   lateSeconds   Int @default(0)
 
-  // open while the clock runs, recorded once it stops, approved once an admin signs it off.
+  // open while the clock runs, recorded once it stops.
   status String @default("open")
   // clock when the buttons produced it, manual when somebody wrote it up.
   source String @default("clock")
@@ -100,8 +100,6 @@ model AttendanceDay {
   clockOutLocation  String?
 
   editedById String?
-  approvedById String?
-  approvedAt   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

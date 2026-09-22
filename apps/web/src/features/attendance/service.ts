@@ -89,7 +89,6 @@ const daySelect = {
   clockOutSelfieKey: true,
   clockInLocation: true,
   clockOutLocation: true,
-  approvedById: true,
   breaks: {
     select: { id: true, startedAt: true, endedAt: true, seconds: true },
     orderBy: { startedAt: 'asc' },
@@ -119,7 +118,6 @@ interface DayRecord {
   clockOutSelfieKey: string | null
   clockInLocation: string | null
   clockOutLocation: string | null
-  approvedById: string | null
   breaks: BreakRecord[]
 }
 
@@ -168,7 +166,7 @@ async function signedUrl(key: string | null) {
 }
 
 function statusOf(value: string): AttendanceStatus {
-  return value === 'open' || value === 'approved' ? value : 'recorded'
+  return value === 'open' ? 'open' : 'recorded'
 }
 
 function sourceOf(value: string): AttendanceSource {
@@ -222,12 +220,11 @@ async function toDayRow(
       seconds: one.seconds,
       isRunning: one.endedAt === null,
     })),
-    approvedByName: day.approvedById ? (names.get(day.approvedById) ?? 'An admin') : undefined,
   }
 }
 
 async function rowsFor(days: DayRecord[], viewer: Caller): Promise<AttendanceDayRow[]> {
-  const names = await peopleNames(days.flatMap((day) => [day.userId, day.approvedById ?? '']))
+  const names = await peopleNames(days.map((day) => day.userId))
   return Promise.all(days.map((day) => toDayRow(day, names, viewer)))
 }
 
@@ -688,38 +685,6 @@ export async function saveAttendanceDay(values: AttendanceDayValues): Promise<At
   })
 
   return toDayRow(day, names, caller)
-}
-
-export async function approveAttendanceDay(
-  dayId: string,
-  approved: boolean,
-): Promise<AttendanceDayRow> {
-  const caller = await requireMember()
-  requireAdmin(caller, 'Only an admin signs off attendance.')
-
-  const existing = await db.attendanceDay.findFirst({
-    where: { id: dayId, organizationId: caller.organizationId },
-    select: { id: true, clockOutAt: true },
-  })
-  if (!existing) throw new ConnectError('That day is no longer there.', Code.NotFound)
-  if (approved && existing.clockOutAt === null) {
-    throw new ConnectError(
-      'That day is still running — it cannot be signed off yet.',
-      Code.FailedPrecondition,
-    )
-  }
-
-  const day = await db.attendanceDay.update({
-    where: { id: existing.id },
-    data: {
-      status: approved ? 'approved' : 'recorded',
-      approvedById: approved ? caller.userId : null,
-      approvedAt: approved ? new Date() : null,
-    },
-    select: daySelect,
-  })
-
-  return toDayRow(day, await peopleNames([day.userId, caller.userId]), caller)
 }
 
 export async function deleteAttendanceDay(dayId: string): Promise<void> {

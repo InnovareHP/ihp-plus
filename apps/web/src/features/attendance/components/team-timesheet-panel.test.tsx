@@ -15,7 +15,6 @@ const rpc = vi.hoisted(() => ({
   getAttendanceBoard: vi.fn(),
   listSchedules: vi.fn(),
   saveAttendanceDay: vi.fn(),
-  approveAttendanceDay: vi.fn(),
   deleteAttendanceDay: vi.fn(),
   listShifts: vi.fn(),
   saveShift: vi.fn(),
@@ -55,7 +54,6 @@ const DAY: AttendanceDayRow = {
   isOpen: false,
   onBreak: false,
   breaks: [],
-  approvedByName: undefined,
 }
 
 describe('TeamTimesheetPanel', () => {
@@ -72,7 +70,6 @@ describe('TeamTimesheetPanel', () => {
       settings: { timeZone: 'Asia/Manila' },
       shifts: [],
     })
-    rpc.approveAttendanceDay.mockResolvedValue({ ...DAY, status: 'approved' })
     rpc.deleteAttendanceDay.mockResolvedValue(undefined)
   })
 
@@ -119,34 +116,10 @@ describe('TeamTimesheetPanel', () => {
     await waitFor(() => expect(rpc.deleteAttendanceDay).toHaveBeenCalledWith('day-1'))
   })
 
-  it('moves the badge on the click, before the server answers', async () => {
-    const user = userEvent.setup()
-    let settle: (day: AttendanceDayRow) => void = () => {}
-    rpc.approveAttendanceDay.mockReturnValue(
-      new Promise<AttendanceDayRow>((resolve) => {
-        settle = resolve
-      }),
-    )
-
+  it('says how the row was recorded, with nothing to sign off', async () => {
     render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
-    await user.click(await screen.findByRole('button', { name: /^Approve Grace Reyes/ }))
 
-    expect(await screen.findByText('Approved')).toBeInTheDocument()
-    settle({ ...DAY, status: 'approved' })
-  })
-
-  it('puts the badge back and says why when the sign-off fails', async () => {
-    const user = userEvent.setup()
-    rpc.approveAttendanceDay.mockRejectedValue(new Error('Only an admin signs off attendance.'))
-
-    render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
-    await user.click(await screen.findByRole('button', { name: /^Approve Grace Reyes/ }))
-
-    await waitFor(() =>
-      expect(toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Only an admin signs off attendance.' }),
-      ),
-    )
     expect(await screen.findByText('Recorded')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Approve/ })).not.toBeInTheDocument()
   })
 })

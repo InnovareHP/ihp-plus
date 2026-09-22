@@ -12,7 +12,6 @@ const rpc = vi.hoisted(() => ({
   assignShift: vi.fn(),
   getAttendanceBoard: vi.fn(),
   saveAttendanceDay: vi.fn(),
-  approveAttendanceDay: vi.fn(),
   deleteAttendanceDay: vi.fn(),
   getTimeClock: vi.fn(),
   getAttendanceSettings: vi.fn(),

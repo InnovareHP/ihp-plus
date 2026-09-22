@@ -14,8 +14,6 @@ export const attendanceEvents = {
   selfieFailed: 'attendance.selfie.failed',
   dayEdited: 'attendance.day.edited',
   dayEditFailed: 'attendance.day.edit_failed',
-  dayApproved: 'attendance.day.approved',
-  dayApproveFailed: 'attendance.day.approve_failed',
   dayDeleted: 'attendance.day.deleted',
   dayDeleteFailed: 'attendance.day.delete_failed',
   shiftSaved: 'attendance.shift.saved',

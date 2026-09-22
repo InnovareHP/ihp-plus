@@ -148,16 +148,6 @@ export async function saveAttendanceDay(values: AttendanceDayValues): Promise<At
   return requiredDay(response.day)
 }
 
-export async function approveAttendanceDay(
-  dayId: string,
-  approved: boolean,
-): Promise<AttendanceDayRow> {
-  const response = await call(() =>
-    browserClients.attendance.approveAttendanceDay({ dayId, approved }),
-  )
-  return requiredDay(response.day)
-}
-
 export async function deleteAttendanceDay(dayId: string): Promise<void> {
   await call(() => browserClients.attendance.deleteAttendanceDay({ dayId }))
 }
