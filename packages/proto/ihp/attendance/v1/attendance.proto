@@ -377,6 +377,8 @@ message CalendarDay {
 message GetCalendarRequest {
   // YYYY-MM; empty means this month in the organization's zone.
   string month = 1;
+  // Admin only: somebody else's month. Empty means the caller's own.
+  optional string user_id = 2;
 }
 
 message GetCalendarResponse {
@@ -386,10 +388,41 @@ message GetCalendarResponse {
   string time_zone = 3;
   repeated CalendarDay days = 4;
   bool can_manage = 5;
+  // True when the holidays and leave cover everyone, which is an admin reading their own month.
+  bool shows_everyone = 6;
+}
+
+// One person's notable state on a team calendar day: in, absent, on leave or on a holiday.
+message TeamCalendarEntry {
+  string user_id = 1;
+  string user_name = 2;
+  // worked, open, absent, leave or holiday; days off and days to come are left out.
+  string state = 3;
+  int32 worked_seconds = 4;
+  optional string leave_name = 5;
+}
+
+message TeamCalendarDay {
+  string date = 1;
+  repeated CalendarHoliday holidays = 2;
+  repeated TeamCalendarEntry people = 3;
+}
+
+message GetTeamCalendarRequest {
+  // YYYY-MM; empty means this month in the organization's zone.
+  string month = 1;
+}
+
+message GetTeamCalendarResponse {
+  string month = 1;
+  string today = 2;
+  string time_zone = 3;
+  repeated TeamCalendarDay days = 4;
 }
 
 service AttendanceService {
   rpc GetCalendar(GetCalendarRequest) returns (GetCalendarResponse);
+  rpc GetTeamCalendar(GetTeamCalendarRequest) returns (GetTeamCalendarResponse);
   rpc GetAttendanceSettings(GetAttendanceSettingsRequest) returns (GetAttendanceSettingsResponse);
   rpc UpdateAttendanceSettings(UpdateAttendanceSettingsRequest) returns (UpdateAttendanceSettingsResponse);
   rpc GetTimeClock(GetTimeClockRequest) returns (GetTimeClockResponse);

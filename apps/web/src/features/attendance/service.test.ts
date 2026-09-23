@@ -61,6 +61,7 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 
 const {
   loadCalendar,
+  loadTeamCalendar,
   clockIn,
   clockOut,
   deleteAttendanceDay,
@@ -954,6 +955,89 @@ describe('the month calendar', () => {
 
     await expect(loadCalendar()).resolves.toMatchObject({ month: '2026-09' })
     await expect(loadCalendar('2026-13')).rejects.toMatchObject({ code: Code.InvalidArgument })
+    vi.useRealTimers()
+  })
+})
+
+describe('the team calendar', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    everybodyOn()
+    prisma.member.findMany.mockResolvedValue([
+      memberRow('user-2', 'Ada'),
+      memberRow('user-3', 'Linus'),
+    ])
+    prisma.attendanceSchedule.findMany.mockResolvedValue([])
+    prisma.attendanceHoliday.findMany.mockResolvedValue([])
+    prisma.attendanceLeave.findMany.mockResolvedValue([])
+    prisma.attendanceDay.findMany.mockResolvedValue([])
+    prisma.user.findMany.mockResolvedValue([])
+    vi.setSystemTime(new Date('2026-09-24T12:00:00.000Z'))
+  })
+
+  it('keeps the whole team out of a member’s hands, and somebody else’s month too', async () => {
+    signedInAs('member')
+
+    await expect(loadTeamCalendar('2026-09')).rejects.toMatchObject({ code: Code.PermissionDenied })
+    await expect(loadCalendar('2026-09', 'user-2')).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+    vi.useRealTimers()
+  })
+
+  it('judges each person against their own shift and leaves quiet days out', async () => {
+    signedInAs('admin')
+    prisma.attendanceDay.findMany.mockResolvedValue([
+      {
+        userId: 'user-2',
+        workDate: new Date('2026-09-22T00:00:00.000Z'),
+        workedSeconds: 8 * 3600,
+        clockOutAt: new Date('2026-09-22T18:00:00.000Z'),
+      },
+    ])
+    prisma.attendanceLeave.findMany.mockResolvedValue([
+      { userId: 'user-3', date: new Date('2026-09-23T00:00:00.000Z'), name: 'Sick leave' },
+    ])
+
+    const calendar = await loadTeamCalendar('2026-09')
+    const on = (date: string) =>
+      calendar.days.find((day) => day.date === date)?.people.map((one) => [one.userName, one.state])
+
+    expect(on('2026-09-22')).toEqual([
+      ['Ada', 'worked'],
+      ['Linus', 'absent'],
+    ])
+    expect(on('2026-09-23')).toEqual([
+      ['Ada', 'absent'],
+      ['Linus', 'leave'],
+    ])
+    // A Sunday and a day still to come carry nobody.
+    expect(on('2026-09-20')).toEqual([])
+    expect(on('2026-09-25')).toEqual([])
+    vi.useRealTimers()
+  })
+
+  it('narrows an admin’s view of one person to that person', async () => {
+    signedInAs('admin')
+    prisma.member.findMany.mockResolvedValue([memberRow('user-2', 'Ada')])
+
+    const calendar = await loadCalendar('2026-09', 'user-2')
+
+    expect(calendar.showsEveryone).toBe(false)
+    expect(prisma.attendanceLeave.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ userId: 'user-2' }) }),
+    )
+    expect(prisma.attendanceDay.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ userId: 'user-2' }) }),
+    )
+    vi.useRealTimers()
+  })
+
+  it('says so when the person is not in the organization', async () => {
+    signedInAs('admin')
+    prisma.member.findMany.mockResolvedValue([])
+
+    await expect(loadCalendar('2026-09', 'user-9')).rejects.toMatchObject({ code: Code.NotFound })
     vi.useRealTimers()
   })
 })

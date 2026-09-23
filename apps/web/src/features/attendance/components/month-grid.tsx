@@ -1,15 +1,15 @@
 import { Table, Text, VisuallyHidden } from '@mantine/core'
 import { WEEKDAY_LABELS } from '@ihp/clock'
-import type { CalendarDayRow } from '../schema'
+import type { ReactNode } from 'react'
 import { formatMonth, weeksOfMonth } from '../utils/calendar'
-import { CalendarDayDetails } from './calendar-day-details'
 
 export interface MonthGridProps {
   month: string
   today: string
-  days: readonly CalendarDayRow[]
-  countryNames: ReadonlyMap<string, string>
-  showCountry: boolean
+  /** What a day's cell holds under its date. */
+  renderDay: (date: string) => ReactNode
+  /** Days that are nobody's working day, shaded so the working week stands out. */
+  isShaded?: (date: string) => boolean
 }
 
 const WEEKDAY_NAMES = [
@@ -29,10 +29,10 @@ const fullDate = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 })
 
-/** The month as a real table: a screen reader walks it by weekday column and week row. */
-export function MonthGrid({ month, today, days, countryNames, showCountry }: MonthGridProps) {
-  const byDate = new Map(days.map((day) => [day.date, day]))
+const SHADE = 'var(--mantine-color-default-hover)'
 
+/** The month as a real table: a screen reader walks it by weekday column and week row. */
+export function MonthGrid({ month, today, renderDay, isShaded }: MonthGridProps) {
   return (
     <Table withTableBorder withColumnBorders layout="fixed" verticalSpacing="xs">
       <Table.Caption>{formatMonth(month)}</Table.Caption>
@@ -49,10 +49,7 @@ export function MonthGrid({ month, today, days, countryNames, showCountry }: Mon
         {weeksOfMonth(month).map((week) => (
           <Table.Tr key={week.find(Boolean) ?? month}>
             {week.map((date, index) => {
-              const day = date ? byDate.get(date) : undefined
-              if (!date || !day) {
-                return <Table.Td key={`pad-${index}`} bg="var(--mantine-color-default-hover)" />
-              }
+              if (!date) return <Table.Td key={`pad-${index}`} bg={SHADE} />
               const isToday = date === today
               return (
                 <Table.Td
@@ -60,7 +57,7 @@ export function MonthGrid({ month, today, days, countryNames, showCountry }: Mon
                   h={116}
                   // Cells hold a stack of notes, so they read from the top rather than the middle.
                   style={{ verticalAlign: 'top' }}
-                  bg={day.state === 'off' ? 'var(--mantine-color-default-hover)' : undefined}
+                  bg={isShaded?.(date) ? SHADE : undefined}
                   aria-current={isToday ? 'date' : undefined}
                 >
                   <Text
@@ -77,11 +74,7 @@ export function MonthGrid({ month, today, days, countryNames, showCountry }: Mon
                     {fullDate.format(new Date(`${date}T00:00:00Z`))}
                     {isToday ? ', today' : ''}
                   </VisuallyHidden>
-                  <CalendarDayDetails
-                    day={day}
-                    countryNames={countryNames}
-                    showCountry={showCountry}
-                  />
+                  {renderDay(date)}
                 </Table.Td>
               )
             })}

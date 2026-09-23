@@ -33,6 +33,7 @@ function month(
     timeZone: 'Asia/Manila',
     days,
     canManage,
+    showsEveryone: canManage,
   } satisfies CalendarMonth
 }
 
@@ -70,7 +71,7 @@ describe('CalendarPanel', () => {
     nav.search = 'month=2026-12'
     render(<CalendarPanel />)
 
-    await waitFor(() => expect(rpc.getCalendar).toHaveBeenCalledWith('2026-12'))
+    await waitFor(() => expect(rpc.getCalendar).toHaveBeenCalledWith('2026-12', ''))
   })
 
   it('puts the next and previous month in the URL, and this month clears it', async () => {

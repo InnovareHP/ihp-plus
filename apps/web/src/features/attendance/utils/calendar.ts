@@ -1,4 +1,5 @@
 import { shiftDateKey } from '@ihp/clock'
+import type { TeamCalendarDayRow } from '../schema'
 
 const MONTH_KEY = /^\d{4}-(0[1-9]|1[0-2])$/
 
@@ -49,4 +50,15 @@ const monthTitle = new Intl.DateTimeFormat('en-US', {
 
 export function formatMonth(month: string) {
   return monthTitle.format(new Date(`${month}-01T00:00:00Z`))
+}
+
+/** How many were in, absent and on leave on a team day; a running day counts as in. */
+export function teamCounts(day: TeamCalendarDayRow) {
+  const count = (states: readonly string[]) =>
+    day.people.filter((one) => states.includes(one.state)).length
+  return {
+    present: count(['worked', 'open']),
+    absent: count(['absent']),
+    leave: count(['leave']),
+  }
 }

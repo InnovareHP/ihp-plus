@@ -5,6 +5,7 @@ import {
   absenceFromProto,
   boardRowFromProto,
   calendarDayFromProto,
+  teamCalendarDayFromProto,
   dayFromProto,
   holidayFromProto,
   scheduleFromProto,
@@ -24,6 +25,7 @@ import type {
   AttendanceSettingsView,
   AttendanceShiftRow,
   CalendarMonth,
+  TeamCalendarMonth,
   AssignShiftValues,
   ClockActionValues,
   HolidayBook,
@@ -263,13 +265,26 @@ export async function importHolidays(
   return response.added.map(holidayFromProto)
 }
 
-export async function getCalendar(month: string): Promise<CalendarMonth> {
-  const response = await call(() => browserClients.attendance.getCalendar({ month }))
+export async function getCalendar(month: string, userId?: string): Promise<CalendarMonth> {
+  const response = await call(() =>
+    browserClients.attendance.getCalendar({ month, userId: userId || undefined }),
+  )
   return {
     month: response.month,
     today: response.today,
     timeZone: response.timeZone || 'UTC',
     days: response.days.map(calendarDayFromProto),
     canManage: response.canManage,
+    showsEveryone: response.showsEveryone,
+  }
+}
+
+export async function getTeamCalendar(month: string): Promise<TeamCalendarMonth> {
+  const response = await call(() => browserClients.attendance.getTeamCalendar({ month }))
+  return {
+    month: response.month,
+    today: response.today,
+    timeZone: response.timeZone || 'UTC',
+    days: response.days.map(teamCalendarDayFromProto),
   }
 }

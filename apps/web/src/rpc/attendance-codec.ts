@@ -1,6 +1,7 @@
 import type {
   AttendanceAbsence as AttendanceAbsenceMessage,
   CalendarDay as CalendarDayMessage,
+  TeamCalendarDay as TeamCalendarDayMessage,
   AttendanceBoardRow as AttendanceBoardRowMessage,
   AttendanceDay as AttendanceDayMessage,
   AttendanceHoliday as AttendanceHolidayMessage,
@@ -13,6 +14,8 @@ import {
   CALENDAR_DAY_STATES,
   DEFAULT_SHIFT,
   type CalendarDayRow,
+  TEAM_CALENDAR_STATES,
+  type TeamCalendarDayRow,
   type AttendanceAbsenceRow,
   type AttendanceBoardRow,
   type AttendanceDayRow,
@@ -301,5 +304,47 @@ export function calendarDayFromProto(day: CalendarDayMessage): CalendarDayRow {
     workedSeconds: day.workedSeconds,
     holidays: day.holidays.map((one) => ({ name: one.name, country: one.country })),
     leave: day.leave.map((one) => ({ userId: one.userId, userName: one.userName, name: one.name })),
+  }
+}
+
+export function teamCalendarDayToProto(day: TeamCalendarDayRow): TeamCalendarDayMessage {
+  return {
+    $typeName: 'ihp.attendance.v1.TeamCalendarDay',
+    date: day.date,
+    holidays: day.holidays.map((one) => ({
+      $typeName: 'ihp.attendance.v1.CalendarHoliday' as const,
+      name: one.name,
+      country: one.country,
+    })),
+    people: day.people.map((one) => ({
+      $typeName: 'ihp.attendance.v1.TeamCalendarEntry' as const,
+      userId: one.userId,
+      userName: one.userName,
+      state: one.state,
+      workedSeconds: one.workedSeconds,
+      leaveName: one.leaveName,
+    })),
+  }
+}
+
+export function teamCalendarDayFromProto(day: TeamCalendarDayMessage): TeamCalendarDayRow {
+  return {
+    date: day.date,
+    holidays: day.holidays.map((one) => ({ name: one.name, country: one.country })),
+    // A state this client does not know is left off rather than miscounted.
+    people: day.people.flatMap((one) => {
+      const state = TEAM_CALENDAR_STATES.find((known) => known === one.state)
+      return state
+        ? [
+            {
+              userId: one.userId,
+              userName: one.userName,
+              state,
+              workedSeconds: one.workedSeconds,
+              leaveName: one.leaveName,
+            },
+          ]
+        : []
+    }),
   }
 }

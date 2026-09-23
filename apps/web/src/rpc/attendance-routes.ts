@@ -14,6 +14,7 @@ import {
   loadAttendanceSettings,
   loadBoard,
   loadCalendar,
+  loadTeamCalendar,
   loadHolidays,
   loadSchedules,
   loadShifts,
@@ -28,6 +29,7 @@ import {
   absenceToProto,
   boardRowToProto,
   calendarDayToProto,
+  teamCalendarDayToProto,
   dayToProto,
   holidayToProto,
   scheduleToProto,
@@ -40,13 +42,24 @@ import {
 // feature's service, so the business rules stay testable without a transport.
 export const attendance: ServiceImpl<typeof AttendanceService> = {
   getCalendar: async (request) => {
-    const calendar = await loadCalendar(request.month)
+    const calendar = await loadCalendar(request.month, request.userId)
     return {
       month: calendar.month,
       today: calendar.today,
       timeZone: calendar.timeZone,
       days: calendar.days.map(calendarDayToProto),
       canManage: calendar.canManage,
+      showsEveryone: calendar.showsEveryone,
+    }
+  },
+
+  getTeamCalendar: async (request) => {
+    const calendar = await loadTeamCalendar(request.month)
+    return {
+      month: calendar.month,
+      today: calendar.today,
+      timeZone: calendar.timeZone,
+      days: calendar.days.map(teamCalendarDayToProto),
     }
   },
 

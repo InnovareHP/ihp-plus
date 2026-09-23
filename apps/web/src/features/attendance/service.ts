@@ -19,6 +19,9 @@ import {
   type CalendarDayRow,
   type CalendarDayState,
   type CalendarMonth,
+  type TeamCalendarDayRow,
+  type TeamCalendarMonth,
+  type TeamCalendarState,
   type AttendanceDayRow,
   type AttendanceDayValues,
   type AttendanceHolidayRow,
@@ -1314,31 +1317,45 @@ function calendarStateOf(input: {
   return input.date < input.today ? 'absent' : 'scheduled'
 }
 
-/**
- * One month of the caller's own days, with the holidays and leave around them. An admin's month
- * also carries every country's holidays and everyone's leave, so cover can be planned from it.
- */
-export async function loadCalendar(month?: string): Promise<CalendarMonth> {
-  const caller = await requireMember()
-  const settings = await settingsOf(caller.organizationId)
-  const today = workDateKey(new Date(), settings.timeZone)
-
+function monthWindow(month: string | undefined, today: string) {
   const key = month || monthOf(today)
   if (!isMonthKey(key)) {
     throw new ConnectError('Use a month like 2026-09.', Code.InvalidArgument)
   }
-
   const dates = datesOfMonth(key)
   const window = { gte: dateOf(dates[0] ?? `${key}-01`), lte: dateOf(dates.at(-1) ?? `${key}-01`) }
-  const [person] = await rosterOf(caller.organizationId, settings, caller.userId)
-  const shift = person?.shift ?? (await shiftFor(caller.organizationId, caller.userId, settings))
+  return { key, dates, window }
+}
+
+/**
+ * One month of somebody's days, with the holidays and leave around them: the caller's own, or,
+ * for an admin, anyone's. An admin's own month also carries every country's holidays and
+ * everyone's leave, so cover can be planned from it.
+ */
+export async function loadCalendar(month?: string, userId?: string): Promise<CalendarMonth> {
+  const caller = await requireMember()
+  const subject = userId || caller.userId
+  if (subject !== caller.userId)
+    requireAdmin(caller, 'Only an admin reads somebody else’s calendar.')
+
+  const settings = await settingsOf(caller.organizationId)
+  const today = workDateKey(new Date(), settings.timeZone)
+  const { key, dates, window } = monthWindow(month, today)
+
+  const [person] = await rosterOf(caller.organizationId, settings, subject)
+  if (!person && subject !== caller.userId) {
+    throw new ConnectError('That person is not in this organization.', Code.NotFound)
+  }
+  const shift = person?.shift ?? (await shiftFor(caller.organizationId, subject, settings))
+  // Looking at one person narrows the month to them, even for an admin.
+  const everyone = caller.canManage && subject === caller.userId
 
   const [holidays, leave, days] = await Promise.all([
     db.attendanceHoliday.findMany({
       where: {
         organizationId: caller.organizationId,
         date: window,
-        ...(caller.canManage ? {} : { country: { in: ['', shift.holidayCountry] } }),
+        ...(everyone ? {} : { country: { in: ['', shift.holidayCountry] } }),
       },
       select: { date: true, name: true, country: true },
       orderBy: [{ date: 'asc' }, { country: 'asc' }],
@@ -1347,13 +1364,13 @@ export async function loadCalendar(month?: string): Promise<CalendarMonth> {
       where: {
         organizationId: caller.organizationId,
         date: window,
-        ...(caller.canManage ? {} : { userId: caller.userId }),
+        ...(everyone ? {} : { userId: subject }),
       },
       select: { userId: true, date: true, name: true },
       orderBy: { date: 'asc' },
     }),
     db.attendanceDay.findMany({
-      where: { organizationId: caller.organizationId, userId: caller.userId, workDate: window },
+      where: { organizationId: caller.organizationId, userId: subject, workDate: window },
       select: { workDate: true, workedSeconds: true, clockOutAt: true },
     }),
   ])
@@ -1372,7 +1389,7 @@ export async function loadCalendar(month?: string): Promise<CalendarMonth> {
         today,
         person,
         day,
-        onLeave: leaveToday.some((one) => one.userId === caller.userId),
+        onLeave: leaveToday.some((one) => one.userId === subject),
         onHoliday: holidayFor(entries, date, shift.holidayCountry) !== undefined,
       }),
       workedSeconds: day?.workedSeconds ?? 0,
@@ -1393,5 +1410,76 @@ export async function loadCalendar(month?: string): Promise<CalendarMonth> {
     timeZone: settings.timeZone,
     days: rows,
     canManage: caller.canManage,
+    showsEveryone: everyone,
   }
+}
+
+/**
+ * The whole team's month for an admin: for every day, who worked, who was absent, who was on
+ * leave or off for a holiday, each judged against their own shift exactly as their calendar is.
+ */
+export async function loadTeamCalendar(month?: string): Promise<TeamCalendarMonth> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin reads the team calendar.')
+
+  const settings = await settingsOf(caller.organizationId)
+  const today = workDateKey(new Date(), settings.timeZone)
+  const { key, dates, window } = monthWindow(month, today)
+
+  const [roster, holidays, leave, days] = await Promise.all([
+    rosterOf(caller.organizationId, settings),
+    db.attendanceHoliday.findMany({
+      where: { organizationId: caller.organizationId, date: window },
+      select: { date: true, name: true, country: true },
+      orderBy: [{ date: 'asc' }, { country: 'asc' }],
+    }),
+    db.attendanceLeave.findMany({
+      where: { organizationId: caller.organizationId, date: window },
+      select: { userId: true, date: true, name: true },
+    }),
+    db.attendanceDay.findMany({
+      where: { organizationId: caller.organizationId, workDate: window },
+      select: { userId: true, workDate: true, workedSeconds: true, clockOutAt: true },
+    }),
+  ])
+
+  const entries = holidays.map((one) => ({ ...one, date: dateKeyOf(one.date) }))
+  const leaveOn = new Map(
+    leave.map((one) => [personDateKey(one.userId, dateKeyOf(one.date)), one.name]),
+  )
+  const dayOn = new Map(
+    days.map((day) => [personDateKey(day.userId, dateKeyOf(day.workDate)), day]),
+  )
+
+  const rows: TeamCalendarDayRow[] = dates.map((date) => ({
+    date,
+    holidays: entries
+      .filter((one) => one.date === date)
+      .map((one) => ({ name: one.name, country: one.country })),
+    people: roster.flatMap((person) => {
+      const at = personDateKey(person.userId, date)
+      const day = dayOn.get(at)
+      const leaveName = leaveOn.get(at)
+      const state = calendarStateOf({
+        date,
+        today,
+        person,
+        day,
+        onLeave: leaveName !== undefined,
+        onHoliday: holidayFor(entries, date, person.shift.holidayCountry) !== undefined,
+      })
+      if (state === 'off' || state === 'scheduled') return []
+      return [
+        {
+          userId: person.userId,
+          userName: person.userName,
+          state: state satisfies TeamCalendarState,
+          workedSeconds: day?.workedSeconds ?? 0,
+          leaveName,
+        },
+      ]
+    }),
+  }))
+
+  return { month: key, today, timeZone: settings.timeZone, days: rows }
 }

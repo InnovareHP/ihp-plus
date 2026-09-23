@@ -1,13 +1,19 @@
 'use client'
 
 import { Tabs } from '@mantine/core'
-import { IconCalendarTime, IconClockHour4, IconFileSpreadsheet } from '@tabler/icons-react'
+import {
+  IconCalendarMonth,
+  IconCalendarTime,
+  IconClockHour4,
+  IconFileSpreadsheet,
+} from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { ATTENDANCE_TABS, type AttendanceTab } from '@/lib/routes'
 import { useAttendanceSettings } from '../hooks/use-time-clock'
 import { AttendanceBoardPanel } from './attendance-board-panel'
 import { ShiftsPanel } from './shifts-panel'
+import { TeamCalendarPanel } from './team-calendar-panel'
 import { TeamTimesheetPanel } from './team-timesheet-panel'
 
 const TABS: { value: AttendanceTab; label: string; icon: ReactNode }[] = [
@@ -17,6 +23,7 @@ const TABS: { value: AttendanceTab; label: string; icon: ReactNode }[] = [
     label: 'Timesheets',
     icon: <IconFileSpreadsheet size={16} aria-hidden />,
   },
+  { value: 'calendar', label: 'Calendar', icon: <IconCalendarMonth size={16} aria-hidden /> },
   { value: 'shifts', label: 'Shifts', icon: <IconCalendarTime size={16} aria-hidden /> },
 ]
 
@@ -57,6 +64,9 @@ export function TeamAttendanceTabs() {
       </Tabs.Panel>
       <Tabs.Panel value="timesheets">
         <TeamTimesheetPanel timeZone={timeZone} />
+      </Tabs.Panel>
+      <Tabs.Panel value="calendar">
+        <TeamCalendarPanel />
       </Tabs.Panel>
       <Tabs.Panel value="shifts">
         <ShiftsPanel />

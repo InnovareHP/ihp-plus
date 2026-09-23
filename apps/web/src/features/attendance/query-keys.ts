@@ -9,7 +9,9 @@ export const attendanceKeys = {
   board: (date: string) => [...attendanceKeys.all, 'board', date] as const,
   schedules: () => [...attendanceKeys.all, 'schedules'] as const,
   shifts: () => [...attendanceKeys.all, 'shifts'] as const,
-  calendar: (month: string) => [...attendanceKeys.all, 'calendar', month] as const,
+  calendar: (month: string, userId = '') =>
+    [...attendanceKeys.all, 'calendar', month, userId] as const,
+  teamCalendar: (month: string) => [...attendanceKeys.all, 'team-calendar', month] as const,
   holidays: (year: number) => [...attendanceKeys.all, 'holidays', year] as const,
   holidayCountries: () => [...attendanceKeys.all, 'holiday-countries'] as const,
 }

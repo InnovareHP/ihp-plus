@@ -360,6 +360,39 @@ export interface CalendarMonth {
   today: string
   timeZone: string
   days: CalendarDayRow[]
-  /** An admin's calendar carries every country's holidays and everyone's leave. */
   canManage: boolean
+  /** True when the holidays and leave cover everyone, which is an admin reading their own month. */
+  showsEveryone: boolean
+}
+
+/** A state worth showing on a team day; days off and days still to come are left out. */
+export type TeamCalendarState = 'worked' | 'open' | 'absent' | 'leave' | 'holiday'
+
+export const TEAM_CALENDAR_STATES: readonly TeamCalendarState[] = [
+  'worked',
+  'open',
+  'absent',
+  'leave',
+  'holiday',
+]
+
+export interface TeamCalendarEntry {
+  userId: string
+  userName: string
+  state: TeamCalendarState
+  workedSeconds: number
+  leaveName: string | undefined
+}
+
+export interface TeamCalendarDayRow {
+  date: string
+  holidays: CalendarHolidayRow[]
+  people: TeamCalendarEntry[]
+}
+
+export interface TeamCalendarMonth {
+  month: string
+  today: string
+  timeZone: string
+  days: TeamCalendarDayRow[]
 }
