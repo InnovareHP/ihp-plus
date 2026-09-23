@@ -179,12 +179,6 @@ function whoWeAre() {
       scrollTrigger: { ...scrub, end: 'center center' },
     },
   )
-  gsap.to(one('.who-swirl-right img', section), {
-    yPercent: 40,
-    rotation: 25,
-    ease: 'none',
-    scrollTrigger: scrub,
-  })
 
   const diamond = one('.who-diamond', section)
   gsap
