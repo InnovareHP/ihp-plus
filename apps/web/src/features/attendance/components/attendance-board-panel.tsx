@@ -1,7 +1,8 @@
 'use client'
 
-import { Button, Card, Group, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Card, Group, Menu, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useState } from 'react'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { StatCard } from '@/components/stat-card'
@@ -85,15 +86,11 @@ export function AttendanceBoardPanel({ timeZone }: AttendanceBoardPanelProps) {
       key: 'actions',
       header: 'Actions',
       align: 'right',
+      width: 90,
       render: (row) => (
-        <Button
-          variant="subtle"
-          size="compact-sm"
-          onClick={() => setEditing(row)}
-          aria-label={`Correct ${row.userName}'s day`}
-        >
-          {row.day ? 'Correct' : 'Add day'}
-        </Button>
+        <RowActionsMenu name={`${row.userName}'s day`}>
+          <Menu.Item onClick={() => setEditing(row)}>{row.day ? 'Correct' : 'Add day'}</Menu.Item>
+        </RowActionsMenu>
       ),
     },
   ]

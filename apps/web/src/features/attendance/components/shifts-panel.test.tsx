@@ -158,7 +158,8 @@ describe('ShiftsPanel', () => {
     )
     render(<ShiftsPanel />)
 
-    await user.click(await screen.findByRole('button', { name: 'Delete Morning' }))
+    await user.click(await screen.findByRole('button', { name: 'Actions for Morning' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }))
 
     await waitFor(() =>
       expect(toast.show).toHaveBeenCalledWith(

@@ -108,6 +108,7 @@ export function AttendanceLogTable({
             key: 'actions',
             header: 'Actions',
             align: 'right' as const,
+            width: 90,
             render: (day: AttendanceDayRow) => actions(day),
           },
         ]

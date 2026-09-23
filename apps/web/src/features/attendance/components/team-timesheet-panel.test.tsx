@@ -125,7 +125,8 @@ describe('TeamTimesheetPanel', () => {
     const user = userEvent.setup()
     render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
 
-    await user.click(await screen.findByRole('button', { name: /^Remove Grace Reyes/ }))
+    await user.click(await screen.findByRole('button', { name: /^Actions for Grace Reyes/ }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove' }))
 
     await waitFor(() => expect(screen.queryByText('09:05')).not.toBeInTheDocument())
     expect(undo.offerUndo).toHaveBeenCalled()
@@ -137,7 +138,8 @@ describe('TeamTimesheetPanel', () => {
     const user = userEvent.setup()
     render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
 
-    await user.click(await screen.findByRole('button', { name: /^Remove Grace Reyes/ }))
+    await user.click(await screen.findByRole('button', { name: /^Actions for Grace Reyes/ }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove' }))
     await waitFor(() => expect(screen.queryByText('09:05')).not.toBeInTheDocument())
 
     undo.offerUndo.mock.calls[0]?.[0]?.onUndo()
@@ -150,7 +152,8 @@ describe('TeamTimesheetPanel', () => {
     const user = userEvent.setup()
     render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
 
-    await user.click(await screen.findByRole('button', { name: /^Remove Grace Reyes/ }))
+    await user.click(await screen.findByRole('button', { name: /^Actions for Grace Reyes/ }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove' }))
     undo.offerUndo.mock.calls[0]?.[0]?.onCommit()
 
     await waitFor(() => expect(rpc.deleteAttendanceDay).toHaveBeenCalledWith('day-1'))

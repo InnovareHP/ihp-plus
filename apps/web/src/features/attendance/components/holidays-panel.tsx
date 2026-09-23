@@ -1,7 +1,8 @@
 'use client'
 
-import { Badge, Button, Card, Divider, Group, Select, Stack, Text, Title } from '@mantine/core'
+import { Badge, Card, Divider, Group, Menu, Select, Stack, Text, Title } from '@mantine/core'
 import { useQueryClient } from '@tanstack/react-query'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { offerUndo } from '@/lib/undo'
@@ -98,19 +99,18 @@ export function HolidaysPanel() {
       key: 'actions',
       header: 'Actions',
       align: 'right',
-      width: 110,
+      width: 90,
       render: (row) => (
-        <Button
-          variant="subtle"
-          color="red"
-          size="compact-sm"
-          // A pending row has no server id to delete yet.
-          disabled={row.id.startsWith('pending-')}
-          onClick={() => drop(row)}
-          aria-label={`Remove ${row.name}`}
-        >
-          Remove
-        </Button>
+        <RowActionsMenu name={row.name}>
+          <Menu.Item
+            color="red"
+            // A pending row has no server id to delete yet.
+            disabled={row.id.startsWith('pending-')}
+            onClick={() => drop(row)}
+          >
+            Remove
+          </Menu.Item>
+        </RowActionsMenu>
       ),
     },
   ]

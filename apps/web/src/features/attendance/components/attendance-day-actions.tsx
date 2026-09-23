@@ -1,7 +1,8 @@
 'use client'
 
-import { Button, Group } from '@mantine/core'
+import { Menu } from '@mantine/core'
 import { useQueryClient } from '@tanstack/react-query'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { offerUndo } from '@/lib/undo'
 import { useDeleteAttendanceDay } from '../hooks/use-attendance-admin'
 import { editLogs, restoreLogs } from '../hooks/use-attendance-cache'
@@ -30,24 +31,11 @@ export function AttendanceDayActions({ day, onCorrect }: AttendanceDayActionsPro
   }
 
   return (
-    <Group gap="xs" justify="flex-end" wrap="nowrap">
-      <Button
-        variant="subtle"
-        size="compact-sm"
-        onClick={() => onCorrect(day)}
-        aria-label={`Correct ${day.userName}'s ${day.workDate}`}
-      >
-        Correct
-      </Button>
-      <Button
-        variant="subtle"
-        color="red"
-        size="compact-sm"
-        onClick={() => void drop()}
-        aria-label={`Remove ${day.userName}'s ${day.workDate}`}
-      >
+    <RowActionsMenu name={`${day.userName}'s ${day.workDate}`}>
+      <Menu.Item onClick={() => onCorrect(day)}>Correct</Menu.Item>
+      <Menu.Item color="red" onClick={() => void drop()}>
         Remove
-      </Button>
-    </Group>
+      </Menu.Item>
+    </RowActionsMenu>
   )
 }

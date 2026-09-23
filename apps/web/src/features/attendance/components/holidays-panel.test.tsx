@@ -135,7 +135,8 @@ describe('HolidaysPanel', () => {
     const user = userEvent.setup()
     render(<HolidaysPanel />)
 
-    await user.click(await screen.findByRole('button', { name: 'Remove Christmas Day' }))
+    await user.click(await screen.findByRole('button', { name: 'Actions for Christmas Day' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove' }))
 
     await waitFor(() => expect(screen.queryByText('Christmas Day')).not.toBeInTheDocument())
     expect(rpc.deleteHoliday).not.toHaveBeenCalled()
@@ -148,7 +149,8 @@ describe('HolidaysPanel', () => {
     const user = userEvent.setup()
     render(<HolidaysPanel />)
 
-    await user.click(await screen.findByRole('button', { name: 'Remove Christmas Day' }))
+    await user.click(await screen.findByRole('button', { name: 'Actions for Christmas Day' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove' }))
     await waitFor(() => expect(screen.queryByText('Christmas Day')).not.toBeInTheDocument())
 
     undo.offerUndo.mock.calls[0]?.[0]?.onUndo()

@@ -1,8 +1,9 @@
 'use client'
 
-import { Badge, Button, Card, Group, Stack, Text, Title } from '@mantine/core'
+import { Badge, Button, Card, Group, Menu, Stack, Text, Title } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
 import { useState } from 'react'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { useDeleteShift, useShifts } from '../hooks/use-attendance-admin'
@@ -60,27 +61,17 @@ export function ShiftsPanel() {
       key: 'actions',
       header: 'Actions',
       align: 'right',
+      width: 90,
       render: (row) => (
-        <Group gap="xs" justify="flex-end" wrap="nowrap">
-          <Button
-            variant="subtle"
-            size="compact-sm"
-            onClick={() => setEditing(row)}
-            aria-label={`Edit ${row.name}`}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="subtle"
-            color="red"
-            size="compact-sm"
-            loading={remove.isPending}
-            onClick={() => remove.mutate({ shiftId: row.id })}
-            aria-label={`Delete ${row.name}`}
-          >
+        <RowActionsMenu
+          name={row.name}
+          loading={remove.isPending && remove.variables?.shiftId === row.id}
+        >
+          <Menu.Item onClick={() => setEditing(row)}>Edit</Menu.Item>
+          <Menu.Item color="red" onClick={() => remove.mutate({ shiftId: row.id })}>
             Delete
-          </Button>
-        </Group>
+          </Menu.Item>
+        </RowActionsMenu>
       ),
     },
   ]
