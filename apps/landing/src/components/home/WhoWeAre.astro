@@ -7,7 +7,7 @@ import SectionHeading from './SectionHeading.astro'
 ---
 
 <section id="about" class="who relative bg-canvas" aria-labelledby="about-heading">
-  <!-- Ribbons from the artwork, rotated as drawn; the right one tucks up behind the hero. -->
+  <!-- Ribbons from the artwork, rotated as drawn; the right one rises over the hero's foot. -->
   <div class="who-swirl who-swirl-left" aria-hidden="true">
     <img src={swirlLeft.src} width="361" height="198" alt="" />
   </div>
@@ -46,7 +46,7 @@ import SectionHeading from './SectionHeading.astro'
 
 <style>
   .who {
-    /* Clip sideways only, so the right ribbon can still rise behind the hero. */
+    /* Clip sideways only, so the right ribbon can still rise into the hero. */
     overflow-x: clip;
   }
   .who-swirl {
@@ -78,10 +78,13 @@ import SectionHeading from './SectionHeading.astro'
     rotate: -32.31deg;
   }
   .who-swirl-right {
-    left: min(calc(100% - 115.5px), calc(50% + 700px));
-    top: -206px;
+    /* Most of the ribbon on screen, crossing the hero's foot rather than peeking from the edge. */
+    left: min(calc(100% - 300px), calc(50% + 520px));
+    top: -320px;
     width: 397px;
     height: 393px;
+    /* Above the hero's z-10; this section sets no z-index, so the two compare directly. */
+    z-index: 20;
   }
   .who-swirl-right img {
     rotate: -43.6deg;
