@@ -1,0 +1,34 @@
+---
+import Layout from '../layouts/Layout.astro'
+import SiteFooter from '../components/home/SiteFooter.astro'
+---
+
+<!-- nginx serves this for any missing path (error_page 404 /404.html in landing.conf). -->
+<Layout
+  title="Page not found — IHP+"
+  description="That page does not exist. Head back to the IHP+ homepage."
+  noindex
+>
+  <section
+    class="flex flex-1 flex-col items-center justify-center gap-6 bg-night px-4 py-24 text-center text-white"
+    aria-labelledby="not-found-heading"
+  >
+    <img
+      src="/brand/logo-on-dark.svg"
+      width="90"
+      height="55"
+      alt="IHP+"
+      class="h-[55px] w-[90px]"
+    />
+    <p class="font-poster text-brand-gradient text-[120px] leading-none font-extrabold">404</p>
+    <h1 id="not-found-heading" class="font-display text-5xl font-medium">That page is not here.</h1>
+    <p class="max-w-md text-lg">It may have moved, or the link may be mistyped.</p>
+    <a
+      href="/"
+      class="bg-mint-300 text-ink mt-2 px-6 py-3 font-semibold uppercase hover:bg-mint-200 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-night focus-visible:outline-none"
+    >
+      Back to the homepage
+    </a>
+  </section>
+  <SiteFooter slot="footer" />
+</Layout>

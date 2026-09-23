@@ -23,6 +23,9 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 FROM deps AS builder
+# Baked into canonical, Open Graph and sitemap URLs, so the static build needs the real origin.
+ARG NEXT_PUBLIC_SITE_URL=http://localhost
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 COPY . .
 RUN pnpm --filter @ihp/landing build
 

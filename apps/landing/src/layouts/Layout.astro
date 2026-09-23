@@ -4,12 +4,39 @@ import '../styles/global.css'
 interface Props {
   title: string
   description?: string
+  /** A path under public/, used for the Open Graph and Twitter preview card. */
+  image?: string
+  imageAlt?: string
+  /** Pages that should never appear in search results, such as the 404. */
+  noindex?: boolean
 }
+
+const SITE_NAME = 'IHP+'
 
 const {
   title,
-  description = 'IHP+ pairs bold marketing with dependable technology and finance support — one team, every service.',
+  description = 'IHP+ pairs bold marketing with dependable technology and finance support — one team, every service, wherever you operate.',
+  image = '/og-image.jpg',
+  imageAlt = 'IHP+ — Powered by possibilities',
+  noindex = false,
 } = Astro.props
+
+// Absolute URLs, because crawlers and link unfurlers do not resolve relative ones.
+const site = Astro.site ?? new URL('http://localhost')
+const canonical = new URL(Astro.url.pathname, site).href
+const imageUrl = new URL(image, site).href
+
+const organization = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'IHP+',
+  legalName: 'Innovare HP',
+  url: site.href,
+  logo: new URL('/icon-512.png', site).href,
+  description,
+  address: { '@type': 'PostalAddress', addressRegion: 'MI', addressCountry: 'US' },
+  areaServed: 'Worldwide',
+}
 ---
 
 <!doctype html>
@@ -17,14 +44,45 @@ const {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {!noindex && <link rel="canonical" href={canonical} />}
+    <meta
+      name="robots"
+      content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large'}
+    />
+
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#1346c5" />
+    <meta name="application-name" content={SITE_NAME} />
+    <meta name="apple-mobile-web-app-title" content={SITE_NAME} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    <meta name="twitter:image:alt" content={imageAlt} />
+
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title}</title>
-    <meta name="description" content={description} />
+    {
+      !noindex && (
+        <script is:inline type="application/ld+json" set:html={JSON.stringify(organization)} />
+      )
+    }
   </head>
   <body class="font-sans text-ink flex min-h-full flex-col bg-white">
     <!-- First focusable element, hidden until a keyboard user reaches it. -->
