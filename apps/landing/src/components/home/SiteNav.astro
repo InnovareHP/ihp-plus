@@ -1,0 +1,37 @@
+---
+const LEFT = [
+  { href: '#about', label: 'About' },
+  { href: '#services', label: 'Services' },
+]
+const RIGHT = [
+  { href: '#global-reach', label: 'Global Reach' },
+  { href: '#contact', label: 'Contact' },
+]
+
+const link =
+  'rounded-sm text-[13px] text-white underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none'
+---
+
+<!-- The lockup sits under the links, so the design leaves the middle of the bar open for it. -->
+<nav aria-label="Primary" class="w-full pt-6 sm:pt-[27px]">
+  <ul class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:gap-x-12 lg:gap-x-0">
+    {
+      LEFT.map((item, index) => (
+        <li class={index === LEFT.length - 1 ? 'lg:mr-[300px]' : 'lg:mr-12'}>
+          <a href={item.href} class={link}>
+            {item.label}
+          </a>
+        </li>
+      ))
+    }
+    {
+      RIGHT.map((item, index) => (
+        <li class={index === RIGHT.length - 1 ? '' : 'lg:mr-12'}>
+          <a href={item.href} class={link}>
+            {item.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>

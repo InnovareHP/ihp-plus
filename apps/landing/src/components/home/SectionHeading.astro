@@ -1,0 +1,27 @@
+---
+interface Props {
+  /** Words before the gradient one, e.g. "Where". */
+  before?: string
+  /** The one word the design paints in the brand gradient. */
+  highlight: string
+  after?: string
+  tone?: 'light' | 'dark'
+  id?: string
+  class?: string
+}
+
+const { before = '', highlight, after = '', tone = 'dark', id, class: className } = Astro.props
+---
+
+<h2
+  id={id}
+  class:list={[
+    'font-display text-[2.25rem] leading-[1.1] font-medium text-balance sm:text-5xl sm:leading-[3.75rem]',
+    tone === 'light' ? 'text-white' : 'text-ink',
+    className,
+  ]}
+>
+  {before && `${before} `}<span class="text-brand-gradient font-extrabold">{highlight}</span>{
+    after && ` ${after}`
+  }
+</h2>

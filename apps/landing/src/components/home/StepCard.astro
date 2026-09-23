@@ -1,0 +1,43 @@
+---
+import type { ImageMetadata } from 'astro'
+import badge from '../../assets/home/step-badge-a.svg'
+
+interface Props {
+  step: number
+  title: string
+  body: string
+  /** The design draws three variants of the card's gradient; each step names its own. */
+  shape: ImageMetadata
+}
+
+const { step, title, body, shape } = Astro.props
+---
+
+<li class="step-card relative h-[251px] w-[250px] shrink-0">
+  <img
+    src={shape.src}
+    alt=""
+    width="250"
+    height="251"
+    class="step-card-shape absolute inset-0 size-full"
+  />
+  <div class="absolute -top-[10px] left-[200px] flex size-[60px] items-center justify-center">
+    <img src={badge.src} alt="" width="60" height="60" class="absolute inset-0 size-full" />
+    <span class="font-display text-mint-300 relative text-[40px] leading-[50px] font-medium">
+      <span class="sr-only">Step </span>{step}
+    </span>
+  </div>
+  <h3
+    class="font-display text-mint-300 absolute top-[26px] left-[26px] w-[190px] text-[40px] leading-[45px] font-medium"
+  >
+    {title}
+  </h3>
+  <p class="absolute top-[136px] right-[22px] left-[26px] text-base text-white">{body}</p>
+</li>
+
+<style>
+  /* The artwork is drawn notch-left; the design mirrors it so the badge sits top-right. */
+  .step-card-shape {
+    scale: -1 1;
+  }
+</style>

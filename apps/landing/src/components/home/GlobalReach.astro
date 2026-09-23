@@ -1,0 +1,56 @@
+---
+import { Image } from 'astro:assets'
+import globe from '../../assets/home/global-reach-bg.png'
+import DiamondArrow from './DiamondArrow.astro'
+---
+
+<section
+  id="global-reach"
+  class="global relative isolate overflow-hidden bg-night"
+  aria-labelledby="global-heading"
+>
+  <!-- The artwork leaves its top tab transparent; the stats section's mint shows through it. -->
+  <div class="global-tab-fill absolute top-0 left-1/2 -z-10 -translate-x-1/2 bg-mint-100"></div>
+  <Image
+    src={globe}
+    alt=""
+    widths={[1327, 2654]}
+    sizes="1327px"
+    class="global-art absolute top-0 left-1/2 -z-10 -translate-x-1/2"
+  />
+
+  <div class="relative mx-auto flex max-w-[1280px] flex-col items-center px-4 text-center">
+    <p
+      class="font-display text-brand-600 text-[2.5rem] leading-[64px] font-medium sm:text-[64px]"
+      aria-hidden="true"
+    >
+      GLOBAL REACH
+    </p>
+    <DiamondArrow class="mt-[25.5px]" />
+    <h2
+      id="global-heading"
+      class="font-display mt-10 max-w-[585px] text-5xl leading-[1.05] font-medium text-balance text-white sm:mt-[40.5px] sm:text-[64px] sm:leading-[60px]"
+    >
+      <span class="sr-only">Global reach. </span>Built to work across borders and time zones.
+    </h2>
+    <p class="mt-9 max-w-[885px] text-lg text-white sm:mt-[34px] sm:text-xl">
+      IHP+ delivers for clients wherever they operate, with teams structured to overlap your
+      business hours and adapt to your market's language, tone, and compliance needs.
+    </p>
+  </div>
+</section>
+
+<style>
+  .global {
+    height: 942px;
+  }
+  .global-art {
+    width: 1327px;
+    max-width: none;
+    height: 942px;
+  }
+  .global-tab-fill {
+    width: 620px;
+    height: 150px;
+  }
+</style>

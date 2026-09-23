@@ -1,0 +1,64 @@
+---
+import Eyebrow from './Eyebrow.astro'
+import SectionHeading from './SectionHeading.astro'
+import StatCard from './StatCard.astro'
+---
+
+<section class="bg-mint-100" aria-labelledby="why-heading">
+  <div
+    class="mx-auto max-w-[1280px] px-4 pt-20 pb-24 sm:px-8 lg:px-[95px] lg:pt-[91px] lg:pb-[107px]"
+  >
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div>
+        <Eyebrow label="Why IHP+" flag="blue" />
+        <SectionHeading
+          id="why-heading"
+          class="mt-6"
+          before="One"
+          highlight="team,"
+          after="every service."
+        />
+      </div>
+      <p class="max-w-[385px] text-lg sm:text-xl lg:mt-[33px] lg:mr-[10px]">
+        Marketing, technology, and finance — one team, no handoffs.
+      </p>
+    </div>
+
+    <div
+      class="mt-12 grid gap-6 md:grid-cols-2 lg:mt-[72px] lg:grid-cols-[451px_279px_278px] lg:gap-10"
+    >
+      <StatCard
+        value="24"
+        unit="hours"
+        unitStyle="word"
+        label="Average response time from your dedicated pod"
+        tone="blue"
+        class="stat-24 px-[48px] md:col-span-2 lg:col-span-1"
+      />
+      <StatCard
+        value="30"
+        unit="+"
+        unitStyle="mark"
+        label="Projects delivered without missing a deadline"
+        tone="dark"
+        class="px-[24px] [&_.stat-figure]:pl-[7px]"
+      />
+      <StatCard
+        value="80"
+        unit="%"
+        unitStyle="mark"
+        label="Clients add a second service within their first year"
+        tone="light"
+        class="px-[22px] [&_.stat-figure]:pl-[18px]"
+      />
+    </div>
+  </div>
+</section>
+
+<style>
+  /* In the design "24" and "hours" sit apart, with the gap a trailing space leaves. */
+  .stat-24 :global(.stat-figure) {
+    gap: 0.3em;
+    padding-left: 7px;
+  }
+</style>

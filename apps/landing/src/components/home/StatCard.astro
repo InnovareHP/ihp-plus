@@ -1,0 +1,55 @@
+---
+interface Props {
+  value: string
+  unit: string
+  /** "hours" sits beside the number; "+" and "%" ride higher, like superscripts. */
+  unitStyle: 'word' | 'mark'
+  label: string
+  tone: 'blue' | 'dark' | 'light'
+  class?: string
+}
+
+const { value, unit, unitStyle, label, tone, class: className } = Astro.props
+
+const surface = {
+  blue: 'bg-brand-600 text-white',
+  dark: 'bg-ink text-white',
+  light: 'bg-canvas text-ink',
+}[tone]
+---
+
+<figure
+  class:list={[
+    'flex h-[322px] flex-col justify-between rounded-[15px] pt-[30px] pb-[46px]',
+    surface,
+    className,
+  ]}
+>
+  <p class="stat-figure flex items-start" aria-hidden="true">
+    <span
+      class="font-poster text-[120px] leading-[128px] font-extrabold tracking-[0.02em] sm:text-[150px]"
+    >
+      {value}
+    </span>
+    <span
+      class:list={[
+        'font-poster text-[52px] leading-[128px] font-extrabold tracking-[0.02em] sm:text-[64px]',
+        unitStyle === 'word' ? 'stat-unit-word' : 'stat-unit-mark',
+      ]}
+    >
+      {unit}
+    </span>
+  </p>
+  <figcaption class="max-w-[345px] text-base">
+    <span class="sr-only">{value}{unitStyle === 'word' ? ` ${unit}` : unit}: </span>{label}
+  </figcaption>
+</figure>
+
+<style>
+  .stat-unit-word {
+    margin-top: -32px;
+  }
+  .stat-unit-mark {
+    margin-top: -45px;
+  }
+</style>

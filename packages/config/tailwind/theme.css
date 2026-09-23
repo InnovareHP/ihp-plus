@@ -27,8 +27,14 @@
   /* Neutrals the guidelines name outright: body copy, page canvas, and the tinted panel. */
   --color-ink: #222222;
   --color-canvas: #f7f9fc;
+  /* The deep navy the website's photo backgrounds fade to, so wide screens extend them seamlessly. */
+  --color-night: #081c2f;
 
   --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  /* The website's condensed display faces; body copy stays Poppins. */
+  --font-display: 'Big Shoulders', 'Arial Narrow', ui-sans-serif, sans-serif;
+  --font-poster:
+    'Big Shoulders Display', 'Big Shoulders', 'Arial Narrow', ui-sans-serif, sans-serif;
   --font-mono: ui-monospace, 'JetBrains Mono', monospace;
 
   /* The guidelines' four type steps, size/leading verbatim. */

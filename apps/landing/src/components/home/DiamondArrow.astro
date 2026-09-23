@@ -1,0 +1,18 @@
+---
+import diamond from '../../assets/home/diamond-arrow.svg'
+
+interface Props {
+  class?: string
+}
+
+const { class: className } = Astro.props
+---
+
+<!-- The glow in the artwork spills past its box, so the asset keeps its own 129×127 frame. -->
+<img
+  src={diamond.src}
+  width="129"
+  height="127"
+  alt=""
+  class:list={['pointer-events-none h-[127px] w-[129px] select-none', className]}
+/>

@@ -1,0 +1,201 @@
+---
+import { Image } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
+import cardMarketing from '../../assets/home/card-marketing.svg'
+import cardIt from '../../assets/home/card-it.svg'
+import cardFinance from '../../assets/home/card-finance.svg'
+import circleBlue from '../../assets/home/arrow-circle-blue.svg'
+import circleMint from '../../assets/home/arrow-circle-mint.svg'
+import arrowOnBlue from '../../assets/home/arrow-on-blue.svg'
+import arrowOnMint from '../../assets/home/arrow-on-mint.svg'
+
+/** Each card is its own composition in the design: where the notch, photo and copy sit. */
+export type ServiceCardLayout = 'marketing' | 'it' | 'finance'
+
+interface Props {
+  layout: ServiceCardLayout
+  title: string
+  body: string
+  photo: ImageMetadata
+  photoAlt: string
+  /** Where the photo's focal point sits, as the design crops it. */
+  photoPosition?: string
+}
+
+const { layout, title, body, photo, photoAlt, photoPosition = 'center' } = Astro.props
+
+const shape = { marketing: cardMarketing, it: cardIt, finance: cardFinance }[layout]
+const onBlue = layout === 'it'
+---
+
+<article class:list={['service-card', `service-card--${layout}`]}>
+  <img src={shape.src} alt="" class="service-card__shape" width="315" height="433" />
+
+  <h3 class="service-card__title">{title}</h3>
+  <p class="service-card__body">{body}</p>
+  <div class="service-card__photo">
+    <Image
+      src={photo}
+      alt={photoAlt}
+      widths={[300, 600]}
+      sizes="266px"
+      style={`object-position: ${photoPosition}`}
+    />
+  </div>
+
+  <a href="#contact" class="service-card__arrow" aria-label={`Talk to us about ${title}`}>
+    <img src={(onBlue ? circleMint : circleBlue).src} alt="" width="61" height="61" />
+    <img
+      src={(onBlue ? arrowOnMint : arrowOnBlue).src}
+      alt=""
+      width="33"
+      height="22"
+      class="service-card__arrow-glyph"
+    />
+  </a>
+</article>
+
+<style>
+  /* The card keeps the design's 315×433 frame and scales as one piece below that width. */
+  .service-card {
+    --u: calc(100cqw / 315);
+    position: relative;
+    width: min(315px, 100%);
+    aspect-ratio: 315 / 433;
+    container-type: inline-size;
+  }
+  .service-card > * {
+    position: absolute;
+  }
+  .service-card__shape {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .service-card--marketing .service-card__shape {
+    scale: -1 1;
+  }
+  .service-card--it .service-card__shape {
+    scale: 1 -1;
+  }
+
+  .service-card__title {
+    top: calc(var(--u) * 21);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: calc(var(--u) * 40);
+    line-height: calc(var(--u) * 45);
+    color: var(--color-brand-600);
+  }
+  .service-card__body {
+    top: calc(var(--u) * 126);
+    font-size: calc(var(--u) * 16);
+    line-height: calc(var(--u) * 24);
+    color: var(--color-ink);
+  }
+  .service-card__photo {
+    top: calc(var(--u) * 221);
+    left: calc(var(--u) * 24);
+    width: calc(var(--u) * 266);
+    height: calc(var(--u) * 191);
+    overflow: hidden;
+    border: 2px solid var(--color-brand-600);
+    border-radius: 10px;
+  }
+  .service-card__photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .service-card__arrow {
+    width: calc(var(--u) * 61);
+    height: calc(var(--u) * 61);
+    border-radius: 9999px;
+    transition: scale 200ms ease-out;
+  }
+  .service-card__arrow:hover {
+    scale: 1.08;
+  }
+  .service-card__arrow:focus-visible {
+    outline: 2px solid var(--color-mint-300);
+    outline-offset: 3px;
+  }
+  .service-card__arrow img:first-child {
+    width: 100%;
+    height: 100%;
+  }
+  .service-card__arrow-glyph {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(var(--u) * 32.56);
+    height: calc(var(--u) * 22.09);
+    translate: -50% -50%;
+    rotate: -33.51deg;
+  }
+
+  /* Marketing & Creative: notch and arrow top-right, copy left, photo underneath. */
+  .service-card--marketing .service-card__title {
+    left: calc(var(--u) * 27);
+    width: calc(var(--u) * 186);
+  }
+  .service-card--marketing .service-card__body {
+    left: calc(var(--u) * 27);
+    width: calc(var(--u) * 264);
+  }
+  .service-card--marketing .service-card__arrow {
+    top: calc(var(--u) * -5);
+    left: calc(var(--u) * 259);
+  }
+
+  /* IT & Web Solutions: the blue card, photo on top, notch and arrow bottom-left. */
+  .service-card--it .service-card__photo {
+    top: calc(var(--u) * 30);
+    left: calc(var(--u) * 26);
+    border-color: var(--color-mint-300);
+  }
+  .service-card--it .service-card__title {
+    top: calc(var(--u) * 245);
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: var(--color-mint-300);
+  }
+  .service-card--it .service-card__body {
+    top: calc(var(--u) * 305);
+    right: calc(var(--u) * 27);
+    width: calc(var(--u) * 225);
+    text-align: right;
+    color: #fff;
+  }
+  .service-card--it .service-card__arrow {
+    top: calc(var(--u) * 375);
+    left: calc(var(--u) * -6);
+  }
+
+  /* Finance & Accounting: notch and arrow top-left, copy right-aligned, photo underneath. */
+  .service-card--finance .service-card__title {
+    right: calc(var(--u) * 24);
+    width: calc(var(--u) * 204);
+    text-align: right;
+  }
+  .service-card--finance .service-card__body {
+    right: calc(var(--u) * 25);
+    width: calc(var(--u) * 265);
+    text-align: right;
+  }
+  .service-card--finance .service-card__photo {
+    left: calc(var(--u) * 25);
+  }
+  .service-card--finance .service-card__arrow {
+    top: calc(var(--u) * -5);
+    left: calc(var(--u) * -8);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .service-card__arrow {
+      transition: none;
+    }
+  }
+</style>

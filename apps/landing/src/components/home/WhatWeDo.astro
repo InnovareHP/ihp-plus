@@ -1,0 +1,75 @@
+---
+import { Image } from 'astro:assets'
+import servicesBg from '../../assets/home/services-bg.png'
+import marketingPhoto from '../../assets/home/service-marketing.png'
+import itPhoto from '../../assets/home/service-it.png'
+import financePhoto from '../../assets/home/service-finance.png'
+import Eyebrow from './Eyebrow.astro'
+import SectionHeading from './SectionHeading.astro'
+import ServiceCard from './ServiceCard.astro'
+---
+
+<section
+  id="services"
+  class="relative isolate overflow-hidden bg-ink"
+  aria-labelledby="services-heading"
+>
+  <Image
+    src={servicesBg}
+    alt=""
+    widths={[800, 1600, 2000]}
+    sizes="100vw"
+    class="absolute inset-0 -z-10 size-full object-cover object-[35.6%_50%]"
+  />
+  <div class="absolute inset-0 -z-10 bg-black/60"></div>
+
+  <div
+    class="mx-auto max-w-[1280px] px-4 pt-24 pb-24 sm:px-8 lg:px-[118px] lg:pt-[106px] lg:pb-[97px]"
+  >
+    <div class="grid gap-4 lg:grid-cols-[244px_1fr] lg:gap-0">
+      <div class="lg:pt-[17px]">
+        <Eyebrow label="What we do" tone="light" />
+      </div>
+      <div>
+        <SectionHeading
+          id="services-heading"
+          before="Connected"
+          highlight="solutions,"
+          after="endless possibilities."
+          tone="light"
+        />
+        <p class="mt-3 max-w-[729px] text-lg text-white sm:text-xl lg:ml-[5px]">
+          We connect marketing, technology, and business solutions in one workflow, so nothing falls
+          through the cracks as you grow.
+        </p>
+      </div>
+    </div>
+
+    <div
+      class="mt-14 flex flex-wrap justify-center gap-x-[70px] gap-y-12 lg:-mx-[20px] lg:mt-[54px] lg:flex-nowrap"
+    >
+      <ServiceCard
+        layout="marketing"
+        title="Marketing & Creative"
+        body="From strategy to content — we help your brand get seen, get heard, and get chosen."
+        photo={marketingPhoto}
+        photoAlt="A marketing team gathered around a laptop, reviewing a campaign together."
+        photoPosition="78.6% 24%"
+      />
+      <ServiceCard
+        layout="it"
+        title="IT & Web Solutions"
+        body="From websites to full platforms — we build, ship, and maintain the systems your business runs on."
+        photo={itPhoto}
+        photoAlt="A developer at a desk with code on two monitors."
+      />
+      <ServiceCard
+        layout="finance"
+        title="Finance & Accounting"
+        body="Accurate bookkeeping, reporting, and financial support — managed end to end."
+        photo={financePhoto}
+        photoAlt="An accountant working late at a desk beside a computer screen."
+      />
+    </div>
+  </div>
+</section>

@@ -1,0 +1,44 @@
+---
+import badgeBlue from '../../assets/home/start-badge-blue.svg'
+import badgeMint from '../../assets/home/start-badge-mint.svg'
+
+interface Props {
+  variant?: 'blue' | 'mint'
+  class?: string
+}
+
+const { variant = 'blue', class: className } = Astro.props
+const badge = variant === 'blue' ? badgeBlue : badgeMint
+---
+
+<a
+  href="#contact"
+  aria-label="Start a project"
+  class:list={[
+    'start-badge group block rounded-full focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:ring-offset-4 focus-visible:ring-offset-brand-800 focus-visible:outline-none',
+    className,
+  ]}
+>
+  <img src={badge.src} width="167" height="167" alt="" class="start-badge-ring size-full" />
+</a>
+
+<style>
+  /* The ring turns slowly, the way the lettering invites a spin; hover speeds it up. */
+  .start-badge-ring {
+    animation: badge-spin 18s linear infinite;
+  }
+  .start-badge:hover .start-badge-ring,
+  .start-badge:focus-visible .start-badge-ring {
+    animation-duration: 6s;
+  }
+  @keyframes badge-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .start-badge-ring {
+      animation: none;
+    }
+  }
+</style>

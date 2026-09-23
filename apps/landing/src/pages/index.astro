@@ -1,30 +1,24 @@
 ---
 import Layout from '../layouts/Layout.astro'
-import { Button, Card } from '@ihp/ui'
+import Contact from '../components/home/Contact.astro'
+import GlobalReach from '../components/home/GlobalReach.astro'
+import Hero from '../components/home/Hero.astro'
+import HowWeWork from '../components/home/HowWeWork.astro'
+import IndustriesMarquee from '../components/home/IndustriesMarquee.astro'
+import SiteFooter from '../components/home/SiteFooter.astro'
+import WhatWeDo from '../components/home/WhatWeDo.astro'
+import WhoWeAre from '../components/home/WhoWeAre.astro'
+import WhyIhp from '../components/home/WhyIhp.astro'
 ---
 
-<Layout title="IHP Plus — Landing">
-  <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center gap-8 p-8">
-    <div class="flex flex-col gap-4">
-      <h1 class="text-headline-2 sm:text-headline font-bold tracking-tight text-balance">
-        Ship faster with IHP Plus
-      </h1>
-      <p class="text-body max-w-xl opacity-70">
-        Astro handles this marketing page as static HTML. Next.js handles the product at
-        <code class="font-mono">/app</code>. One repo, one origin, two runtimes.
-      </p>
-      <div class="flex gap-3">
-        <a href="/app"><Button size="lg">Get started</Button></a>
-        <Button size="lg" variant="secondary">Book a demo</Button>
-      </div>
-    </div>
-
-    <div class="grid gap-4 sm:grid-cols-3">
-      <Card title="Astro landing">Zero JS by default. Static output, CDN-friendly.</Card>
-      <Card title="Next.js app">App Router, RSC, standalone Docker output.</Card>
-      <Card title="Shared UI"
-        >One <code class="font-mono">@ihp/ui</code> package, both runtimes.</Card
-      >
-    </div>
-  </div>
+<Layout title="IHP+ — Powered by possibilities">
+  <Hero />
+  <WhoWeAre />
+  <WhatWeDo />
+  <WhyIhp />
+  <GlobalReach />
+  <IndustriesMarquee />
+  <HowWeWork />
+  <Contact />
+  <SiteFooter slot="footer" />
 </Layout>

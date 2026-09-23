@@ -1,0 +1,101 @@
+---
+import { Image } from 'astro:assets'
+import contactBg from '../../assets/home/contact-bg.png'
+import bubble from '../../assets/home/contact-bubble.svg'
+import lines from '../../assets/home/contact-shape-left.svg'
+import { ContactForm } from './ContactForm'
+import StartBadge from './StartBadge.astro'
+---
+
+<section id="contact" class="contact relative isolate bg-canvas" aria-labelledby="contact-heading">
+  <!-- Rounded top corners are part of the artwork; the canvas behind shows through them. -->
+  <Image
+    src={contactBg}
+    alt=""
+    widths={[1280, 2560]}
+    sizes="100vw"
+    class="absolute inset-0 -z-10 size-full rounded-t-[30px] object-cover"
+  />
+  <img
+    src={lines.src}
+    alt=""
+    width="421"
+    height="412"
+    class="contact-lines pointer-events-none absolute -z-10 hidden lg:block"
+  />
+
+  <div
+    class="contact-inner relative mx-auto max-w-[1280px] px-4 pt-16 pb-16 sm:px-8 lg:px-0 lg:pt-0 lg:pb-0"
+  >
+    <div class="contact-copy relative z-10 lg:absolute">
+      <h2
+        id="contact-heading"
+        class="font-display text-[3.5rem] leading-[1.05] font-medium text-white sm:text-[80px]"
+      >
+        <span class="block lg:leading-[110px]">Let's turn possibility</span>
+        <span class="block lg:leading-[90px]">
+          into <span class="text-brand-gradient font-extrabold">progress.</span>
+        </span>
+      </h2>
+      <p class="mt-6 max-w-[476px] text-base text-white lg:mt-[28px]">
+        Whether you're looking for marketing, technology, finance, or a connected solution, let's
+        talk about what's next.
+      </p>
+    </div>
+
+    <div class="contact-bubble relative mt-12 lg:absolute lg:mt-0">
+      <img
+        src={bubble.src}
+        alt=""
+        width="650"
+        height="436"
+        class="contact-bubble-shape pointer-events-none absolute hidden lg:block"
+      />
+      <div
+        class="contact-form relative rounded-[30px] bg-brand-600 p-6 sm:p-8 lg:absolute lg:rounded-none lg:bg-transparent lg:p-0"
+      >
+        <ContactForm client:visible endpoint="/app/api/contact" />
+      </div>
+    </div>
+
+    <StartBadge variant="mint" class="contact-badge absolute hidden size-[167px] lg:block" />
+  </div>
+</section>
+
+<style>
+  /* Desktop is the design's 1280×544 composition, measured from the section's top-left. */
+  @media (min-width: 1024px) {
+    .contact-inner {
+      height: 544px;
+    }
+    .contact-lines {
+      top: 16px;
+      left: calc(50% - 518px);
+    }
+    .contact-copy {
+      top: 87px;
+      left: 104px;
+      width: 647px;
+    }
+    .contact-bubble {
+      top: 68.3px;
+      left: 535.3px;
+      width: 650px;
+      height: 436px;
+    }
+    .contact-bubble-shape {
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .contact-form {
+      top: 47px;
+      left: 168px;
+      width: 394px;
+    }
+    .contact-inner :global(.contact-badge) {
+      top: -53px;
+      left: calc(50% + 357px);
+    }
+  }
+</style>

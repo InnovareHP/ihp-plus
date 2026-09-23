@@ -6,7 +6,10 @@ interface Props {
   description?: string
 }
 
-const { title, description = 'IHP Plus — powered by possibility' } = Astro.props
+const {
+  title,
+  description = 'IHP+ pairs bold marketing with dependable technology and finance support — one team, every service.',
+} = Astro.props
 ---
 
 <!doctype html>
@@ -31,19 +34,10 @@ const { title, description = 'IHP Plus — powered by possibility' } = Astro.pro
     >
       Skip to main content
     </a>
-    <header class="border-b border-black/5">
-      <nav class="mx-auto flex w-full max-w-7xl items-center justify-between p-4">
-        <a href="/" class="inline-flex items-center">
-          <img src="/brand/logo.svg" alt="IHP+" width="66" height="40" class="h-10 w-auto" />
-        </a>
-        <a href="/app" class="text-brand-700 text-sm font-medium hover:underline">Open app →</a>
-      </nav>
-    </header>
+    <slot name="header" />
     <main id="main" class="flex flex-1 flex-col">
       <slot />
     </main>
-    <footer class="border-t border-black/5 p-4 text-center text-xs opacity-60">
-      © {new Date().getFullYear()} Innovare Health Partners
-    </footer>
+    <slot name="footer" />
   </body>
 </html>

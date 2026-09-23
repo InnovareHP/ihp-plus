@@ -6,6 +6,28 @@
 @import '@fontsource/poppins/latin-500.css';
 @import '@fontsource/poppins/latin-600.css';
 @import '@fontsource/poppins/latin-700.css';
+/* The website's headlines are Big Shoulders, self-hosted for the same reason. */
+@import '@fontsource/big-shoulders/latin-500';
+@import '@fontsource/big-shoulders/latin-600';
+@import '@fontsource/big-shoulders/latin-800';
+@import '@fontsource/big-shoulders-display/latin-800';
 
 /* @ihp/ui lives outside this app, so Tailwind must be told to scan it. */
 @source '../../../../packages/ui/src';
+
+/* The lockup's gradient; Figma spans it over a box wider than the word, hence the early stop. */
+@utility text-brand-gradient {
+  background-image: linear-gradient(75deg, var(--color-brand-600) -30%, var(--color-mint-300) 95%);
+  background-clip: text;
+  color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

@@ -1,0 +1,61 @@
+---
+import star from '../../assets/home/star.svg'
+
+const INDUSTRIES = ['Legal', 'E-commerce', 'Healthcare', 'Real estate', 'Finance']
+---
+
+<section
+  class="industries relative overflow-hidden bg-brand-600 pt-9 pb-[27px]"
+  aria-labelledby="industries-heading"
+>
+  <h2
+    id="industries-heading"
+    class="text-center text-base leading-5 tracking-[0.05em] text-white uppercase"
+  >
+    Industries we work with
+  </h2>
+
+  <!-- A checkbox rather than a script: the ticker pauses through :has(), with zero JS shipped. -->
+  <label
+    class="sr-only absolute top-2 right-2 z-10 flex items-center gap-2 rounded-sm bg-white px-2 py-1 text-xs text-brand-700 focus-within:not-sr-only"
+  >
+    <input type="checkbox" class="marquee-pause" />
+    Pause the moving list
+  </label>
+
+  <!-- Two identical runs side by side, so sliding one run's width loops without a seam. -->
+  <div class="marquee mt-5 flex w-max">
+    {
+      [false, true].map((copy) => (
+        <ul class="flex shrink-0 items-center" aria-hidden={copy ? 'true' : undefined}>
+          {INDUSTRIES.map((industry) => (
+            <li class="font-display text-mint-300 flex items-center text-5xl leading-[60px] font-semibold tracking-[0.05em] uppercase">
+              <img src={star.src} width="23" height="23" alt="" class="mx-[22px] size-[23px]" />
+              {industry}
+            </li>
+          ))}
+        </ul>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .marquee {
+    animation: marquee 32s linear infinite;
+  }
+  .marquee:hover,
+  .industries:has(.marquee-pause:checked) .marquee {
+    animation-play-state: paused;
+  }
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee {
+      animation: none;
+    }
+  }
+</style>

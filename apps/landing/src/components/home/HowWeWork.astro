@@ -1,0 +1,80 @@
+---
+import ribbon from '../../assets/home/how-ribbon.svg'
+import cardOne from '../../assets/home/step-card-1.svg'
+import cardTwo from '../../assets/home/step-card-2.svg'
+import cardThree from '../../assets/home/step-card-3.svg'
+import Eyebrow from './Eyebrow.astro'
+import SectionHeading from './SectionHeading.astro'
+import StepCard from './StepCard.astro'
+
+const STEPS = [
+  {
+    title: 'Discover & Plan',
+    body: 'We learn your goals, then map the right services for you.',
+    shape: cardOne,
+  },
+  {
+    title: 'Build & Create',
+    body: 'Dedicated teams design, build, and deliver — no black box.',
+    shape: cardTwo,
+  },
+  {
+    title: 'Launch',
+    body: 'Campaigns go live, platforms ship, fully tested and ready.',
+    shape: cardThree,
+  },
+  {
+    title: 'Support & Optimize',
+    body: 'We stay on, measuring and improving results as we go.',
+    shape: cardTwo,
+  },
+]
+---
+
+<section class="relative overflow-hidden bg-canvas" aria-labelledby="how-heading">
+  <img
+    src={ribbon.src}
+    alt=""
+    width="1377"
+    height="525"
+    class="how-ribbon pointer-events-none absolute hidden lg:block"
+  />
+
+  <div
+    class="relative mx-auto max-w-[1280px] px-4 pt-20 pb-24 sm:px-8 lg:px-[98px] lg:pt-[91px] lg:pb-[176px]"
+  >
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div>
+        <Eyebrow label="How we work" flag="blue" />
+        <SectionHeading
+          id="how-heading"
+          class="mt-6"
+          before="From"
+          highlight="discovery"
+          after="to delivery."
+        />
+      </div>
+      <p class="max-w-[428px] text-lg sm:text-xl lg:mt-[44px] lg:mr-[-4px]">
+        Every step is a conversation.<br class="hidden sm:inline" /> That's how possibility turns into
+        progress.
+      </p>
+    </div>
+
+    <ol
+      class="mt-16 grid justify-center gap-x-[22px] gap-y-10 sm:grid-cols-[repeat(2,250px)] lg:mt-[103px] lg:ml-[10px] lg:grid-cols-[repeat(4,250px)] lg:justify-start"
+    >
+      {STEPS.map((step, index) => <StepCard step={index + 1} {...step} />)}
+    </ol>
+  </div>
+</section>
+
+<style>
+  /* The ribbon bleeds 48px past each edge and runs behind the cards, as in the design. */
+  .how-ribbon {
+    top: 177px;
+    left: -48px;
+    width: calc(100% + 97px);
+    max-width: none;
+    height: 525px;
+  }
+</style>

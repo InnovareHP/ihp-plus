@@ -39,6 +39,10 @@ client resolves OKLCH.
 imported at the top of `apps/web/src/app/globals.css` and `apps/landing/src/styles/global.css`.
 No Google Fonts request at runtime.
 
+The marketing site's headlines use **Big Shoulders** (500/600/800) and **Big Shoulders Display** (800),
+from the website's Figma file, self-hosted the same way in `apps/landing` only. They are the
+`font-display` and `font-poster` tokens; body copy there stays Poppins, and `apps/web` does not load them.
+
 The guidelines' four steps, size/leading verbatim, are Tailwind tokens:
 `text-headline` 60/64, `text-headline-2` 30/32, `text-subheading` 20/24, `text-body` 17/20 —
 all bold, tracking 0. The 60px headline is the landing hero's; at `sm` and below drop to
@@ -53,13 +57,13 @@ heading scale starts one step down (`h1` 30/32, `h2` 24/30, `h3` 20/24, `h4` 17/
 Assets live once, in `apps/landing/public/brand/`. nginx maps `/` to landing, so both apps
 reach them at `/brand/...` on the single origin:
 
-| File                         | When                                               |
-| ---------------------------- | -------------------------------------------------- |
-| `logo.svg`                   | default — gradient lockup, reads on light and dark |
-| `logo-on-light.svg`          | flat blue bubble, mint letters                     |
-| `logo-on-dark.svg`           | flat mint bubble, blue letters                     |
-| `logo-mono.svg` / `-reverse` | black-and-white applications                       |
-| `wordmark*.svg`              | same set without the bubble                        |
+| File                         | When                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------- |
+| `logo.svg`                   | default — gradient lockup, reads on light and dark                              |
+| `logo-on-light.svg`          | flat blue bubble, mint letters                                                  |
+| `logo-on-dark.svg`           | flat mint bubble, blue letters                                                  |
+| `logo-mono.svg` / `-reverse` | black-and-white applications                                                    |
+| `wordmark*.svg`              | same set without the bubble                                                     |
 | `logo-email.png`             | `logo.svg` rasterized to 263×160 for email headers — Gmail and Outlook drop SVG |
 
 `apps/web` renders the lockup inline from `src/components/app-logo.tsx` so it needs no
