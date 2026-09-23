@@ -73,29 +73,30 @@ Change the entry port with `PROXY_PORT` in `.env`.
 
 ## Scripts
 
-| Script                 | Does                                                     |
-| ---------------------- | -------------------------------------------------------- |
-| `pnpm build`           | turbo build both apps                                    |
-| `pnpm test`            | vitest (web, graph, email, clock)                        |
-| `pnpm lint`            | eslint (web)                                             |
-| `pnpm typecheck`       | `tsc --noEmit` + `astro check`                           |
-| `pnpm format`          | prettier, incl. `.astro`                                 |
-| `pnpm db:auth-schema`  | regenerate the Better Auth Prisma models                 |
-| `pnpm db:generate`     | create a migration without applying it                   |
-| `pnpm db:migrate`      | apply migrations to `DATABASE_URL`                       |
-| `pnpm db:seed`         | create the org + one team per department                 |
-| `pnpm db:seed:clients` | the real client roster (`--replace` drops the demo rows) |
-| `pnpm rpc:generate`    | regenerate TS clients from the `.proto` files            |
-| `pnpm graph:check`     | prove the SharePoint setup end to end                    |
-| `pnpm graph:grant`     | grant the app write on both SharePoint sites             |
-| `pnpm graph:sites`     | list the SharePoint sites and library ids                |
-| `pnpm rpc:lint`        | `buf lint` the contract                                  |
-| `pnpm db:studio`       | prisma studio                                            |
-| `pnpm infra:up`        | dev postgres + redis                                     |
-| `pnpm infra:pg`        | dev postgres only                                        |
-| `pnpm infra:redis`     | dev redis only                                           |
-| `pnpm infra:s3`        | dev minio + bucket creation                              |
-| `pnpm stack:up`        | full docker stack                                        |
+| Script                  | Does                                                     |
+| ----------------------- | -------------------------------------------------------- |
+| `pnpm build`            | turbo build both apps                                    |
+| `pnpm test`             | vitest (web, graph, email, clock)                        |
+| `pnpm lint`             | eslint (web)                                             |
+| `pnpm typecheck`        | `tsc --noEmit` + `astro check`                           |
+| `pnpm format`           | prettier, incl. `.astro`                                 |
+| `pnpm db:auth-schema`   | regenerate the Better Auth Prisma models                 |
+| `pnpm db:generate`      | create a migration without applying it                   |
+| `pnpm db:migrate`       | apply migrations to `DATABASE_URL`                       |
+| `pnpm db:seed`          | create the org + one team per department                 |
+| `pnpm db:seed:clients`  | the real client roster (`--replace` drops the demo rows) |
+| `pnpm db:seed newhires` | first-day tasks, required reading, shifts for new hires  |
+| `pnpm rpc:generate`     | regenerate TS clients from the `.proto` files            |
+| `pnpm graph:check`      | prove the SharePoint setup end to end                    |
+| `pnpm graph:grant`      | grant the app write on both SharePoint sites             |
+| `pnpm graph:sites`      | list the SharePoint sites and library ids                |
+| `pnpm rpc:lint`         | `buf lint` the contract                                  |
+| `pnpm db:studio`        | prisma studio                                            |
+| `pnpm infra:up`         | dev postgres + redis                                     |
+| `pnpm infra:pg`         | dev postgres only                                        |
+| `pnpm infra:redis`      | dev redis only                                           |
+| `pnpm infra:s3`         | dev minio + bucket creation                              |
+| `pnpm stack:up`         | full docker stack                                        |
 
 ## RPC
 

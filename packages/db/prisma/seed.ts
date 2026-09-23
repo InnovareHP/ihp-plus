@@ -4,6 +4,7 @@ import { db } from '../src/client'
 import { CATALOG_SEED, DEFAULT_CONTRACT_TERMS, DEFAULT_STANDARD_TERMS } from './catalog'
 import { DEMO_CLIENTS } from './client-seed-data'
 import { LOOKUP_OPTION_SEED } from './lookup-seed-data'
+import { NEW_HIRE_TASK_SEED, REQUIRED_READING_CATEGORIES, SHIFT_SEED } from './new-hire-seed-data'
 import { EVALUATION_FORM_SEED, REQUEST_FORM_SEED } from './request-seed-data'
 
 // The company's own departments. Team membership is the single source of truth for them,
@@ -31,12 +32,21 @@ const OWNER_EMAIL = process.env.ORG_OWNER_EMAIL
 
 // Named so a production database can take the reference data without the demo rows:
 // `pnpm db:seed lookups teams`. No argument runs them all, which is the dev default.
-const STEPS = ['teams', 'lookups', 'forms', 'clients', 'catalog', 'contract', 'owner'] as const
+const STEPS = [
+  'teams',
+  'lookups',
+  'forms',
+  'clients',
+  'catalog',
+  'contract',
+  'owner',
+  'newhires',
+] as const
 type Step = (typeof STEPS)[number]
 
 // Membership, approvers and submissions hang off a department, and the owner step only edits
 // rows Better Auth owns, so neither has a delete this file is allowed to make.
-const WIPEABLE = ['lookups', 'forms', 'clients', 'catalog', 'contract'] as const
+const WIPEABLE = ['lookups', 'forms', 'clients', 'catalog', 'contract', 'newhires'] as const
 type Wipeable = (typeof WIPEABLE)[number]
 
 function requestedSteps(): Set<Step> {
@@ -87,6 +97,14 @@ async function wipe(step: Wipeable, organizationId: string) {
   if (step === 'catalog') {
     const { count } = await db.catalogItem.deleteMany({ where: { organizationId } })
     console.log(`  - ${count} catalog items`)
+    return
+  }
+
+  if (step === 'newhires') {
+    // Completions cascade with their task; shifts stay, since people may already work them.
+    const tasks = await db.newHireTask.deleteMany({ where: { organizationId } })
+    const reading = await db.newHireDocument.deleteMany({ where: { organizationId } })
+    console.log(`  - ${tasks.count} first-day tasks, ${reading.count} required documents`)
     return
   }
 
@@ -150,6 +168,73 @@ async function main() {
   if (steps.has('catalog')) await seedCatalog(organization.id)
   if (steps.has('contract')) await seedContractTemplate(organization.id)
   if (steps.has('owner')) await seedOwner(organization.id)
+  if (steps.has('newhires')) await seedNewHireChecklist(organization.id)
+}
+
+/**
+ * The first-day tasks, the required reading and a starter shift library, then the day shift for
+ * any new hire still waiting on one. Every part is create-if-missing, so a re-run never undoes
+ * an admin's edit.
+ */
+async function seedNewHireChecklist(organizationId: string) {
+  // newHireTask has no unique title, so existing ones are matched by hand.
+  const existingTasks = await db.newHireTask.findMany({
+    where: { organizationId, archivedAt: null },
+    select: { title: true },
+  })
+  const taken = new Set(existingTasks.map((task) => task.title))
+  const tasks = await db.newHireTask.createMany({
+    data: NEW_HIRE_TASK_SEED.filter((task) => !taken.has(task.title)).map((task, index) => ({
+      organizationId,
+      title: task.title,
+      description: task.description,
+      sortOrder: existingTasks.length + index,
+    })),
+  })
+  if (tasks.count > 0) console.log(`  + ${tasks.count} first-day tasks`)
+
+  const documents = await db.bluebookDocument.findMany({
+    where: { organizationId, archivedAt: null, category: { in: [...REQUIRED_READING_CATEGORIES] } },
+    select: { id: true },
+  })
+  const reading = await db.newHireDocument.createMany({
+    data: documents.map((document) => ({ organizationId, documentId: document.id })),
+    skipDuplicates: true,
+  })
+  if (reading.count > 0) console.log(`  + ${reading.count} required documents`)
+  if (documents.length === 0) {
+    console.log(
+      `  no required reading: upload bluebook documents filed as ${REQUIRED_READING_CATEGORIES.join(', ')} and re-run`,
+    )
+  }
+
+  const shifts = await db.attendanceShift.createMany({
+    data: SHIFT_SEED.map((shift) => ({ organizationId, ...shift })),
+    skipDuplicates: true,
+  })
+  if (shifts.count > 0) console.log(`  + ${shifts.count} shifts`)
+
+  const dayShift = await db.attendanceShift.findFirst({
+    where: { organizationId, name: SHIFT_SEED[0]?.name },
+    select: { id: true },
+  })
+  if (!dayShift) return
+
+  const [waiting, scheduled] = await Promise.all([
+    db.newHireChecklist.findMany({
+      where: { organizationId, completedAt: null },
+      select: { userId: true },
+    }),
+    db.attendanceSchedule.findMany({ where: { organizationId }, select: { userId: true } }),
+  ])
+  const hasShift = new Set(scheduled.map((row) => row.userId))
+  const assigned = await db.attendanceSchedule.createMany({
+    data: waiting
+      .filter((hire) => !hasShift.has(hire.userId))
+      .map((hire) => ({ organizationId, userId: hire.userId, shiftId: dayShift.id })),
+    skipDuplicates: true,
+  })
+  if (assigned.count > 0) console.log(`  + day shift for ${assigned.count} new hires`)
 }
 
 async function seedDepartments(organizationId: string) {
