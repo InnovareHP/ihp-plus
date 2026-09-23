@@ -198,6 +198,7 @@ export async function shareClientFolder(
         ...clientFolderSharedTemplate({
           organizationName: await organizationName(who.organizationId),
           clientName: client.name,
+          email,
           url: openUrl,
           requiresSignIn: !sharesByLink(),
         }),

@@ -161,7 +161,7 @@ export async function organizationName(organizationId: string) {
     where: { id: organizationId },
     select: { name: true },
   })
-  return organization?.name ?? 'IHP Plus'
+  return organization?.name ?? 'Innovare Health Partners'
 }
 
 /**

@@ -14,22 +14,23 @@ export function verifyEmailTemplate(options: { url: string }): PreparedEmail {
   return {
     subject: 'Confirm your email address',
     ...renderEmail({
-      preheader: 'Confirm your address to finish setting up your IHP Plus account.',
+      preheader: 'Confirm your address to finish setting up your account.',
       heading: 'Confirm your email address',
       body: [
         'Confirming your address lets us send you password resets and anything the portal needs you to action.',
       ],
       action: { label: 'Confirm my address', url: options.url },
-      footnote: 'If you did not create an IHP Plus account, you can ignore this email.',
+      footnote:
+        'If you did not create an account with Innovare Health Partners, you can ignore this email.',
     }),
   }
 }
 
 export function resetPasswordTemplate(options: { url: string }): PreparedEmail {
   return {
-    subject: 'Reset your IHP Plus password',
+    subject: 'Reset your password',
     ...renderEmail({
-      preheader: 'Choose a new password for your IHP Plus account.',
+      preheader: 'Choose a new password for your account.',
       heading: 'Choose a new password',
       body: [
         'Use the link below to set a new password. Your current one keeps working until you do.',
@@ -47,12 +48,12 @@ export function invitationTemplate(options: {
   url: string
 }): PreparedEmail {
   return {
-    subject: `Join ${options.organizationName} on IHP Plus`,
+    subject: `Join ${options.organizationName}`,
     ...renderEmail({
       preheader: `${options.inviterName} invited you to join ${options.organizationName}.`,
       heading: `Join ${options.organizationName}`,
       body: [
-        `${options.inviterName} invited you to ${options.organizationName} on IHP Plus.`,
+        `${options.inviterName} invited you to join ${options.organizationName}.`,
         'Accepting takes you through a short setup — your name, your department and a photo for your company ID.',
       ],
       action: { label: 'Accept the invitation', url: options.url },
@@ -86,10 +87,14 @@ export function contractPublishedTemplate(options: {
 export function clientFolderSharedTemplate(options: {
   organizationName: string
   clientName: string
+  /** The address the folder was shared with, which is the one Microsoft will ask for. */
+  email: string
   url: string
   /** A guest share asks for a Microsoft sign-in; a link share opens straight away. */
   requiresSignIn?: boolean
 }): PreparedEmail {
+  const signIn = options.requiresSignIn !== false
+
   return {
     subject: `${options.organizationName} shared a document folder with you`,
     ...renderEmail({
@@ -98,12 +103,27 @@ export function clientFolderSharedTemplate(options: {
       body: [
         `${options.organizationName} has given you access to the folder it keeps for ${options.clientName}.`,
         'Everything your team files for you appears there, and stays up to date as it changes.',
+        ...(signIn
+          ? [
+              'The folder is kept in Microsoft SharePoint. You do not need a Microsoft account or a password — Microsoft checks it is you with a code sent to this inbox.',
+            ]
+          : []),
       ],
+      ...(signIn
+        ? {
+            steps: [
+              'Select Open the folder below.',
+              `When Microsoft asks for your email, enter ${options.email} — the address this message was sent to. Access is tied to it, so another address will not work.`,
+              'Select Send code. Microsoft emails a one-time code to that same address; check your junk folder if it has not arrived within a few minutes.',
+              'Enter the code within 30 minutes of it arriving. If it has expired, ask Microsoft to send a new one.',
+              'The first time, accept the Review permissions screen. The folder then opens, read-only.',
+            ],
+          }
+        : {}),
       action: { label: 'Open the folder', url: options.url },
-      footnote:
-        options.requiresSignIn === false
-          ? 'The link opens without a sign-in, so keep it to yourself — anyone who has it can read the folder.'
-          : 'Open it with this email address. No Microsoft account? Microsoft emails you a one-time code instead of asking for a password. If the link does not work, ask your contact to share the folder again.',
+      footnote: signIn
+        ? `Already use ${options.email} for a Microsoft work, school or Outlook account? Microsoft signs you in with that instead of sending a code. Next time, open this email and use the same button; Microsoft asks for a fresh code about once a day. If the link stops working, ask your contact to share the folder again.`
+        : 'The link opens without a sign-in, so keep it to yourself — anyone who has it can read the folder.',
     }),
   }
 }
@@ -371,10 +391,10 @@ export function memberAccessChangedTemplate(options: {
     return {
       subject: `Your ${options.organizationName} access was suspended`,
       ...renderEmail({
-        preheader: `You cannot sign in to ${options.organizationName} on IHP Plus for now.`,
+        preheader: `You cannot sign in to ${options.organizationName} for now.`,
         heading: 'Your access was suspended',
         body: [
-          `${options.changedByName} suspended your access to ${options.organizationName} on IHP Plus.`,
+          `${options.changedByName} suspended your access to ${options.organizationName}.`,
           'Signing in will not work until somebody restores it. Nothing you filed has been deleted.',
         ],
         footnote: 'If you think this is a mistake, contact whoever manages your organization.',
@@ -385,10 +405,10 @@ export function memberAccessChangedTemplate(options: {
   return {
     subject: `Your ${options.organizationName} access is back`,
     ...renderEmail({
-      preheader: `You can sign in to ${options.organizationName} on IHP Plus again.`,
+      preheader: `You can sign in to ${options.organizationName} again.`,
       heading: 'Your access is back',
       body: [
-        `${options.changedByName} restored your access to ${options.organizationName} on IHP Plus.`,
+        `${options.changedByName} restored your access to ${options.organizationName}.`,
         'Everything you had before is where you left it.',
       ],
       action: { label: 'Sign in', url: options.url },

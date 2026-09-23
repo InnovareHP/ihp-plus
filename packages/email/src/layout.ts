@@ -13,6 +13,13 @@ const INK = '#222222'
 const MUTED = '#616161'
 const BORDER = '#e3e3e3'
 const CANVAS = '#f7f9fc'
+const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+
+// A PNG because Gmail and Outlook drop SVG images; landing serves /brand/ on the shared origin.
+function logoUrl() {
+  const origin = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
+  return `${origin}/brand/logo-email.png`
+}
 
 export interface EmailLayout {
   /** Shown in the inbox preview line, so a reader knows what it is before opening it. */
@@ -20,6 +27,8 @@ export interface EmailLayout {
   heading: string
   /** Sentences, rendered as separate paragraphs. */
   body: readonly string[]
+  /** An ordered how-to, rendered as a numbered list between the body and the button. */
+  steps?: readonly string[]
   action?: { label: string; url: string }
   /** Follows the button, e.g. how long the link lasts. */
   footnote?: string
@@ -63,6 +72,12 @@ export function renderEmail(layout: EmailLayout) {
     )
     .join('\n')
 
+  const steps = layout.steps?.length
+    ? `<ol style="margin:0 0 16px;padding-left:24px;font-family:${FONT};font-size:15px;line-height:24px;color:${INK};">
+${layout.steps.map((step) => `<li style="margin:0 0 8px;">${escapeHtml(step)}</li>`).join('\n')}
+</ol>`
+    : ''
+
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -79,20 +94,15 @@ export function renderEmail(layout: EmailLayout) {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background-color:#ffffff;border:1px solid ${BORDER};border-radius:12px;">
           <tr>
             <td style="padding:24px 32px 0;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <!-- The mark is a table cell rather than an image: a blocked image would
-                       otherwise leave the header empty. -->
-                  <td width="32" height="32" align="center" valign="middle" bgcolor="${BRAND}" style="border-radius:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;color:#ffffff;">+</td>
-                  <td style="padding-left:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:17px;font-weight:700;color:${INK};">IHP Plus</td>
-                </tr>
-              </table>
+              <!-- The alt text stands in for the lockup when a client blocks images. -->
+              <img src="${escapeHtml(logoUrl())}" width="66" height="40" alt="Innovare Health Partners" style="display:block;border:0;outline:none;text-decoration:none;font-family:${FONT};font-size:17px;font-weight:700;color:${BRAND};">
             </td>
           </tr>
           <tr>
             <td style="padding:24px 32px 32px;">
               <h1 style="margin:0 0 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:22px;line-height:30px;font-weight:650;color:${INK};">${escapeHtml(layout.heading)}</h1>
               ${paragraphs}
+              ${steps}
               ${layout.action ? button(layout.action.label, layout.action.url) : ''}
               ${
                 layout.footnote
@@ -103,7 +113,7 @@ export function renderEmail(layout: EmailLayout) {
           </tr>
         </table>
         <p style="margin:16px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:${MUTED};">
-          Sent by IHP Plus · Innovare Health Partners
+          Sent by Innovare Health Partners
         </p>
       </td>
     </tr>
@@ -117,10 +127,13 @@ export function renderEmail(layout: EmailLayout) {
     layout.heading,
     '',
     ...layout.body,
+    ...(layout.steps?.length
+      ? ['', ...layout.steps.map((step, index) => `${index + 1}. ${step}`)]
+      : []),
     ...(layout.action ? ['', `${layout.action.label}: ${layout.action.url}`] : []),
     ...(layout.footnote ? ['', layout.footnote] : []),
     '',
-    '— IHP Plus · Innovare Health Partners',
+    '— Innovare Health Partners',
   ].join('\n')
 
   return { html, text }

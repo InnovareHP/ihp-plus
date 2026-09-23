@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
 import {
+  clientFolderSharedTemplate,
   clientOwnerAssignedTemplate,
   clockInReminderTemplate,
   clockOutReminderTemplate,
@@ -123,8 +124,8 @@ describe('templates', () => {
       url: 'https://ihp.test/invite/1',
     })
 
-    expect(email.subject).toBe('Join Innovare Health Partners on IHP Plus')
-    expect(email.text).toContain('Ada Lovelace invited you to Innovare Health Partners')
+    expect(email.subject).toBe('Join Innovare Health Partners')
+    expect(email.text).toContain('Ada Lovelace invited you to join Innovare Health Partners')
   })
 
   it('tells a password-reset reader that ignoring it is safe', () => {
@@ -147,11 +148,42 @@ describe('templates', () => {
       resetPasswordTemplate({ url: 'https://ihp.test/b' }),
       invitationTemplate({ organizationName: 'Org', inviterName: 'Someone', url: 'x' }),
     ]) {
-      expect(email.html).toContain('IHP Plus')
+      expect(email.html).toContain('/brand/logo-email.png')
+      expect(email.html).toContain('alt="Innovare Health Partners"')
+      expect(`${email.subject}${email.html}${email.text}`).not.toMatch(/IHP Plus|IHP\+/)
       // The brand hex is the sRGB form of the theme's shade 6.
       expect(email.html).toContain('#1346c5')
       expect(email.text).toContain('Innovare Health Partners')
     }
+  })
+})
+
+describe('client folder shared', () => {
+  const shared = (requiresSignIn?: boolean) =>
+    clientFolderSharedTemplate({
+      organizationName: 'Innovare Health Partners',
+      clientName: 'Acme Clinic',
+      email: 'owner@acme.test',
+      url: 'https://acme.sharepoint.com/folder',
+      requiresSignIn,
+    })
+
+  it('walks a guest through signing in with the address it was sent to and a code', () => {
+    const email = shared()
+
+    expect(email.html).toContain('<ol')
+    expect(email.text).toContain('2. When Microsoft asks for your email, enter owner@acme.test')
+    expect(email.text).toContain('3. Select Send code.')
+    expect(email.text).toMatch(/30 minutes/)
+    expect(email.text).toContain('do not need a Microsoft account')
+  })
+
+  it('gives a link share no sign-in steps and warns it can be forwarded', () => {
+    const email = shared(false)
+
+    expect(email.html).not.toContain('<ol')
+    expect(email.text).not.toContain('Send code')
+    expect(email.text).toContain('anyone who has it can read the folder')
   })
 })
 
