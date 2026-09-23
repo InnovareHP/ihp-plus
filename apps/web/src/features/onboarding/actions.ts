@@ -1,7 +1,8 @@
 'use server'
 
 import { db } from '@ihp/db'
-import { headers } from 'next/headers'
+import type { AuthContext } from 'better-auth'
+import { getOrgAdapter } from 'better-auth/plugins'
 import { auth } from '@/lib/auth'
 import { isKnownOption } from '@/features/lookups/service'
 import { requireSession } from '@/lib/auth-guard'
@@ -109,12 +110,9 @@ export async function completeOnboarding(values: unknown): Promise<CompleteOnboa
   return { ok: true }
 }
 
-// Both endpoints maintain teamMember.membershipKey and team.memberCount, which is why
-// membership is never inserted directly.
+// Membership is never inserted directly: the org adapter maintains membershipKey and memberCount.
 async function joinDepartment(userId: string, teamId: string, organizationId: string) {
-  // Whether they are already in the organization decides which endpoint applies: addMember
-  // rejects an existing member outright, and its team join goes with it. The seeded owner is
-  // exactly that case, and an existing role must not be overwritten with 'member' either.
+  // addMember rejects an existing member, and an existing role must not become 'member' either.
   const existing = await db.member.findFirst({
     where: { userId, organizationId },
     select: { id: true },
@@ -122,16 +120,17 @@ async function joinDepartment(userId: string, teamId: string, organizationId: st
 
   try {
     if (existing) {
-      // Unlike addMember this one requires headers, so it runs as the signed-in caller.
-      await auth.api.addTeamMember({
-        body: { teamId, userId, organizationId },
-        headers: await headers(),
-      })
+      // Not auth.api.addTeamMember: that demands member:update of the caller, which an invited
+      // member joining their own department does not hold, and the team was checked above.
+      // $context is typed with this app's exact options, which the widened AuthContext rejects.
+      const context = (await auth.$context) as unknown as AuthContext
+      await getOrgAdapter(context).findOrCreateTeamMember({ teamId, userId })
     } else {
       await auth.api.addMember({ body: { userId, role: 'member', organizationId, teamId } })
     }
     return true
-  } catch {
+  } catch (error) {
+    console.error('[onboarding] joining a department failed', error)
     return false
   }
 }

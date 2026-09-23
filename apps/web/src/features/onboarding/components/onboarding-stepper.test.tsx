@@ -262,6 +262,33 @@ describe('OnboardingStepper', () => {
     expect(actions.completeOnboarding).not.toHaveBeenCalled()
   })
 
+  it('keeps every answer when the review sends the user back to edit about you', async () => {
+    const person = user()
+    renderStepper({ startDate: '2026-01-05' })
+
+    await person.type(screen.getByLabelText(/First name/), 'Ada')
+    await person.type(screen.getByLabelText(/Last name/), 'Lovelace')
+    await person.type(screen.getByLabelText(/Phone number/), '6095550134')
+    await person.click(screen.getByRole('button', { name: 'Continue' }))
+    await person.click(await screen.findByRole('button', { name: 'Continue' }))
+    await screen.findByText('Step 3 of 4')
+    await person.click(screen.getByRole('button', { name: 'Continue' }))
+    await screen.findByText('Step 4 of 4')
+
+    await person.click(screen.getByRole('button', { name: 'Edit about you' }))
+
+    expect(await screen.findByText('Step 1 of 4')).toBeInTheDocument()
+    expect(screen.getByLabelText(/First name/)).toHaveValue('Ada')
+    expect(screen.getByLabelText(/Last name/)).toHaveValue('Lovelace')
+    expect(screen.getByLabelText(/Phone number/)).toHaveValue('6095550134')
+
+    await person.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(await screen.findByText('Step 2 of 4')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /Department/ })).toHaveValue(
+      'Information Technology',
+    )
+  })
+
   it('has no axe violations on any step', async () => {
     const { container } = renderStepper()
     expect(await axe(container)).toHaveNoViolations()
