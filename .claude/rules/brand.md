@@ -60,6 +60,7 @@ reach them at `/brand/...` on the single origin:
 | `logo-on-dark.svg`           | flat mint bubble, blue letters                     |
 | `logo-mono.svg` / `-reverse` | black-and-white applications                       |
 | `wordmark*.svg`              | same set without the bubble                        |
+| `logo-email.png`             | `logo.svg` rasterized to 263×160 for email headers — Gmail and Outlook drop SVG |
 
 `apps/web` renders the lockup inline from `src/components/app-logo.tsx` so it needs no
 basePath-aware asset URL and no second copy of the artwork; that file is generated from the
