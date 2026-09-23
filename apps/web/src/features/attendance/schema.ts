@@ -303,3 +303,46 @@ export function selfieProblem(file: File): string | undefined {
   if (file.size > MAX_SELFIE_BYTES) return 'That photo is too large — take or pick a smaller one.'
   return undefined
 }
+
+/** The caller's own day on the calendar. */
+export type CalendarDayState =
+  'worked' | 'open' | 'absent' | 'leave' | 'holiday' | 'off' | 'scheduled'
+
+export const CALENDAR_DAY_STATES: readonly CalendarDayState[] = [
+  'worked',
+  'open',
+  'absent',
+  'leave',
+  'holiday',
+  'off',
+  'scheduled',
+]
+
+export interface CalendarHolidayRow {
+  name: string
+  /** ISO code, empty for a day off everyone gets. */
+  country: string
+}
+
+export interface CalendarLeaveRow {
+  userId: string
+  userName: string
+  name: string
+}
+
+export interface CalendarDayRow {
+  date: string
+  state: CalendarDayState
+  workedSeconds: number
+  holidays: CalendarHolidayRow[]
+  leave: CalendarLeaveRow[]
+}
+
+export interface CalendarMonth {
+  month: string
+  today: string
+  timeZone: string
+  days: CalendarDayRow[]
+  /** An admin's calendar carries every country's holidays and everyone's leave. */
+  canManage: boolean
+}

@@ -349,7 +349,47 @@ message ImportHolidaysResponse {
   repeated AttendanceHoliday added = 1;
 }
 
+// A holiday on one calendar day; an admin sees every country's, a member only their shift's.
+message CalendarHoliday {
+  string name = 1;
+  // ISO country code, empty for a day off everyone gets.
+  string country = 2;
+}
+
+// Approved leave on one calendar day; a member sees only their own.
+message CalendarLeave {
+  string user_id = 1;
+  string user_name = 2;
+  // The form it came through, such as "Vacation leave".
+  string name = 3;
+}
+
+message CalendarDay {
+  // YYYY-MM-DD.
+  string date = 1;
+  // The caller's own day: worked, open, absent, leave, holiday, off or scheduled.
+  string state = 2;
+  int32 worked_seconds = 3;
+  repeated CalendarHoliday holidays = 4;
+  repeated CalendarLeave leave = 5;
+}
+
+message GetCalendarRequest {
+  // YYYY-MM; empty means this month in the organization's zone.
+  string month = 1;
+}
+
+message GetCalendarResponse {
+  string month = 1;
+  // YYYY-MM-DD in the organization's zone, so the grid can mark it.
+  string today = 2;
+  string time_zone = 3;
+  repeated CalendarDay days = 4;
+  bool can_manage = 5;
+}
+
 service AttendanceService {
+  rpc GetCalendar(GetCalendarRequest) returns (GetCalendarResponse);
   rpc GetAttendanceSettings(GetAttendanceSettingsRequest) returns (GetAttendanceSettingsResponse);
   rpc UpdateAttendanceSettings(UpdateAttendanceSettingsRequest) returns (UpdateAttendanceSettingsResponse);
   rpc GetTimeClock(GetTimeClockRequest) returns (GetTimeClockResponse);

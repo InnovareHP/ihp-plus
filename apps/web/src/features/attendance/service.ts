@@ -16,6 +16,9 @@ import {
   type AssignShiftValues,
   type AttendanceAbsenceRow,
   type AttendanceBoard,
+  type CalendarDayRow,
+  type CalendarDayState,
+  type CalendarMonth,
   type AttendanceDayRow,
   type AttendanceDayValues,
   type AttendanceHolidayRow,
@@ -37,6 +40,7 @@ import {
 } from './schema'
 import { fillHolidays, fillUpcomingHolidays, holidaySelect, toHolidayRow } from './holiday-calendar'
 import { absencesOf, personDateKey } from './utils/absences'
+import { datesOfMonth, isMonthKey, monthOf } from './utils/calendar'
 import { holidayFor } from './utils/holidays'
 import { holidayCountries, isHolidayCountry } from './utils/public-holidays'
 import {
@@ -1289,4 +1293,105 @@ export async function importHolidays(
   }
 
   return fillHolidays(caller.organizationId, country, year)
+}
+
+/** The caller's own day, most specific reason first, the same order the board uses. */
+function calendarStateOf(input: {
+  date: string
+  today: string
+  person: RosterEntry | undefined
+  day: { clockOutAt: Date | null } | undefined
+  onLeave: boolean
+  onHoliday: boolean
+}): CalendarDayState {
+  if (input.day) return input.day.clockOutAt === null ? 'open' : 'worked'
+  if (input.onLeave) return 'leave'
+  if (input.onHoliday) return 'holiday'
+  const person = input.person
+  if (!person || input.date < person.since || !isWorkday(input.date, person.shift.workdays)) {
+    return 'off'
+  }
+  return input.date < input.today ? 'absent' : 'scheduled'
+}
+
+/**
+ * One month of the caller's own days, with the holidays and leave around them. An admin's month
+ * also carries every country's holidays and everyone's leave, so cover can be planned from it.
+ */
+export async function loadCalendar(month?: string): Promise<CalendarMonth> {
+  const caller = await requireMember()
+  const settings = await settingsOf(caller.organizationId)
+  const today = workDateKey(new Date(), settings.timeZone)
+
+  const key = month || monthOf(today)
+  if (!isMonthKey(key)) {
+    throw new ConnectError('Use a month like 2026-09.', Code.InvalidArgument)
+  }
+
+  const dates = datesOfMonth(key)
+  const window = { gte: dateOf(dates[0] ?? `${key}-01`), lte: dateOf(dates.at(-1) ?? `${key}-01`) }
+  const [person] = await rosterOf(caller.organizationId, settings, caller.userId)
+  const shift = person?.shift ?? (await shiftFor(caller.organizationId, caller.userId, settings))
+
+  const [holidays, leave, days] = await Promise.all([
+    db.attendanceHoliday.findMany({
+      where: {
+        organizationId: caller.organizationId,
+        date: window,
+        ...(caller.canManage ? {} : { country: { in: ['', shift.holidayCountry] } }),
+      },
+      select: { date: true, name: true, country: true },
+      orderBy: [{ date: 'asc' }, { country: 'asc' }],
+    }),
+    db.attendanceLeave.findMany({
+      where: {
+        organizationId: caller.organizationId,
+        date: window,
+        ...(caller.canManage ? {} : { userId: caller.userId }),
+      },
+      select: { userId: true, date: true, name: true },
+      orderBy: { date: 'asc' },
+    }),
+    db.attendanceDay.findMany({
+      where: { organizationId: caller.organizationId, userId: caller.userId, workDate: window },
+      select: { workDate: true, workedSeconds: true, clockOutAt: true },
+    }),
+  ])
+
+  const names = await peopleNames(leave.map((one) => one.userId))
+  const entries = holidays.map((one) => ({ ...one, date: dateKeyOf(one.date) }))
+  const dayOn = new Map(days.map((day) => [dateKeyOf(day.workDate), day]))
+
+  const rows: CalendarDayRow[] = dates.map((date) => {
+    const leaveToday = leave.filter((one) => dateKeyOf(one.date) === date)
+    const day = dayOn.get(date)
+    return {
+      date,
+      state: calendarStateOf({
+        date,
+        today,
+        person,
+        day,
+        onLeave: leaveToday.some((one) => one.userId === caller.userId),
+        onHoliday: holidayFor(entries, date, shift.holidayCountry) !== undefined,
+      }),
+      workedSeconds: day?.workedSeconds ?? 0,
+      holidays: entries
+        .filter((one) => one.date === date)
+        .map((one) => ({ name: one.name, country: one.country })),
+      leave: leaveToday.map((one) => ({
+        userId: one.userId,
+        userName: names.get(one.userId) ?? 'Someone',
+        name: one.name,
+      })),
+    }
+  })
+
+  return {
+    month: key,
+    today,
+    timeZone: settings.timeZone,
+    days: rows,
+    canManage: caller.canManage,
+  }
 }

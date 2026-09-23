@@ -4,6 +4,7 @@ import { ConnectError } from '@ihp/rpc'
 import {
   absenceFromProto,
   boardRowFromProto,
+  calendarDayFromProto,
   dayFromProto,
   holidayFromProto,
   scheduleFromProto,
@@ -22,6 +23,7 @@ import type {
   AttendanceSettingsRow,
   AttendanceSettingsView,
   AttendanceShiftRow,
+  CalendarMonth,
   AssignShiftValues,
   ClockActionValues,
   HolidayBook,
@@ -259,4 +261,15 @@ export async function importHolidays(
 ): Promise<AttendanceHolidayRow[]> {
   const response = await call(() => browserClients.attendance.importHolidays(values))
   return response.added.map(holidayFromProto)
+}
+
+export async function getCalendar(month: string): Promise<CalendarMonth> {
+  const response = await call(() => browserClients.attendance.getCalendar({ month }))
+  return {
+    month: response.month,
+    today: response.today,
+    timeZone: response.timeZone || 'UTC',
+    days: response.days.map(calendarDayFromProto),
+    canManage: response.canManage,
+  }
 }

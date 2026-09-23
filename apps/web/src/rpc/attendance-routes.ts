@@ -13,6 +13,7 @@ import {
   loadAttendance,
   loadAttendanceSettings,
   loadBoard,
+  loadCalendar,
   loadHolidays,
   loadSchedules,
   loadShifts,
@@ -26,6 +27,7 @@ import {
 import {
   absenceToProto,
   boardRowToProto,
+  calendarDayToProto,
   dayToProto,
   holidayToProto,
   scheduleToProto,
@@ -37,6 +39,17 @@ import {
 // Thin by design: every implementation converts at the wire boundary and delegates to the
 // feature's service, so the business rules stay testable without a transport.
 export const attendance: ServiceImpl<typeof AttendanceService> = {
+  getCalendar: async (request) => {
+    const calendar = await loadCalendar(request.month)
+    return {
+      month: calendar.month,
+      today: calendar.today,
+      timeZone: calendar.timeZone,
+      days: calendar.days.map(calendarDayToProto),
+      canManage: calendar.canManage,
+    }
+  },
+
   getAttendanceSettings: async () => {
     const view = await loadAttendanceSettings()
     return { settings: settingsToProto(view.settings), canManage: view.canManage }

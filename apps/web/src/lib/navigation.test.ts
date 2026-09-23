@@ -21,6 +21,12 @@ function hrefsIn(access: typeof NOBODY, sectionId: string) {
 }
 
 describe('navigation', () => {
+  it('offers the calendar to everyone under the time clock', () => {
+    expect(
+      itemIn(NOBODY, 'workspace', 'Time clock')?.children?.map((child) => child.href),
+    ).toContain(routes.attendanceCalendar)
+  })
+
   it('hides the admin section from someone who cannot manage the organization', () => {
     expect(visibleSections(NOBODY).map((section) => section.id)).toEqual(['workspace', 'work'])
     expect(visibleSections(ADMIN).map((section) => section.id)).toEqual([

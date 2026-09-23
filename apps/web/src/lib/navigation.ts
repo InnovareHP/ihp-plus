@@ -88,6 +88,11 @@ export const NAV_SECTIONS: readonly NavSection[] = [
             description: 'Clock in, take a break, see your hours',
           },
           {
+            href: routes.attendanceCalendar,
+            label: 'Calendar',
+            description: 'Holidays, leave and your days by month',
+          },
+          {
             href: routes.attendanceTeam,
             label: 'Team attendance',
             description: 'Who is in, timesheets and shifts',

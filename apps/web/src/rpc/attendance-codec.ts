@@ -1,5 +1,6 @@
 import type {
   AttendanceAbsence as AttendanceAbsenceMessage,
+  CalendarDay as CalendarDayMessage,
   AttendanceBoardRow as AttendanceBoardRowMessage,
   AttendanceDay as AttendanceDayMessage,
   AttendanceHoliday as AttendanceHolidayMessage,
@@ -9,7 +10,9 @@ import type {
 } from '@ihp/rpc/attendance'
 import {
   DEFAULT_ATTENDANCE_SETTINGS,
+  CALENDAR_DAY_STATES,
   DEFAULT_SHIFT,
+  type CalendarDayRow,
   type AttendanceAbsenceRow,
   type AttendanceBoardRow,
   type AttendanceDayRow,
@@ -267,5 +270,36 @@ export function boardRowFromProto(row: AttendanceBoardRowMessage): AttendanceBoa
     day: row.day ? dayFromProto(row.day) : undefined,
     state: stateOf(row.state),
     offReason: row.offReason,
+  }
+}
+
+export function calendarDayToProto(day: CalendarDayRow): CalendarDayMessage {
+  return {
+    $typeName: 'ihp.attendance.v1.CalendarDay',
+    date: day.date,
+    state: day.state,
+    workedSeconds: day.workedSeconds,
+    holidays: day.holidays.map((one) => ({
+      $typeName: 'ihp.attendance.v1.CalendarHoliday' as const,
+      name: one.name,
+      country: one.country,
+    })),
+    leave: day.leave.map((one) => ({
+      $typeName: 'ihp.attendance.v1.CalendarLeave' as const,
+      userId: one.userId,
+      userName: one.userName,
+      name: one.name,
+    })),
+  }
+}
+
+export function calendarDayFromProto(day: CalendarDayMessage): CalendarDayRow {
+  return {
+    date: day.date,
+    // An unknown state from a newer server reads as an ordinary scheduled day.
+    state: CALENDAR_DAY_STATES.find((state) => state === day.state) ?? 'scheduled',
+    workedSeconds: day.workedSeconds,
+    holidays: day.holidays.map((one) => ({ name: one.name, country: one.country })),
+    leave: day.leave.map((one) => ({ userId: one.userId, userName: one.userName, name: one.name })),
   }
 }

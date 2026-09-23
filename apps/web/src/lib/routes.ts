@@ -11,6 +11,7 @@ export const routes = {
   tasks: '/tasks',
   attendance: '/attendance',
   attendanceTeam: '/attendance/team',
+  attendanceCalendar: '/attendance/calendar',
   onboarding: '/onboarding',
   requests: '/requests',
   requestApprovals: '/requests/approvals',

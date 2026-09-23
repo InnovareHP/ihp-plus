@@ -60,6 +60,7 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 }))
 
 const {
+  loadCalendar,
   clockIn,
   clockOut,
   deleteAttendanceDay,
@@ -859,5 +860,100 @@ describe('holidays that follow the shift', () => {
     await expect(importHolidays({ year: 2026, country: 'PH' })).rejects.toMatchObject({
       code: Code.PermissionDenied,
     })
+  })
+})
+
+describe('the month calendar', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    everybodyOn()
+    prisma.member.findMany.mockResolvedValue([memberRow('user-1', 'Grace')])
+    prisma.attendanceSchedule.findMany.mockResolvedValue([])
+    prisma.attendanceHoliday.findMany.mockResolvedValue([])
+    prisma.attendanceLeave.findMany.mockResolvedValue([])
+    prisma.attendanceDay.findMany.mockResolvedValue([])
+    prisma.user.findMany.mockResolvedValue([
+      { id: 'user-1', name: 'Grace Reyes', preferredName: 'Grace' },
+      { id: 'user-2', name: 'Ada Lovelace', preferredName: null },
+    ])
+    // Thursday 24 September 2026.
+    vi.setSystemTime(new Date('2026-09-24T12:00:00.000Z'))
+  })
+
+  it("gives every day of the month the caller's own state", async () => {
+    signedInAs('member')
+    prisma.attendanceDay.findMany.mockResolvedValue([
+      {
+        workDate: new Date('2026-09-21T00:00:00.000Z'),
+        workedSeconds: 8 * 3600,
+        clockOutAt: new Date('2026-09-21T18:00:00.000Z'),
+      },
+      { workDate: new Date('2026-09-24T00:00:00.000Z'), workedSeconds: 0, clockOutAt: null },
+    ])
+    prisma.attendanceHoliday.findMany.mockResolvedValue([
+      { date: new Date('2026-09-22T00:00:00.000Z'), name: 'Founders Day', country: '' },
+    ])
+    prisma.attendanceLeave.findMany.mockResolvedValue([
+      { userId: 'user-1', date: new Date('2026-09-23T00:00:00.000Z'), name: 'Vacation leave' },
+    ])
+
+    const calendar = await loadCalendar('2026-09')
+    const state = (date: string) => calendar.days.find((day) => day.date === date)?.state
+
+    expect(calendar).toMatchObject({ month: '2026-09', today: '2026-09-24', canManage: false })
+    expect(calendar.days).toHaveLength(30)
+    expect(state('2026-09-21')).toBe('worked')
+    expect(state('2026-09-22')).toBe('holiday')
+    expect(state('2026-09-23')).toBe('leave')
+    expect(state('2026-09-24')).toBe('open')
+    expect(state('2026-09-18')).toBe('absent')
+    expect(state('2026-09-20')).toBe('off')
+    expect(state('2026-09-25')).toBe('scheduled')
+    expect(calendar.days.find((day) => day.date === '2026-09-23')?.leave).toEqual([
+      { userId: 'user-1', userName: 'Grace', name: 'Vacation leave' },
+    ])
+    vi.useRealTimers()
+  })
+
+  it("shows a member only their own leave and their shift's holidays", async () => {
+    signedInAs('member')
+    await loadCalendar('2026-09')
+
+    expect(prisma.attendanceLeave.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ userId: 'user-1' }) }),
+    )
+    expect(prisma.attendanceHoliday.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ country: { in: ['', ''] } }),
+      }),
+    )
+    vi.useRealTimers()
+  })
+
+  it("shows an admin every country's holidays and everyone's leave", async () => {
+    signedInAs('admin')
+    prisma.attendanceLeave.findMany.mockResolvedValue([
+      { userId: 'user-2', date: new Date('2026-09-10T00:00:00.000Z'), name: 'Sick leave' },
+    ])
+
+    const calendar = await loadCalendar('2026-09')
+
+    const leaveQuery = prisma.attendanceLeave.findMany.mock.calls[0]?.[0]
+    expect(leaveQuery.where.userId).toBeUndefined()
+    expect(prisma.attendanceHoliday.findMany.mock.calls[0]?.[0].where.country).toBeUndefined()
+    expect(calendar.canManage).toBe(true)
+    expect(calendar.days.find((day) => day.date === '2026-09-10')).toMatchObject({
+      state: 'absent',
+      leave: [{ userId: 'user-2', userName: 'Ada Lovelace', name: 'Sick leave' }],
+    })
+    vi.useRealTimers()
+  })
+
+  it('opens on this month in the company zone, and refuses a month that is not one', async () => {
+    signedInAs('member')
+
+    await expect(loadCalendar()).resolves.toMatchObject({ month: '2026-09' })
+    await expect(loadCalendar('2026-13')).rejects.toMatchObject({ code: Code.InvalidArgument })
+    vi.useRealTimers()
   })
 })
