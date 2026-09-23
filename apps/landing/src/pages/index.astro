@@ -16,6 +16,13 @@ import WhyIhp from '../components/home/WhyIhp.astro'
   title="IHP+ — Marketing, technology & finance, one team | Innovare HP"
   description="IHP+ is one team for marketing & creative, IT & web solutions, and finance & accounting. Founded in Michigan, serving clients globally."
 >
+  <!-- Runs before the nav and hero parse; the timeout reveals it if the motion bundle never arrives. -->
+  <script is:inline>
+    if (matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+      document.documentElement.classList.add('motion')
+      setTimeout(() => document.documentElement.classList.remove('motion'), 3000)
+    }
+  </script>
   <SiteNav />
   <Hero />
   <WhoWeAre />
@@ -27,3 +34,7 @@ import WhyIhp from '../components/home/WhyIhp.astro'
   <Contact />
   <SiteFooter slot="footer" />
 </Layout>
+
+<script>
+  import '../scripts/home-motion'
+</script>

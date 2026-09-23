@@ -21,19 +21,25 @@ import DiamondArrow from './DiamondArrow.astro'
 
   <div class="relative mx-auto flex max-w-[1280px] flex-col items-center px-4 text-center">
     <p
+      data-global-kicker
       class="font-display text-brand-600 text-[2.5rem] leading-[64px] font-medium sm:text-[64px]"
       aria-hidden="true"
     >
       GLOBAL REACH
     </p>
-    <DiamondArrow class="mt-[25.5px]" />
+    <DiamondArrow
+      href="#industries"
+      label="Next section: Industries we work with"
+      class="global-diamond mt-[25.5px]"
+    />
     <h2
       id="global-heading"
+      data-motion="heading"
       class="font-display mt-10 max-w-[585px] text-5xl leading-[1.05] font-medium text-balance text-white sm:mt-[40.5px] sm:text-[64px] sm:leading-[60px]"
     >
       <span class="sr-only">Global reach. </span>Built to work across borders and time zones.
     </h2>
-    <p class="mt-9 max-w-[885px] text-lg text-white sm:mt-[34px] sm:text-xl">
+    <p data-motion="fade" class="mt-9 max-w-[885px] text-lg text-white sm:mt-[34px] sm:text-xl">
       IHP+ delivers for clients wherever they operate, with teams structured to overlap your
       business hours and adapt to your market's language, tone, and compliance needs.
     </p>

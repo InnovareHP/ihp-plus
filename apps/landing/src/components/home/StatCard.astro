@@ -19,6 +19,7 @@ const surface = {
 ---
 
 <figure
+  data-motion="stat"
   class:list={[
     'flex h-[322px] flex-col justify-between rounded-[15px] pt-[30px] pb-[46px]',
     surface,
@@ -27,11 +28,13 @@ const surface = {
 >
   <p class="stat-figure flex items-start" aria-hidden="true">
     <span
+      data-stat-value
       class="font-poster text-[120px] leading-[128px] font-extrabold tracking-[0.02em] sm:text-[150px]"
     >
       {value}
     </span>
     <span
+      data-stat-unit
       class:list={[
         'font-poster text-[52px] leading-[128px] font-extrabold tracking-[0.02em] sm:text-[64px]',
         unitStyle === 'word' ? 'stat-unit-word' : 'stat-unit-mark',

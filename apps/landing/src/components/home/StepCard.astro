@@ -21,7 +21,9 @@ const { step, title, body, shape } = Astro.props
     height="251"
     class="step-card-shape absolute inset-0 size-full"
   />
-  <div class="absolute -top-[10px] left-[200px] flex size-[60px] items-center justify-center">
+  <div
+    class="step-card-badge absolute -top-[10px] left-[200px] flex size-[60px] items-center justify-center"
+  >
     <img src={badge.src} alt="" width="60" height="60" class="absolute inset-0 size-full" />
     <span class="font-display text-mint-300 relative text-[40px] leading-[50px] font-medium">
       <span class="sr-only">Step </span>{step}

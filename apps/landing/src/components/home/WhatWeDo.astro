@@ -11,7 +11,7 @@ import ServiceCard from './ServiceCard.astro'
 
 <section
   id="services"
-  class="relative isolate overflow-hidden bg-ink"
+  class="services relative isolate overflow-hidden bg-ink"
   aria-labelledby="services-heading"
 >
   <Image
@@ -19,7 +19,7 @@ import ServiceCard from './ServiceCard.astro'
     alt=""
     widths={[800, 1600, 2000]}
     sizes="100vw"
-    class="absolute inset-0 -z-10 size-full object-cover object-[35.6%_50%]"
+    class="services-bg absolute inset-0 -z-10 size-full object-cover object-[35.6%_50%]"
   />
   <div class="absolute inset-0 -z-10 bg-black/60"></div>
 
@@ -38,7 +38,7 @@ import ServiceCard from './ServiceCard.astro'
           after="endless possibilities."
           tone="light"
         />
-        <p class="mt-3 max-w-[729px] text-lg text-white sm:text-xl lg:ml-[5px]">
+        <p data-motion="fade" class="mt-3 max-w-[729px] text-lg text-white sm:text-xl lg:ml-[5px]">
           We connect marketing, technology, and business solutions in one workflow, so nothing falls
           through the cracks as you grow.
         </p>

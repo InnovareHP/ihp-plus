@@ -2,17 +2,24 @@
 import diamond from '../../assets/home/diamond-arrow.svg'
 
 interface Props {
+  /** The section the arrow scrolls to, e.g. "#services". */
+  href: string
+  /** Names the destination, since the arrow itself has no text. */
+  label: string
   class?: string
 }
 
-const { class: className } = Astro.props
+const { href, label, class: className } = Astro.props
 ---
 
 <!-- The glow in the artwork spills past its box, so the asset keeps its own 129×127 frame. -->
-<img
-  src={diamond.src}
-  width="129"
-  height="127"
-  alt=""
-  class:list={['pointer-events-none h-[127px] w-[129px] select-none', className]}
-/>
+<a
+  href={href}
+  aria-label={label}
+  class:list={[
+    'block h-[127px] w-[129px] rounded-full hover:translate-y-1.5 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:outline-none motion-safe:transition-[translate] motion-safe:duration-200 motion-safe:ease-out',
+    className,
+  ]}
+>
+  <img src={diamond.src} width="129" height="127" alt="" class="size-full select-none" />
+</a>

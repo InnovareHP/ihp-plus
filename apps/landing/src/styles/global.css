@@ -31,3 +31,15 @@ html {
     scroll-behavior: auto;
   }
 }
+
+/* Set by the homepage's inline script, so the hero never paints before its GSAP intro. */
+.motion [data-hero],
+.motion [data-site-nav] li {
+  visibility: hidden;
+}
+
+/* SplitText's word masks clip at the line box; the extra room keeps glyph tails visible. */
+.motion-word-mask {
+  padding-block: 0.12em;
+  margin-block: -0.12em;
+}

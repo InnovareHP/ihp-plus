@@ -12,6 +12,7 @@ const photo = {
   quality: 70,
 }
 import bulge from '../../assets/home/hero-bulge.svg'
+import HeroBackdrop from './HeroBackdrop.astro'
 import StartBadge from './StartBadge.astro'
 ---
 
@@ -25,12 +26,13 @@ import StartBadge from './StartBadge.astro'
       fetchpriority="high"
       class="hero-photo"
     />
+    <HeroBackdrop />
   </div>
   <div class="hero-bulge absolute bottom-0 left-1/2" style={`--bulge: url(${bulge.src})`}>
     <Picture {...photo} formats={[...photo.formats]} loading="eager" class="hero-photo" />
   </div>
 
-  <div class="relative flex h-full flex-col items-center px-4 text-center">
+  <div class="hero-content relative flex h-full flex-col items-center px-4 text-center">
     <!-- Holds the place the sticky nav sits over, so the lockup lands where the design has it. -->
     <div aria-hidden="true" class="h-[44px] w-full shrink-0 sm:h-[47px]"></div>
 
@@ -39,16 +41,19 @@ import StartBadge from './StartBadge.astro'
       width="90"
       height="55"
       alt="IHP+"
+      data-hero="logo"
       class="mt-12 h-[55px] w-[90px] sm:mt-[72px] lg:mt-[96px] lg:h-[67px] lg:w-[110px]"
     />
 
     <h1 id="hero-heading" class="mt-7 flex flex-col items-center sm:mt-[28px]">
       <span
+        data-hero="kicker"
         class="font-display text-[2.75rem] leading-[1.1] font-medium text-white sm:text-[64px] sm:leading-[70px] lg:text-[76px] lg:leading-[82px]"
       >
         POWERED BY
       </span>
       <span
+        data-hero="title"
         class="font-poster text-brand-gradient text-[3.5rem] leading-[1] font-extrabold tracking-[0.02em] sm:text-[100px] sm:leading-[128px] lg:text-[120px] lg:leading-[140px]"
       >
         POSSIBILITIES
@@ -56,6 +61,7 @@ import StartBadge from './StartBadge.astro'
     </h1>
 
     <p
+      data-hero="copy"
       class="mt-7 max-w-[837px] lg:max-w-[920px] text-base text-white sm:mt-6 sm:text-xl lg:text-[22px] lg:leading-[1.5]"
     >
       IHP+ turns possibility into progress — pairing bold marketing with dependable technology to
@@ -65,7 +71,7 @@ import StartBadge from './StartBadge.astro'
 
   <StartBadge
     variant="blue"
-    class="absolute bottom-[22px] left-1/2 size-[167px] -translate-x-1/2"
+    class="hero-badge absolute bottom-[22px] left-1/2 size-[167px] -translate-x-1/2"
   />
 </section>
 
