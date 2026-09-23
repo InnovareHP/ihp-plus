@@ -66,6 +66,8 @@ export interface AttendanceShiftRow {
   captureLocation: boolean
   autoClockOutHours: number
   isDefault: boolean
+  /** Emails a missed clock-in or a forgotten clock-out to whoever works it. */
+  sendReminders: boolean
 }
 
 export interface AttendanceScheduleRow {
@@ -167,6 +169,7 @@ export const shiftSchema = z
     requireSelfie: z.boolean(),
     requireNote: z.boolean(),
     captureLocation: z.boolean(),
+    sendReminders: z.boolean(),
     autoClockOutHours: z
       .number()
       .int()

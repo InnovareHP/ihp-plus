@@ -155,6 +155,7 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
         requireNote: request.requireNote,
         captureLocation: request.captureLocation,
         autoClockOutHours: request.autoClockOutHours,
+        sendReminders: request.sendReminders,
       }),
     ),
   }),

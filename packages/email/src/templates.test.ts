@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
 import {
   clientOwnerAssignedTemplate,
+  clockInReminderTemplate,
+  clockOutReminderTemplate,
   contractStatusChangedTemplate,
   evaluationCancelledTemplate,
   evaluationSubmittedTemplate,
@@ -284,5 +286,46 @@ describe('client and contract emails', () => {
 
     expect(email.subject).toBe('IHP-2026-014 is now cancelled')
     expect(email.text).toContain('Growth retainer for Riverside Care Center')
+  })
+})
+
+describe('time clock reminders', () => {
+  it('says when the shift started and where to clock in', () => {
+    const email = clockInReminderTemplate({
+      firstName: 'Grace',
+      shiftName: 'Morning',
+      startsAt: '09:00',
+      url: 'https://ihp.test/app/attendance',
+    })
+
+    expect(email.subject).toBe('You have not clocked in yet')
+    expect(email.text).toContain('Your Morning shift started at 09:00')
+    expect(email.text).toContain('time off request')
+    expect(email.text).toContain('https://ihp.test/app/attendance')
+  })
+
+  it('warns when the clock will close the day on its own', () => {
+    const email = clockOutReminderTemplate({
+      firstName: 'Grace',
+      shiftName: 'Morning',
+      endedAt: '18:00',
+      closesAt: '01:00',
+      url: 'https://ihp.test/app/attendance',
+    })
+
+    expect(email.subject).toBe('You are still clocked in')
+    expect(email.text).toContain('closes the day at 01:00')
+  })
+
+  it('leaves the auto-close out when the shift never closes a day', () => {
+    const email = clockOutReminderTemplate({
+      firstName: 'Grace',
+      shiftName: 'Night',
+      endedAt: '06:00',
+      closesAt: undefined,
+      url: 'https://ihp.test/app/attendance',
+    })
+
+    expect(email.text).not.toContain('closes the day')
   })
 })

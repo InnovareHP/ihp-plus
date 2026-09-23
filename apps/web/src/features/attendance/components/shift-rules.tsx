@@ -7,6 +7,7 @@ export function ShiftRules({ shift }: { shift: AttendanceShiftRow }) {
     shift.requireSelfie ? 'Selfie' : undefined,
     shift.requireNote ? 'Note' : undefined,
     shift.captureLocation ? 'Location' : undefined,
+    shift.sendReminders ? 'Reminders' : undefined,
   ].filter((rule): rule is string => Boolean(rule))
 
   if (asks.length === 0) {

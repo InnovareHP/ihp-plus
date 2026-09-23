@@ -456,3 +456,52 @@ export function contractStatusChangedTemplate(options: {
     }),
   }
 }
+
+export function clockInReminderTemplate(options: {
+  firstName: string
+  shiftName: string
+  /** The shift's start as the person reads it, "09:00". */
+  startsAt: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: 'You have not clocked in yet',
+    ...renderEmail({
+      preheader: `Your ${options.shiftName} shift started at ${options.startsAt}.`,
+      heading: `Hi ${options.firstName}, you have not clocked in yet`,
+      body: [
+        `Your ${options.shiftName} shift started at ${options.startsAt} and there is no clock-in for today.`,
+        'If you are working, clock in now so your hours count from here.',
+      ],
+      action: { label: 'Open your time clock', url: options.url },
+      footnote:
+        'If you are off today, ask your admin to record it, or raise a time off request so it shows as leave.',
+    }),
+  }
+}
+
+export function clockOutReminderTemplate(options: {
+  firstName: string
+  shiftName: string
+  /** The shift's end as the person reads it, "18:00". */
+  endedAt: string
+  /** When the clock will close the day on its own, "01:00", or undefined if it never does. */
+  closesAt: string | undefined
+  url: string
+}): PreparedEmail {
+  return {
+    subject: 'You are still clocked in',
+    ...renderEmail({
+      preheader: `Your ${options.shiftName} shift ended at ${options.endedAt}.`,
+      heading: `Hi ${options.firstName}, you are still clocked in`,
+      body: [
+        `Your ${options.shiftName} shift ended at ${options.endedAt}, and your clock is still running.`,
+        options.closesAt
+          ? `If you have finished, clock out now. Otherwise the clock closes the day at ${options.closesAt} and marks the clock-out as missed.`
+          : 'If you have finished, clock out now so the day records the hours you actually worked.',
+      ],
+      action: { label: 'Clock out', url: options.url },
+      footnote: 'Still working? Nothing to do; this is the only reminder you will get today.',
+    }),
+  }
+}

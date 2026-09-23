@@ -37,6 +37,7 @@ const SHIFT: AttendanceShiftRow = {
   requireNote: false,
   captureLocation: false,
   autoClockOutHours: 16,
+  sendReminders: true,
   isDefault: true,
 }
 

@@ -42,6 +42,7 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
       requireSelfie: shift?.requireSelfie ?? defaults.requireSelfie,
       requireNote: shift?.requireNote ?? defaults.requireNote,
       captureLocation: shift?.captureLocation ?? defaults.captureLocation,
+      sendReminders: shift?.sendReminders ?? defaults.sendReminders,
       autoClockOutHours: shift?.autoClockOutHours ?? defaults.autoClockOutHours,
     },
   })
@@ -180,6 +181,20 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
               <Switch
                 label="Where the clock was pressed"
                 description="Coordinates ride along with the punch; a refused fix never blocks it."
+                checked={field.value}
+                onChange={(event) => field.onChange(event.currentTarget.checked)}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="sendReminders"
+            render={({ field }) => (
+              <Switch
+                label="Email reminders"
+                description="Emails anyone not clocked in after the grace period, or still clocked in 30 minutes after the shift ends."
                 checked={field.value}
                 onChange={(event) => field.onChange(event.currentTarget.checked)}
                 onBlur={field.onBlur}

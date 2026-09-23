@@ -40,6 +40,7 @@ const MORNING: AttendanceShiftRow = {
   requireNote: false,
   captureLocation: false,
   autoClockOutHours: 16,
+  sendReminders: true,
   isDefault: false,
 }
 
@@ -85,6 +86,26 @@ describe('ShiftsPanel', () => {
           name: 'Graveyard',
           shiftStartMinutes: DEFAULT_SHIFT.shiftStartMinutes,
         }),
+      ),
+    )
+  })
+
+  it('turns email reminders off for a shift that should not get them', async () => {
+    const user = userEvent.setup()
+    render(<ShiftsPanel />)
+
+    await user.click(await screen.findByRole('button', { name: 'New shift' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New shift' })
+
+    await user.type(within(dialog).getByRole('textbox', { name: 'Name' }), 'Remote')
+    const reminders = within(dialog).getByRole('switch', { name: /Email reminders/ })
+    expect(reminders).toBeChecked()
+    await user.click(reminders)
+    await user.click(within(dialog).getByRole('button', { name: 'Save shift' }))
+
+    await waitFor(() =>
+      expect(rpc.saveShift).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Remote', sendReminders: false }),
       ),
     )
   })

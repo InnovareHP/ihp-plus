@@ -179,6 +179,7 @@ export function shiftToProto(shift: AttendanceShiftRow): AttendanceShiftMessage 
     captureLocation: shift.captureLocation,
     autoClockOutHours: shift.autoClockOutHours,
     isDefault: shift.isDefault,
+    sendReminders: shift.sendReminders,
   }
 }
 
@@ -198,6 +199,7 @@ export function shiftFromProto(shift: AttendanceShiftMessage | undefined): Atten
     captureLocation: shift.captureLocation,
     autoClockOutHours: shift.autoClockOutHours,
     isDefault: shift.isDefault,
+    sendReminders: shift.sendReminders,
   }
 }
 

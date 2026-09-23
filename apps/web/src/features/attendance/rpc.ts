@@ -203,6 +203,7 @@ export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow
       requireNote: values.requireNote,
       captureLocation: values.captureLocation,
       autoClockOutHours: values.autoClockOutHours,
+      sendReminders: values.sendReminders,
     }),
   )
   if (!response.shift) throw new Error('The server did not return the shift.')

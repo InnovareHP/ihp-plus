@@ -56,6 +56,7 @@ const shiftFields = {
   requireNote: true,
   captureLocation: true,
   autoClockOutHours: true,
+  sendReminders: true,
 } as const
 
 async function requireMember() {
@@ -156,6 +157,7 @@ interface ShiftFields {
   requireNote: boolean
   captureLocation: boolean
   autoClockOutHours: number
+  sendReminders: boolean
 }
 
 function toShiftFields(shift: ShiftFields, assignedCount: number, isDefault: boolean) {

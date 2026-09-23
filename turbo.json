@@ -26,6 +26,7 @@
         "AWS_SECRET_ACCESS_KEY",
         "S3_*",
         "GRAPH_*",
+        "CRON_SECRET",
         "ORG_*"
       ]
     },
@@ -51,6 +52,7 @@
         "AWS_SECRET_ACCESS_KEY",
         "S3_*",
         "GRAPH_*",
+        "CRON_SECRET",
         "ORG_*"
       ]
     },
@@ -78,6 +80,7 @@
         "AWS_SECRET_ACCESS_KEY",
         "S3_*",
         "GRAPH_*",
+        "CRON_SECRET",
         "ORG_*"
       ]
     },

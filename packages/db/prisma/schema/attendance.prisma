@@ -41,6 +41,8 @@ model AttendanceShift {
   captureLocation   Boolean @default(false)
   // Hours after which a day nobody clocked out of is closed at that length; 0 never closes one.
   autoClockOutHours Int     @default(16)
+  // Emails whoever works it when they have not clocked in, or are still clocked in, past the hour.
+  sendReminders     Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -171,5 +173,23 @@ model AttendanceLeave {
   @@index([organizationId, date])
   @@index([submissionId])
   @@map("attendanceLeave")
+  @@schema("attendance")
+}
+
+// One row per reminder sent, so a restarted or second worker never emails the same thing twice.
+model AttendanceReminder {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  // The work day the reminder is about, in the organization's zone.
+  workDate       DateTime @db.Date
+  // clock_in or clock_out.
+  kind           String
+
+  sentAt DateTime @default(now())
+
+  @@unique([userId, workDate, kind])
+  @@index([organizationId, workDate])
+  @@map("attendanceReminder")
   @@schema("attendance")
 }

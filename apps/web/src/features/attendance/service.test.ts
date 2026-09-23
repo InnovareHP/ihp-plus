@@ -85,6 +85,7 @@ const SHIFT = {
   requireNote: false,
   captureLocation: false,
   autoClockOutHours: 16,
+  sendReminders: true,
 }
 
 /** Nobody has a shift of their own, so everyone falls back to the company's. */
@@ -341,6 +342,7 @@ describe('what only an admin may do', () => {
       workdays: '1,2,3,4,5,6',
       requireSelfie: true,
       autoClockOutHours: 12,
+      sendReminders: true,
       _count: { assignments: 0 },
     })
 
@@ -356,6 +358,7 @@ describe('what only an admin may do', () => {
       requireNote: false,
       captureLocation: false,
       autoClockOutHours: 12,
+      sendReminders: true,
     })
 
     expect(saved).toMatchObject({
@@ -364,6 +367,7 @@ describe('what only an admin may do', () => {
       assignedCount: 0,
       requireSelfie: true,
       autoClockOutHours: 12,
+      sendReminders: true,
     })
   })
 
@@ -382,6 +386,7 @@ describe('what only an admin may do', () => {
         requireNote: false,
         captureLocation: false,
         autoClockOutHours: 16,
+        sendReminders: true,
       }),
     ).rejects.toMatchObject({ code: Code.AlreadyExists })
   })
@@ -442,6 +447,7 @@ describe('what only an admin may do', () => {
         requireNote: false,
         captureLocation: false,
         autoClockOutHours: 16,
+        sendReminders: true,
       }),
     ).rejects.toMatchObject({ code: Code.PermissionDenied })
     await expect(assignShift({ userId: 'user-2', shiftId: 'shift-1' })).rejects.toMatchObject({

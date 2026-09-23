@@ -10,6 +10,7 @@ export const COMPANY_HOURS = {
   graceMinutes: 15,
   workdays: DEFAULT_WORKDAYS,
   autoClockOutHours: 16,
+  sendReminders: true,
 } as const
 
 export function parseWorkdays(value: string): number[] {

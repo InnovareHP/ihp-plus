@@ -33,6 +33,7 @@ describe('shiftSchema', () => {
     requireSelfie: true,
     requireNote: false,
     captureLocation: false,
+    sendReminders: true,
     autoClockOutHours: 16,
   }
 
