@@ -103,7 +103,7 @@ export function clientFolderSharedTemplate(options: {
       footnote:
         options.requiresSignIn === false
           ? 'The link opens without a sign-in, so keep it to yourself — anyone who has it can read the folder.'
-          : 'Sign in with this email address to open it. If the link does not work, ask your contact to share the folder again.',
+          : 'Open it with this email address. No Microsoft account? Microsoft emails you a one-time code instead of asking for a password. If the link does not work, ask your contact to share the folder again.',
     }),
   }
 }
