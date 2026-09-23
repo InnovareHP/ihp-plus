@@ -6,7 +6,8 @@
  * portal afterwards, and re-seeding never overwrites a row someone has changed.
  */
 export interface CatalogSeed {
-  category: 'creative' | 'social' | 'bundle' | 'addon'
+  /** A value of the catalogSection lookup list. */
+  category: string
   name: string
   description: string
   priceMinCents: number
@@ -22,7 +23,7 @@ const dollars = (amount: number) => amount * 100
 export const CATALOG_SEED: readonly CatalogSeed[] = [
   // ---- Creative services ----
   {
-    category: 'creative',
+    category: 'Creative services',
     name: 'Brand Identity Design',
     description:
       "Develop or refresh your brand's visual identity, including logos, colors, typography, and brand assets.",
@@ -31,7 +32,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'project',
   },
   {
-    category: 'creative',
+    category: 'Creative services',
     name: 'Graphic Design',
     description:
       'Create professional marketing materials for digital and print, from flyers to brochures and promotional graphics.',
@@ -40,7 +41,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'project',
   },
   {
-    category: 'creative',
+    category: 'Creative services',
     name: 'Social Media Graphics',
     description: 'Approximately 12–20 static graphics or carousels across agreed platforms.',
     priceMinCents: dollars(600),
@@ -48,7 +49,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'month',
   },
   {
-    category: 'creative',
+    category: 'Creative services',
     name: 'Ad Creative Design',
     description:
       'Produce high-converting visuals for Meta, Google Display, LinkedIn, and other digital advertising campaigns.',
@@ -57,7 +58,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'campaign',
   },
   {
-    category: 'creative',
+    category: 'Creative services',
     name: 'Presentation Design',
     description:
       'Design polished pitch decks, sales presentations, company profiles, and proposal presentations.',
@@ -66,7 +67,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'deck',
   },
   {
-    category: 'creative',
+    category: 'Creative services',
     name: 'Video Editing',
     description:
       'Edit promotional videos, testimonials, educational content, reels, and short-form videos for digital platforms.',
@@ -77,7 +78,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
 
   // ---- Social media services ----
   {
-    category: 'social',
+    category: 'Social media services',
     name: 'Content Creation',
     description:
       'Produce engaging captions, graphics, carousels, and short-form videos tailored to your audience.',
@@ -86,7 +87,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'month',
   },
   {
-    category: 'social',
+    category: 'Social media services',
     name: 'Social Media Management',
     description:
       'Manage your social media presence through publishing, scheduling, and day-to-day account management.',
@@ -95,7 +96,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'month',
   },
   {
-    category: 'social',
+    category: 'Social media services',
     name: 'Community Management',
     description:
       'Monitor comments and messages, respond to inquiries, and foster audience engagement.',
@@ -104,7 +105,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'month',
   },
   {
-    category: 'social',
+    category: 'Social media services',
     name: 'Profile Optimization',
     description:
       'Optimize your social media profiles to strengthen branding and improve discoverability.',
@@ -113,7 +114,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'once',
   },
   {
-    category: 'social',
+    category: 'Social media services',
     name: 'Campaign Management',
     description:
       'Plan and coordinate organic social media campaigns for launches, promotions, and awareness initiatives.',
@@ -122,7 +123,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'campaign',
   },
   {
-    category: 'social',
+    category: 'Social media services',
     name: 'Paid Social Advertising',
     defaultTerms:
       'Paid social advertising is billed either as the agreed monthly fee or as 15% of ad spend, as stated in this contract. Ad spend itself is paid by the client directly and is not included.',
@@ -134,7 +135,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     percentOfSpend: 15,
   },
   {
-    category: 'social',
+    category: 'Social media services',
     name: 'Performance Reporting',
     description:
       'Deliver regular reports with actionable insights, key metrics, and recommendations for improvement.',
@@ -145,7 +146,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
 
   // ---- Bundles ----
   {
-    category: 'bundle',
+    category: 'Bundles',
     name: 'Starter',
     defaultTerms:
       'Starter bundle: one or two platforms; nine static posts or carousels per month; two short-form videos per month; captions and scheduling; basic monthly reporting; limited community management; one strategy call per month.',
@@ -156,7 +157,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'month',
   },
   {
-    category: 'bundle',
+    category: 'Bundles',
     name: 'Growth',
     defaultTerms:
       'Growth bundle: three platforms; twelve to sixteen posts or carousels per month; three to five short-form videos per month; content calendar and copywriting; community management during business hours; profile optimization; monthly performance reporting; one campaign or promotional push per month.',
@@ -167,7 +168,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'month',
   },
   {
-    category: 'bundle',
+    category: 'Bundles',
     name: 'Growth Plus',
     defaultTerms:
       'Growth Plus bundle: three to four platforms; eighteen to twenty content pieces per month; six to eight short-form videos per month; creative direction and campaign planning; active community management; paid social management for one to two platforms; biweekly reporting; two strategy calls per month.',
@@ -180,7 +181,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
 
   // ---- Add-ons ----
   {
-    category: 'addon',
+    category: 'Add-ons',
     name: 'Additional Static Graphic',
     description: 'One more static graphic beyond the agreed monthly count.',
     priceMinCents: dollars(125),
@@ -188,7 +189,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'project',
   },
   {
-    category: 'addon',
+    category: 'Add-ons',
     name: 'Additional Carousel',
     description: 'One more carousel beyond the agreed monthly count.',
     priceMinCents: dollars(200),
@@ -196,7 +197,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'project',
   },
   {
-    category: 'addon',
+    category: 'Add-ons',
     name: 'Additional Short-Form Video',
     description: 'One more short-form video beyond the agreed monthly count.',
     priceMinCents: dollars(350),
@@ -204,7 +205,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'video',
   },
   {
-    category: 'addon',
+    category: 'Add-ons',
     name: 'Extra Revision Round',
     description: 'A further round of revisions beyond the number the contract states.',
     priceMinCents: dollars(150),
@@ -212,7 +213,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'project',
   },
   {
-    category: 'addon',
+    category: 'Add-ons',
     name: 'Additional Social Platform',
     description: 'Extend the agreed work to one more platform.',
     priceMinCents: dollars(400),
@@ -220,7 +221,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'month',
   },
   {
-    category: 'addon',
+    category: 'Add-ons',
     name: 'Weekend Or After-Hours Community Management',
     description: 'Community management outside the agreed business-hours window.',
     priceMinCents: dollars(500),
@@ -228,7 +229,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'month',
   },
   {
-    category: 'addon',
+    category: 'Add-ons',
     name: 'Additional Strategy Meeting',
     description: 'One more strategy meeting beyond those the contract includes.',
     priceMinCents: dollars(200),
@@ -236,7 +237,7 @@ export const CATALOG_SEED: readonly CatalogSeed[] = [
     unit: 'once',
   },
   {
-    category: 'addon',
+    category: 'Add-ons',
     // A surcharge, not a fee: the range is the percentage, which is why both bounds are zero.
     name: 'Rush Delivery',
     defaultTerms:

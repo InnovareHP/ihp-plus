@@ -1,6 +1,5 @@
 import {
   BillingCycle,
-  CatalogCategory,
   CatalogUnit,
   ContractSortKey,
   ContractStatus,
@@ -15,7 +14,6 @@ import {
 import { DEFAULT_CONTRACT_QUERY } from '@/features/contracts/schema'
 import type {
   BillingCycle as Cycle,
-  CatalogCategory as Category,
   CatalogItemRow,
   CatalogUnit as Unit,
   ContractDetail,
@@ -30,21 +28,6 @@ import type { SortDirection as Direction } from '@/lib/pagination'
 
 // The UI keeps its string unions and the wire keeps its enums. Every crossing goes through
 // these maps, so an UNSPECIFIED from an older client falls back instead of throwing.
-const CATEGORY_TO: Record<Category, CatalogCategory> = {
-  creative: CatalogCategory.CREATIVE,
-  social: CatalogCategory.SOCIAL,
-  bundle: CatalogCategory.BUNDLE,
-  addon: CatalogCategory.ADDON,
-}
-
-const CATEGORY_FROM: Record<CatalogCategory, Category> = {
-  [CatalogCategory.UNSPECIFIED]: 'creative',
-  [CatalogCategory.CREATIVE]: 'creative',
-  [CatalogCategory.SOCIAL]: 'social',
-  [CatalogCategory.BUNDLE]: 'bundle',
-  [CatalogCategory.ADDON]: 'addon',
-}
-
 const UNIT_TO: Record<Unit, CatalogUnit> = {
   project: CatalogUnit.PROJECT,
   month: CatalogUnit.MONTH,
@@ -122,7 +105,6 @@ const DIRECTION_FROM: Record<SortDirection, Direction> = {
   [SortDirection.DESC]: 'desc',
 }
 
-export const categoryToProto = (value: Category) => CATEGORY_TO[value]
 export const unitToProto = (value: Unit) => UNIT_TO[value]
 export const statusToProto = (value: Status) => STATUS_TO[value]
 export const statusFromProto = (value: ContractStatus) => STATUS_FROM[value]
@@ -270,7 +252,7 @@ export function catalogToProto(item: CatalogItemRow): CatalogItem {
   return {
     $typeName: 'ihp.contracts.v1.CatalogItem',
     id: item.id,
-    category: CATEGORY_TO[item.category],
+    section: item.category,
     name: item.name,
     description: item.description,
     priceMinCents: item.priceMinCents,
@@ -284,7 +266,7 @@ export function catalogToProto(item: CatalogItemRow): CatalogItem {
 export function catalogFromProto(message: CatalogItem): CatalogItemRow {
   return {
     id: message.id,
-    category: CATEGORY_FROM[message.category],
+    category: message.section,
     name: message.name,
     description: message.description,
     priceMinCents: message.priceMinCents,
@@ -293,10 +275,6 @@ export function catalogFromProto(message: CatalogItem): CatalogItemRow {
     percentOfSpend: message.percentOfSpend,
     defaultTerms: message.defaultTerms,
   }
-}
-
-export function catalogCategoryFromProto(value: CatalogCategory) {
-  return CATEGORY_FROM[value]
 }
 
 export function catalogUnitFromProto(value: CatalogUnit) {

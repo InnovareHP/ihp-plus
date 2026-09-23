@@ -5,14 +5,20 @@ import type { CatalogItemRow } from '../schema'
 import { RateCard } from './rate-card'
 
 const rpc = vi.hoisted(() => ({ listCatalog: vi.fn(), createCatalogItem: vi.fn() }))
+const lookups = vi.hoisted(() => ({
+  listLookupOptions: vi.fn(),
+  addLookupOptions: vi.fn(),
+  retireLookupOption: vi.fn(),
+}))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
+vi.mock('@/features/lookups/actions', () => lookups)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 
 const LOGO: CatalogItemRow = {
   id: 'item-1',
-  category: 'creative',
+  category: 'Creative services',
   name: 'Logo design',
   description: 'A mark and its variants',
   priceMinCents: 150_000,
@@ -24,11 +30,20 @@ const LOGO: CatalogItemRow = {
 
 const user = () => userEvent.setup()
 
+async function chooseSection(person: ReturnType<typeof user>, dialog: HTMLElement) {
+  await person.click(within(dialog).getByRole('combobox', { name: /Section/ }))
+  await person.click(await screen.findByRole('option', { name: 'Creative services' }))
+}
+
 describe('RateCard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     rpc.listCatalog.mockResolvedValue([])
     rpc.createCatalogItem.mockResolvedValue(LOGO)
+    lookups.listLookupOptions.mockResolvedValue({
+      ok: true,
+      data: { catalogSection: ['Creative services', 'Website', 'IT department'] },
+    })
   })
 
   it('offers a manager a way to add the first service', async () => {
@@ -56,6 +71,7 @@ describe('RateCard', () => {
 
     await person.click(await screen.findByRole('button', { name: 'Add service' }))
     const dialog = await screen.findByRole('dialog', { name: 'Add a service' })
+    await chooseSection(person, dialog)
     await person.type(within(dialog).getByLabelText(/Service name/), 'Logo design')
     await person.type(within(dialog).getByLabelText(/Price from/), '1500')
     await person.type(within(dialog).getByLabelText(/Price to/), '3000')
@@ -64,7 +80,7 @@ describe('RateCard', () => {
     await waitFor(() =>
       expect(rpc.createCatalogItem).toHaveBeenCalledWith(
         expect.objectContaining({
-          category: 'creative',
+          category: 'Creative services',
           name: 'Logo design',
           priceMinCents: 150_000,
           priceMaxCents: 300_000,
@@ -77,7 +93,35 @@ describe('RateCard', () => {
     )
   })
 
-  it('requires a name and a range that does not run backwards', async () => {
+  it('groups services under admin sections in list order, IT department included', async () => {
+    rpc.listCatalog.mockResolvedValue([
+      { ...LOGO, id: 'help', category: 'IT department', name: 'Help desk' },
+      LOGO,
+      { ...LOGO, id: 'site', category: 'Website', name: 'Landing page' },
+    ])
+    render(<RateCard canManage />)
+
+    await screen.findByText('Help desk')
+    await waitFor(() =>
+      expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+        'Creative services',
+        'Website',
+        'IT department',
+      ]),
+    )
+  })
+
+  it('opens the section list for an admin to add Website or IT department', async () => {
+    rpc.listCatalog.mockResolvedValue([LOGO])
+    const person = user()
+    render(<RateCard canManage />)
+
+    await person.click(await screen.findByRole('button', { name: 'Manage sections' }))
+
+    expect(await screen.findByRole('dialog')).toHaveTextContent('IT department')
+  })
+
+  it('requires a section, a name and a range that does not run backwards', async () => {
     const person = user()
     render(<RateCard canManage />)
 
@@ -88,6 +132,7 @@ describe('RateCard', () => {
     await person.click(within(dialog).getByRole('button', { name: 'Add service' }))
 
     expect(await within(dialog).findByText('Name the service')).toBeInTheDocument()
+    expect(within(dialog).getByText('Choose a section')).toBeInTheDocument()
     expect(
       within(dialog).getByText('The top of the range cannot be below the bottom'),
     ).toBeInTheDocument()
@@ -102,6 +147,7 @@ describe('RateCard', () => {
 
     await person.click(await screen.findByRole('button', { name: 'Add service' }))
     const dialog = await screen.findByRole('dialog', { name: 'Add a service' })
+    await chooseSection(person, dialog)
     await person.type(within(dialog).getByLabelText(/Service name/), 'Logo design')
     await person.click(within(dialog).getByRole('button', { name: 'Add service' }))
 

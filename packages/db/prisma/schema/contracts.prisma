@@ -12,7 +12,7 @@ model CatalogItem {
   // Organization model in auth.prisma.
   organizationId String
 
-  /// "creative" | "social" | "bundle" | "addon" — the section of the rate card.
+  /// The rate card section, a value of the "catalogSection" lookup list.
   category String
   name     String
   /// The rate card's own wording, shown when picking an item.

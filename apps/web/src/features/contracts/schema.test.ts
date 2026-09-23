@@ -3,7 +3,7 @@ import { composeTerms, type CatalogItemRow } from './schema'
 
 function item(overrides: Partial<CatalogItemRow> & { id: string }): CatalogItemRow {
   return {
-    category: 'bundle',
+    category: 'Bundles',
     name: 'Growth',
     description: undefined,
     priceMinCents: 450_000,
@@ -54,7 +54,7 @@ describe('composeTerms', () => {
       lines: [{ catalogItemId: 'rush' }, { catalogItemId: 'growth' }],
       catalog: [
         item({ id: 'growth', defaultTerms: 'Growth bundle.' }),
-        item({ id: 'rush', category: 'addon', defaultTerms: 'Rush surcharge.' }),
+        item({ id: 'rush', category: 'Add-ons', defaultTerms: 'Rush surcharge.' }),
       ],
       template: undefined,
     })

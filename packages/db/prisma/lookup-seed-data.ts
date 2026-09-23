@@ -78,4 +78,14 @@ export const LOOKUP_OPTION_SEED: Record<string, readonly string[]> = {
     'Contact list',
     'Reference',
   ],
+
+  // The rate card's sections; catalog.ts files its seeded services under the first four.
+  catalogSection: [
+    'Creative services',
+    'Social media services',
+    'Bundles',
+    'Add-ons',
+    'Website',
+    'IT department',
+  ],
 }

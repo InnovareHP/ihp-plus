@@ -7,7 +7,6 @@ import { pageInfoFromProto } from '@/rpc/page-info'
 import {
   activityFromProto,
   catalogFromProto,
-  categoryToProto,
   contractFromProto,
   cycleToProto,
   detailFromProto,
@@ -143,7 +142,7 @@ export async function listCatalog(): Promise<CatalogItemRow[]> {
 export async function createCatalogItem(values: CatalogItemValues): Promise<CatalogItemRow> {
   const response = await call(() =>
     browserClients.contracts.createCatalogItem({
-      category: categoryToProto(values.category),
+      section: values.category,
       name: values.name,
       description: values.description,
       priceMinCents: values.priceMinCents,

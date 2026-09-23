@@ -3,24 +3,55 @@
 import { Alert, Button, Group, Skeleton, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconPlus } from '@tabler/icons-react'
+import { LookupOptionsModal } from '@/components/lookup-options-modal'
 import { PageSection } from '@/components/page-section'
 import { EmptyState } from '@/components/empty-state'
-import { CATALOG_CATEGORIES, CATALOG_CATEGORY_LABELS } from '../schema'
+import { useLookupLists } from '@/features/lookups/hooks/use-lookup-admin'
+import { groupBySection } from '../catalog-sections'
+import { CATALOG_LOOKUP_KINDS } from '../schema'
 import { useCatalog } from '../use-contracts'
 import { CatalogItemFormModal } from './catalog-item-form-modal'
 import { CategoryTable } from './category-table'
 
-/** The published rate card, grouped the way the card itself is written. */
+/** The published rate card, grouped under the sections an admin curates. */
 export function RateCard({ canManage }: { canManage: boolean }) {
   const catalog = useCatalog()
+  const lists = useLookupLists(CATALOG_LOOKUP_KINDS)
   const [adding, addModal] = useDisclosure(false)
+  const [managing, manageModal] = useDisclosure(false)
+
+  const sections = lists.data?.catalogSection ?? []
 
   const addButton = canManage ? (
     <Button leftSection={<IconPlus size={16} aria-hidden />} onClick={addModal.open}>
       Add service
     </Button>
   ) : null
-  const modal = canManage ? <CatalogItemFormModal opened={adding} onClose={addModal.close} /> : null
+  const toolbar = canManage ? (
+    <Group justify="flex-end">
+      <Button variant="default" onClick={manageModal.open}>
+        Manage sections
+      </Button>
+      {addButton}
+    </Group>
+  ) : null
+  const modals = canManage ? (
+    <>
+      <CatalogItemFormModal
+        opened={adding}
+        onClose={addModal.close}
+        sections={sections}
+        onManageSections={manageModal.open}
+      />
+      <LookupOptionsModal
+        opened={managing}
+        onClose={manageModal.close}
+        kinds={CATALOG_LOOKUP_KINDS}
+        lists={lists.data ?? {}}
+        initialKind="catalogSection"
+      />
+    </>
+  ) : null
 
   if (catalog.isPending) {
     return (
@@ -57,25 +88,20 @@ export function RateCard({ canManage }: { canManage: boolean }) {
           }
           action={addButton}
         />
-        {modal}
+        {modals}
       </>
     )
   }
 
   return (
     <Stack gap="lg">
-      {addButton ? <Group justify="flex-end">{addButton}</Group> : null}
-      {CATALOG_CATEGORIES.map((category) => {
-        const items = catalog.data.filter((item) => item.category === category)
-        if (items.length === 0) return null
-
-        return (
-          <PageSection key={category} title={CATALOG_CATEGORY_LABELS[category]}>
-            <CategoryTable label={CATALOG_CATEGORY_LABELS[category]} items={items} />
-          </PageSection>
-        )
-      })}
-      {modal}
+      {toolbar}
+      {groupBySection(catalog.data, sections).map(({ section, items }) => (
+        <PageSection key={section} title={section}>
+          <CategoryTable label={section} items={items} />
+        </PageSection>
+      ))}
+      {modals}
     </Stack>
   )
 }

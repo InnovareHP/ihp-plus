@@ -1,14 +1,9 @@
 import { z } from 'zod'
+import type { LookupKind } from '@/features/lookups/schema'
 import { paginationSchema, sortDirectionSchema, type PageInfo } from '@/lib/pagination'
 
-export const CATALOG_CATEGORIES = ['creative', 'social', 'bundle', 'addon'] as const
-
-export const CATALOG_CATEGORY_LABELS: Record<CatalogCategory, string> = {
-  creative: 'Creative services',
-  social: 'Social media services',
-  bundle: 'Bundles',
-  addon: 'Add-ons',
-}
+/** The rate card's sections are a curated list an admin edits, not a fixed set. */
+export const CATALOG_LOOKUP_KINDS = ['catalogSection'] as const satisfies readonly LookupKind[]
 
 /** What a price buys, shown after the amount as "$2,500/month". */
 export const CATALOG_UNITS = ['project', 'month', 'campaign', 'deck', 'video', 'once'] as const
@@ -122,7 +117,7 @@ export const contractStatusSchema = z.object({
 
 export const catalogItemSchema = z
   .object({
-    category: z.enum(CATALOG_CATEGORIES),
+    category: z.string().trim().min(1, 'Choose a section').max(80),
     name: z.string().trim().min(1, 'Name the service').max(120),
     description: z.string().trim().max(600).default(''),
     priceMinCents: cents,
@@ -145,7 +140,6 @@ export const contractQuerySchema = paginationSchema.extend({
   sortDirection: sortDirectionSchema.catch('desc'),
 })
 
-export type CatalogCategory = (typeof CATALOG_CATEGORIES)[number]
 export type CatalogUnit = (typeof CATALOG_UNITS)[number]
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number]
 export type BillingCycle = (typeof BILLING_CYCLES)[number]
@@ -163,7 +157,8 @@ export const DEFAULT_CONTRACT_QUERY: ContractQuery = contractQuerySchema.parse({
 
 export interface CatalogItemRow {
   id: string
-  category: CatalogCategory
+  /** The rate card section, a value of the catalogSection lookup list. */
+  category: string
   name: string
   description: string | undefined
   priceMinCents: number

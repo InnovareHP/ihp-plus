@@ -4,6 +4,7 @@ import { contractQuerySchema } from './schema'
 
 const prisma = vi.hoisted(() => ({
   catalogItem: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
+  lookupOption: { findMany: vi.fn() },
   contract: {
     count: vi.fn(),
     findMany: vi.fn(),
@@ -605,7 +606,7 @@ describe('catalog', () => {
   it('refuses a price range that runs backwards', async () => {
     const code = await codeOf(() =>
       createCatalogItem({
-        category: 'creative',
+        category: 'Creative services',
         name: 'Brand Identity Design',
         description: '',
         priceMinCents: 700_000,
@@ -618,12 +619,54 @@ describe('catalog', () => {
     expect(prisma.catalogItem.create).not.toHaveBeenCalled()
   })
 
+  it('refuses a section that is not on the list', async () => {
+    prisma.lookupOption.findMany.mockResolvedValue([{ value: 'Website', sortOrder: 0 }])
+
+    const code = await codeOf(() =>
+      createCatalogItem({
+        category: 'Made up',
+        name: 'Landing page',
+        description: '',
+        priceMinCents: 100_000,
+        priceMaxCents: 100_000,
+        unit: 'project',
+      }),
+    )
+
+    expect(code).toBe(Code.InvalidArgument)
+    expect(prisma.catalogItem.create).not.toHaveBeenCalled()
+  })
+
+  it('files a service under a section an admin added', async () => {
+    prisma.lookupOption.findMany.mockResolvedValue([{ value: 'IT department', sortOrder: 0 }])
+    prisma.catalogItem.findFirst.mockResolvedValue(null)
+    prisma.catalogItem.create.mockImplementation(async ({ data }) => ({
+      id: 'catalog-2',
+      ...data,
+    }))
+
+    const created = await createCatalogItem({
+      category: 'IT department',
+      name: 'Help desk',
+      description: '',
+      priceMinCents: 50_000,
+      priceMaxCents: 50_000,
+      unit: 'month',
+    })
+
+    expect(created.category).toBe('IT department')
+    expect(prisma.catalogItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ category: 'IT department' }) }),
+    )
+  })
+
   it('refuses a duplicate of a service already on the card', async () => {
+    prisma.lookupOption.findMany.mockResolvedValue([{ value: 'Bundles', sortOrder: 0 }])
     prisma.catalogItem.findFirst.mockResolvedValue({ id: 'catalog-1' })
 
     const code = await codeOf(() =>
       createCatalogItem({
-        category: 'bundle',
+        category: 'Bundles',
         name: 'Growth',
         description: '',
         priceMinCents: 450_000,

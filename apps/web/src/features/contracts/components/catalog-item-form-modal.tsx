@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
+  Anchor,
   Button,
   Group,
   Modal,
@@ -15,8 +16,6 @@ import {
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import {
-  CATALOG_CATEGORIES,
-  CATALOG_CATEGORY_LABELS,
   CATALOG_UNITS,
   CATALOG_UNIT_LABELS,
   catalogItemSchema,
@@ -25,17 +24,13 @@ import {
 } from '../schema'
 import { useCreateCatalogItem } from '../use-contracts'
 
-const CATEGORY_OPTIONS = CATALOG_CATEGORIES.map((value) => ({
-  value,
-  label: CATALOG_CATEGORY_LABELS[value],
-}))
 const UNIT_OPTIONS = CATALOG_UNITS.map((value) => ({
   value,
   label: `Per ${CATALOG_UNIT_LABELS[value]}`,
 }))
 
 const EMPTY_ITEM: CatalogItemInput = {
-  category: 'creative',
+  category: '',
   name: '',
   description: '',
   priceMinCents: 0,
@@ -48,9 +43,17 @@ const EMPTY_ITEM: CatalogItemInput = {
 export interface CatalogItemFormModalProps {
   opened: boolean
   onClose: () => void
+  /** The catalogSection lookup list, in the admin's order. */
+  sections: string[]
+  onManageSections: () => void
 }
 
-export function CatalogItemFormModal({ opened, onClose }: CatalogItemFormModalProps) {
+export function CatalogItemFormModal({
+  opened,
+  onClose,
+  sections,
+  onManageSections,
+}: CatalogItemFormModalProps) {
   const create = useCreateCatalogItem()
   const {
     control,
@@ -98,10 +101,18 @@ export function CatalogItemFormModal({ opened, onClose }: CatalogItemFormModalPr
             render={({ field }) => (
               <Select
                 label="Section"
-                data={CATEGORY_OPTIONS}
+                placeholder="Choose a section"
+                description={
+                  <Anchor component="button" type="button" size="xs" onClick={onManageSections}>
+                    Manage sections
+                  </Anchor>
+                }
+                data={sections}
                 allowDeselect={false}
+                searchable
+                nothingFoundMessage="No match — add it under Manage sections"
                 required
-                value={field.value}
+                value={field.value || null}
                 onChange={(value) => value && field.onChange(value)}
                 onBlur={field.onBlur}
                 error={errors.category?.message}

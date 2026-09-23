@@ -24,7 +24,6 @@ import { useClients } from '@/features/clients/hooks/use-clients'
 import {
   BILLING_CYCLES,
   BILLING_CYCLE_LABELS,
-  CATALOG_CATEGORY_LABELS,
   composeTerms,
   contractDraftSchema,
   formatCents,
@@ -169,7 +168,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
 
   const catalogOptions = (catalog.data ?? []).map((item) => ({
     value: item.id,
-    label: `${CATALOG_CATEGORY_LABELS[item.category]} · ${item.name} — ${formatPriceRange(item)}`,
+    label: `${item.category} · ${item.name} — ${formatPriceRange(item)}`,
   }))
 
   return (

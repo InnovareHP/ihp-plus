@@ -20,6 +20,7 @@ export const LOOKUP_KINDS = [
   'clientState',
   'clientTag',
   'bluebookCategory',
+  'catalogSection',
 ] as const
 
 export type LookupKind = (typeof LOOKUP_KINDS)[number]
@@ -35,6 +36,7 @@ export const LOOKUP_KIND_LABELS: Record<LookupKind, string> = {
   clientState: 'States',
   clientTag: 'Client tags',
   bluebookCategory: 'Bluebook categories',
+  catalogSection: 'Rate card sections',
 }
 
 export function isLookupKind(value: string): value is LookupKind {

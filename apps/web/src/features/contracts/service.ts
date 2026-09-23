@@ -2,6 +2,7 @@ import { db } from '@ihp/db'
 import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { syncBilling } from '@/features/billing/contract-billing'
+import { listFor } from '@/features/lookups/service'
 import {
   loadActivity,
   recordActivity,
@@ -28,7 +29,6 @@ import {
   isEditable,
   subtotalOf,
   type BillingCycle,
-  type CatalogCategory,
   type CatalogItemRow,
   type CatalogUnit,
   type ContractDetail,
@@ -89,7 +89,7 @@ const CATALOG_SELECT = {
 function catalogRowOf(row: Prisma.CatalogItemGetPayload<{ select: typeof CATALOG_SELECT }>) {
   return {
     id: row.id,
-    category: row.category as CatalogCategory,
+    category: row.category,
     name: row.name,
     description: row.description ?? undefined,
     priceMinCents: row.priceMinCents,
@@ -123,6 +123,14 @@ export async function createCatalogItem(input: unknown): Promise<CatalogItemRow>
   }
 
   const values = parsed.data
+  const sections = await listFor(organizationId, 'catalogSection')
+  if (!sections.some((section) => section.value === values.category)) {
+    throw new ConnectError(
+      'That section is not on the list any more. Choose another, or ask an admin to add it.',
+      Code.InvalidArgument,
+    )
+  }
+
   const existing = await db.catalogItem.findFirst({
     where: { organizationId, category: values.category, name: values.name },
     select: { id: true },

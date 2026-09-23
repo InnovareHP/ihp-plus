@@ -15,7 +15,6 @@ import {
 } from '@/features/contracts/service'
 import {
   activityToProto,
-  catalogCategoryFromProto,
   catalogToProto,
   catalogUnitFromProto,
   contractToProto,
@@ -112,7 +111,7 @@ export const contracts: ServiceImpl<typeof ContractsService> = {
   createCatalogItem: async (request) => ({
     item: catalogToProto(
       await createCatalogItem({
-        category: catalogCategoryFromProto(request.category),
+        category: request.section,
         name: request.name,
         description: request.description,
         priceMinCents: request.priceMinCents,

@@ -5,14 +5,6 @@ package ihp.contracts.v1;
 // Money is whole cents everywhere. A contract total has to reconcile with what Stripe charged
 // to the cent, which a float cannot promise.
 
-enum CatalogCategory {
-  CATALOG_CATEGORY_UNSPECIFIED = 0;
-  CATALOG_CATEGORY_CREATIVE = 1;
-  CATALOG_CATEGORY_SOCIAL = 2;
-  CATALOG_CATEGORY_BUNDLE = 3;
-  CATALOG_CATEGORY_ADDON = 4;
-}
-
 // What a price buys, rendered after the amount as "$2,500/month".
 enum CatalogUnit {
   CATALOG_UNIT_UNSPECIFIED = 0;
@@ -57,8 +49,12 @@ enum SortDirection {
 
 // One line of the published rate card.
 message CatalogItem {
+  // Was a fixed category enum; sections are now an organization's own lookup list.
+  reserved 2;
+  reserved "category";
   string id = 1;
-  CatalogCategory category = 2;
+  // The rate card section it is listed under, a value of the catalogSection lookup list.
+  string section = 10;
   string name = 3;
   optional string description = 4;
   // Inclusive bounds. A fixed price repeats as both, so there is no separate flag to keep in step.
@@ -255,7 +251,9 @@ message ListCatalogResponse {
 }
 
 message CreateCatalogItemRequest {
-  CatalogCategory category = 1;
+  reserved 1;
+  reserved "category";
+  string section = 9;
   string name = 2;
   string description = 3;
   int32 price_min_cents = 4;
