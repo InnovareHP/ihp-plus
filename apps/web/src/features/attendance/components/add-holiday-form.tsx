@@ -10,10 +10,17 @@ export interface AddHolidayFormProps {
   /** The year on screen, so the picker opens inside it. */
   year: number
   countries: readonly HolidayCountryOption[]
+  /** Who a new day is for until the admin says otherwise; empty is everyone. */
+  defaultCountry?: string
   onAdd: (values: HolidayValues) => Promise<void>
 }
 
-export function AddHolidayForm({ year, countries, onAdd }: AddHolidayFormProps) {
+export function AddHolidayForm({
+  year,
+  countries,
+  defaultCountry = '',
+  onAdd,
+}: AddHolidayFormProps) {
   const {
     control,
     register,
@@ -25,13 +32,13 @@ export function AddHolidayForm({ year, countries, onAdd }: AddHolidayFormProps) 
     resolver: zodResolver(holidaySchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: { date: '', name: '', country: '' },
+    defaultValues: { date: '', name: '', country: defaultCountry },
   })
 
   async function submit(values: HolidayValues) {
     try {
       await onAdd(values)
-      reset()
+      reset({ date: '', name: '', country: values.country })
     } catch (error) {
       // A clash is about the date, so the reason sits under that field.
       setError('date', {
@@ -41,7 +48,7 @@ export function AddHolidayForm({ year, countries, onAdd }: AddHolidayFormProps) 
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} noValidate aria-label="Add a holiday">
+    <form onSubmit={handleSubmit(submit)} noValidate aria-label="Add a day off">
       <Group align="flex-start" gap="sm" wrap="wrap">
         <TextInput
           {...register('date')}
@@ -81,7 +88,7 @@ export function AddHolidayForm({ year, countries, onAdd }: AddHolidayFormProps) 
       </Group>
       <Group justify="flex-end" mt="sm">
         <Button type="submit" loading={isSubmitting}>
-          {isSubmitting ? 'Adding…' : 'Add holiday'}
+          {isSubmitting ? 'Adding…' : 'Add day off'}
         </Button>
       </Group>
     </form>

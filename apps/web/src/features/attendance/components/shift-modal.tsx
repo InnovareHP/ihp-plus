@@ -1,14 +1,32 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Divider, Group, Modal, NumberInput, Stack, Switch, TextInput } from '@mantine/core'
-import { Controller, useForm } from 'react-hook-form'
+import {
+  Button,
+  Divider,
+  Group,
+  Modal,
+  NumberInput,
+  Select,
+  Stack,
+  Switch,
+  Text,
+  TextInput,
+} from '@mantine/core'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { useSaveShift } from '../hooks/use-attendance-admin'
 import { useHolidayCountries } from '../hooks/use-holidays'
-import { shiftSchema, type AttendanceShiftRow, type ShiftValues } from '../schema'
+import { useSaveAttendanceSettings } from '../hooks/use-time-clock'
+import {
+  shiftFormSchema,
+  type AttendanceSettingsRow,
+  type AttendanceShiftRow,
+  type ShiftFormValues,
+} from '../schema'
 import { clockToMinutes, DEFAULT_WORKDAYS, minutesToClock } from '@ihp/clock'
 import { CountrySelect } from './country-select'
+import { ShiftHolidays } from './shift-holidays'
 import { WorkdaysField } from './workdays-field'
 
 export interface ShiftModalProps {
@@ -18,11 +36,17 @@ export interface ShiftModalProps {
   shift?: AttendanceShiftRow
   /** The company hours a new shift starts from. */
   defaults: AttendanceShiftRow
+  /** The company-wide time zone and default shift, edited here alongside the shift. */
+  settings: AttendanceSettingsRow
 }
 
+// Every zone the platform knows, so a company counts its day the way it actually works.
+const TIME_ZONES = Intl.supportedValuesOf('timeZone')
+
 /** A shift is written once here and handed out under the organization. */
-export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps) {
+export function ShiftModal({ opened, onClose, shift, defaults, settings }: ShiftModalProps) {
   const save = useSaveShift()
+  const saveSettings = useSaveAttendanceSettings()
   const countries = useHolidayCountries()
 
   const {
@@ -30,9 +54,10 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
     handleSubmit,
     register,
     setError,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<ShiftValues>({
-    resolver: zodResolver(shiftSchema),
+  } = useForm<ShiftFormValues>({
+    resolver: zodResolver(shiftFormSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
     values: {
@@ -48,18 +73,50 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
       sendReminders: shift?.sendReminders ?? defaults.sendReminders,
       holidayCountry: shift?.holidayCountry ?? defaults.holidayCountry,
       autoClockOutHours: shift?.autoClockOutHours ?? defaults.autoClockOutHours,
+      timeZone: settings.timeZone,
+      isCompanyHours: shift?.isDefault ?? false,
     },
   })
+  const pendingCountry = useWatch({ control, name: 'holidayCountry' })
+  const pendingCountryName =
+    countries.data?.find((one) => one.code === pendingCountry)?.name ?? pendingCountry
 
-  async function submit(values: ShiftValues) {
+  async function submit(values: ShiftFormValues) {
+    const { timeZone, isCompanyHours, ...shiftValues } = values
+
+    let saved: AttendanceShiftRow
     try {
-      await save.mutateAsync(values)
-      onClose()
+      saved = await save.mutateAsync(shiftValues)
     } catch (error) {
       setError('root', {
         message: error instanceof Error ? error.message : 'Could not save that shift.',
       })
+      return
     }
+
+    // Turning the switch off on the current company hours hands them back to the built-in ones.
+    const defaultShiftId = isCompanyHours
+      ? saved.id
+      : settings.defaultShiftId === saved.id
+        ? ''
+        : settings.defaultShiftId
+
+    if (timeZone !== settings.timeZone || defaultShiftId !== settings.defaultShiftId) {
+      try {
+        await saveSettings.mutateAsync({ timeZone, defaultShiftId })
+      } catch (error) {
+        // The shift exists now, so a retry must update it rather than write a second one.
+        setValue('shiftId', saved.id)
+        setError('root', {
+          message: `The shift was saved, but the company settings were not — ${
+            error instanceof Error ? error.message : 'try again.'
+          }`,
+        })
+        return
+      }
+    }
+
+    onClose()
   }
 
   return (
@@ -67,6 +124,7 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
       opened={opened}
       onClose={onClose}
       title={shift ? `Edit ${shift.name}` : 'New shift'}
+      size="lg"
       centered
     >
       <form onSubmit={handleSubmit(submit)} noValidate>
@@ -181,6 +239,41 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
             )}
           />
 
+          <Divider label="The whole company" labelPosition="left" />
+
+          <Controller
+            control={control}
+            name="timeZone"
+            render={({ field }) => (
+              <Select
+                label="Company time zone"
+                description="Shared by every shift: the midnight that ends a working day for everyone."
+                searchable
+                allowDeselect={false}
+                data={TIME_ZONES}
+                value={field.value}
+                onChange={(value) => field.onChange(value ?? field.value)}
+                onBlur={field.onBlur}
+                error={errors.timeZone?.message}
+                errorProps={{ role: 'alert' }}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="isCompanyHours"
+            render={({ field }) => (
+              <Switch
+                label="Make this the company hours"
+                description="Anyone without a shift of their own works this one. With none chosen, the built-in 09:00–18:00, Mon–Fri apply."
+                checked={field.value}
+                onChange={(event) => field.onChange(event.currentTarget.checked)}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+
           {/* The rules belong to the shift: a night shift can ask for a selfie, the office one not. */}
           <Divider label="What the clock asks for" labelPosition="left" />
 
@@ -265,12 +358,29 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
             <Button variant="subtle" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" loading={isSubmitting || save.isPending}>
-              {isSubmitting || save.isPending ? 'Saving…' : 'Save shift'}
+            <Button type="submit" loading={isSubmitting}>
+              {isSubmitting ? 'Saving…' : 'Save shift'}
             </Button>
           </Group>
         </Stack>
       </form>
+
+      {/* Outside the shift's form: a day off is saved on its own, and forms cannot nest. */}
+      <Stack gap="sm" mt="xl" component="section" aria-labelledby="shift-days-off-heading">
+        <Divider />
+        <Text fw={600} size="sm" id="shift-days-off-heading">
+          Days off on this shift
+        </Text>
+        {shift && pendingCountry === shift.holidayCountry ? (
+          <ShiftHolidays country={shift.holidayCountry} countries={countries.data ?? []} />
+        ) : (
+          <Text size="sm" c="dimmed">
+            {pendingCountry
+              ? `Save the shift to fill in the public holidays for ${pendingCountryName}, this year and next.`
+              : 'Save the shift to see and add its days off.'}
+          </Text>
+        )}
+      </Stack>
     </Modal>
   )
 }

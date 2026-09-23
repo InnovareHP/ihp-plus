@@ -7,7 +7,7 @@ import { RowActionsMenu } from '@/components/row-actions-menu'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { useDeleteShift, useShifts } from '../hooks/use-attendance-admin'
-import { DEFAULT_SHIFT, type AttendanceShiftRow } from '../schema'
+import { DEFAULT_ATTENDANCE_SETTINGS, DEFAULT_SHIFT, type AttendanceShiftRow } from '../schema'
 import { formatWorkdays, minutesToClock } from '@ihp/clock'
 import { ShiftModal } from './shift-modal'
 import { ShiftRules } from './shift-rules'
@@ -85,8 +85,8 @@ export function ShiftsPanel() {
               Shifts
             </Title>
             <Text size="sm" c="dimmed">
-              A shift decides what counts as late. Give one to a person on their row under
-              Organization → Members; anyone without one works the company hours in Settings.
+              A shift decides what counts as late and which days are off. Give one to a person on
+              their row under Organization → Members; anyone without one works the company hours.
             </Text>
           </Stack>
           <Button leftSection={<IconPlus size={18} />} onClick={() => setWriting(true)}>
@@ -124,6 +124,7 @@ export function ShiftsPanel() {
             }}
             shift={editing}
             defaults={companyHours}
+            settings={book.data?.settings ?? DEFAULT_ATTENDANCE_SETTINGS}
           />
         ) : null}
       </Stack>

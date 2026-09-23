@@ -22,6 +22,7 @@ const rpc = vi.hoisted(() => ({
   startBreak: vi.fn(),
   endBreak: vi.fn(),
   listHolidayCountries: vi.fn(),
+  listHolidays: vi.fn(),
 }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
@@ -55,6 +56,19 @@ describe('ShiftsPanel', () => {
     })
     rpc.saveShift.mockResolvedValue(MORNING)
     rpc.deleteShift.mockResolvedValue(undefined)
+    rpc.updateAttendanceSettings.mockImplementation(async (settings) => settings)
+    rpc.listHolidays.mockResolvedValue({
+      holidays: [
+        {
+          id: 'h-1',
+          date: `${new Date().getFullYear()}-03-01`,
+          name: 'Founders Day',
+          country: '',
+          imported: false,
+        },
+      ],
+      canManage: true,
+    })
     rpc.listHolidayCountries.mockResolvedValue([
       { code: 'PH', name: 'Philippines' },
       { code: 'US', name: 'United States of America' },
@@ -135,6 +149,87 @@ describe('ShiftsPanel', () => {
         expect.objectContaining({ name: 'Manila day', holidayCountry: 'PH' }),
       ),
     )
+  })
+
+  it('leaves the company settings alone when neither was touched', async () => {
+    const user = userEvent.setup()
+    render(<ShiftsPanel />)
+
+    await user.click(await screen.findByRole('button', { name: 'New shift' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New shift' })
+    await user.type(within(dialog).getByRole('textbox', { name: 'Name' }), 'Mid')
+    await user.click(within(dialog).getByRole('button', { name: 'Save shift' }))
+
+    await waitFor(() => expect(rpc.saveShift).toHaveBeenCalled())
+    expect(rpc.updateAttendanceSettings).not.toHaveBeenCalled()
+  })
+
+  it('saves the company time zone and makes the saved shift the company hours', async () => {
+    const user = userEvent.setup()
+    render(<ShiftsPanel />)
+
+    await user.click(await screen.findByRole('button', { name: 'New shift' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New shift' })
+    await user.type(within(dialog).getByRole('textbox', { name: 'Name' }), 'Morning')
+
+    const zone = within(dialog).getByRole('combobox', { name: /Company time zone/ })
+    await user.clear(zone)
+    await user.type(zone, 'Asia/Manila')
+    await user.click(await screen.findByRole('option', { name: 'Asia/Manila' }))
+    await user.click(within(dialog).getByRole('switch', { name: /Make this the company hours/ }))
+    await user.click(within(dialog).getByRole('button', { name: 'Save shift' }))
+
+    // The id comes from the saved shift, so a brand-new shift can become the default in one go.
+    await waitFor(() =>
+      expect(rpc.updateAttendanceSettings).toHaveBeenCalledWith({
+        timeZone: 'Asia/Manila',
+        defaultShiftId: 'shift-1',
+      }),
+    )
+  })
+
+  it('keeps the modal open and updates, not duplicates, the shift when the settings fail', async () => {
+    rpc.updateAttendanceSettings.mockRejectedValue(new Error('Only an admin sets the rules.'))
+    const user = userEvent.setup()
+    render(<ShiftsPanel />)
+
+    await user.click(await screen.findByRole('button', { name: 'New shift' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New shift' })
+    await user.type(within(dialog).getByRole('textbox', { name: 'Name' }), 'Morning')
+    await user.click(within(dialog).getByRole('switch', { name: /Make this the company hours/ }))
+    await user.click(within(dialog).getByRole('button', { name: 'Save shift' }))
+
+    expect(
+      await within(dialog).findByText(/The shift was saved, but the company settings were not/),
+    ).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Save shift' }))
+    await waitFor(() => expect(rpc.saveShift).toHaveBeenCalledTimes(2))
+    expect(rpc.saveShift).toHaveBeenLastCalledWith(expect.objectContaining({ shiftId: 'shift-1' }))
+  })
+
+  it('shows the days off of a saved shift, and explains them on a new one', async () => {
+    const user = userEvent.setup()
+    render(<ShiftsPanel />)
+
+    await user.click(await screen.findByRole('button', { name: 'New shift' }))
+    let dialog = await screen.findByRole('dialog', { name: 'New shift' })
+    expect(
+      within(dialog).getByText('Save the shift to see and add its days off.'),
+    ).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('combobox', { name: /Public holidays/ }))
+    await user.click(await screen.findByRole('option', { name: 'Philippines' }))
+    expect(
+      within(dialog).getByText(
+        'Save the shift to fill in the public holidays for Philippines, this year and next.',
+      ),
+    ).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+    await user.click(screen.getByRole('button', { name: 'Actions for Morning' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Edit' }))
+    dialog = await screen.findByRole('dialog', { name: 'Edit Morning' })
+    expect(await within(dialog).findByText('Founders Day')).toBeInTheDocument()
   })
 
   it('will not save a shift with no name', async () => {

@@ -161,43 +161,60 @@ export const DEFAULT_SHIFT: AttendanceShiftRow = {
   holidayCountry: '',
 }
 
-export const shiftSchema = z
-  .object({
-    shiftId: z.string().optional(),
-    name: z
-      .string()
-      .trim()
-      .min(1, 'Give the shift a name people will recognise.')
-      .max(60, 'Keep the name under 60 characters.'),
-    requireSelfie: z.boolean(),
-    requireNote: z.boolean(),
-    captureLocation: z.boolean(),
-    sendReminders: z.boolean(),
-    holidayCountry: z.string().trim().toUpperCase().max(2),
-    autoClockOutHours: z
-      .number()
-      .int()
-      .min(0, 'Use 0 to never close a day on its own.')
-      .max(24, 'A day is the longest a clock may run.'),
-    shiftStartMinutes: z
-      .number()
-      .int()
-      .min(0)
-      .max(24 * 60 - 1),
-    shiftEndMinutes: z
-      .number()
-      .int()
-      .min(0)
-      .max(24 * 60 - 1),
-    graceMinutes: z.number().int().min(0, 'Grace cannot be negative.').max(120),
-    workdays: workdaysField,
-  })
-  .refine((values) => values.shiftStartMinutes !== values.shiftEndMinutes, {
-    message: 'A shift cannot start and end at the same minute.',
-    path: ['shiftEndMinutes'],
-  })
+const shiftFields = z.object({
+  shiftId: z.string().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Give the shift a name people will recognise.')
+    .max(60, 'Keep the name under 60 characters.'),
+  requireSelfie: z.boolean(),
+  requireNote: z.boolean(),
+  captureLocation: z.boolean(),
+  sendReminders: z.boolean(),
+  holidayCountry: z.string().trim().toUpperCase().max(2),
+  autoClockOutHours: z
+    .number()
+    .int()
+    .min(0, 'Use 0 to never close a day on its own.')
+    .max(24, 'A day is the longest a clock may run.'),
+  shiftStartMinutes: z
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 60 - 1),
+  shiftEndMinutes: z
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 60 - 1),
+  graceMinutes: z.number().int().min(0, 'Grace cannot be negative.').max(120),
+  workdays: workdaysField,
+})
+
+const distinctEnds = {
+  check: (values: { shiftStartMinutes: number; shiftEndMinutes: number }) =>
+    values.shiftStartMinutes !== values.shiftEndMinutes,
+  message: 'A shift cannot start and end at the same minute.',
+  path: ['shiftEndMinutes'],
+}
+
+export const shiftSchema = shiftFields.refine(distinctEnds.check, {
+  message: distinctEnds.message,
+  path: distinctEnds.path,
+})
 
 export type ShiftValues = z.infer<typeof shiftSchema>
+
+/** The shift modal also carries the two company-wide settings, saved alongside the shift. */
+export const shiftFormSchema = shiftFields
+  .extend({
+    timeZone: z.string().min(1, 'Pick the zone the working day is counted in.'),
+    isCompanyHours: z.boolean(),
+  })
+  .refine(distinctEnds.check, { message: distinctEnds.message, path: distinctEnds.path })
+
+export type ShiftFormValues = z.infer<typeof shiftFormSchema>
 
 export const assignShiftSchema = z.object({
   userId: z.string().min(1, 'Pick who the shift is for.'),

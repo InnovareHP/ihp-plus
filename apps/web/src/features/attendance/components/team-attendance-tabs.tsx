@@ -1,14 +1,12 @@
 'use client'
 
-import { Card, Stack, Tabs, Title } from '@mantine/core'
+import { Tabs } from '@mantine/core'
 import { IconCalendarTime, IconClockHour4, IconFileSpreadsheet } from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { ATTENDANCE_TABS, type AttendanceTab } from '@/lib/routes'
 import { useAttendanceSettings } from '../hooks/use-time-clock'
 import { AttendanceBoardPanel } from './attendance-board-panel'
-import { AttendanceSettingsForm } from './attendance-settings-form'
-import { HolidaysPanel } from './holidays-panel'
 import { ShiftsPanel } from './shifts-panel'
 import { TeamTimesheetPanel } from './team-timesheet-panel'
 
@@ -61,16 +59,7 @@ export function TeamAttendanceTabs() {
         <TeamTimesheetPanel timeZone={timeZone} />
       </Tabs.Panel>
       <Tabs.Panel value="shifts">
-        <Stack gap="md">
-          <ShiftsPanel />
-          <HolidaysPanel />
-          <Card padding="lg" component="section" aria-labelledby="clock-rules-heading">
-            <Title order={2} size="h5" mb="sm" id="clock-rules-heading">
-              Company hours and clock rules
-            </Title>
-            <AttendanceSettingsForm />
-          </Card>
-        </Stack>
+        <ShiftsPanel />
       </Tabs.Panel>
     </Tabs>
   )
