@@ -33,6 +33,7 @@ const SAVED: FormRow = {
   status: 'draft',
   submissionCount: 0,
   updatedAt: '2026-09-01T00:00:00Z',
+  timeOff: false,
   teams: [],
   fields: [],
 }
@@ -120,6 +121,46 @@ describe('FormBuilder', () => {
     await person.click(screen.getByRole('button', { name: 'Save draft' }))
 
     expect(await screen.findByText('Only an admin can manage request forms.')).toBeInTheDocument()
+  })
+
+  it('locks the two date questions in place when the form books time off', async () => {
+    const person = user()
+    render(<FormBuilder />)
+
+    await person.click(await screen.findByRole('switch', { name: /Time off request/ }))
+
+    expect(await screen.findByText('Question 1: First day off')).toBeInTheDocument()
+    expect(screen.getByText('Question 2: Last day off')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Remove question 1' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Add at least one question.')).not.toBeInTheDocument()
+
+    await person.click(screen.getByRole('switch', { name: /Time off request/ }))
+    await waitFor(() =>
+      expect(screen.queryByText('Question 1: First day off')).not.toBeInTheDocument(),
+    )
+  })
+
+  it('saves a time off form with its dates first', async () => {
+    const person = user()
+    render(<FormBuilder />)
+
+    await person.type(screen.getByLabelText(/Form name/), 'Vacation leave')
+    await person.click(screen.getByRole('switch', { name: /Time off request/ }))
+    await person.click(screen.getByRole('button', { name: 'Save draft' }))
+
+    await waitFor(() => expect(rpc.saveForm).toHaveBeenCalled())
+    const values = rpc.saveForm.mock.calls[0]?.[0]
+    expect(values.timeOff).toBe(true)
+    expect(values.fields.map((field: { id: string }) => field.id)).toEqual([
+      'time-off-first-day',
+      'time-off-last-day',
+    ])
+  })
+
+  it('will not let a used form change whether it books time off', async () => {
+    render(<FormBuilder form={{ ...SAVED, submissionCount: 3 }} />)
+
+    expect(await screen.findByRole('switch', { name: /Time off request/ })).toBeDisabled()
   })
 
   it('has no axe violations', async () => {

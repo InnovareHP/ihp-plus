@@ -69,6 +69,7 @@ export async function getTimeClock(): Promise<TimeClockView> {
     canManage: response.canManage,
     shift: shiftFromProto(response.shift),
     holidayName: response.holidayName,
+    leaveName: response.leaveName,
   }
 }
 

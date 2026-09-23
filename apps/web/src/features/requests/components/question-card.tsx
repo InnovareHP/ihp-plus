@@ -34,6 +34,8 @@ interface QuestionCardProps {
   onMoveUp: () => void
   onMoveDown: () => void
   onRemove: () => void
+  /** Questions above this one are locked in place, so it cannot move past them. */
+  firstMovableIndex?: number
 }
 
 export function QuestionCard({
@@ -47,6 +49,7 @@ export function QuestionCard({
   onMoveUp,
   onMoveDown,
   onRemove,
+  firstMovableIndex = 0,
 }: QuestionCardProps) {
   return (
     <Card padding="md" component="fieldset" bd="1px solid var(--mantine-color-default-border)">
@@ -58,7 +61,7 @@ export function QuestionCard({
           <ActionIcon
             variant="subtle"
             color="gray"
-            disabled={index === 0}
+            disabled={index <= firstMovableIndex}
             aria-label={`Move question ${index + 1} up`}
             onClick={onMoveUp}
           >

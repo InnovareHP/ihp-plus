@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake } from '@/lib/pagination'
 import { recordActivity } from '@/lib/activity'
+import { bookLeave } from '@/features/attendance/leave'
 import {
   notifyApprovers,
   notifyApproversWithdrawn,
@@ -35,6 +36,7 @@ import {
   type RequestsPage,
   type SetApproverValues,
 } from './schema'
+import { datesOf, timeOffRangeOf, withTimeOffFields } from './time-off'
 
 // Deliberately not requireOnboarded(): that redirects, and a redirect thrown inside an RPC
 // surfaces as an opaque 500 rather than a code the caller can act on.
@@ -112,6 +114,7 @@ async function toFormRow(form: FormRecord, teamNames: Map<string, string>): Prom
     // One count, whichever kind the form is: what has been filled in against it.
     submissionCount: form.kind === 'evaluation' ? form._count.evaluations : form._count.submissions,
     updatedAt: form.updatedAt.toISOString(),
+    timeOff: form.timeOff,
   }
 }
 
@@ -180,6 +183,25 @@ export async function saveForm(input: FormDraftValues): Promise<FormRow> {
     throw new ConnectError('Check the highlighted fields and try again.', Code.InvalidArgument)
   }
   const draft = parsed.data
+  // Only a request reaches an approver, so only a request can book time off.
+  const timeOff = draft.kind === 'request' && draft.timeOff
+  // Enforced here too, so an older client cannot save a time off form without its dates.
+  const fields = timeOff ? withTimeOffFields(draft.fields) : draft.fields
+
+  if (draft.formId) {
+    const existing = await db.requestForm.findFirst({
+      where: { id: draft.formId, organizationId: caller.organizationId },
+      select: { timeOff: true, _count: { select: { submissions: true } } },
+    })
+    if (!existing) throw new ConnectError('That form no longer exists.', Code.NotFound)
+    // Flipping it later would change what approving the requests already made does.
+    if (existing.timeOff !== timeOff && existing._count.submissions > 0) {
+      throw new ConnectError(
+        'People have already used this form, so whether it books time off is settled.',
+        Code.FailedPrecondition,
+      )
+    }
+  }
 
   // An evaluation is assigned to a person, never offered to a department.
   const teamIds =
@@ -191,7 +213,7 @@ export async function saveForm(input: FormDraftValues): Promise<FormRow> {
           where: { id: draft.formId },
           // The kind is settled when the form is created; changing it later would strand the
           // submissions or evaluations already made against it.
-          data: { name: draft.name, description: draft.description, fields: draft.fields },
+          data: { name: draft.name, description: draft.description, fields, timeOff },
         })
       : await tx.requestForm.create({
           data: {
@@ -200,7 +222,8 @@ export async function saveForm(input: FormDraftValues): Promise<FormRow> {
             kind: draft.kind,
             name: draft.name,
             description: draft.description,
-            fields: draft.fields,
+            fields,
+            timeOff,
           },
         })
 
@@ -319,7 +342,7 @@ export async function submitRequest(input: {
 
   const fields = fieldsOf(form.fields)
   // The server is the trust boundary; the client's copy of this schema is for UX only.
-  const answers = answerSchemaOf(fields).safeParse(input.values)
+  const answers = answerSchemaOf(fields, { timeOff: form.timeOff }).safeParse(input.values)
   if (!answers.success) {
     const first = answers.error.issues[0]
     throw new ConnectError(first?.message ?? 'Some answers are not valid.', Code.InvalidArgument)
@@ -576,14 +599,43 @@ export async function decideRequest(input: DecisionValues): Promise<RequestRow> 
     )
   }
 
-  const updated = await db.requestSubmission.update({
-    where: { id: submission.id },
-    data: {
-      status: parsed.data.decision,
-      decidedById: caller.userId,
-      decidedAt: new Date(),
-      decisionNote: parsed.data.note || null,
-    },
+  const form = await db.requestForm.findUnique({
+    where: { id: submission.formId },
+    select: { timeOff: true },
+  })
+  const booking =
+    form?.timeOff && parsed.data.decision === 'approved'
+      ? timeOffRangeOf(valuesOf(submission.values))
+      : undefined
+  if (booking && 'problem' in booking) {
+    throw new ConnectError(
+      `These dates cannot be booked: ${booking.problem}`,
+      Code.FailedPrecondition,
+    )
+  }
+
+  const updated = await db.$transaction(async (tx) => {
+    const decided = await tx.requestSubmission.update({
+      where: { id: submission.id },
+      data: {
+        status: parsed.data.decision,
+        decidedById: caller.userId,
+        decidedAt: new Date(),
+        decisionNote: parsed.data.note || null,
+      },
+    })
+
+    if (booking) {
+      await bookLeave(tx, {
+        organizationId: caller.organizationId,
+        userId: decided.requesterId,
+        name: decided.formName,
+        submissionId: decided.id,
+        dates: datesOf(booking.range),
+      })
+    }
+
+    return decided
   })
 
   // Not awaited: the decision is saved whether or not the mail provider answers promptly.

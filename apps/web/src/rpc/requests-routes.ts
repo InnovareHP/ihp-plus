@@ -62,6 +62,7 @@ export const requests: ServiceImpl<typeof RequestsService> = {
         description: request.description,
         fields: request.fields.map(fieldFromProto),
         teamIds: request.teamIds,
+        timeOff: request.timeOff,
       }),
     ),
   }),

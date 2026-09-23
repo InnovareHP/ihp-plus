@@ -8,6 +8,7 @@ import {
   Group,
   MultiSelect,
   Stack,
+  Switch,
   Text,
   Textarea,
   TextInput,
@@ -31,6 +32,8 @@ import {
   type FormRow,
 } from '../schema'
 import { useSaveForm, useSetFormStatus } from '../hooks/use-forms'
+import { isTimeOffField, withTimeOffFields } from '../time-off'
+import { LockedQuestionCard } from './locked-question-card'
 import { QuestionCard } from './question-card'
 
 function draftOf(form: FormRow | undefined, kind: FormKind): FormDraftValues {
@@ -41,6 +44,7 @@ function draftOf(form: FormRow | undefined, kind: FormKind): FormDraftValues {
     description: form?.description ?? '',
     fields: form?.fields ?? [],
     teamIds: form?.teams.map((team) => team.id) ?? [],
+    timeOff: form?.timeOff ?? false,
   }
 }
 
@@ -70,6 +74,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
     handleSubmit,
     reset,
     setError,
+    getValues,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormDraftInput, unknown, FormDraftValues>({
     resolver: zodResolver(formDraftSchema),
@@ -83,6 +88,10 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
   // memoize, and this value feeds the publish check on every keystroke.
   const watchedFields = useWatch({ control, name: 'fields' })
   const watchedTeamIds = useWatch({ control, name: 'teamIds' })
+  const timeOff = useWatch({ control, name: 'timeOff' }) ?? false
+  const lockedCount = timeOff
+    ? (watchedFields ?? []).filter((field) => isTimeOffField(field.id)).length
+    : 0
 
   const blockers = publishBlockers({
     kind: formKind,
@@ -166,6 +175,35 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
             {isEvaluation ? null : (
               <Controller
                 control={control}
+                name="timeOff"
+                render={({ field }) => (
+                  <Switch
+                    label="Time off request"
+                    description={
+                      form && form.submissionCount > 0
+                        ? 'Already used, so this is settled: changing it would alter what approving those requests does.'
+                        : 'Asks for the first and last day off, and books them on the time clock when approved.'
+                    }
+                    disabled={Boolean(form && form.submissionCount > 0)}
+                    checked={field.value ?? false}
+                    onChange={(event) => {
+                      const on = event.currentTarget.checked
+                      field.onChange(on)
+                      const current = getValues('fields') ?? []
+                      fields.replace(
+                        on
+                          ? withTimeOffFields(current as FormDraftValues['fields'])
+                          : current.filter((one) => !isTimeOffField(one.id)),
+                      )
+                    }}
+                  />
+                )}
+              />
+            )}
+
+            {isEvaluation ? null : (
+              <Controller
+                control={control}
                 name="teamIds"
                 render={({ field }) => (
                   <MultiSelect
@@ -237,21 +275,35 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
             />
           ) : (
             <Stack gap="md">
-              {fields.fields.map((field, index) => (
-                <QuestionCard
-                  key={field.id}
-                  index={index}
-                  total={fields.fields.length}
-                  control={control}
-                  register={register}
-                  type={watchedFields?.[index]?.type ?? 'text'}
-                  labelError={errors.fields?.[index]?.label?.message}
-                  optionsError={errors.fields?.[index]?.options?.message}
-                  onMoveUp={() => fields.swap(index, index - 1)}
-                  onMoveDown={() => fields.swap(index, index + 1)}
-                  onRemove={() => fields.remove(index)}
-                />
-              ))}
+              {fields.fields.map((field, index) => {
+                const current = watchedFields?.[index]
+                if (timeOff && current && isTimeOffField(current.id)) {
+                  return (
+                    <LockedQuestionCard
+                      key={field.id}
+                      index={index}
+                      label={current.label}
+                      help={current.help ?? ''}
+                    />
+                  )
+                }
+                return (
+                  <QuestionCard
+                    key={field.id}
+                    index={index}
+                    firstMovableIndex={lockedCount}
+                    total={fields.fields.length}
+                    control={control}
+                    register={register}
+                    type={watchedFields?.[index]?.type ?? 'text'}
+                    labelError={errors.fields?.[index]?.label?.message}
+                    optionsError={errors.fields?.[index]?.options?.message}
+                    onMoveUp={() => fields.swap(index, index - 1)}
+                    onMoveDown={() => fields.swap(index, index + 1)}
+                    onRemove={() => fields.remove(index)}
+                  />
+                )
+              })}
             </Stack>
           )}
         </PageSection>

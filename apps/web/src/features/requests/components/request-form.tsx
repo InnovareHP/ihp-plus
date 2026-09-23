@@ -23,7 +23,7 @@ export function RequestForm({ form }: { form: FormRow }) {
     setError,
     formState: { errors, isSubmitting },
   } = useForm<FieldValues>({
-    resolver: zodResolver(answerSchemaOf(form.fields)),
+    resolver: zodResolver(answerSchemaOf(form.fields, { timeOff: form.timeOff })),
     mode: 'onTouched',
     reValidateMode: 'onChange',
     defaultValues: defaultAnswersOf(form.fields),
@@ -75,6 +75,7 @@ export function RequestForm({ form }: { form: FormRow }) {
 
           <Text size="sm" c="dimmed">
             It goes to the approvers for your department, who decide it from their queue.
+            {form.timeOff ? ' Once approved, these days show as leave on your time clock.' : ''}
           </Text>
 
           <Group>

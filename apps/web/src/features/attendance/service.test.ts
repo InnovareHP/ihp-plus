@@ -27,6 +27,7 @@ const prisma = vi.hoisted(() => ({
     delete: vi.fn(),
   },
   attendanceBreak: { create: vi.fn(), update: vi.fn() },
+  attendanceLeave: { findUnique: vi.fn() },
   attendanceHoliday: {
     findUnique: vi.fn(),
     findFirst: vi.fn(),
@@ -549,6 +550,24 @@ describe('the holiday calendar', () => {
     const view = await loadTimeClock()
 
     expect(view.holidayName).toBe('Christmas Day')
+    vi.useRealTimers()
+  })
+
+  it('names approved leave on the clock', async () => {
+    signedInAs('member')
+    vi.setSystemTime(new Date('2026-10-06T08:00:00.000Z'))
+    prisma.attendanceDay.findFirst.mockResolvedValue(null)
+    prisma.attendanceDay.findUnique.mockResolvedValue(null)
+    prisma.attendanceHoliday.findUnique.mockResolvedValue(null)
+    prisma.attendanceLeave.findUnique.mockResolvedValue({ name: 'Vacation leave' })
+
+    const view = await loadTimeClock()
+
+    expect(prisma.attendanceLeave.findUnique).toHaveBeenCalledWith({
+      where: { userId_date: { userId: 'user-1', date: new Date('2026-10-06T00:00:00.000Z') } },
+      select: { name: true },
+    })
+    expect(view.leaveName).toBe('Vacation leave')
     vi.useRealTimers()
   })
 })

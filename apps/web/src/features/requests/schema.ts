@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { pageQueryFields, type Paginated } from '@/lib/pagination'
+import { timeOffRangeOf } from './time-off'
 
 export const FIELD_TYPES = ['text', 'textarea', 'number', 'date', 'select', 'checkbox'] as const
 export const FORM_STATUSES = ['draft', 'published', 'archived'] as const
@@ -73,6 +74,7 @@ export const formDraftSchema = z.object({
   description: z.string().trim().max(400).default(''),
   fields: z.array(formFieldSchema).max(40, 'A form can hold at most 40 questions.'),
   teamIds: z.array(z.string().min(1)),
+  timeOff: z.boolean().default(false),
 })
 
 export const setFormStatusSchema = z.object({
@@ -129,6 +131,8 @@ export interface FormRow {
   teams: TeamRef[]
   submissionCount: number
   updatedAt: string
+  /** Approving a request on it books the dates as leave on the time clock. */
+  timeOff: boolean
 }
 
 export interface RequestRow {
@@ -188,14 +192,23 @@ function requiredMessage(label: string) {
 
 // The answer schema is built from the form's own fields, so validation follows whatever an
 // admin assembled rather than a fixed shape.
-export function answerSchemaOf(fields: readonly FormField[]) {
+export function answerSchemaOf(fields: readonly FormField[], options: { timeOff?: boolean } = {}) {
   const shape: Record<string, z.ZodType> = {}
 
   for (const field of fields) {
     shape[field.id] = fieldSchemaOf(field)
   }
 
-  return z.object(shape)
+  const answers = z.object(shape)
+  if (!options.timeOff) return answers
+
+  // A range that runs backwards or past the cap would be approved and then book nonsense.
+  return answers.superRefine((values, ctx) => {
+    const checked = timeOffRangeOf(values as RequestValues)
+    if ('problem' in checked) {
+      ctx.addIssue({ code: 'custom', message: checked.problem, path: [checked.field] })
+    }
+  })
 }
 
 function fieldSchemaOf(field: FormField): z.ZodType {

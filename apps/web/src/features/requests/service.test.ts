@@ -9,7 +9,19 @@ const prisma = vi.hoisted(() => ({
     update: vi.fn(),
     create: vi.fn(),
   },
-  requestForm: { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn() },
+  requestForm: {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    count: vi.fn(),
+    findUnique: vi.fn(),
+    findUniqueOrThrow: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+  },
+  requestFormTeam: { deleteMany: vi.fn(), createMany: vi.fn() },
+  attendanceLeave: { createMany: vi.fn() },
+  // The transaction hands back the same mocks, so a write inside one is asserted like any other.
+  $transaction: vi.fn(),
   team: { findMany: vi.fn() },
   requestApprover: { findMany: vi.fn() },
   user: { findMany: vi.fn() },
@@ -42,6 +54,7 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 const {
   decideRequest,
   loadFormsPage,
+  saveForm,
   loadMyRequestsPage,
   loadRequest,
   loadRequestsPage,
@@ -104,6 +117,8 @@ beforeEach(() => {
     { id: 'user-9', name: 'Grace Hopper', preferredName: null },
     { id: 'user-1', name: 'Ada Lovelace', preferredName: null },
   ])
+  prisma.requestForm.findUnique.mockResolvedValue({ timeOff: false })
+  prisma.$transaction.mockImplementation((work: (tx: typeof prisma) => unknown) => work(prisma))
 })
 
 describe('the approvals queue', () => {
@@ -445,5 +460,166 @@ describe('the forms catalogue', () => {
     expect(prisma.requestForm.count.mock.calls[0]?.[0].where).toMatchObject({
       teams: { some: { teamId: { in: ['team-1'] } } },
     })
+  })
+})
+
+describe('time off', () => {
+  const RANGE = { 'time-off-first-day': '2026-10-05', 'time-off-last-day': '2026-10-07' }
+
+  it('books every day of an approved range as leave for the requester', async () => {
+    signedIn({ isAdmin: true })
+    prisma.requestForm.findUnique.mockResolvedValue({ timeOff: true })
+    prisma.requestSubmission.findFirst.mockResolvedValue({ ...PENDING, values: RANGE })
+
+    await decideRequest({ submissionId: 'sub-1', decision: 'approved', note: '' })
+
+    expect(prisma.attendanceLeave.createMany).toHaveBeenCalledWith({
+      data: ['2026-10-05', '2026-10-06', '2026-10-07'].map((date) => ({
+        organizationId: 'org-1',
+        userId: 'user-9',
+        date: new Date(`${date}T00:00:00.000Z`),
+        name: 'Time off',
+        submissionId: 'sub-1',
+      })),
+      skipDuplicates: true,
+    })
+  })
+
+  it('books nothing when the request is rejected', async () => {
+    signedIn({ isAdmin: true })
+    prisma.requestForm.findUnique.mockResolvedValue({ timeOff: true })
+    prisma.requestSubmission.findFirst.mockResolvedValue({ ...PENDING, values: RANGE })
+
+    await decideRequest({ submissionId: 'sub-1', decision: 'rejected', note: 'Short that week.' })
+
+    expect(prisma.attendanceLeave.createMany).not.toHaveBeenCalled()
+  })
+
+  it('books nothing for an ordinary request', async () => {
+    signedIn({ isAdmin: true })
+    prisma.requestSubmission.findFirst.mockResolvedValue({ ...PENDING, values: RANGE })
+
+    await decideRequest({ submissionId: 'sub-1', decision: 'approved', note: '' })
+
+    expect(prisma.attendanceLeave.createMany).not.toHaveBeenCalled()
+  })
+
+  it('refuses to approve dates that cannot be booked, and leaves the request pending', async () => {
+    signedIn({ isAdmin: true })
+    prisma.requestForm.findUnique.mockResolvedValue({ timeOff: true })
+    prisma.requestSubmission.findFirst.mockResolvedValue({
+      ...PENDING,
+      values: { 'time-off-first-day': '2026-10-07', 'time-off-last-day': '2026-10-05' },
+    })
+
+    expect(
+      await codeOf(() => decideRequest({ submissionId: 'sub-1', decision: 'approved', note: '' })),
+    ).toBe(Code.FailedPrecondition)
+    expect(prisma.requestSubmission.update).not.toHaveBeenCalled()
+  })
+
+  it('refuses a range that ends before it starts when it is raised', async () => {
+    const fields = [
+      {
+        id: 'time-off-first-day',
+        type: 'date',
+        label: 'First day off',
+        help: '',
+        placeholder: '',
+        required: true,
+        options: [],
+      },
+      {
+        id: 'time-off-last-day',
+        type: 'date',
+        label: 'Last day off',
+        help: '',
+        placeholder: '',
+        required: true,
+        options: [],
+      },
+    ]
+    prisma.requestForm.findFirst.mockResolvedValue({
+      id: 'form-1',
+      name: 'Time off',
+      fields,
+      timeOff: true,
+    })
+
+    const error = await submitRequest({
+      formId: 'form-1',
+      values: { 'time-off-first-day': '2026-10-07', 'time-off-last-day': '2026-10-05' },
+    }).catch((thrown: unknown) => ConnectError.from(thrown))
+
+    expect(error).toMatchObject({
+      code: Code.InvalidArgument,
+      rawMessage: 'The last day off cannot be before the first.',
+    })
+    expect(prisma.requestSubmission.create).not.toHaveBeenCalled()
+  })
+
+  it('puts the two date questions first on a time off form, whatever the client sent', async () => {
+    signedIn({ isAdmin: true })
+    prisma.requestForm.create.mockResolvedValue({ id: 'form-1' })
+    prisma.requestForm.findUniqueOrThrow.mockResolvedValue({
+      id: 'form-1',
+      kind: 'request',
+      name: 'Vacation leave',
+      description: '',
+      status: 'draft',
+      fields: [],
+      teams: [],
+      timeOff: true,
+      updatedAt: new Date('2026-09-24T00:00:00.000Z'),
+      _count: { submissions: 0, evaluations: 0 },
+    })
+    prisma.team.findMany.mockResolvedValue([])
+
+    await saveForm({
+      kind: 'request',
+      name: 'Vacation leave',
+      description: '',
+      fields: [
+        {
+          id: 'why',
+          type: 'textarea',
+          label: 'Anything to add?',
+          help: '',
+          placeholder: '',
+          required: false,
+          options: [],
+        },
+      ],
+      teamIds: [],
+      timeOff: true,
+    })
+
+    const saved = prisma.requestForm.create.mock.calls[0]?.[0].data
+    expect(saved.timeOff).toBe(true)
+    expect(saved.fields.map((field: { id: string }) => field.id)).toEqual([
+      'time-off-first-day',
+      'time-off-last-day',
+      'why',
+    ])
+  })
+
+  it('will not flip a form people have already used', async () => {
+    signedIn({ isAdmin: true })
+    prisma.requestForm.findFirst.mockResolvedValue({ timeOff: false, _count: { submissions: 2 } })
+
+    expect(
+      await codeOf(() =>
+        saveForm({
+          formId: 'form-1',
+          kind: 'request',
+          name: 'Vacation leave',
+          description: '',
+          fields: [],
+          teamIds: [],
+          timeOff: true,
+        }),
+      ),
+    ).toBe(Code.FailedPrecondition)
+    expect(prisma.requestForm.update).not.toHaveBeenCalled()
   })
 })

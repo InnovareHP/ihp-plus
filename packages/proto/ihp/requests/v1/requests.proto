@@ -80,6 +80,8 @@ message RequestForm {
   string updated_at = 8;
   // UNSPECIFIED reads as REQUEST: every form predating evaluations is one.
   FormKind kind = 9;
+  // Approving a request on it books the first to last day off as leave on the time clock.
+  bool time_off = 10;
 }
 
 // One answer. The oneof keeps a number a number across the wire rather than making every
@@ -171,6 +173,7 @@ message SaveFormRequest {
   repeated FormField fields = 4;
   repeated string team_ids = 5;
   FormKind kind = 6;
+  bool time_off = 7;
 }
 
 message SaveFormResponse {

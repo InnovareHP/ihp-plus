@@ -17,6 +17,8 @@ model RequestForm {
   status      String  @default("draft")
   // Ordered field definitions, validated against the zod schema in features/requests.
   fields      Json    @default("[]")
+  // An approved request on a time off form books its dates as leave on the time clock.
+  timeOff     Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -98,6 +98,8 @@ export interface TimeClockView {
   shift: AttendanceShiftRow
   /** Today's company holiday, if it is one. */
   holidayName: string | undefined
+  /** Today's approved time off, named after the form it came through. */
+  leaveName: string | undefined
 }
 
 export interface AttendanceSettingsView {

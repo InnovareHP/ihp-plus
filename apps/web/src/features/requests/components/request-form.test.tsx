@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { render, screen, userEvent, waitFor } from '@/test/render'
 import type { FormRow } from '../schema'
+import { withTimeOffFields } from '../time-off'
 import { RequestForm } from './request-form'
 
 const rpc = vi.hoisted(() => ({
@@ -31,6 +32,7 @@ const FORM: FormRow = {
   status: 'published',
   submissionCount: 0,
   updatedAt: '2026-09-01T00:00:00Z',
+  timeOff: false,
   teams: [{ id: 'team-1', name: 'Information Technology' }],
   fields: [
     {
@@ -87,6 +89,21 @@ describe('RequestForm', () => {
     expect(screen.getByText('One item per request.')).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: /Size/ })).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: /Needed urgently/ })).toBeInTheDocument()
+  })
+
+  it('refuses time off whose last day comes before the first', async () => {
+    const person = userEvent.setup()
+    render(<RequestForm form={{ ...FORM, timeOff: true, fields: withTimeOffFields([]) }} />)
+
+    await person.type(screen.getByLabelText(/First day off/), '2026-10-09')
+    await person.type(screen.getByLabelText(/Last day off/), '2026-10-05')
+    await person.click(screen.getByRole('button', { name: 'Send request' }))
+
+    expect(
+      await screen.findByText('The last day off cannot be before the first.'),
+    ).toBeInTheDocument()
+    expect(rpc.submitRequest).not.toHaveBeenCalled()
+    expect(screen.getByText(/these days show as leave on your time clock/)).toBeInTheDocument()
   })
 
   it('refuses to send until the required questions are answered', async () => {

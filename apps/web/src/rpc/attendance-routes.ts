@@ -52,6 +52,7 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
       canManage: view.canManage,
       shift: shiftToProto(view.shift),
       holidayName: view.holidayName,
+      leaveName: view.leaveName,
     }
   },
 

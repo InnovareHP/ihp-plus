@@ -115,6 +115,17 @@ describe('TimeClockCard', () => {
     expect(screen.getByRole('button', { name: 'Clock in' })).toBeInTheDocument()
   })
 
+  it('tells someone on approved leave that nobody expects them in', async () => {
+    rpc.getTimeClock.mockResolvedValue({ ...view(undefined), leaveName: 'Vacation leave' })
+    render(<TimeClockCard />)
+
+    expect(
+      await screen.findByText(
+        'You are on approved leave today (Vacation leave). Clock in only if you are working it.',
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('offers the one action a day that has not started needs', async () => {
     render(<TimeClockCard />)
 

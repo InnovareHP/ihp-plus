@@ -150,3 +150,24 @@ model AttendanceHoliday {
   @@map("attendanceHoliday")
   @@schema("attendance")
 }
+
+// A day one person is off with approval, written when a time off request is approved.
+model AttendanceLeave {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  date           DateTime @db.Date
+  // The form it came through, such as "Vacation leave", which is what the timesheet shows.
+  name           String
+  // Plain column, not a relation: requests live in another Postgres schema.
+  submissionId   String?
+
+  createdAt DateTime @default(now())
+
+  // Overlapping approvals book the day once.
+  @@unique([userId, date])
+  @@index([organizationId, date])
+  @@index([submissionId])
+  @@map("attendanceLeave")
+  @@schema("attendance")
+}

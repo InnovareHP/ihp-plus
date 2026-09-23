@@ -117,6 +117,8 @@ message GetTimeClockResponse {
   AttendanceShift shift = 5;
   // Set when today is a company holiday, so the screen can say so before anyone clocks in.
   optional string holiday_name = 6;
+  // Set when today is approved leave, named after the form it came through.
+  optional string leave_name = 7;
 }
 
 message ClockInRequest {

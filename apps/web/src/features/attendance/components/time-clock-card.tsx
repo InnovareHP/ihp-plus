@@ -104,8 +104,8 @@ export function TimeClockCard() {
 
         <ClockReading day={today} now={now} state={state} timeZone={settings.timeZone} />
 
-        {state === 'absent' && clock.data.holidayName ? (
-          <DayOffNotice holidayName={clock.data.holidayName} />
+        {state === 'absent' && (clock.data.holidayName || clock.data.leaveName) ? (
+          <DayOffNotice holidayName={clock.data.holidayName} leaveName={clock.data.leaveName} />
         ) : null}
 
         {today ? (

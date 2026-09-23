@@ -420,15 +420,19 @@ export async function loadTimeClock(): Promise<TimeClockView> {
     }))
 
   const names = new Map([[caller.userId, caller.name]])
-  const holiday = await db.attendanceHoliday.findUnique({
-    where: {
-      organizationId_date: {
-        organizationId: caller.organizationId,
-        date: dateOf(workDateKey(new Date(), settings.timeZone)),
+  const todayKey = dateOf(workDateKey(new Date(), settings.timeZone))
+  const [holiday, leave] = await Promise.all([
+    db.attendanceHoliday.findUnique({
+      where: {
+        organizationId_date: { organizationId: caller.organizationId, date: todayKey },
       },
-    },
-    select: { name: true },
-  })
+      select: { name: true },
+    }),
+    db.attendanceLeave.findUnique({
+      where: { userId_date: { userId: caller.userId, date: todayKey } },
+      select: { name: true },
+    }),
+  ])
 
   return {
     today: today ? await toDayRow(today, names, caller) : undefined,
@@ -442,6 +446,7 @@ export async function loadTimeClock(): Promise<TimeClockView> {
     canManage: caller.canManage,
     shift,
     holidayName: holiday?.name,
+    leaveName: leave?.name,
   }
 }
 
