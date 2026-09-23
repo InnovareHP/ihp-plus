@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro'
 
 // The portal under /app is behind sign-in, so crawlers are kept to the marketing site.
 export const GET: APIRoute = ({ site }) => {
-  const origin = site ?? new URL('http://localhost')
+  const origin = site ?? new URL('https://www.ihpplusglobal.com')
   const body = [
     'User-agent: *',
     'Allow: /',

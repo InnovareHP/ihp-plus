@@ -4,8 +4,12 @@ import type { APIRoute } from 'astro'
 const PAGES = ['/']
 
 export const GET: APIRoute = ({ site }) => {
-  const origin = site ?? new URL('http://localhost')
-  const urls = PAGES.map((path) => `  <url><loc>${new URL(path, origin).href}</loc></url>`)
+  const origin = site ?? new URL('https://www.ihpplusglobal.com')
+  // The build date: every deploy is a static rebuild, so it is when the pages last changed.
+  const lastmod = new Date().toISOString().slice(0, 10)
+  const urls = PAGES.map(
+    (path) => `  <url><loc>${new URL(path, origin).href}</loc><lastmod>${lastmod}</lastmod></url>`,
+  )
   const body = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',

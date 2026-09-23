@@ -22,20 +22,34 @@ const {
 } = Astro.props
 
 // Absolute URLs, because crawlers and link unfurlers do not resolve relative ones.
-const site = Astro.site ?? new URL('http://localhost')
+const site = Astro.site ?? new URL('https://www.ihpplusglobal.com')
 const canonical = new URL(Astro.url.pathname, site).href
 const imageUrl = new URL(image, site).href
 
-const organization = {
+const organizationId = new URL('/#organization', site).href
+const structuredData = {
   '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'IHP+',
-  legalName: 'Ihpplusglobal',
-  url: site.href,
-  logo: new URL('/icon-512.png', site).href,
-  description,
-  address: { '@type': 'PostalAddress', addressRegion: 'MI', addressCountry: 'US' },
-  areaServed: 'Worldwide',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': organizationId,
+      name: 'IHP+',
+      legalName: 'Ihpplusglobal',
+      url: site.href,
+      logo: new URL('/icon-512.png', site).href,
+      description,
+      address: { '@type': 'PostalAddress', addressRegion: 'MI', addressCountry: 'US' },
+      areaServed: 'Worldwide',
+    },
+    {
+      '@type': 'WebSite',
+      '@id': new URL('/#website', site).href,
+      name: 'IHP+',
+      url: site.href,
+      inLanguage: 'en-US',
+      publisher: { '@id': organizationId },
+    },
+  ],
 }
 ---
 
@@ -67,6 +81,7 @@ const organization = {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={imageAlt} />
@@ -80,7 +95,7 @@ const organization = {
     <meta name="generator" content={Astro.generator} />
     {
       !noindex && (
-        <script is:inline type="application/ld+json" set:html={JSON.stringify(organization)} />
+        <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
       )
     }
   </head>

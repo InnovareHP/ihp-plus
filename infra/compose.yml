@@ -104,8 +104,6 @@ services:
     build:
       context: ..
       dockerfile: infra/docker/landing.Dockerfile
-      args:
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost}
     restart: unless-stopped
     expose:
       - '80'

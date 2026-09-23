@@ -6,8 +6,8 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   // Pure static marketing site — nginx serves dist/ directly.
   output: 'static',
-  // Canonical, Open Graph and sitemap URLs need the public origin, which landing and app share.
-  site: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost',
+  // The marketing domain, baked into canonical, Open Graph and sitemap URLs; the portal has its own.
+  site: 'https://www.ihpplusglobal.com',
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
