@@ -14,6 +14,7 @@ const rpc = vi.hoisted(() => ({
   endBreak: vi.fn(),
   getAttendanceBoard: vi.fn(),
   listSchedules: vi.fn(),
+  listCorrections: vi.fn(async () => []),
   saveAttendanceDay: vi.fn(),
   deleteAttendanceDay: vi.fn(),
   listShifts: vi.fn(),

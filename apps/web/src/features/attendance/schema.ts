@@ -396,3 +396,68 @@ export interface TeamCalendarMonth {
   timeZone: string
   days: TeamCalendarDayRow[]
 }
+
+export const CORRECTION_STATUSES = ['pending', 'approved', 'rejected', 'withdrawn'] as const
+export type CorrectionStatus = (typeof CORRECTION_STATUSES)[number]
+
+export interface AttendanceCorrectionRow {
+  id: string
+  userId: string
+  userName: string
+  workDate: string
+  clockInTime: string
+  clockOutTime: string
+  breakMinutes: number
+  reason: string
+  status: CorrectionStatus
+  decidedBy: string | undefined
+  decidedAt: string | undefined
+  decisionNote: string | undefined
+  createdAt: string
+  /** An admin, on somebody else's pending request. */
+  canDecide: boolean
+  isMine: boolean
+}
+
+/**
+ * What a member asks for: the day as it should read. Both ends are required, because a request
+ * is about a day that is over — a running day is still theirs to clock out of.
+ */
+export const correctionSchema = z
+  .object({
+    workDate: dateKey,
+    clockInTime: timeOfDay,
+    clockOutTime: timeOfDay,
+    breakMinutes: z
+      .number()
+      .int()
+      .min(0, 'Break time cannot be negative.')
+      .max(12 * 60, 'A break cannot run longer than half a day.'),
+    reason: z
+      .string()
+      .trim()
+      .min(1, 'Say what happened, so the admin can check it.')
+      .max(300, 'Keep the reason under 300 characters.'),
+  })
+  .refine((values) => clockToMinutes(values.clockInTime) !== clockToMinutes(values.clockOutTime), {
+    message: 'A day cannot start and end at the same minute.',
+    path: ['clockOutTime'],
+  })
+
+export type CorrectionValues = z.infer<typeof correctionSchema>
+
+export const CORRECTION_NEEDS_REASON =
+  'Say why it was turned down, so they know what to do instead.'
+
+export const correctionDecisionSchema = z
+  .object({
+    correctionId: z.string().min(1),
+    decision: z.enum(['approved', 'rejected']),
+    note: z.string().trim().max(300).default(''),
+  })
+  .refine((values) => values.decision !== 'rejected' || values.note.length > 0, {
+    message: CORRECTION_NEEDS_REASON,
+    path: ['note'],
+  })
+
+export type CorrectionDecisionValues = z.infer<typeof correctionDecisionSchema>

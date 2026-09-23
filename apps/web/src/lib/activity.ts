@@ -28,6 +28,9 @@ export const ACTIVITY_LABELS = {
   'task.commented': 'Commented',
   'task.attached': 'File attached',
   'attendance.day.edited': 'Attendance corrected',
+  'attendance.correction.requested': 'Asked for a correction',
+  'attendance.correction.approved': 'Correction approved',
+  'attendance.correction.rejected': 'Correction turned down',
   'attendance.day.deleted': 'Attendance removed',
 } as const
 

@@ -1,5 +1,6 @@
 import type {
   AttendanceAbsence as AttendanceAbsenceMessage,
+  AttendanceCorrection as AttendanceCorrectionMessage,
   CalendarDay as CalendarDayMessage,
   TeamCalendarDay as TeamCalendarDayMessage,
   AttendanceBoardRow as AttendanceBoardRowMessage,
@@ -12,6 +13,8 @@ import type {
 import {
   DEFAULT_ATTENDANCE_SETTINGS,
   CALENDAR_DAY_STATES,
+  CORRECTION_STATUSES,
+  type AttendanceCorrectionRow,
   DEFAULT_SHIFT,
   type CalendarDayRow,
   TEAM_CALENDAR_STATES,
@@ -346,5 +349,47 @@ export function teamCalendarDayFromProto(day: TeamCalendarDayMessage): TeamCalen
           ]
         : []
     }),
+  }
+}
+
+export function correctionToProto(row: AttendanceCorrectionRow): AttendanceCorrectionMessage {
+  return {
+    $typeName: 'ihp.attendance.v1.AttendanceCorrection',
+    id: row.id,
+    userId: row.userId,
+    userName: row.userName,
+    workDate: row.workDate,
+    clockInTime: row.clockInTime,
+    clockOutTime: row.clockOutTime,
+    breakMinutes: row.breakMinutes,
+    reason: row.reason,
+    status: row.status,
+    decidedBy: row.decidedBy,
+    decidedAt: row.decidedAt,
+    decisionNote: row.decisionNote,
+    createdAt: row.createdAt,
+    canDecide: row.canDecide,
+    isMine: row.isMine,
+  }
+}
+
+export function correctionFromProto(message: AttendanceCorrectionMessage): AttendanceCorrectionRow {
+  return {
+    id: message.id,
+    userId: message.userId,
+    userName: message.userName,
+    workDate: message.workDate,
+    clockInTime: message.clockInTime,
+    clockOutTime: message.clockOutTime,
+    breakMinutes: message.breakMinutes,
+    reason: message.reason,
+    // An unknown status from a newer server reads as still waiting, the safe assumption.
+    status: CORRECTION_STATUSES.find((status) => status === message.status) ?? 'pending',
+    decidedBy: message.decidedBy,
+    decidedAt: message.decidedAt,
+    decisionNote: message.decisionNote,
+    createdAt: message.createdAt,
+    canDecide: message.canDecide,
+    isMine: message.isMine,
   }
 }

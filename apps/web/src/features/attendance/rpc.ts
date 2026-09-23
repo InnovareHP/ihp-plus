@@ -5,6 +5,7 @@ import {
   absenceFromProto,
   boardRowFromProto,
   calendarDayFromProto,
+  correctionFromProto,
   teamCalendarDayFromProto,
   dayFromProto,
   holidayFromProto,
@@ -24,7 +25,10 @@ import type {
   AttendanceSettingsRow,
   AttendanceSettingsView,
   AttendanceShiftRow,
+  AttendanceCorrectionRow,
   CalendarMonth,
+  CorrectionDecisionValues,
+  CorrectionValues,
   TeamCalendarMonth,
   AssignShiftValues,
   ClockActionValues,
@@ -287,4 +291,45 @@ export async function getTeamCalendar(month: string): Promise<TeamCalendarMonth>
     timeZone: response.timeZone || 'UTC',
     days: response.days.map(teamCalendarDayFromProto),
   }
+}
+
+function requiredCorrection(
+  correction: Parameters<typeof correctionFromProto>[0] | undefined,
+): AttendanceCorrectionRow {
+  if (!correction) throw new Error('The server did not return the request.')
+  return correctionFromProto(correction)
+}
+
+export async function requestCorrection(
+  values: CorrectionValues,
+): Promise<AttendanceCorrectionRow> {
+  const response = await call(() => browserClients.attendance.requestCorrection(values))
+  return requiredCorrection(response.correction)
+}
+
+export interface CorrectionQuery {
+  everyone?: boolean
+  status?: string
+}
+
+export async function listCorrections(query: CorrectionQuery): Promise<AttendanceCorrectionRow[]> {
+  const response = await call(() =>
+    browserClients.attendance.listCorrections({
+      everyone: query.everyone ?? false,
+      status: query.status ?? '',
+    }),
+  )
+  return response.corrections.map(correctionFromProto)
+}
+
+export async function decideCorrection(
+  values: CorrectionDecisionValues,
+): Promise<AttendanceCorrectionRow> {
+  const response = await call(() => browserClients.attendance.decideCorrection(values))
+  return requiredCorrection(response.correction)
+}
+
+export async function withdrawCorrection(correctionId: string): Promise<AttendanceCorrectionRow> {
+  const response = await call(() => browserClients.attendance.withdrawCorrection({ correctionId }))
+  return requiredCorrection(response.correction)
 }

@@ -1,20 +1,52 @@
 'use client'
 
-import { Card, Group, Stack, Text, Title } from '@mantine/core'
+import { Button, Card, Group, Stack, Text, Title } from '@mantine/core'
+import { formatTimeOfDay, minutesToClock, workDateKey } from '@ihp/clock'
+import { useState } from 'react'
+import { useMyCorrections, useWithdrawCorrection } from '../hooks/use-corrections'
 import { useAttendanceRange } from '../hooks/use-attendance-range'
 import { useAttendanceLog, useTimeClock } from '../hooks/use-time-clock'
+import type { AttendanceDayRow, CorrectionValues } from '../schema'
 import { AbsencesTable } from './absences-table'
 import { AttendanceLogTable } from './attendance-log-table'
 import { AttendanceRangeFields } from './attendance-range-fields'
+import { CorrectionRequestModal } from './correction-request-modal'
 import { DayTotals } from './day-totals'
 import { ExportTimesheetButton } from './export-timesheet-button'
+import { MyCorrectionsTable } from './my-corrections-table'
 
 /** A member's own history: the range in the URL, the totals above the rows. */
 export function MyAttendancePanel() {
   const range = useAttendanceRange()
   const clock = useTimeClock()
   const log = useAttendanceLog({ from: range.from, to: range.to })
+  const corrections = useMyCorrections()
+  const withdraw = useWithdrawCorrection()
   const timeZone = clock.data?.settings.timeZone ?? 'UTC'
+  const today = workDateKey(new Date(), timeZone)
+  // Which day the request form is open on is a disclosure nothing else reads.
+  const [asking, setAsking] = useState<CorrectionValues | undefined>(undefined)
+
+  function askAbout(day: AttendanceDayRow) {
+    setAsking({
+      workDate: day.workDate,
+      clockInTime: formatTimeOfDay(day.clockInAt, timeZone),
+      clockOutTime: day.clockOutAt ? formatTimeOfDay(day.clockOutAt, timeZone) : '',
+      breakMinutes: Math.round(day.breakSeconds / 60),
+      reason: '',
+    })
+  }
+
+  function askAboutAnotherDay() {
+    const shift = clock.data?.shift
+    setAsking({
+      workDate: today,
+      clockInTime: shift ? minutesToClock(shift.shiftStartMinutes) : '09:00',
+      clockOutTime: shift ? minutesToClock(shift.shiftEndMinutes) : '18:00',
+      breakMinutes: 0,
+      reason: '',
+    })
+  }
 
   return (
     <Card padding="lg" component="section" aria-labelledby="my-attendance-heading">
@@ -37,6 +69,9 @@ export function MyAttendancePanel() {
               to={range.to}
               timeZone={timeZone}
             />
+            <Button variant="default" onClick={askAboutAnotherDay}>
+              Ask for a correction
+            </Button>
           </Group>
         </Group>
 
@@ -53,6 +88,19 @@ export function MyAttendancePanel() {
           isFetching={log.isFetching}
           onRetry={() => void log.refetch()}
           timeZone={timeZone}
+          // A running day is still the member's to clock out of, so only a finished one is asked about.
+          actions={(day) =>
+            day.isOpen ? null : (
+              <Button
+                variant="subtle"
+                size="compact-sm"
+                onClick={() => askAbout(day)}
+                aria-label={`Ask to correct ${day.workDate}`}
+              >
+                Ask to correct
+              </Button>
+            )
+          }
           emptyHint="Clock in on the card above and today will show up here."
         />
 
@@ -63,6 +111,25 @@ export function MyAttendancePanel() {
           isFetching={log.isFetching}
           onRetry={() => void log.refetch()}
         />
+
+        <MyCorrectionsTable
+          corrections={corrections.data}
+          isPending={corrections.isPending}
+          isError={corrections.isError}
+          isFetching={corrections.isFetching}
+          onRetry={() => void corrections.refetch()}
+          onWithdraw={(row) => withdraw.mutate({ correctionId: row.id })}
+        />
+
+        {asking ? (
+          <CorrectionRequestModal
+            key={asking.workDate}
+            opened
+            onClose={() => setAsking(undefined)}
+            initial={asking}
+            today={today}
+          />
+        ) : null}
       </Stack>
     </Card>
   )

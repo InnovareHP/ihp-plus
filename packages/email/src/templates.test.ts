@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
 import {
   clientFolderSharedTemplate,
+  correctionDecidedTemplate,
   leaveCancelledTemplate,
   clientOwnerAssignedTemplate,
   clockInReminderTemplate,
@@ -375,5 +376,34 @@ describe('cancelled leave', () => {
     expect(email.subject).toBe('Your Vacation leave was cancelled')
     expect(email.text).toContain('workdays on your time clock again')
     expect(email.text).toContain('The audit moved to that week.')
+  })
+})
+
+describe('correction requests', () => {
+  it('says the day was corrected, and by whom', () => {
+    const email = correctionDecidedTemplate({
+      workDate: '2026-09-22',
+      decision: 'approved',
+      deciderName: 'Ada Lovelace',
+      note: undefined,
+      url: 'https://ihp.test/app/attendance',
+    })
+
+    expect(email.subject).toBe('Your Tuesday, September 22 was corrected')
+    expect(email.text).toContain('Ada Lovelace approved your request')
+  })
+
+  it('carries the reason when the request is turned down', () => {
+    const email = correctionDecidedTemplate({
+      workDate: '2026-09-22',
+      decision: 'rejected',
+      deciderName: 'Ada Lovelace',
+      note: 'The door log shows 17:10.',
+      url: 'https://ihp.test/app/attendance',
+    })
+
+    expect(email.subject).toBe('Your correction for Tuesday, September 22 was turned down')
+    expect(email.text).toContain('The door log shows 17:10.')
+    expect(email.text).toContain('send a new request')
   })
 })

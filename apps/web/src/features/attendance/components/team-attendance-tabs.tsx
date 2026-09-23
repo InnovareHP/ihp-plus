@@ -1,6 +1,6 @@
 'use client'
 
-import { Tabs } from '@mantine/core'
+import { Badge, Tabs } from '@mantine/core'
 import {
   IconCalendarMonth,
   IconCalendarTime,
@@ -10,6 +10,7 @@ import {
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { ATTENDANCE_TABS, type AttendanceTab } from '@/lib/routes'
+import { useCorrectionQueue } from '../hooks/use-corrections'
 import { useAttendanceSettings } from '../hooks/use-time-clock'
 import { AttendanceBoardPanel } from './attendance-board-panel'
 import { ShiftsPanel } from './shifts-panel'
@@ -39,6 +40,8 @@ export function TeamAttendanceTabs() {
   const pathname = usePathname()
   const router = useRouter()
   const settings = useAttendanceSettings()
+  // The waiting count rides on the Timesheets tab, so a request is seen from any tab.
+  const waiting = useCorrectionQueue().data?.length ?? 0
   const tab = tabOf(searchParams.get('tab'))
   const timeZone = settings.data?.settings.timeZone ?? 'UTC'
 
@@ -52,7 +55,23 @@ export function TeamAttendanceTabs() {
     <Tabs value={tab} onChange={openTab} keepMounted={false}>
       <Tabs.List mb="lg">
         {TABS.map((entry) => (
-          <Tabs.Tab key={entry.value} value={entry.value} leftSection={entry.icon}>
+          <Tabs.Tab
+            key={entry.value}
+            value={entry.value}
+            leftSection={entry.icon}
+            rightSection={
+              entry.value === 'timesheets' && waiting > 0 ? (
+                <Badge
+                  size="sm"
+                  color="yellow"
+                  variant="light"
+                  aria-label={`${waiting} correction requests waiting`}
+                >
+                  {waiting}
+                </Badge>
+              ) : undefined
+            }
+          >
             {entry.label}
           </Tabs.Tab>
         ))}

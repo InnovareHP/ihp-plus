@@ -28,6 +28,12 @@ const prisma = vi.hoisted(() => ({
   },
   attendanceBreak: { create: vi.fn(), update: vi.fn() },
   attendanceLeave: { findUnique: vi.fn(), findMany: vi.fn() },
+  attendanceCorrection: {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+  },
   attendanceHoliday: {
     findUnique: vi.fn(),
     findFirst: vi.fn(),
@@ -48,7 +54,10 @@ const storage = vi.hoisted(() => ({
   isObjectStorageConfigured: vi.fn(() => true),
 }))
 
+const mail = vi.hoisted(() => ({ notifyCorrectionDecided: vi.fn() }))
+
 vi.mock('@ihp/db', () => ({ db: prisma }))
+vi.mock('./notifications', () => mail)
 vi.mock('@/lib/activity', () => activity)
 vi.mock('@/lib/s3', () => storage)
 const calendar = vi.hoisted(() => ({ fillHolidays: vi.fn(), fillUpcomingHolidays: vi.fn() }))
@@ -64,6 +73,10 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 }))
 
 const {
+  decideCorrection,
+  loadCorrections,
+  requestCorrection,
+  withdrawCorrection,
   selfieKeyFor,
   loadCalendar,
   loadTeamCalendar,
@@ -1074,5 +1087,201 @@ describe('clock selfies', () => {
       code: Code.PermissionDenied,
     })
     expect(prisma.attendanceDay.findFirst).not.toHaveBeenCalled()
+  })
+})
+
+describe('correction requests', () => {
+  async function codeOf(operation: () => Promise<unknown>) {
+    const error = await operation().catch((thrown: unknown) => thrown)
+    return (error as { code?: Code }).code
+  }
+
+  const ASKED = {
+    workDate: '2026-09-22',
+    clockInTime: '09:00',
+    clockOutTime: '18:00',
+    breakMinutes: 60,
+    reason: 'Forgot to clock out, left at 18:00.',
+  }
+
+  function correctionRecord(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 'corr-1',
+      userId: 'user-2',
+      workDate: new Date('2026-09-22T00:00:00.000Z'),
+      clockInTime: '09:00',
+      clockOutTime: '18:00',
+      breakMinutes: 60,
+      reason: 'Forgot to clock out, left at 18:00.',
+      status: 'pending',
+      decidedById: null,
+      decidedAt: null,
+      decisionNote: null,
+      createdAt: new Date('2026-09-23T00:00:00.000Z'),
+      ...overrides,
+    }
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    everybodyOn()
+    prisma.user.findMany.mockResolvedValue([
+      { id: 'user-1', name: 'Grace Reyes', preferredName: 'Grace' },
+      { id: 'user-2', name: 'Ada Lovelace', preferredName: null },
+    ])
+    vi.setSystemTime(new Date('2026-09-24T12:00:00.000Z'))
+  })
+
+  it('files a member’s request for one of their own finished days', async () => {
+    signedInAs('member')
+    prisma.attendanceCorrection.findFirst.mockResolvedValue(null)
+    prisma.attendanceCorrection.create.mockImplementation(
+      ({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve(correctionRecord({ ...data, id: 'corr-9' })),
+    )
+
+    const row = await requestCorrection(ASKED)
+
+    expect(prisma.attendanceCorrection.create.mock.calls[0]?.[0].data).toMatchObject({
+      organizationId: 'org-1',
+      userId: 'user-1',
+      clockOutTime: '18:00',
+    })
+    expect(row).toMatchObject({ status: 'pending', isMine: true, canDecide: false })
+    vi.useRealTimers()
+  })
+
+  it('refuses a day still to come, a second request for the same day, and no reason', async () => {
+    signedInAs('member')
+
+    expect(await codeOf(() => requestCorrection({ ...ASKED, workDate: '2026-09-30' }))).toBe(
+      Code.InvalidArgument,
+    )
+    expect(await codeOf(() => requestCorrection({ ...ASKED, reason: '  ' }))).toBe(
+      Code.InvalidArgument,
+    )
+
+    prisma.attendanceCorrection.findFirst.mockResolvedValue({ id: 'corr-1' })
+    expect(await codeOf(() => requestCorrection(ASKED))).toBe(Code.AlreadyExists)
+    expect(prisma.attendanceCorrection.create).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('shows a member only their own requests, and everyone’s only to an admin', async () => {
+    signedInAs('member')
+    prisma.attendanceCorrection.findMany.mockResolvedValue([])
+
+    await loadCorrections({})
+    expect(prisma.attendanceCorrection.findMany.mock.calls[0]?.[0].where).toMatchObject({
+      userId: 'user-1',
+    })
+    expect(await codeOf(() => loadCorrections({ everyone: true }))).toBe(Code.PermissionDenied)
+    vi.useRealTimers()
+  })
+
+  it('writes the day as asked when an admin approves, and tells the member', async () => {
+    signedInAs('admin')
+    prisma.attendanceCorrection.findFirst.mockResolvedValue(correctionRecord())
+    prisma.attendanceCorrection.update.mockImplementation(
+      ({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve(correctionRecord({ ...data, decidedById: 'user-1' })),
+    )
+    prisma.attendanceDay.upsert.mockImplementation(
+      ({ update }: { update: Record<string, unknown> }) =>
+        Promise.resolve(dayRecord({ ...update, userId: 'user-2' })),
+    )
+
+    const row = await decideCorrection({ correctionId: 'corr-1', decision: 'approved', note: '' })
+
+    const written = prisma.attendanceDay.upsert.mock.calls[0]?.[0]
+    expect(written.where).toEqual({
+      userId_workDate: { userId: 'user-2', workDate: new Date('2026-09-22T00:00:00.000Z') },
+    })
+    expect(written.update).toMatchObject({
+      clockInAt: new Date('2026-09-22T09:00:00.000Z'),
+      clockOutAt: new Date('2026-09-22T18:00:00.000Z'),
+      breakSeconds: 3600,
+      workedSeconds: 8 * 3600,
+      autoClosed: false,
+      source: 'manual',
+    })
+    expect(row).toMatchObject({ status: 'approved', decidedBy: 'Grace' })
+    expect(mail.notifyCorrectionDecided).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-2', decision: 'approved', workDate: '2026-09-22' }),
+    )
+    vi.useRealTimers()
+  })
+
+  it('leaves the day alone when a request is turned down, which needs a reason', async () => {
+    signedInAs('admin')
+    prisma.attendanceCorrection.findFirst.mockResolvedValue(correctionRecord())
+    prisma.attendanceCorrection.update.mockImplementation(
+      ({ data }: { data: Record<string, unknown> }) => Promise.resolve(correctionRecord(data)),
+    )
+
+    expect(
+      await codeOf(() =>
+        decideCorrection({ correctionId: 'corr-1', decision: 'rejected', note: '' }),
+      ),
+    ).toBe(Code.InvalidArgument)
+
+    await decideCorrection({
+      correctionId: 'corr-1',
+      decision: 'rejected',
+      note: 'The door log shows 17:10.',
+    })
+    expect(prisma.attendanceDay.upsert).not.toHaveBeenCalled()
+    expect(mail.notifyCorrectionDecided).toHaveBeenCalledWith(
+      expect.objectContaining({ decision: 'rejected', note: 'The door log shows 17:10.' }),
+    )
+    vi.useRealTimers()
+  })
+
+  it('keeps deciding to an admin, and never on a settled or an own request', async () => {
+    signedInAs('member')
+    expect(
+      await codeOf(() =>
+        decideCorrection({ correctionId: 'corr-1', decision: 'approved', note: '' }),
+      ),
+    ).toBe(Code.PermissionDenied)
+
+    signedInAs('admin')
+    prisma.attendanceCorrection.findFirst.mockResolvedValue(
+      correctionRecord({ status: 'approved' }),
+    )
+    expect(
+      await codeOf(() =>
+        decideCorrection({ correctionId: 'corr-1', decision: 'approved', note: '' }),
+      ),
+    ).toBe(Code.FailedPrecondition)
+
+    prisma.attendanceCorrection.findFirst.mockResolvedValue(correctionRecord({ userId: 'user-1' }))
+    expect(
+      await codeOf(() =>
+        decideCorrection({ correctionId: 'corr-1', decision: 'approved', note: '' }),
+      ),
+    ).toBe(Code.FailedPrecondition)
+    expect(prisma.attendanceDay.upsert).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('lets a member withdraw only their own pending request', async () => {
+    signedInAs('member')
+    prisma.attendanceCorrection.findFirst.mockResolvedValue(correctionRecord({ userId: 'user-1' }))
+    prisma.attendanceCorrection.update.mockImplementation(
+      ({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve(correctionRecord({ ...data, userId: 'user-1' })),
+    )
+
+    await expect(withdrawCorrection('corr-1')).resolves.toMatchObject({ status: 'withdrawn' })
+    expect(prisma.attendanceCorrection.findFirst.mock.calls[0]?.[0].where).toMatchObject({
+      userId: 'user-1',
+    })
+
+    prisma.attendanceCorrection.findFirst.mockResolvedValue(
+      correctionRecord({ userId: 'user-1', status: 'rejected' }),
+    )
+    expect(await codeOf(() => withdrawCorrection('corr-1'))).toBe(Code.FailedPrecondition)
+    vi.useRealTimers()
   })
 })

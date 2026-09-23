@@ -215,3 +215,31 @@ model AttendanceReminder {
   @@map("attendanceReminder")
   @@schema("attendance")
 }
+
+// A member asking for one of their own days to be put right; an admin applies it or turns it down.
+model AttendanceCorrection {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  workDate       DateTime @db.Date
+
+  // Wall clock times, as the admin's own correction form takes them.
+  clockInTime  String
+  clockOutTime String
+  breakMinutes Int    @default(0)
+  reason       String
+
+  // pending, approved, rejected or withdrawn.
+  status       String    @default("pending")
+  decidedById  String?
+  decidedAt    DateTime?
+  decisionNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([userId, workDate])
+  @@map("attendanceCorrection")
+  @@schema("attendance")
+}

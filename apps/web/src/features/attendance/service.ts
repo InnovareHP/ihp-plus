@@ -4,9 +4,12 @@ import { recordActivity } from '@/lib/activity'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { selfieUrl } from '@/lib/attendance-selfie'
 import { deleteObject } from '@/lib/s3'
+import { notifyCorrectionDecided } from './notifications'
 import {
   assignShiftSchema,
   attendanceDaySchema,
+  correctionDecisionSchema,
+  correctionSchema,
   attendanceSettingsSchema,
   clockActionSchema,
   holidaySchema,
@@ -24,7 +27,11 @@ import {
   type TeamCalendarMonth,
   type TeamCalendarState,
   type AttendanceDayRow,
+  type AttendanceCorrectionRow,
   type AttendanceDayValues,
+  type CorrectionDecisionValues,
+  type CorrectionStatus,
+  type CorrectionValues,
   type AttendanceHolidayRow,
   type AttendanceLog,
   type AttendanceScheduleRow,
@@ -897,8 +904,18 @@ export async function saveAttendanceDay(values: AttendanceDayValues): Promise<At
   const caller = await requireMember()
   requireAdmin(caller, 'Only an admin records or corrects a day.')
 
-  const settings = await settingsOf(caller.organizationId)
   const parsed = attendanceDaySchema.parse(values)
+  const day = await writeDay(caller, parsed)
+  const names = await peopleNames([parsed.userId, caller.userId])
+  return toDayRow(day, names, caller)
+}
+
+/**
+ * Writes a day as an admin typed it, whether from the correction form or an approved request, so
+ * both are measured the same way and both clear a missed clock-out.
+ */
+async function writeDay(caller: Caller, parsed: AttendanceDayValues): Promise<DayRecord> {
+  const settings = await settingsOf(caller.organizationId)
 
   const clockInAt = instantOf(parsed.workDate, parsed.clockInTime, settings.timeZone)
   const typedOut = parsed.clockOutTime
@@ -911,7 +928,6 @@ export async function saveAttendanceDay(values: AttendanceDayValues): Promise<At
       ? instantOf(shiftDateKey(parsed.workDate, 1), parsed.clockOutTime, settings.timeZone)
       : typedOut
 
-  const names = await peopleNames([parsed.userId, caller.userId])
   const shift = await shiftFor(caller.organizationId, parsed.userId, settings)
 
   const breakSeconds = parsed.breakMinutes * 60
@@ -962,7 +978,7 @@ export async function saveAttendanceDay(values: AttendanceDayValues): Promise<At
     detail: parsed.workDate,
   })
 
-  return toDayRow(day, names, caller)
+  return day
 }
 
 export async function deleteAttendanceDay(dayId: string): Promise<void> {
@@ -1492,4 +1508,248 @@ export async function selfieKeyFor(dayId: string, side: 'in' | 'out'): Promise<s
   const key = side === 'in' ? day?.clockInSelfieKey : day?.clockOutSelfieKey
   if (!key) throw new ConnectError('That photo is no longer there.', Code.NotFound)
   return key
+}
+
+const correctionSelect = {
+  id: true,
+  userId: true,
+  workDate: true,
+  clockInTime: true,
+  clockOutTime: true,
+  breakMinutes: true,
+  reason: true,
+  status: true,
+  decidedById: true,
+  decidedAt: true,
+  decisionNote: true,
+  createdAt: true,
+} as const
+
+interface CorrectionRecord {
+  id: string
+  userId: string
+  workDate: Date
+  clockInTime: string
+  clockOutTime: string
+  breakMinutes: number
+  reason: string
+  status: string
+  decidedById: string | null
+  decidedAt: Date | null
+  decisionNote: string | null
+  createdAt: Date
+}
+
+function correctionStatusOf(value: string): CorrectionStatus {
+  return value === 'approved' || value === 'rejected' || value === 'withdrawn' ? value : 'pending'
+}
+
+function toCorrectionRow(
+  record: CorrectionRecord,
+  names: ReadonlyMap<string, string>,
+  viewer: Caller,
+): AttendanceCorrectionRow {
+  const status = correctionStatusOf(record.status)
+  return {
+    id: record.id,
+    userId: record.userId,
+    userName: names.get(record.userId) ?? 'Someone',
+    workDate: dateKeyOf(record.workDate),
+    clockInTime: record.clockInTime,
+    clockOutTime: record.clockOutTime,
+    breakMinutes: record.breakMinutes,
+    reason: record.reason,
+    status,
+    decidedBy: record.decidedById ? (names.get(record.decidedById) ?? 'Someone') : undefined,
+    decidedAt: record.decidedAt?.toISOString(),
+    decisionNote: record.decisionNote ?? undefined,
+    createdAt: record.createdAt.toISOString(),
+    // An admin fixes their own day directly, so they never decide a request of their own.
+    canDecide: viewer.canManage && status === 'pending' && record.userId !== viewer.userId,
+    isMine: record.userId === viewer.userId,
+  }
+}
+
+async function correctionRows(records: readonly CorrectionRecord[], viewer: Caller) {
+  const names = await peopleNames(records.flatMap((one) => [one.userId, one.decidedById ?? '']))
+  return records.map((one) => toCorrectionRow(one, names, viewer))
+}
+
+/** A member asks for one of their own finished days to be put right. */
+export async function requestCorrection(
+  values: CorrectionValues,
+): Promise<AttendanceCorrectionRow> {
+  const caller = await requireMember()
+  const parsed = correctionSchema.safeParse(values)
+  if (!parsed.success) {
+    throw new ConnectError(
+      parsed.error.issues[0]?.message ?? 'Check the highlighted fields.',
+      Code.InvalidArgument,
+    )
+  }
+
+  const settings = await settingsOf(caller.organizationId)
+  if (parsed.data.workDate > workDateKey(new Date(), settings.timeZone)) {
+    throw new ConnectError('A correction is for a day that has happened.', Code.InvalidArgument)
+  }
+
+  const open = await db.attendanceCorrection.findFirst({
+    where: {
+      userId: caller.userId,
+      workDate: dateOf(parsed.data.workDate),
+      status: 'pending',
+    },
+    select: { id: true },
+  })
+  if (open) {
+    throw new ConnectError(
+      'You already asked about that day. Withdraw that request to send a different one.',
+      Code.AlreadyExists,
+    )
+  }
+
+  const created = await db.attendanceCorrection.create({
+    data: {
+      organizationId: caller.organizationId,
+      userId: caller.userId,
+      workDate: dateOf(parsed.data.workDate),
+      clockInTime: parsed.data.clockInTime,
+      clockOutTime: parsed.data.clockOutTime,
+      breakMinutes: parsed.data.breakMinutes,
+      reason: parsed.data.reason,
+    },
+    select: correctionSelect,
+  })
+
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'attendance',
+    subjectId: created.id,
+    action: 'attendance.correction.requested',
+    actorId: caller.userId,
+    actorName: caller.name,
+    detail: parsed.data.workDate,
+  })
+
+  return toCorrectionRow(created, new Map([[caller.userId, caller.name]]), caller)
+}
+
+/** A member reads their own requests; an admin may read everyone's, newest first. */
+export async function loadCorrections(query: {
+  everyone?: boolean
+  status?: string
+}): Promise<AttendanceCorrectionRow[]> {
+  const caller = await requireMember()
+  if (query.everyone) requireAdmin(caller, 'Only an admin reads everyone’s correction requests.')
+
+  const records = await db.attendanceCorrection.findMany({
+    where: {
+      organizationId: caller.organizationId,
+      ...(query.everyone ? {} : { userId: caller.userId }),
+      ...(query.status ? { status: correctionStatusOf(query.status) } : {}),
+    },
+    select: correctionSelect,
+    orderBy: [{ createdAt: 'desc' }],
+    take: 200,
+  })
+
+  return correctionRows(records, caller)
+}
+
+/**
+ * Applies a request as the day it asks for, or turns it down with a reason. Either way the member
+ * is emailed; an approval clears a missed clock-out exactly as an admin's own correction does.
+ */
+export async function decideCorrection(
+  values: CorrectionDecisionValues,
+): Promise<AttendanceCorrectionRow> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin decides a correction request.')
+
+  const parsed = correctionDecisionSchema.safeParse(values)
+  if (!parsed.success) {
+    throw new ConnectError(
+      parsed.error.issues[0]?.message ?? 'That decision is not valid.',
+      Code.InvalidArgument,
+    )
+  }
+
+  const correction = await db.attendanceCorrection.findFirst({
+    where: { id: parsed.data.correctionId, organizationId: caller.organizationId },
+    select: correctionSelect,
+  })
+  if (!correction) throw new ConnectError('That request is no longer there.', Code.NotFound)
+  if (correction.status !== 'pending') {
+    throw new ConnectError('That request has already been settled.', Code.FailedPrecondition)
+  }
+  if (correction.userId === caller.userId) {
+    throw new ConnectError('Correct your own day directly instead.', Code.FailedPrecondition)
+  }
+
+  if (parsed.data.decision === 'approved') {
+    await writeDay(caller, {
+      userId: correction.userId,
+      workDate: dateKeyOf(correction.workDate),
+      clockInTime: correction.clockInTime,
+      clockOutTime: correction.clockOutTime,
+      breakMinutes: correction.breakMinutes,
+      note: `Corrected on request: ${correction.reason}`.slice(0, 200),
+    })
+  }
+
+  const decided = await db.attendanceCorrection.update({
+    where: { id: correction.id },
+    data: {
+      status: parsed.data.decision,
+      decidedById: caller.userId,
+      decidedAt: new Date(),
+      decisionNote: parsed.data.note || null,
+    },
+    select: correctionSelect,
+  })
+
+  // Not awaited: the day is already written whether or not the mail goes promptly.
+  void notifyCorrectionDecided({
+    userId: decided.userId,
+    workDate: dateKeyOf(decided.workDate),
+    decision: parsed.data.decision,
+    deciderName: caller.name,
+    note: parsed.data.note || undefined,
+  })
+
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'attendance',
+    subjectId: decided.id,
+    action:
+      parsed.data.decision === 'approved'
+        ? 'attendance.correction.approved'
+        : 'attendance.correction.rejected',
+    actorId: caller.userId,
+    actorName: caller.name,
+    detail: parsed.data.note || dateKeyOf(decided.workDate),
+  })
+
+  return (await correctionRows([decided], caller))[0] as AttendanceCorrectionRow
+}
+
+/** A member takes back a request nobody has decided yet. */
+export async function withdrawCorrection(correctionId: string): Promise<AttendanceCorrectionRow> {
+  const caller = await requireMember()
+
+  const correction = await db.attendanceCorrection.findFirst({
+    where: { id: correctionId, organizationId: caller.organizationId, userId: caller.userId },
+    select: correctionSelect,
+  })
+  if (!correction) throw new ConnectError('That request is no longer there.', Code.NotFound)
+  if (correction.status !== 'pending') {
+    throw new ConnectError('Only a pending request can be withdrawn.', Code.FailedPrecondition)
+  }
+
+  const withdrawn = await db.attendanceCorrection.update({
+    where: { id: correction.id },
+    data: { status: 'withdrawn' },
+    select: correctionSelect,
+  })
+  return toCorrectionRow(withdrawn, new Map([[caller.userId, caller.name]]), caller)
 }

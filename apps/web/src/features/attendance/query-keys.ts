@@ -12,6 +12,13 @@ export const attendanceKeys = {
   calendar: (month: string, userId = '') =>
     [...attendanceKeys.all, 'calendar', month, userId] as const,
   teamCalendar: (month: string) => [...attendanceKeys.all, 'team-calendar', month] as const,
+  corrections: () => [...attendanceKeys.all, 'corrections'] as const,
+  correctionList: (query: { everyone?: boolean; status?: string }) =>
+    [
+      ...attendanceKeys.corrections(),
+      query.everyone ? 'everyone' : 'mine',
+      query.status ?? '',
+    ] as const,
   holidays: (year: number) => [...attendanceKeys.all, 'holidays', year] as const,
   holidayCountries: () => [...attendanceKeys.all, 'holiday-countries'] as const,
 }

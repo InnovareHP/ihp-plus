@@ -13,7 +13,11 @@ import {
   loadAttendance,
   loadAttendanceSettings,
   loadBoard,
+  decideCorrection,
   loadCalendar,
+  loadCorrections,
+  requestCorrection,
+  withdrawCorrection,
   loadTeamCalendar,
   loadHolidays,
   loadSchedules,
@@ -29,6 +33,7 @@ import {
   absenceToProto,
   boardRowToProto,
   calendarDayToProto,
+  correctionToProto,
   teamCalendarDayToProto,
   dayToProto,
   holidayToProto,
@@ -41,6 +46,39 @@ import {
 // Thin by design: every implementation converts at the wire boundary and delegates to the
 // feature's service, so the business rules stay testable without a transport.
 export const attendance: ServiceImpl<typeof AttendanceService> = {
+  requestCorrection: async (request) => ({
+    correction: correctionToProto(
+      await requestCorrection({
+        workDate: request.workDate,
+        clockInTime: request.clockInTime,
+        clockOutTime: request.clockOutTime,
+        breakMinutes: request.breakMinutes,
+        reason: request.reason,
+      }),
+    ),
+  }),
+
+  listCorrections: async (request) => ({
+    corrections: (
+      await loadCorrections({ everyone: request.everyone, status: request.status })
+    ).map(correctionToProto),
+  }),
+
+  decideCorrection: async (request) => ({
+    correction: correctionToProto(
+      await decideCorrection({
+        correctionId: request.correctionId,
+        // Anything but an approval is read as a rejection, which then needs its reason.
+        decision: request.decision === 'approved' ? 'approved' : 'rejected',
+        note: request.note,
+      }),
+    ),
+  }),
+
+  withdrawCorrection: async (request) => ({
+    correction: correctionToProto(await withdrawCorrection(request.correctionId)),
+  }),
+
   getCalendar: async (request) => {
     const calendar = await loadCalendar(request.month, request.userId)
     return {

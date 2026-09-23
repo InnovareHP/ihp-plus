@@ -11,6 +11,7 @@ import { AttendanceDayModal } from './attendance-day-modal'
 import { AbsencesTable } from './absences-table'
 import { AttendanceLogTable } from './attendance-log-table'
 import { AttendanceRangeFields } from './attendance-range-fields'
+import { CorrectionsQueue } from './corrections-queue'
 import { DayTotals } from './day-totals'
 import { ExportTimesheetButton } from './export-timesheet-button'
 
@@ -32,79 +33,83 @@ export function TeamTimesheetPanel({ timeZone }: TeamTimesheetPanelProps) {
   })
 
   return (
-    <Card padding="lg" component="section" aria-labelledby="team-timesheet-heading">
-      <Stack gap="md">
-        <Group justify="space-between" align="flex-end" wrap="wrap">
-          <Stack gap={2}>
-            <Title order={2} size="h5" id="team-timesheet-heading">
-              Timesheets
-            </Title>
-            <Text size="xs" c="dimmed">
-              Times are shown in the company zone, {timeZone}.
-            </Text>
-          </Stack>
-          <Group gap="sm" align="flex-end" wrap="wrap">
-            <Select
-              label="Employee"
-              placeholder="Everyone"
-              clearable
-              searchable
-              value={range.userId || null}
-              data={(people.data?.schedules ?? []).map((person) => ({
-                value: person.userId,
-                label: person.userName,
-              }))}
-              onChange={(value) => range.setRange({ userId: value ?? '' })}
-            />
-            <AttendanceRangeFields from={range.from} to={range.to} onChange={range.setRange} />
-            <ExportTimesheetButton
-              days={log.data?.days}
-              absences={log.data?.absences}
-              from={range.from}
-              to={range.to}
-              timeZone={timeZone}
-            />
+    <Stack gap="md">
+      {/* Requests to fix a day sit above the days they would change. */}
+      <CorrectionsQueue />
+      <Card padding="lg" component="section" aria-labelledby="team-timesheet-heading">
+        <Stack gap="md">
+          <Group justify="space-between" align="flex-end" wrap="wrap">
+            <Stack gap={2}>
+              <Title order={2} size="h5" id="team-timesheet-heading">
+                Timesheets
+              </Title>
+              <Text size="xs" c="dimmed">
+                Times are shown in the company zone, {timeZone}.
+              </Text>
+            </Stack>
+            <Group gap="sm" align="flex-end" wrap="wrap">
+              <Select
+                label="Employee"
+                placeholder="Everyone"
+                clearable
+                searchable
+                value={range.userId || null}
+                data={(people.data?.schedules ?? []).map((person) => ({
+                  value: person.userId,
+                  label: person.userName,
+                }))}
+                onChange={(value) => range.setRange({ userId: value ?? '' })}
+              />
+              <AttendanceRangeFields from={range.from} to={range.to} onChange={range.setRange} />
+              <ExportTimesheetButton
+                days={log.data?.days}
+                absences={log.data?.absences}
+                from={range.from}
+                to={range.to}
+                timeZone={timeZone}
+              />
+            </Group>
           </Group>
-        </Group>
 
-        <DayTotals
-          workedSeconds={log.data?.totalWorkedSeconds ?? 0}
-          breakSeconds={log.data?.totalBreakSeconds ?? 0}
-          lateSeconds={log.data?.totalLateSeconds ?? 0}
-        />
-
-        <AttendanceLogTable
-          days={log.data?.days}
-          isPending={log.isPending}
-          isError={log.isError}
-          isFetching={log.isFetching}
-          onRetry={() => void log.refetch()}
-          showPerson={!range.userId}
-          timeZone={timeZone}
-          actions={(day) => <AttendanceDayActions day={day} onCorrect={setCorrecting} />}
-          emptyHint="Nobody clocked in over this range — widen the dates or add a day by hand."
-        />
-
-        <AbsencesTable
-          absences={log.data?.absences}
-          isPending={log.isPending}
-          isError={log.isError}
-          isFetching={log.isFetching}
-          onRetry={() => void log.refetch()}
-          showPerson={!range.userId}
-        />
-
-        {correcting ? (
-          <AttendanceDayModal
-            opened
-            onClose={() => setCorrecting(undefined)}
-            person={{ userId: correcting.userId, userName: correcting.userName }}
-            workDate={correcting.workDate}
-            timeZone={timeZone}
-            day={correcting}
+          <DayTotals
+            workedSeconds={log.data?.totalWorkedSeconds ?? 0}
+            breakSeconds={log.data?.totalBreakSeconds ?? 0}
+            lateSeconds={log.data?.totalLateSeconds ?? 0}
           />
-        ) : null}
-      </Stack>
-    </Card>
+
+          <AttendanceLogTable
+            days={log.data?.days}
+            isPending={log.isPending}
+            isError={log.isError}
+            isFetching={log.isFetching}
+            onRetry={() => void log.refetch()}
+            showPerson={!range.userId}
+            timeZone={timeZone}
+            actions={(day) => <AttendanceDayActions day={day} onCorrect={setCorrecting} />}
+            emptyHint="Nobody clocked in over this range — widen the dates or add a day by hand."
+          />
+
+          <AbsencesTable
+            absences={log.data?.absences}
+            isPending={log.isPending}
+            isError={log.isError}
+            isFetching={log.isFetching}
+            onRetry={() => void log.refetch()}
+            showPerson={!range.userId}
+          />
+
+          {correcting ? (
+            <AttendanceDayModal
+              opened
+              onClose={() => setCorrecting(undefined)}
+              person={{ userId: correcting.userId, userName: correcting.userName }}
+              workDate={correcting.workDate}
+              timeZone={timeZone}
+              day={correcting}
+            />
+          ) : null}
+        </Stack>
+      </Card>
+    </Stack>
   )
 }

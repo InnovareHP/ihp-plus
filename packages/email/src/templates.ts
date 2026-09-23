@@ -546,3 +546,42 @@ export function leaveCancelledTemplate(options: {
     }),
   }
 }
+
+const correctionDay = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'UTC',
+})
+
+export function correctionDecidedTemplate(options: {
+  /** YYYY-MM-DD. */
+  workDate: string
+  decision: 'approved' | 'rejected'
+  deciderName: string
+  note: string | undefined
+  url: string
+}): PreparedEmail {
+  const day = correctionDay.format(new Date(`${options.workDate}T00:00:00Z`))
+  const approved = options.decision === 'approved'
+
+  return {
+    subject: approved ? `Your ${day} was corrected` : `Your correction for ${day} was turned down`,
+    ...renderEmail({
+      preheader: `${options.deciderName} ${approved ? 'approved' : 'turned down'} your correction request.`,
+      heading: approved
+        ? `Your ${day} was corrected`
+        : `Your correction for ${day} was turned down`,
+      body: [
+        approved
+          ? `${options.deciderName} approved your request, and the day now reads the way you asked.`
+          : `${options.deciderName} turned down your correction request, so the day is unchanged.`,
+        ...(options.note ? [`Their note: ${options.note}`] : []),
+      ],
+      action: { label: 'Open your time clock', url: options.url },
+      footnote: approved
+        ? undefined
+        : 'If something is still wrong with the day, send a new request with what they asked for.',
+    }),
+  }
+}
