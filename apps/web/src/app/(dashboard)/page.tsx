@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/page-header'
 import { AttentionGrid } from '@/features/dashboard/components/attention-grid'
 import { SummaryCard } from '@/features/dashboard/components/summary-card'
 import { loadDashboardSummary } from '@/features/dashboard/service'
+import { FirstDaysChecklist } from '@/features/new-hires/components/first-days-checklist'
+import { loadChecklistFor } from '@/features/new-hires/service'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
 
 export const metadata: Metadata = { title: 'Dashboard' }
@@ -16,7 +18,10 @@ export default async function DashboardPage() {
   const { user, session, profile } = await requireOnboarded()
   const membership = membershipOf(profile)
   const greetingName = profile.preferredName ?? profile.firstName ?? user.name
-  const summary = await loadDashboardSummary()
+  const [summary, checklist] = await Promise.all([
+    loadDashboardSummary(),
+    membership.organizationId ? loadChecklistFor(membership.organizationId, user.id) : null,
+  ])
 
   return (
     <PageShell>
@@ -24,6 +29,9 @@ export default async function DashboardPage() {
         title={`Welcome back, ${greetingName}`}
         description={`${profile.jobTitle} · ${membership.team?.name ?? 'No department'}`}
       />
+
+      {/* A finished checklist leaves the dashboard; the hire saw it complete when it happened. */}
+      {checklist && !checklist.completedAt ? <FirstDaysChecklist initial={checklist} /> : null}
 
       <Stack gap="sm" component="section" aria-labelledby="attention-heading">
         <Title order={2} size="h4" id="attention-heading">
