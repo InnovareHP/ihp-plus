@@ -98,3 +98,27 @@ export async function objectUrl(key: string) {
     expiresIn: READ_URL_TTL_SECONDS,
   })
 }
+
+export interface StoredObject {
+  body: ReadableStream<Uint8Array>
+  contentType: string
+  contentLength: number | undefined
+}
+
+/** The object itself, for a route that serves it on our own domain instead of handing out S3. */
+export async function getObject(key: string): Promise<StoredObject | null> {
+  const { client, config } = connect()
+  try {
+    const response = await client.send(new GetObjectCommand({ Bucket: config.bucket, Key: key }))
+    if (!response.Body) return null
+    return {
+      body: response.Body.transformToWebStream(),
+      contentType: response.ContentType ?? 'application/octet-stream',
+      contentLength: response.ContentLength,
+    }
+  } catch (error) {
+    // A key that was deleted under the row is a missing file, not a storage outage.
+    if (error instanceof Error && error.name === 'NoSuchKey') return null
+    throw error
+  }
+}

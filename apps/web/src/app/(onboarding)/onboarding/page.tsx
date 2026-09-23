@@ -4,7 +4,7 @@ import { OnboardingStepper } from '@/features/onboarding/components/onboarding-s
 import { db } from '@ihp/db'
 import { membershipOf, requireOnboarding } from '@/lib/auth-guard'
 import { soleOrganizationId } from '@/lib/organization'
-import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
+import { profilePhotoUrl } from '@/lib/profile-photo'
 
 export const metadata: Metadata = { title: 'Finish your profile' }
 
@@ -31,8 +31,7 @@ export default async function OnboardingPage() {
       })
     : []
 
-  const photoUrl =
-    profile.photoKey && isObjectStorageConfigured() ? await objectUrl(profile.photoKey) : undefined
+  const photoUrl = profilePhotoUrl(user.id, profile.photoKey)
 
   return (
     <Paper withBorder radius="md" p={{ base: 'lg', sm: 'xl' }}>

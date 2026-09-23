@@ -5,7 +5,7 @@ import { PageShell } from '@/components/page-shell'
 import { PageHeader } from '@/components/page-header'
 import { ContactDetailsForm } from '@/features/settings/components/contact-details-form'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
-import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
+import { profilePhotoUrl } from '@/lib/profile-photo'
 
 export const metadata: Metadata = { title: 'Settings' }
 
@@ -22,8 +22,7 @@ function date(value: Date | null) {
 export default async function SettingsPage() {
   const { user, profile } = await requireOnboarded()
   const membership = membershipOf(profile)
-  const photoUrl =
-    profile.photoKey && isObjectStorageConfigured() ? await objectUrl(profile.photoKey) : undefined
+  const photoUrl = profilePhotoUrl(user.id, profile.photoKey)
 
   return (
     <PageShell>

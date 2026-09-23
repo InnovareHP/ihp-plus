@@ -3,7 +3,7 @@ import { DashboardShell } from '@/components/dashboard-shell'
 import { SkipLink } from '@/components/skip-link'
 import { canReachApprovals, requestsAccess } from '@/features/requests/guards'
 import { canManageOrganization, getSession, membershipOf } from '@/lib/auth-guard'
-import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
+import { profilePhotoUrl } from '@/lib/profile-photo'
 
 // Route group: every segment here revalidates the session and the onboarding gate first.
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
@@ -11,8 +11,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const { user, profile } = access
   const membership = membershipOf(profile)
   const session = await getSession()
-  const photoUrl =
-    profile.photoKey && isObjectStorageConfigured() ? await objectUrl(profile.photoKey) : undefined
+  const photoUrl = profilePhotoUrl(user.id, profile.photoKey)
 
   return (
     <>

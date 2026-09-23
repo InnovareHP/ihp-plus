@@ -3,7 +3,7 @@ import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake } from '@/lib/pagination'
-import { isObjectStorageConfigured, objectUrl } from '@/lib/s3'
+import { profilePhotoUrl } from '@/lib/profile-photo'
 import {
   directoryQuerySchema,
   UNASSIGNED,
@@ -108,7 +108,6 @@ export async function loadDirectoryPage(input: unknown): Promise<DirectoryPage> 
     organizationId,
     members.map((member) => member.user.id),
   )
-  const storageReady = isObjectStorageConfigured()
 
   const rows: PersonRow[] = await Promise.all(
     members.map(async (member) => {
@@ -124,7 +123,7 @@ export async function loadDirectoryPage(input: unknown): Promise<DirectoryPage> 
         phone: person.phone ?? '',
         ihpId: person.ihpId ?? '',
         employmentType: person.employmentType ?? '',
-        photoUrl: person.photoKey && storageReady ? await objectUrl(person.photoKey) : '',
+        photoUrl: profilePhotoUrl(person.id, person.photoKey) ?? '',
         startDate: person.startDate?.toISOString() ?? '',
         isLead: leads.has(person.id),
       }

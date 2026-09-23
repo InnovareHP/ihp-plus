@@ -7,7 +7,8 @@ import { auth } from '@/lib/auth'
 import { isKnownOption } from '@/features/lookups/service'
 import { startChecklist } from '@/features/new-hires/service'
 import { requireSession } from '@/lib/auth-guard'
-import { deleteObject, objectUrl, putObject, S3NotConfiguredError } from '@/lib/s3'
+import { pendingPhotoUrl } from '@/lib/profile-photo'
+import { deleteObject, putObject, S3NotConfiguredError } from '@/lib/s3'
 import { notifyAdminsOfNewMember } from './notifications'
 import { generateIhpId } from './utils/ihp-id'
 import { detectPhotoType, MAX_PHOTO_BYTES, photoExtension } from './utils/photo'
@@ -180,5 +181,5 @@ export async function uploadPhoto(formData: FormData): Promise<UploadPhotoResult
     await deleteObject(previousKey).catch(() => undefined)
   }
 
-  return { ok: true, key, url: await objectUrl(key) }
+  return { ok: true, key, url: pendingPhotoUrl(session.user.id, key) }
 }

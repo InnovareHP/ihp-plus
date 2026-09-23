@@ -187,7 +187,7 @@ describe('loadDirectoryPage', () => {
     ])
   })
 
-  it('lists someone by the name they are addressed by, and signs their photo link', async () => {
+  it('lists someone by the name they are addressed by, with a photo link on our domain', async () => {
     prisma.member.findMany.mockResolvedValue([{ user: { ...ADA.user, preferredName: 'Addie' } }])
 
     const page = await loadDirectoryPage({})
@@ -197,7 +197,8 @@ describe('loadDirectoryPage', () => {
       jobTitle: 'Software Engineer',
       department: 'Information Technology',
       ihpId: 'IHP-0001',
-      photoUrl: 'https://files.example/photos/ada.jpg',
+      // Versioned by the stored file, so a new photo is a new URL; no storage call is made.
+      photoUrl: '/app/api/people/user-1/photo?v=ada.jpg',
       startDate: '2026-03-04T00:00:00.000Z',
       isLead: false,
     })

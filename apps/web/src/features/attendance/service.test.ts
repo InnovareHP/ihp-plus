@@ -42,7 +42,11 @@ const prisma = vi.hoisted(() => ({
 
 const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
 const activity = vi.hoisted(() => ({ recordActivity: vi.fn(), loadActivity: vi.fn() }))
-const storage = vi.hoisted(() => ({ objectUrl: vi.fn(), deleteObject: vi.fn() }))
+const storage = vi.hoisted(() => ({
+  objectUrl: vi.fn(),
+  deleteObject: vi.fn(),
+  isObjectStorageConfigured: vi.fn(() => true),
+}))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/activity', () => activity)
@@ -60,6 +64,7 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 }))
 
 const {
+  selfieKeyFor,
   loadCalendar,
   loadTeamCalendar,
   clockIn,
@@ -320,7 +325,6 @@ describe('what only an admin may do', () => {
   })
 
   it('keeps the selfie and the coordinates for an admin', async () => {
-    storage.objectUrl.mockResolvedValue('https://example.test/selfie.jpg')
     prisma.attendanceDay.findMany.mockResolvedValue([
       dayRecord({
         clockOutAt: new Date('2026-09-22T18:00:00.000Z'),
@@ -335,7 +339,8 @@ describe('what only an admin may do', () => {
 
     signedInAs('admin')
     const asAdmin = await loadAttendance({ from: '2026-09-01', to: '2026-09-22' })
-    expect(asAdmin.days[0]?.clockInSelfieUrl).toBe('https://example.test/selfie.jpg')
+    expect(asAdmin.days[0]?.clockInSelfieUrl).toBe('/app/api/attendance/selfies/day-1?side=in')
+    expect(asAdmin.days[0]?.clockOutSelfieUrl).toBeUndefined()
     expect(asAdmin.days[0]?.clockInLocation).toBe('14.59950,120.98420')
   })
 
@@ -1039,5 +1044,35 @@ describe('the team calendar', () => {
 
     await expect(loadCalendar('2026-09', 'user-9')).rejects.toMatchObject({ code: Code.NotFound })
     vi.useRealTimers()
+  })
+})
+
+describe('clock selfies', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    everybodyOn()
+  })
+
+  it('hands an admin the stored photo for either end of the day', async () => {
+    signedInAs('admin')
+    prisma.attendanceDay.findFirst.mockResolvedValue({
+      clockInSelfieKey: 'attendance/org-1/user-1/in.jpg',
+      clockOutSelfieKey: null,
+    })
+
+    await expect(selfieKeyFor('day-1', 'in')).resolves.toBe('attendance/org-1/user-1/in.jpg')
+    await expect(selfieKeyFor('day-1', 'out')).rejects.toMatchObject({ code: Code.NotFound })
+    expect(prisma.attendanceDay.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'day-1', organizationId: 'org-1' } }),
+    )
+  })
+
+  it('keeps the photos out of a member’s hands, their own included', async () => {
+    signedInAs('member')
+
+    await expect(selfieKeyFor('day-1', 'in')).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+    expect(prisma.attendanceDay.findFirst).not.toHaveBeenCalled()
   })
 })

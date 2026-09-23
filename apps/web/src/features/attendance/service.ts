@@ -2,7 +2,8 @@ import { db } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { recordActivity } from '@/lib/activity'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
-import { deleteObject, objectUrl } from '@/lib/s3'
+import { selfieUrl } from '@/lib/attendance-selfie'
+import { deleteObject } from '@/lib/s3'
 import {
   assignShiftSchema,
   attendanceDaySchema,
@@ -235,17 +236,6 @@ async function forgetSelfies(keys: readonly (string | null)[]) {
   }
 }
 
-// Storage being unconfigured must not blank the row: the day still reads, the photo just cannot
-// be opened.
-async function signedUrl(key: string | null) {
-  if (!key) return undefined
-  try {
-    return await objectUrl(key)
-  } catch {
-    return undefined
-  }
-}
-
 function statusOf(value: string): AttendanceStatus {
   return value === 'open' ? 'open' : 'recorded'
 }
@@ -271,9 +261,12 @@ async function toDayRow(
   names: Map<string, string>,
   viewer: Caller,
 ): Promise<AttendanceDayRow> {
-  const [clockInSelfieUrl, clockOutSelfieUrl] = viewer.canManage
-    ? await Promise.all([signedUrl(day.clockInSelfieKey), signedUrl(day.clockOutSelfieKey)])
-    : [undefined, undefined]
+  const clockInSelfieUrl = viewer.canManage
+    ? selfieUrl(day.id, 'in', day.clockInSelfieKey)
+    : undefined
+  const clockOutSelfieUrl = viewer.canManage
+    ? selfieUrl(day.id, 'out', day.clockOutSelfieKey)
+    : undefined
 
   return {
     id: day.id,
@@ -1482,4 +1475,21 @@ export async function loadTeamCalendar(month?: string): Promise<TeamCalendarMont
   }))
 
   return { month: key, today, timeZone: settings.timeZone, days: rows }
+}
+
+/**
+ * Which stored photo a selfie link points at. Admin only, the same people the day row hands the
+ * link to; a member never reads the evidence behind their own hours.
+ */
+export async function selfieKeyFor(dayId: string, side: 'in' | 'out'): Promise<string> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin sees the photos taken at the clock.')
+
+  const day = await db.attendanceDay.findFirst({
+    where: { id: dayId, organizationId: caller.organizationId },
+    select: { clockInSelfieKey: true, clockOutSelfieKey: true },
+  })
+  const key = side === 'in' ? day?.clockInSelfieKey : day?.clockOutSelfieKey
+  if (!key) throw new ConnectError('That photo is no longer there.', Code.NotFound)
+  return key
 }
