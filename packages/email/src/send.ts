@@ -1,4 +1,5 @@
 import { SendEmailCommand, SESv2Client } from '@aws-sdk/client-sesv2'
+import { LOGO_CONTENT_ID, LOGO_PNG_BASE64 } from './logo'
 import type { PreparedEmail } from './templates'
 
 export interface OutboundEmail extends PreparedEmail {
@@ -33,6 +34,13 @@ function readConfig(): SesConfig | null {
 }
 
 let cached: { config: SesConfig; client: SESv2Client } | undefined
+
+let logo: Uint8Array | undefined
+
+function logoBytes() {
+  logo ??= Uint8Array.from(Buffer.from(LOGO_PNG_BASE64, 'base64'))
+  return logo
+}
 
 // Built on first send rather than at import: a build must not require mail credentials.
 function connect(config: SesConfig) {
@@ -74,6 +82,17 @@ export async function sendEmail({ to, subject, html, text }: OutboundEmail) {
               Html: { Data: html, Charset: 'UTF-8' },
               Text: { Data: text, Charset: 'UTF-8' },
             },
+            // Every layout references the logo by content id, so it travels with every message.
+            Attachments: [
+              {
+                FileName: 'innovare-logo.png',
+                ContentType: 'image/png',
+                ContentDisposition: 'INLINE',
+                ContentId: LOGO_CONTENT_ID,
+                ContentTransferEncoding: 'BASE64',
+                RawContent: logoBytes(),
+              },
+            ],
           },
         },
       }),

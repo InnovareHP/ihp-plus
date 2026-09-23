@@ -1,5 +1,6 @@
 import { writeFileSync } from 'node:fs'
 import { describe, it } from 'vitest'
+import { LOGO_CONTENT_ID, LOGO_PNG_BASE64 } from './logo'
 import {
   clientFolderSharedTemplate,
   invitationTemplate,
@@ -28,7 +29,11 @@ describe.skipIf(!process.env.EMAIL_PREVIEW_OUT)('email preview', () => {
 
     writeFileSync(
       process.env.EMAIL_PREVIEW_OUT!,
-      emails.map((email) => email.html).join('<hr style="margin:0;border:0">'),
+      emails
+        .map((email) => email.html)
+        .join('<hr style="margin:0;border:0">')
+        // A browser cannot resolve a content id, so the preview carries the logo itself.
+        .replaceAll(`cid:${LOGO_CONTENT_ID}`, `data:image/png;base64,${LOGO_PNG_BASE64}`),
     )
   })
 })

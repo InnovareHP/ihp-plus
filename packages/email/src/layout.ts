@@ -6,6 +6,8 @@
  * a table attribute and anything visual has to be on the element itself.
  */
 
+import { LOGO_CONTENT_ID } from './logo'
+
 // The brand palette as sRGB hex — no email client resolves the OKLCH ramps in theme.ts.
 const BRAND = '#1346c5'
 const BRAND_DARK = '#0b286b'
@@ -15,11 +17,9 @@ const BORDER = '#e3e3e3'
 const CANVAS = '#f7f9fc'
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 
-// A PNG because Gmail and Outlook drop SVG images; landing serves /brand/ on the shared origin.
-function logoUrl() {
-  const origin = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
-  return `${origin}/brand/logo-email.png`
-}
+// Sent inline rather than linked: Outlook blocks remote images by default, and a linked PNG
+// only exists where the landing site is served on the same origin.
+const LOGO_SRC = `cid:${LOGO_CONTENT_ID}`
 
 export interface EmailLayout {
   /** Shown in the inbox preview line, so a reader knows what it is before opening it. */
@@ -95,7 +95,7 @@ ${layout.steps.map((step) => `<li style="margin:0 0 8px;">${escapeHtml(step)}</l
           <tr>
             <td style="padding:24px 32px 0;">
               <!-- The alt text stands in for the lockup when a client blocks images. -->
-              <img src="${escapeHtml(logoUrl())}" width="66" height="40" alt="Innovare Health Partners" style="display:block;border:0;outline:none;text-decoration:none;font-family:${FONT};font-size:17px;font-weight:700;color:${BRAND};">
+              <img src="${LOGO_SRC}" width="66" height="40" alt="Innovare Health Partners" style="display:block;border:0;outline:none;text-decoration:none;font-family:${FONT};font-size:17px;font-weight:700;color:${BRAND};">
             </td>
           </tr>
           <tr>

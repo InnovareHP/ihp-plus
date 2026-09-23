@@ -148,7 +148,7 @@ describe('templates', () => {
       resetPasswordTemplate({ url: 'https://ihp.test/b' }),
       invitationTemplate({ organizationName: 'Org', inviterName: 'Someone', url: 'x' }),
     ]) {
-      expect(email.html).toContain('/brand/logo-email.png')
+      expect(email.html).toContain('src="cid:ihp-logo"')
       expect(email.html).toContain('alt="Innovare Health Partners"')
       expect(`${email.subject}${email.html}${email.text}`).not.toMatch(/IHP Plus|IHP\+/)
       // The brand hex is the sRGB form of the theme's shade 6.
