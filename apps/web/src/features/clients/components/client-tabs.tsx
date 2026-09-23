@@ -57,7 +57,7 @@ export function ClientTabs({
         <ContractsTable canManage={canManage} billingEnabled={billingEnabled} />
       </Tabs.Panel>
       <Tabs.Panel value="rates">
-        <RateCard />
+        <RateCard canManage={canManage} />
       </Tabs.Panel>
     </Tabs>
   )

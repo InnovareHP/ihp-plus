@@ -156,6 +156,7 @@ export type ContractDraftValues = z.infer<typeof contractDraftSchema>
 export type ContractDraftInput = z.input<typeof contractDraftSchema>
 export type ContractUpdateValues = z.infer<typeof contractUpdateSchema>
 export type CatalogItemValues = z.infer<typeof catalogItemSchema>
+export type CatalogItemInput = z.input<typeof catalogItemSchema>
 export type ContractQuery = z.infer<typeof contractQuerySchema>
 
 export const DEFAULT_CONTRACT_QUERY: ContractQuery = contractQuerySchema.parse({})
