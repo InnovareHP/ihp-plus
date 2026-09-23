@@ -108,7 +108,8 @@ import StartBadge from './StartBadge.astro'
     height: var(--hero-h);
     max-width: none;
     object-fit: cover;
-    object-position: center bottom;
+    /* Wide screens crop the photo vertically; keep the face in frame rather than the shoulders. */
+    object-position: center 30%;
   }
   .hero-bulge .hero-photo {
     top: calc(var(--bulge-h) - var(--hero-h));

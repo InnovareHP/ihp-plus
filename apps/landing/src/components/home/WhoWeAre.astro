@@ -64,7 +64,8 @@ import SectionHeading from './SectionHeading.astro'
   }
   /* Offsets are the design's, measured from this section's top edge at the hero's foot. */
   .who-swirl-left {
-    left: -168px;
+    /* Hug the viewport edge up to 1280px, then stay beside the content on wider screens. */
+    left: max(-168px, calc(50% - 808px));
     top: 37px;
     width: 411px;
     height: 361px;
@@ -73,7 +74,7 @@ import SectionHeading from './SectionHeading.astro'
     rotate: -32.31deg;
   }
   .who-swirl-right {
-    left: calc(100% - 115.5px);
+    left: min(calc(100% - 115.5px), calc(50% + 700px));
     top: -206px;
     width: 397px;
     height: 393px;
