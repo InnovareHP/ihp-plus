@@ -57,7 +57,7 @@ export function RequestForm({ form }: { form: FormRow }) {
 
   return (
     // The page header already names the form; repeating it here read as a second page.
-    <PageSection title="Your answers" maw={680}>
+    <PageSection title="Your answers">
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Stack gap="lg">
           <FormError message={errors.root?.message} title="Could not send that request" />

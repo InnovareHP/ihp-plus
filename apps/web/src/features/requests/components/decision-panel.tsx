@@ -15,7 +15,7 @@ export function DecisionPanel({ row }: { row: RequestRow }) {
       title="Your decision"
       description="The requester sees the outcome and your note straight away."
     >
-      <Stack maw={620}>
+      <Stack>
         <DecisionFields
           label="request"
           isPending={decide.isPending}

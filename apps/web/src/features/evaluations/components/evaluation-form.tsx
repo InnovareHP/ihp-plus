@@ -61,7 +61,6 @@ export function EvaluationForm({ evaluation }: { evaluation: EvaluationRow }) {
   return (
     <PageSection
       title="Your answers"
-      maw={680}
       description={
         evaluation.dueAt
           ? `Due by ${dateOnly.format(new Date(evaluation.dueAt))}.`

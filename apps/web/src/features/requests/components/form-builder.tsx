@@ -149,7 +149,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
             ) : null
           }
         >
-          <Stack gap="md" maw={620}>
+          <Stack gap="md">
             <FormError message={errors.root?.message} title="Could not save that form" />
 
             <TextInput
