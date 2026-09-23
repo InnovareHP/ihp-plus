@@ -5,6 +5,7 @@ import type { AuthContext } from 'better-auth'
 import { getOrgAdapter } from 'better-auth/plugins'
 import { auth } from '@/lib/auth'
 import { isKnownOption } from '@/features/lookups/service'
+import { startChecklist } from '@/features/new-hires/service'
 import { requireSession } from '@/lib/auth-guard'
 import { deleteObject, objectUrl, putObject, S3NotConfiguredError } from '@/lib/s3'
 import { notifyAdminsOfNewMember } from './notifications'
@@ -96,6 +97,12 @@ export async function completeOnboarding(values: unknown): Promise<CompleteOnboa
     })
   } catch {
     return { ok: false, message: 'Could not save your profile — check your connection and retry.' }
+  }
+
+  try {
+    await startChecklist(team.organizationId, session.user.id)
+  } catch {
+    // The profile is saved; a missing checklist costs the hire a to-do list, not their access.
   }
 
   // Not awaited: the profile is saved, and the admins being told is not the person's problem.

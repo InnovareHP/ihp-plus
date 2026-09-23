@@ -9,10 +9,12 @@ const guard = vi.hoisted(() => ({ requireSession: vi.fn() }))
 const lookups = vi.hoisted(() => ({ isKnownOption: vi.fn() }))
 const orgAdapter = vi.hoisted(() => ({ findOrCreateTeamMember: vi.fn() }))
 const authApi = vi.hoisted(() => ({ addMember: vi.fn(), addTeamMember: vi.fn() }))
+const newHires = vi.hoisted(() => ({ startChecklist: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/auth-guard', () => guard)
 vi.mock('@/features/lookups/service', () => lookups)
+vi.mock('@/features/new-hires/service', () => newHires)
 vi.mock('@/lib/auth', () => ({ auth: { api: authApi, $context: Promise.resolve({}) } }))
 vi.mock('better-auth/plugins', () => ({ getOrgAdapter: () => orgAdapter }))
 vi.mock('@/lib/s3', () => ({}))
@@ -79,5 +81,21 @@ describe('completeOnboarding', () => {
       message: 'Could not join that department — try again in a moment.',
     })
     expect(prisma.user.update).not.toHaveBeenCalled()
+    expect(newHires.startChecklist).not.toHaveBeenCalled()
+  })
+
+  it('starts the new-hire checklist once the profile is saved', async () => {
+    prisma.member.findFirst.mockResolvedValue({ id: 'member-1' })
+
+    expect(await completeOnboarding(PROFILE)).toEqual({ ok: true })
+
+    expect(newHires.startChecklist).toHaveBeenCalledWith('org-1', 'user-1')
+  })
+
+  it('still finishes setup when the checklist cannot be started', async () => {
+    prisma.member.findFirst.mockResolvedValue({ id: 'member-1' })
+    newHires.startChecklist.mockRejectedValue(new Error('connection reset'))
+
+    expect(await completeOnboarding(PROFILE)).toEqual({ ok: true })
   })
 })
