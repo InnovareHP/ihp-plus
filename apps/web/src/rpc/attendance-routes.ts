@@ -5,22 +5,26 @@ import {
   clockIn,
   clockOut,
   deleteAttendanceDay,
+  deleteHoliday,
   deleteShift,
   endBreak,
   loadAttendance,
   loadAttendanceSettings,
   loadBoard,
+  loadHolidays,
   loadSchedules,
   loadShifts,
   loadTimeClock,
   saveAttendanceDay,
   saveAttendanceSettings,
+  saveHoliday,
   saveShift,
   startBreak,
 } from '@/features/attendance/service'
 import {
   boardRowToProto,
   dayToProto,
+  holidayToProto,
   scheduleToProto,
   settingsFromProto,
   settingsToProto,
@@ -47,6 +51,7 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
       schedule: scheduleToProto(view.schedule),
       canManage: view.canManage,
       shift: shiftToProto(view.shift),
+      holidayName: view.holidayName,
     }
   },
 
@@ -152,6 +157,22 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
 
   deleteShift: async (request) => {
     await deleteShift(request.shiftId)
+    return {}
+  },
+
+  listHolidays: async (request) => {
+    const book = await loadHolidays(request.year)
+    return { holidays: book.holidays.map(holidayToProto), canManage: book.canManage }
+  },
+
+  saveHoliday: async (request) => ({
+    holiday: holidayToProto(
+      await saveHoliday({ holidayId: request.holidayId, date: request.date, name: request.name }),
+    ),
+  }),
+
+  deleteHoliday: async (request) => {
+    await deleteHoliday(request.holidayId)
     return {}
   },
 

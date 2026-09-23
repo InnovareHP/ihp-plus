@@ -1,6 +1,7 @@
 import type {
   AttendanceBoardRow as AttendanceBoardRowMessage,
   AttendanceDay as AttendanceDayMessage,
+  AttendanceHoliday as AttendanceHolidayMessage,
   AttendanceSchedule as AttendanceScheduleMessage,
   AttendanceSettings as AttendanceSettingsMessage,
   AttendanceShift as AttendanceShiftMessage,
@@ -10,6 +11,7 @@ import {
   DEFAULT_SHIFT,
   type AttendanceBoardRow,
   type AttendanceDayRow,
+  type AttendanceHolidayRow,
   type AttendanceScheduleRow,
   type AttendanceSettingsRow,
   type AttendanceShiftRow,
@@ -92,6 +94,19 @@ export function dayFromProto(day: AttendanceDayMessage): AttendanceDayRow {
       isRunning: one.isRunning,
     })),
   }
+}
+
+export function holidayToProto(holiday: AttendanceHolidayRow): AttendanceHolidayMessage {
+  return {
+    $typeName: 'ihp.attendance.v1.AttendanceHoliday',
+    id: holiday.id,
+    date: holiday.date,
+    name: holiday.name,
+  }
+}
+
+export function holidayFromProto(holiday: AttendanceHolidayMessage): AttendanceHolidayRow {
+  return { id: holiday.id, date: holiday.date, name: holiday.name }
 }
 
 export function settingsToProto(settings: AttendanceSettingsRow): AttendanceSettingsMessage {

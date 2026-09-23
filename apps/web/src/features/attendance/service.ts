@@ -8,6 +8,7 @@ import {
   attendanceDaySchema,
   attendanceSettingsSchema,
   clockActionSchema,
+  holidaySchema,
   DEFAULT_ATTENDANCE_SETTINGS,
   DEFAULT_SHIFT,
   shiftSchema,
@@ -15,6 +16,7 @@ import {
   type AttendanceBoard,
   type AttendanceDayRow,
   type AttendanceDayValues,
+  type AttendanceHolidayRow,
   type AttendanceLog,
   type AttendanceScheduleRow,
   type AttendanceSettingsRow,
@@ -24,6 +26,8 @@ import {
   type AttendanceState,
   type AttendanceStatus,
   type ClockActionValues,
+  type HolidayBook,
+  type HolidayValues,
   type ShiftValues,
   type TimeClockView,
 } from './schema'
@@ -416,6 +420,15 @@ export async function loadTimeClock(): Promise<TimeClockView> {
     }))
 
   const names = new Map([[caller.userId, caller.name]])
+  const holiday = await db.attendanceHoliday.findUnique({
+    where: {
+      organizationId_date: {
+        organizationId: caller.organizationId,
+        date: dateOf(workDateKey(new Date(), settings.timeZone)),
+      },
+    },
+    select: { name: true },
+  })
 
   return {
     today: today ? await toDayRow(today, names, caller) : undefined,
@@ -428,6 +441,7 @@ export async function loadTimeClock(): Promise<TimeClockView> {
     ),
     canManage: caller.canManage,
     shift,
+    holidayName: holiday?.name,
   }
 }
 
@@ -950,4 +964,76 @@ export async function assignShift(values: AssignShiftValues): Promise<Attendance
     ...scheduleFrom(userId, userName, toShiftFields(shift, 0, false), true),
     jobTitle: member.user.jobTitle ?? undefined,
   }
+}
+
+const holidaySelect = { id: true, date: true, name: true } as const
+
+function toHolidayRow(holiday: { id: string; date: Date; name: string }): AttendanceHolidayRow {
+  return { id: holiday.id, date: dateKeyOf(holiday.date), name: holiday.name }
+}
+
+/** Everyone reads the calendar, since it says which days nobody is expected in. */
+export async function loadHolidays(year: number): Promise<HolidayBook> {
+  const caller = await requireMember()
+
+  const holidays = await db.attendanceHoliday.findMany({
+    where: {
+      organizationId: caller.organizationId,
+      date: { gte: dateOf(`${year}-01-01`), lte: dateOf(`${year}-12-31`) },
+    },
+    select: holidaySelect,
+    orderBy: { date: 'asc' },
+  })
+
+  return { holidays: holidays.map(toHolidayRow), canManage: caller.canManage }
+}
+
+export async function saveHoliday(values: HolidayValues): Promise<AttendanceHolidayRow> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin sets the holiday calendar.')
+
+  const { holidayId, date, name } = holidaySchema.parse(values)
+
+  const clash = await db.attendanceHoliday.findFirst({
+    where: {
+      organizationId: caller.organizationId,
+      date: dateOf(date),
+      ...(holidayId ? { NOT: { id: holidayId } } : {}),
+    },
+    select: { name: true },
+  })
+  if (clash) {
+    throw new ConnectError(`${date} is already ${clash.name}.`, Code.AlreadyExists)
+  }
+
+  if (!holidayId) {
+    const created = await db.attendanceHoliday.create({
+      data: { organizationId: caller.organizationId, date: dateOf(date), name },
+      select: holidaySelect,
+    })
+    return toHolidayRow(created)
+  }
+
+  const existing = await db.attendanceHoliday.findFirst({
+    where: { id: holidayId, organizationId: caller.organizationId },
+    select: { id: true },
+  })
+  if (!existing) throw new ConnectError('That holiday is no longer there.', Code.NotFound)
+
+  const updated = await db.attendanceHoliday.update({
+    where: { id: existing.id },
+    data: { date: dateOf(date), name },
+    select: holidaySelect,
+  })
+  return toHolidayRow(updated)
+}
+
+export async function deleteHoliday(holidayId: string): Promise<void> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin sets the holiday calendar.')
+
+  const { count } = await db.attendanceHoliday.deleteMany({
+    where: { id: holidayId, organizationId: caller.organizationId },
+  })
+  if (count === 0) throw new ConnectError('That holiday is no longer there.', Code.NotFound)
 }

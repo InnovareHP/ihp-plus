@@ -4,6 +4,7 @@ import { ConnectError } from '@ihp/rpc'
 import {
   boardRowFromProto,
   dayFromProto,
+  holidayFromProto,
   scheduleFromProto,
   settingsFromProto,
   settingsToProto,
@@ -14,6 +15,7 @@ import type {
   AttendanceBoard,
   AttendanceDayRow,
   AttendanceDayValues,
+  AttendanceHolidayRow,
   AttendanceLog,
   AttendanceScheduleRow,
   AttendanceSettingsRow,
@@ -21,6 +23,8 @@ import type {
   AttendanceShiftRow,
   AssignShiftValues,
   ClockActionValues,
+  HolidayBook,
+  HolidayValues,
   ShiftValues,
   TimeClockView,
 } from './schema'
@@ -64,6 +68,7 @@ export async function getTimeClock(): Promise<TimeClockView> {
     schedule: scheduleFromProto(response.schedule),
     canManage: response.canManage,
     shift: shiftFromProto(response.shift),
+    holidayName: response.holidayName,
   }
 }
 
@@ -212,4 +217,25 @@ export async function assignShift(values: AssignShiftValues): Promise<Attendance
     }),
   )
   return scheduleFromProto(response.schedule)
+}
+
+export async function listHolidays(year: number): Promise<HolidayBook> {
+  const response = await call(() => browserClients.attendance.listHolidays({ year }))
+  return { holidays: response.holidays.map(holidayFromProto), canManage: response.canManage }
+}
+
+export async function saveHoliday(values: HolidayValues): Promise<AttendanceHolidayRow> {
+  const response = await call(() =>
+    browserClients.attendance.saveHoliday({
+      holidayId: values.holidayId,
+      date: values.date,
+      name: values.name,
+    }),
+  )
+  if (!response.holiday) throw new Error('The server did not return the holiday.')
+  return holidayFromProto(response.holiday)
+}
+
+export async function deleteHoliday(holidayId: string): Promise<void> {
+  await call(() => browserClients.attendance.deleteHoliday({ holidayId }))
 }

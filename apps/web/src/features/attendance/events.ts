@@ -25,4 +25,8 @@ export const attendanceEvents = {
   settingsSaved: 'attendance.settings.saved',
   settingsSaveFailed: 'attendance.settings.save_failed',
   exported: 'attendance.timesheet.exported',
+  holidayAdded: 'attendance.holiday.added',
+  holidayAddFailed: 'attendance.holiday.add_failed',
+  holidayDeleted: 'attendance.holiday.deleted',
+  holidayDeleteFailed: 'attendance.holiday.delete_failed',
 } as const satisfies Record<string, EventName>

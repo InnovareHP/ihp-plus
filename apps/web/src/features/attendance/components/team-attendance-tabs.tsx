@@ -8,6 +8,7 @@ import { ATTENDANCE_TABS, type AttendanceTab } from '@/lib/routes'
 import { useAttendanceSettings } from '../hooks/use-time-clock'
 import { AttendanceBoardPanel } from './attendance-board-panel'
 import { AttendanceSettingsForm } from './attendance-settings-form'
+import { HolidaysPanel } from './holidays-panel'
 import { ShiftsPanel } from './shifts-panel'
 import { TeamTimesheetPanel } from './team-timesheet-panel'
 
@@ -62,6 +63,7 @@ export function TeamAttendanceTabs() {
       <Tabs.Panel value="shifts">
         <Stack gap="md">
           <ShiftsPanel />
+          <HolidaysPanel />
           <Card padding="lg" component="section" aria-labelledby="clock-rules-heading">
             <Title order={2} size="h5" mb="sm" id="clock-rules-heading">
               Company hours and clock rules

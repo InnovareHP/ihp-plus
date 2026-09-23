@@ -134,3 +134,19 @@ model AttendanceBreak {
   @@map("attendanceBreak")
   @@schema("attendance")
 }
+
+// A day the whole company is off, so nobody scheduled on it counts as absent.
+model AttendanceHoliday {
+  id             String   @id @default(uuid())
+  organizationId String
+  date           DateTime @db.Date
+  name           String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Two names for one day off is a typo, not two holidays.
+  @@unique([organizationId, date])
+  @@map("attendanceHoliday")
+  @@schema("attendance")
+}

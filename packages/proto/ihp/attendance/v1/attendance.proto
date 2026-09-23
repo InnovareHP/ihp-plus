@@ -115,6 +115,8 @@ message GetTimeClockResponse {
   bool can_manage = 4;
   // The shift this person works, and the rules their clock runs under.
   AttendanceShift shift = 5;
+  // Set when today is a company holiday, so the screen can say so before anyone clocks in.
+  optional string holiday_name = 6;
 }
 
 message ClockInRequest {
@@ -261,6 +263,40 @@ message AssignShiftResponse {
   AttendanceSchedule schedule = 1;
 }
 
+// A day the whole company is off.
+message AttendanceHoliday {
+  string id = 1;
+  // YYYY-MM-DD.
+  string date = 2;
+  string name = 3;
+}
+
+message ListHolidaysRequest {
+  int32 year = 1;
+}
+
+message ListHolidaysResponse {
+  repeated AttendanceHoliday holidays = 1;
+  bool can_manage = 2;
+}
+
+message SaveHolidayRequest {
+  // Empty creates the holiday.
+  optional string holiday_id = 1;
+  string date = 2;
+  string name = 3;
+}
+
+message SaveHolidayResponse {
+  AttendanceHoliday holiday = 1;
+}
+
+message DeleteHolidayRequest {
+  string holiday_id = 1;
+}
+
+message DeleteHolidayResponse {}
+
 service AttendanceService {
   rpc GetAttendanceSettings(GetAttendanceSettingsRequest) returns (GetAttendanceSettingsResponse);
   rpc UpdateAttendanceSettings(UpdateAttendanceSettingsRequest) returns (UpdateAttendanceSettingsResponse);
@@ -278,4 +314,7 @@ service AttendanceService {
   rpc SaveShift(SaveShiftRequest) returns (SaveShiftResponse);
   rpc DeleteShift(DeleteShiftRequest) returns (DeleteShiftResponse);
   rpc AssignShift(AssignShiftRequest) returns (AssignShiftResponse);
+  rpc ListHolidays(ListHolidaysRequest) returns (ListHolidaysResponse);
+  rpc SaveHoliday(SaveHolidayRequest) returns (SaveHolidayResponse);
+  rpc DeleteHoliday(DeleteHolidayRequest) returns (DeleteHolidayResponse);
 }

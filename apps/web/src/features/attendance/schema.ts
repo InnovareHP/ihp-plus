@@ -96,6 +96,8 @@ export interface TimeClockView {
   canManage: boolean
   /** The shift this person works, and the rules their clock runs under. */
   shift: AttendanceShiftRow
+  /** Today's company holiday, if it is one. */
+  holidayName: string | undefined
 }
 
 export interface AttendanceSettingsView {
@@ -213,6 +215,25 @@ export const attendanceDaySchema = z
   )
 
 export type AttendanceDayValues = z.infer<typeof attendanceDaySchema>
+
+export interface AttendanceHolidayRow {
+  id: string
+  date: string
+  name: string
+}
+
+export interface HolidayBook {
+  holidays: AttendanceHolidayRow[]
+  canManage: boolean
+}
+
+export const holidaySchema = z.object({
+  holidayId: z.string().optional(),
+  date: dateKey,
+  name: z.string().trim().min(1, 'Name the holiday.').max(80, 'Keep the name under 80 characters.'),
+})
+
+export type HolidayValues = z.infer<typeof holidaySchema>
 
 export const clockActionSchema = z.object({
   selfieKey: z.string().trim().default(''),

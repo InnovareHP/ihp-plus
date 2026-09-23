@@ -27,6 +27,14 @@ const prisma = vi.hoisted(() => ({
     delete: vi.fn(),
   },
   attendanceBreak: { create: vi.fn(), update: vi.fn() },
+  attendanceHoliday: {
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    deleteMany: vi.fn(),
+  },
   member: { findMany: vi.fn(), findFirst: vi.fn() },
   user: { findMany: vi.fn() },
 }))
@@ -53,6 +61,10 @@ const {
   loadBoard,
   assignShift,
   deleteShift,
+  deleteHoliday,
+  loadHolidays,
+  loadTimeClock,
+  saveHoliday,
   saveAttendanceDay,
   saveAttendanceSettings,
   saveShift,
@@ -142,11 +154,14 @@ describe('the clock', () => {
   })
 
   it('refuses a second clock in while one is running', async () => {
+    // Pinned inside the auto-close window, or the running day is closed before the refusal.
+    vi.setSystemTime(new Date('2026-09-22T10:00:00.000Z'))
     prisma.attendanceDay.findFirst.mockResolvedValue(dayRecord())
 
     await expect(clockIn({ selfieKey: '', location: '', note: '' })).rejects.toMatchObject({
       code: Code.FailedPrecondition,
     })
+    vi.useRealTimers()
   })
 
   it('asks for the selfie the company requires', async () => {
@@ -451,5 +466,89 @@ describe('what only an admin may do', () => {
 
     // 22:00 to 06:00 in Manila is eight hours, one of them a break.
     expect(day.workedSeconds).toBe(7 * 3600)
+  })
+})
+
+describe('the holiday calendar', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    everybodyOn()
+  })
+
+  it('reads one year to anyone, in date order', async () => {
+    signedInAs('member')
+    prisma.attendanceHoliday.findMany.mockResolvedValue([
+      { id: 'h-1', date: new Date('2026-12-25T00:00:00.000Z'), name: 'Christmas Day' },
+    ])
+
+    const book = await loadHolidays(2026)
+
+    expect(prisma.attendanceHoliday.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          organizationId: 'org-1',
+          date: {
+            gte: new Date('2026-01-01T00:00:00.000Z'),
+            lte: new Date('2026-12-31T00:00:00.000Z'),
+          },
+        },
+        orderBy: { date: 'asc' },
+      }),
+    )
+    expect(book).toEqual({
+      holidays: [{ id: 'h-1', date: '2026-12-25', name: 'Christmas Day' }],
+      canManage: false,
+    })
+  })
+
+  it('keeps writing the calendar to an admin', async () => {
+    signedInAs('member')
+
+    await expect(saveHoliday({ date: '2026-12-25', name: 'Christmas Day' })).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+    await expect(deleteHoliday('h-1')).rejects.toMatchObject({ code: Code.PermissionDenied })
+  })
+
+  it('adds a holiday, and refuses a second one on the same date', async () => {
+    signedInAs('admin')
+    prisma.attendanceHoliday.findFirst.mockResolvedValue(null)
+    prisma.attendanceHoliday.create.mockResolvedValue({
+      id: 'h-1',
+      date: new Date('2026-12-25T00:00:00.000Z'),
+      name: 'Christmas Day',
+    })
+
+    await expect(saveHoliday({ date: '2026-12-25', name: 'Christmas Day' })).resolves.toEqual({
+      id: 'h-1',
+      date: '2026-12-25',
+      name: 'Christmas Day',
+    })
+
+    prisma.attendanceHoliday.findFirst.mockResolvedValue({ name: 'Christmas Day' })
+    await expect(saveHoliday({ date: '2026-12-25', name: 'Xmas' })).rejects.toMatchObject({
+      code: Code.AlreadyExists,
+      rawMessage: '2026-12-25 is already Christmas Day.',
+    })
+  })
+
+  it('says a holiday it cannot find is gone rather than pretending it deleted it', async () => {
+    signedInAs('admin')
+    prisma.attendanceHoliday.deleteMany.mockResolvedValue({ count: 0 })
+
+    await expect(deleteHoliday('h-9')).rejects.toMatchObject({ code: Code.NotFound })
+  })
+
+  it('names today on the clock when it is a holiday', async () => {
+    signedInAs('member')
+    vi.setSystemTime(new Date('2026-12-25T08:00:00.000Z'))
+    prisma.attendanceDay.findFirst.mockResolvedValue(null)
+    prisma.attendanceDay.findUnique.mockResolvedValue(null)
+    prisma.attendanceHoliday.findUnique.mockResolvedValue({ name: 'Christmas Day' })
+
+    const view = await loadTimeClock()
+
+    expect(view.holidayName).toBe('Christmas Day')
+    vi.useRealTimers()
   })
 })

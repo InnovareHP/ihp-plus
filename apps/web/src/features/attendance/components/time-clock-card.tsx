@@ -12,6 +12,7 @@ import { formatHours, minutesToClock } from '../utils/clock'
 import { dayState, liveBreakSeconds, liveWorkedSeconds } from '../utils/day'
 import { ClockReading } from './clock-reading'
 import { ClockStateBadge } from './clock-state-badge'
+import { DayOffNotice } from './day-off-notice'
 import { DayTotals } from './day-totals'
 import { SelfieCapture } from './selfie-capture'
 
@@ -102,6 +103,10 @@ export function TimeClockCard() {
         </Group>
 
         <ClockReading day={today} now={now} state={state} timeZone={settings.timeZone} />
+
+        {state === 'absent' && clock.data.holidayName ? (
+          <DayOffNotice holidayName={clock.data.holidayName} />
+        ) : null}
 
         {today ? (
           <DayTotals

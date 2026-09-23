@@ -103,6 +103,18 @@ describe('TimeClockCard', () => {
     rpc.endBreak.mockResolvedValue(day())
   })
 
+  it('says today is a holiday but still lets someone who works it clock in', async () => {
+    rpc.getTimeClock.mockResolvedValue({ ...view(undefined), holidayName: 'Christmas Day' })
+    render(<TimeClockCard />)
+
+    expect(
+      await screen.findByText(
+        'Today is Christmas Day, a company holiday. Clock in only if you are working it.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Clock in' })).toBeInTheDocument()
+  })
+
   it('offers the one action a day that has not started needs', async () => {
     render(<TimeClockCard />)
 
