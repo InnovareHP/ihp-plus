@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const prisma = vi.hoisted(() => ({ user: { findUnique: vi.fn() } }))
+const prisma = vi.hoisted(() => ({ user: { findUnique: vi.fn(), findMany: vi.fn() } }))
+const executives = vi.hoisted(() => ({ executiveUserIds: vi.fn() }))
 
 const email = vi.hoisted(() => ({
   sendEmail: vi.fn(),
@@ -12,12 +13,13 @@ const email = vi.hoisted(() => ({
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/email', () => email)
+vi.mock('./executives', () => executives)
 
-const { notifyAssigner, notifyEvaluatorCancelled } = await import('./notifications')
+const { notifyEvaluatorCancelled, notifyExecutives } = await import('./notifications')
 
 const SUBMITTED = {
   evaluationId: 'ev-1',
-  assignedById: 'user-admin',
+  organizationId: 'org-1',
   evaluatorId: 'user-evaluator',
   evaluatorName: 'Ada Lovelace',
   employeeId: 'user-employee',
@@ -36,12 +38,25 @@ beforeEach(() => {
   )
 })
 
-describe('notifyAssigner', () => {
-  it('reports the answers back to whoever asked for them', async () => {
-    await notifyAssigner(SUBMITTED)
+describe('notifyExecutives', () => {
+  beforeEach(() => {
+    executives.executiveUserIds.mockResolvedValue(['user-ceo', 'user-coo'])
+    prisma.user.findMany.mockImplementation(
+      async ({ where }: { where: { id: { in: string[] } } }) =>
+        where.id.in.map((id) => ({ email: `${id}@ihp.test` })),
+    )
+  })
 
+  it('sends the finished evaluation to each executive, one message apiece', async () => {
+    await notifyExecutives(SUBMITTED)
+
+    expect(executives.executiveUserIds).toHaveBeenCalledWith('org-1')
+    expect(email.sendEmail).toHaveBeenCalledTimes(2)
     expect(email.sendEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'user-admin@ihp.test' }),
+      expect.objectContaining({ to: 'user-ceo@ihp.test' }),
+    )
+    expect(email.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'user-coo@ihp.test' }),
     )
     expect(email.evaluationSubmittedTemplate).toHaveBeenCalledWith({
       evaluatorName: 'Ada Lovelace',
@@ -51,14 +66,25 @@ describe('notifyAssigner', () => {
     })
   })
 
-  it('stays quiet when the evaluator assigned it to themselves', async () => {
-    await notifyAssigner({ ...SUBMITTED, assignedById: 'user-evaluator' })
+  it('never tells the person evaluated, even an executive, nor the evaluator', async () => {
+    executives.executiveUserIds.mockResolvedValue(['user-ceo', 'user-employee', 'user-evaluator'])
 
-    expect(email.sendEmail).not.toHaveBeenCalled()
+    await notifyExecutives(SUBMITTED)
+
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: { in: ['user-ceo'] } } }),
+    )
+    expect(email.sendEmail).toHaveBeenCalledTimes(1)
+    expect(email.sendEmail).not.toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'user-employee@ihp.test' }),
+    )
   })
 
-  it('stays quiet for a row that records nobody as the assigner', async () => {
-    await notifyAssigner({ ...SUBMITTED, assignedById: null })
+  it('sends nothing, to anyone else, when the Executive department is empty', async () => {
+    executives.executiveUserIds.mockResolvedValue([])
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    await notifyExecutives(SUBMITTED)
 
     expect(email.sendEmail).not.toHaveBeenCalled()
   })

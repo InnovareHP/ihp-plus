@@ -7,6 +7,7 @@ import {
   sendEmail,
 } from '@/lib/email'
 import { evaluationRoute, routes } from '@/lib/routes'
+import { executiveUserIds } from './executives'
 
 export interface AssignedEvaluations {
   evaluatorId: string
@@ -43,7 +44,7 @@ export async function notifyEvaluator(assignment: AssignedEvaluations) {
 
 export interface SubmittedEvaluation {
   evaluationId: string
-  assignedById: string | null
+  organizationId: string
   evaluatorId: string
   evaluatorName: string
   employeeId: string
@@ -58,28 +59,38 @@ export interface CancelledEvaluation {
 }
 
 /**
- * Tells whoever asked for the evaluation that it came back. Skipped when they cancelled it
- * themselves — they are already looking at the answer. Never throws: the row is already saved.
+ * Sends a finished evaluation to the Executive department only. Never the person evaluated, even
+ * when they sit in that department, and never the evaluator, who wrote it. Never throws: the
+ * answers are already saved.
  */
-export async function notifyAssigner(evaluation: SubmittedEvaluation) {
+export async function notifyExecutives(evaluation: SubmittedEvaluation) {
   try {
-    if (!evaluation.assignedById || evaluation.assignedById === evaluation.evaluatorId) return
+    const recipients = (await executiveUserIds(evaluation.organizationId)).filter(
+      (userId) => userId !== evaluation.employeeId && userId !== evaluation.evaluatorId,
+    )
+    if (recipients.length === 0) {
+      console.warn(
+        `[evaluations] ${evaluation.evaluationId} was submitted but no one in the Executive department can be told`,
+      )
+      return
+    }
 
-    const [assigner, employee] = await Promise.all([
-      db.user.findUnique({ where: { id: evaluation.assignedById }, select: { email: true } }),
+    const [people, employee] = await Promise.all([
+      db.user.findMany({ where: { id: { in: recipients } }, select: { email: true } }),
       nameOf(evaluation.employeeId),
     ])
-    if (!assigner) return
 
-    void sendEmail({
-      to: assigner.email,
-      ...evaluationSubmittedTemplate({
-        evaluatorName: evaluation.evaluatorName,
-        employeeName: employee,
-        formName: evaluation.formName,
-        url: portalUrl(evaluationRoute(evaluation.evaluationId)),
-      }),
+    const message = evaluationSubmittedTemplate({
+      evaluatorName: evaluation.evaluatorName,
+      employeeName: employee,
+      formName: evaluation.formName,
+      url: portalUrl(evaluationRoute(evaluation.evaluationId)),
     })
+
+    // One message per person, so executives never see each other's addresses.
+    for (const person of people) {
+      void sendEmail({ to: person.email, ...message })
+    }
   } catch (error) {
     console.error(`[evaluations] could not report ${evaluation.evaluationId} back`, error)
   }

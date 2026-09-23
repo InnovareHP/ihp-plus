@@ -11,7 +11,8 @@ import {
   type FormField,
   type RequestValues,
 } from '@/features/requests/schema'
-import { notifyAssigner, notifyEvaluator, notifyEvaluatorCancelled } from './notifications'
+import { executiveUserIds } from './executives'
+import { notifyEvaluator, notifyEvaluatorCancelled, notifyExecutives } from './notifications'
 import {
   assignEvaluationsSchema,
   type AssignEvaluationsValues,
@@ -183,9 +184,15 @@ export async function loadEvaluation(evaluationId: string): Promise<EvaluationRo
   })
   if (!row) throw new ConnectError('That evaluation no longer exists.', Code.NotFound)
 
-  // What a supervisor wrote about someone is read by the supervisor and People & Culture, not
-  // by the rest of the organization.
-  if (row.evaluatorId !== caller.userId && !caller.isAdmin) {
+  // What a supervisor wrote about someone is read by the supervisor, admins and the Executive
+  // department it is sent to, never by the rest of the organization or the person themselves.
+  const mayRead =
+    row.evaluatorId === caller.userId ||
+    caller.isAdmin ||
+    (row.employeeId !== caller.userId &&
+      row.status === 'submitted' &&
+      (await executiveUserIds(caller.organizationId)).includes(caller.userId))
+  if (!mayRead) {
     throw new ConnectError('That evaluation is not yours to read.', Code.PermissionDenied)
   }
 
@@ -235,9 +242,9 @@ export async function submitEvaluation(input: {
   })
 
   // Not awaited: the answers are saved whether or not the mail provider answers promptly.
-  void notifyAssigner({
+  void notifyExecutives({
     evaluationId: updated.id,
-    assignedById: updated.assignedById,
+    organizationId: caller.organizationId,
     evaluatorId: updated.evaluatorId,
     evaluatorName: caller.name,
     employeeId: updated.employeeId,

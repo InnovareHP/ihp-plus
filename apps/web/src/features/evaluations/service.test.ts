@@ -23,7 +23,7 @@ const guard = vi.hoisted(() => ({
 }))
 
 const notifications = vi.hoisted(() => ({
-  notifyAssigner: vi.fn(),
+  notifyExecutives: vi.fn(),
   notifyEvaluator: vi.fn(),
   notifyEvaluatorCancelled: vi.fn(),
 }))
@@ -31,6 +31,8 @@ const activity = vi.hoisted(() => ({ recordActivity: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./notifications', () => notifications)
+const executives = vi.hoisted(() => ({ executiveUserIds: vi.fn(async () => [] as string[]) }))
+vi.mock('./executives', () => executives)
 vi.mock('@/lib/activity', () => activity)
 // membershipOf is pure, so the real one is kept: how a membership resolves has one definition.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
@@ -109,6 +111,7 @@ const ASSIGNMENT = {
 beforeEach(() => {
   vi.clearAllMocks()
   signedIn()
+  executives.executiveUserIds.mockResolvedValue([])
   prisma.requestForm.findFirst.mockResolvedValue(FORM)
   prisma.evaluationAssignment.findFirst.mockResolvedValue(PENDING)
   prisma.evaluationAssignment.findMany.mockResolvedValue([])
@@ -199,10 +202,10 @@ describe('filling one in', () => {
   it('saves the answers, stamps the time and needs no approver', async () => {
     await submitEvaluation({ evaluationId: 'eval-1', values: { rating: 4 } })
 
-    // Whoever asked for it hears it came back, which is the only signal they get.
-    expect(notifications.notifyAssigner).toHaveBeenCalledWith({
+    // The Executive department hears it came back; the person evaluated never does.
+    expect(notifications.notifyExecutives).toHaveBeenCalledWith({
       evaluationId: 'eval-1',
-      assignedById: 'user-2',
+      organizationId: 'org-1',
       evaluatorId: 'user-1',
       evaluatorName: 'Ada',
       employeeId: 'user-9',
@@ -254,6 +257,27 @@ describe('reading one', () => {
   it('keeps it from everyone else', async () => {
     signedIn({ userId: 'user-7' })
 
+    expect(await codeOf(() => loadEvaluation('eval-1'))).toBe(Code.PermissionDenied)
+  })
+
+  it('lets an executive read a submitted one, the evaluation the email sent them to', async () => {
+    signedIn({ userId: 'user-7' })
+    executives.executiveUserIds.mockResolvedValue(['user-7'])
+    prisma.evaluationAssignment.findFirst.mockResolvedValue({ ...PENDING, status: 'submitted' })
+
+    expect(await loadEvaluation('eval-1')).toMatchObject({ id: 'eval-1', canFill: false })
+  })
+
+  it('keeps an executive out of one still being written, and out of their own', async () => {
+    signedIn({ userId: 'user-7' })
+    executives.executiveUserIds.mockResolvedValue(['user-7'])
+    expect(await codeOf(() => loadEvaluation('eval-1'))).toBe(Code.PermissionDenied)
+
+    prisma.evaluationAssignment.findFirst.mockResolvedValue({
+      ...PENDING,
+      status: 'submitted',
+      employeeId: 'user-7',
+    })
     expect(await codeOf(() => loadEvaluation('eval-1'))).toBe(Code.PermissionDenied)
   })
 })
