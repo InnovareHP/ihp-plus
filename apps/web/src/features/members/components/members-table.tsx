@@ -16,6 +16,7 @@ import {
   type MemberSortKey,
 } from '../schema'
 import { useMemberQuery } from '../hooks/use-member-query'
+import { MemberActionsMenu } from './member-actions-menu'
 import {
   useMembers,
   useSetBanned,
@@ -196,33 +197,26 @@ export function MembersTable({ canImpersonate = false }: { canImpersonate?: bool
       key: 'access',
       header: 'Access',
       render: (row) => (
-        <Group gap="sm" wrap="nowrap">
-          <Badge color={row.banned ? 'red' : 'green'} variant="light">
-            {row.banned ? 'Suspended' : 'Active'}
-          </Badge>
-          {row.isSelf ? null : (
-            <Button
-              variant="subtle"
-              size="compact-sm"
-              color={row.banned ? undefined : 'red'}
-              onClick={() => banned.mutate({ userId: row.userId, banned: !row.banned })}
-            >
-              {row.banned ? `Restore ${row.name}` : `Suspend ${row.name}`}
-            </Button>
-          )}
-          {canImpersonate && canSignInAs(row) ? (
-            <Button
-              variant="subtle"
-              size="compact-sm"
-              disabled={impersonate.isPending}
-              onClick={() => impersonate.mutate(row.userId)}
-            >
-              {impersonate.isPending && impersonate.variables === row.userId
-                ? 'Signing in…'
-                : `Sign in as ${row.name}`}
-            </Button>
-          ) : null}
-        </Group>
+        <Badge color={row.banned ? 'red' : 'green'} variant="light">
+          {row.banned ? 'Suspended' : 'Active'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: 90,
+      align: 'right',
+      render: (row) => (
+        <MemberActionsMenu
+          name={row.name}
+          banned={row.banned}
+          canSuspend={!row.isSelf}
+          canSignInAs={canImpersonate && canSignInAs(row)}
+          isSigningIn={impersonate.isPending && impersonate.variables === row.userId}
+          onToggleBanned={() => banned.mutate({ userId: row.userId, banned: !row.banned })}
+          onSignInAs={() => impersonate.mutate(row.userId)}
+        />
       ),
     },
   ]

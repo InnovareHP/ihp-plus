@@ -65,6 +65,9 @@ const SELF = {
 
 const user = () => userEvent.setup()
 
+const openActions = async (person: ReturnType<typeof user>, name: string) =>
+  person.click(await screen.findByRole('button', { name: `Actions for ${name}` }))
+
 describe('MembersTable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -89,11 +92,30 @@ describe('MembersTable', () => {
   })
 
   it('marks your own row and offers no way to suspend yourself', async () => {
+    const person = user()
     render(<MembersTable />)
 
     expect(await screen.findByText('You')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Suspend Grace Hopper/ })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Suspend Ada Lovelace/ })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Actions for Grace Hopper' }),
+    ).not.toBeInTheDocument()
+    await openActions(person, 'Ada Lovelace')
+    expect(screen.getByRole('menuitem', { name: 'Suspend' })).toBeInTheDocument()
+  })
+
+  it('offers restore instead of suspend for a suspended member', async () => {
+    actions.listMembers.mockResolvedValue(page([{ ...ADA, banned: true }, SELF]))
+    const person = user()
+    render(<MembersTable />)
+
+    await openActions(person, 'Ada Lovelace')
+    await person.click(screen.getByRole('menuitem', { name: 'Restore access' }))
+
+    await waitFor(() =>
+      expect(actions.setBanned).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'user-1', banned: false }),
+      ),
+    )
   })
 
   it('shows the new portal role before the server answers', async () => {
@@ -151,7 +173,8 @@ describe('MembersTable', () => {
     const person = user()
     render(<MembersTable />)
 
-    await person.click(await screen.findByRole('button', { name: /Suspend Ada Lovelace/ }))
+    await openActions(person, 'Ada Lovelace')
+    await person.click(screen.getByRole('menuitem', { name: 'Suspend' }))
 
     await waitFor(() => expect(actions.setBanned).toHaveBeenCalled())
     await waitFor(() => expect(screen.getAllByText('Active').length).toBe(2))
@@ -159,24 +182,28 @@ describe('MembersTable', () => {
   })
 
   it('offers sign in as only to a portal admin, and never for themselves or another admin', async () => {
+    const person = user()
     const { unmount } = render(<MembersTable />)
-    await screen.findByText('Ada Lovelace')
-    expect(screen.queryByRole('button', { name: /Sign in as/ })).not.toBeInTheDocument()
+    await openActions(person, 'Ada Lovelace')
+    expect(screen.queryByRole('menuitem', { name: 'Sign in as' })).not.toBeInTheDocument()
     unmount()
 
     render(<MembersTable canImpersonate />)
-    expect(await screen.findByRole('button', { name: 'Sign in as Ada Lovelace' })).toBeEnabled()
+    await openActions(person, 'Ada Lovelace')
+    expect(screen.getByRole('menuitem', { name: 'Sign in as' })).toBeEnabled()
+    // Your own row has nothing to act on, so it carries no menu at all.
     expect(
-      screen.queryByRole('button', { name: 'Sign in as Grace Hopper' }),
+      screen.queryByRole('button', { name: 'Actions for Grace Hopper' }),
     ).not.toBeInTheDocument()
   })
 
   it('does not offer sign in as for a suspended member', async () => {
     actions.listMembers.mockResolvedValue(page([{ ...ADA, banned: true }, SELF]))
+    const person = user()
     render(<MembersTable canImpersonate />)
 
-    await screen.findByText('Ada Lovelace')
-    expect(screen.queryByRole('button', { name: /Sign in as/ })).not.toBeInTheDocument()
+    await openActions(person, 'Ada Lovelace')
+    expect(screen.queryByRole('menuitem', { name: 'Sign in as' })).not.toBeInTheDocument()
   })
 
   it('signs in as the member and lands on their dashboard', async () => {
@@ -184,7 +211,8 @@ describe('MembersTable', () => {
     const person = user()
     render(<MembersTable canImpersonate />)
 
-    await person.click(await screen.findByRole('button', { name: 'Sign in as Ada Lovelace' }))
+    await openActions(person, 'Ada Lovelace')
+    await person.click(screen.getByRole('menuitem', { name: 'Sign in as' }))
 
     expect(admin.impersonateUser).toHaveBeenCalledWith({ userId: 'user-1' })
     await waitFor(() => expect(nav.replace).toHaveBeenCalledWith('/'))
@@ -199,7 +227,8 @@ describe('MembersTable', () => {
     const person = user()
     render(<MembersTable canImpersonate />)
 
-    await person.click(await screen.findByRole('button', { name: 'Sign in as Ada Lovelace' }))
+    await openActions(person, 'Ada Lovelace')
+    await person.click(screen.getByRole('menuitem', { name: 'Sign in as' }))
 
     await waitFor(() =>
       expect(toast.show).toHaveBeenCalledWith(
@@ -284,5 +313,16 @@ describe('MembersTable', () => {
     const { container } = render(<MembersTable />)
     await screen.findByText('Ada Lovelace')
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('opens the row menu from the keyboard', async () => {
+    const person = user()
+    render(<MembersTable canImpersonate />)
+    const trigger = await screen.findByRole('button', { name: 'Actions for Ada Lovelace' })
+
+    trigger.focus()
+    await person.keyboard('{Enter}')
+
+    expect(await screen.findByRole('menuitem', { name: 'Sign in as' })).toBeInTheDocument()
   })
 })
