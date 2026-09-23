@@ -14,6 +14,9 @@ vi.mock('next/navigation', () => ({
 vi.mock('./organization-panel', () => ({ OrganizationPanel: () => <p>overview panel</p> }))
 vi.mock('./teams-panel', () => ({ TeamsPanel: () => <p>departments panel</p> }))
 vi.mock('./invitations-panel', () => ({ InvitationsPanel: () => <p>invitations panel</p> }))
+vi.mock('@/features/new-hires/components/new-hires-panel', () => ({
+  NewHiresPanel: () => <p>onboarding panel</p>,
+}))
 vi.mock('@/features/members/components/members-table', () => ({
   MembersTable: () => <p>members panel</p>,
 }))
@@ -29,7 +32,7 @@ describe('OrganizationTabs', () => {
   it('gathers the whole organization into one page of tabs', () => {
     render(<OrganizationTabs invitedBy="Grace Hopper" />)
 
-    for (const label of ['Overview', 'Members', 'Departments', 'Invitations']) {
+    for (const label of ['Overview', 'Members', 'Departments', 'Invitations', 'Onboarding']) {
       expect(screen.getByRole('tab', { name: label })).toBeInTheDocument()
     }
     // Approvers are set inside each department now, not on a tab of their own.

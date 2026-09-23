@@ -1,10 +1,17 @@
 'use client'
 
 import { Tabs } from '@mantine/core'
-import { IconBuilding, IconMailForward, IconUserCog, IconUsersGroup } from '@tabler/icons-react'
+import {
+  IconBuilding,
+  IconChecklist,
+  IconMailForward,
+  IconUserCog,
+  IconUsersGroup,
+} from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { MembersTable } from '@/features/members/components/members-table'
+import { NewHiresPanel } from '@/features/new-hires/components/new-hires-panel'
 import { ORGANIZATION_TABS, type OrganizationTab } from '@/lib/routes'
 import { InvitationsPanel } from './invitations-panel'
 import { OrganizationPanel } from './organization-panel'
@@ -15,6 +22,7 @@ const TABS: { value: OrganizationTab; label: string; icon: ReactNode }[] = [
   { value: 'members', label: 'Members', icon: <IconUserCog size={16} aria-hidden /> },
   { value: 'departments', label: 'Departments', icon: <IconUsersGroup size={16} aria-hidden /> },
   { value: 'invitations', label: 'Invitations', icon: <IconMailForward size={16} aria-hidden /> },
+  { value: 'onboarding', label: 'Onboarding', icon: <IconChecklist size={16} aria-hidden /> },
 ]
 
 function tabOf(value: string | null): OrganizationTab {
@@ -67,6 +75,9 @@ export function OrganizationTabs({
       </Tabs.Panel>
       <Tabs.Panel value="invitations">
         <InvitationsPanel invitedBy={invitedBy} />
+      </Tabs.Panel>
+      <Tabs.Panel value="onboarding">
+        <NewHiresPanel />
       </Tabs.Panel>
     </Tabs>
   )

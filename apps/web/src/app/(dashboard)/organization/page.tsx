@@ -15,7 +15,7 @@ export default async function OrganizationPage() {
     <PageShell>
       <PageHeader
         title="Organization"
-        description="Your company as the portal sees it — who belongs to it, how it is divided, who leads and approves, and who is still waiting to join."
+        description="Your company as the portal sees it — who belongs to it, how it is divided, who leads and approves, who is still waiting to join, and how new hires are settling in."
       />
       {/* The open tab lives in the query string, which needs a boundary. */}
       <Suspense
