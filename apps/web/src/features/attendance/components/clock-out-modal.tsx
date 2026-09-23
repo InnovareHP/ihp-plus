@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { useNow } from '../hooks/use-now'
 import { usePunch } from '../hooks/use-punch'
 import type { AttendanceDayRow, AttendanceSettingsRow, AttendanceShiftRow } from '../schema'
-import { formatHours, formatTimeOfDay } from '../utils/clock'
+import { formatHours, formatTimeOfDay } from '@ihp/clock'
 import { liveBreakSeconds, liveWorkedSeconds } from '../utils/day'
 import { SelfieCapture } from './selfie-capture'
 

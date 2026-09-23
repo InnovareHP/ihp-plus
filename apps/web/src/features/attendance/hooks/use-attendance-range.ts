@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
-import { shiftDateKey } from '../utils/clock'
+import { shiftDateKey } from '@ihp/clock'
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
 

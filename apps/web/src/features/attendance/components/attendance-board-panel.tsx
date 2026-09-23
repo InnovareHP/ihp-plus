@@ -8,7 +8,7 @@ import { StatCard } from '@/components/stat-card'
 import { useAttendanceBoard } from '../hooks/use-attendance-admin'
 import { useAttendanceRange } from '../hooks/use-attendance-range'
 import type { AttendanceBoardRow } from '../schema'
-import { formatHours, formatTimeOfDay } from '../utils/clock'
+import { formatHours, formatTimeOfDay } from '@ihp/clock'
 import { AttendanceDayModal } from './attendance-day-modal'
 import { ClockStateBadge } from './clock-state-badge'
 

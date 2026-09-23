@@ -1,5 +1,5 @@
 import type { AttendanceDayRow, AttendanceState } from '../schema'
-import { workedSecondsFor } from './clock'
+import { workedSecondsFor } from '@ihp/clock'
 
 /** Breaks already taken, plus the one still running, counted up to now. */
 export function liveBreakSeconds(day: AttendanceDayRow, now: number): number {

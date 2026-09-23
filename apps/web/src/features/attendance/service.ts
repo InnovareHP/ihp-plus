@@ -41,7 +41,7 @@ import {
   workDateKey,
   workedSecondsFor,
   zonedInstant,
-} from './utils/clock'
+} from '@ihp/clock'
 
 const SETTINGS_SELECT = { timeZone: true, defaultShiftId: true } as const
 

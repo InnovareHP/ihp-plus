@@ -3,6 +3,15 @@ export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] 
 
 export const DEFAULT_WORKDAYS = '1,2,3,4,5'
 
+/** The hours anyone without a shift works until the company writes its own. */
+export const COMPANY_HOURS = {
+  shiftStartMinutes: 9 * 60,
+  shiftEndMinutes: 18 * 60,
+  graceMinutes: 15,
+  workdays: DEFAULT_WORKDAYS,
+  autoClockOutHours: 16,
+} as const
+
 export function parseWorkdays(value: string): number[] {
   const days = value
     .split(',')

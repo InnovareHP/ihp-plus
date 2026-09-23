@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { routes } from '@/lib/routes'
 import { useNow } from '../hooks/use-now'
 import { useTimeClock } from '../hooks/use-time-clock'
-import { formatElapsed } from '../utils/clock'
+import { formatElapsed } from '@ihp/clock'
 import { liveWorkedSeconds } from '../utils/day'
 import { ClockOutModal } from './clock-out-modal'
 

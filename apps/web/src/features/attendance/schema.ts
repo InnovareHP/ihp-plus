@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { clockToMinutes, DEFAULT_WORKDAYS, parseWorkdays } from './utils/clock'
+import { clockToMinutes, COMPANY_HOURS, parseWorkdays } from '@ihp/clock'
 
 export type AttendanceStatus = 'open' | 'recorded'
 
@@ -146,17 +146,13 @@ export const DEFAULT_ATTENDANCE_SETTINGS: AttendanceSettingsRow = {
 
 /** The hours and rules a company runs on before anybody writes a shift of its own. */
 export const DEFAULT_SHIFT: AttendanceShiftRow = {
+  ...COMPANY_HOURS,
   id: '',
   name: 'Company hours',
-  shiftStartMinutes: 9 * 60,
-  shiftEndMinutes: 18 * 60,
-  graceMinutes: 15,
-  workdays: DEFAULT_WORKDAYS,
   assignedCount: 0,
   requireSelfie: false,
   requireNote: false,
   captureLocation: false,
-  autoClockOutHours: 16,
   isDefault: true,
 }
 

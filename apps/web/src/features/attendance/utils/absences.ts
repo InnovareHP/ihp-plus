@@ -1,5 +1,5 @@
 import type { AttendanceAbsenceRow } from '../schema'
-import { isWorkday, shiftDateKey } from './clock'
+import { isWorkday, shiftDateKey } from '@ihp/clock'
 
 export interface RosterPerson {
   userId: string

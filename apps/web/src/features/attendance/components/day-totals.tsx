@@ -1,5 +1,5 @@
 import { Group, Stack, Text } from '@mantine/core'
-import { formatHours } from '../utils/clock'
+import { formatHours } from '@ihp/clock'
 
 export interface DayTotalsProps {
   workedSeconds: number

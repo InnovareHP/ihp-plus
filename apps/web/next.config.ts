@@ -16,9 +16,9 @@ const nextConfig: NextConfig = {
   // Astro owns "/", Next is mounted under "/app" by the nginx proxy.
   basePath: '/app',
 
-  // Both ship raw TS — Prisma's generated client and buf's generated messages — so Next
+  // All ship raw TS — Prisma's generated client, buf's messages, the shared helpers — so Next
   // has to compile them rather than consume a build output.
-  transpilePackages: ['@ihp/db', '@ihp/rpc', '@ihp/graph'],
+  transpilePackages: ['@ihp/db', '@ihp/rpc', '@ihp/graph', '@ihp/email', '@ihp/clock'],
 
   // The pg driver and the Redis client open real sockets; bundling them breaks the standalone server.
   serverExternalPackages: ['@prisma/adapter-pg', 'pg', 'redis', '@redis/client'],

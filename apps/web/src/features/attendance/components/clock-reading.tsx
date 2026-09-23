@@ -2,7 +2,7 @@
 
 import { Stack, Text } from '@mantine/core'
 import type { AttendanceDayRow, AttendanceState } from '../schema'
-import { formatElapsed, formatTimeOfDay } from '../utils/clock'
+import { formatElapsed, formatTimeOfDay } from '@ihp/clock'
 import { liveWorkedSeconds, runningBreakStartedAt } from '../utils/day'
 
 export interface ClockReadingProps {

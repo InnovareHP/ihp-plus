@@ -2,7 +2,7 @@
 
 import { Select } from '@mantine/core'
 import { useAssignShift, useSchedules } from '../hooks/use-attendance-admin'
-import { minutesToClock } from '../utils/clock'
+import { minutesToClock } from '@ihp/clock'
 
 export interface MemberShiftSelectProps {
   userId: string

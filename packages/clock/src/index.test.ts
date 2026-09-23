@@ -14,7 +14,7 @@ import {
   workDateKey,
   workedSecondsFor,
   zonedInstant,
-} from './clock'
+} from './index'
 
 describe('workdays', () => {
   it('keeps the days in order and drops rubbish', () => {

@@ -6,7 +6,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { useSaveShift } from '../hooks/use-attendance-admin'
 import { shiftSchema, type AttendanceShiftRow, type ShiftValues } from '../schema'
-import { clockToMinutes, DEFAULT_WORKDAYS, minutesToClock } from '../utils/clock'
+import { clockToMinutes, DEFAULT_WORKDAYS, minutesToClock } from '@ihp/clock'
 import { WorkdaysField } from './workdays-field'
 
 export interface ShiftModalProps {

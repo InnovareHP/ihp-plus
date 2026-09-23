@@ -1,7 +1,7 @@
 'use client'
 
 import { Checkbox, Group, Input } from '@mantine/core'
-import { parseWorkdays, WEEKDAY_LABELS } from '../utils/clock'
+import { parseWorkdays, WEEKDAY_LABELS } from '@ihp/clock'
 
 export interface WorkdaysFieldProps {
   value: string

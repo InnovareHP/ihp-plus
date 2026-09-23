@@ -6,7 +6,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { useSaveAttendanceDay } from '../hooks/use-attendance-admin'
 import { attendanceDaySchema, type AttendanceDayRow, type AttendanceDayValues } from '../schema'
-import { formatTimeOfDay } from '../utils/clock'
+import { formatTimeOfDay } from '@ihp/clock'
 
 export interface AttendanceDayModalProps {
   opened: boolean

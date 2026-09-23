@@ -13,6 +13,8 @@ packages/
   config/     shared tsconfig presets + Tailwind v4 theme tokens (@ihp/config)
   db/         Prisma 7 client + Better Auth schema and migrations (@ihp/db)
   graph/      Microsoft Graph client — SharePoint drive sync and sharing (@ihp/graph)
+  email/      transactional email layout, templates and the SES sender (@ihp/email)
+  clock/      time-zone and shift arithmetic for the time clock (@ihp/clock)
 infra/
   compose.yml       full containerized stack (postgres, redis, web, landing, proxy)
   compose.dev.yml   dev infra only (postgres, redis)
@@ -74,7 +76,7 @@ Change the entry port with `PROXY_PORT` in `.env`.
 | Script                 | Does                                                     |
 | ---------------------- | -------------------------------------------------------- |
 | `pnpm build`           | turbo build both apps                                    |
-| `pnpm test`            | vitest (web, graph)                                      |
+| `pnpm test`            | vitest (web, graph, email, clock)                        |
 | `pnpm lint`            | eslint (web)                                             |
 | `pnpm typecheck`       | `tsc --noEmit` + `astro check`                           |
 | `pnpm format`          | prettier, incl. `.astro`                                 |

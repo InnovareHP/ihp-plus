@@ -7,7 +7,7 @@ import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { useDeleteShift, useShifts } from '../hooks/use-attendance-admin'
 import { DEFAULT_SHIFT, type AttendanceShiftRow } from '../schema'
-import { formatWorkdays, minutesToClock } from '../utils/clock'
+import { formatWorkdays, minutesToClock } from '@ihp/clock'
 import { ShiftModal } from './shift-modal'
 import { ShiftRules } from './shift-rules'
 

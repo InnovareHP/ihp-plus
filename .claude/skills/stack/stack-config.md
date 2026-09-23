@@ -11,7 +11,7 @@ came from, the file wins — fix this table.
 | `pnpm dev:web`                                  | `turbo run dev --filter=@ihp/web`                                                 |
 | `pnpm dev:landing`                              | `turbo run dev --filter=@ihp/landing`                                             |
 | `pnpm build`                                    | `turbo run build`                                                                 |
-| `pnpm test`                                     | `turbo run test` — `@ihp/web` and `@ihp/graph` define it (`vitest run`)           |
+| `pnpm test`                                     | `turbo run test` — web, graph, email and clock define it (`vitest run`)           |
 | `pnpm lint`                                     | `turbo run lint` — only `@ihp/web` defines it                                     |
 | `pnpm typecheck`                                | `tsc --noEmit` (web, ui, db) + `astro check` (landing)                            |
 | `pnpm format`                                   | prettier write, incl. `.astro` — repo-wide, rewrites unrelated files              |
@@ -36,6 +36,8 @@ Both compose scripts pass `--env-file .env`. `dev`, `dev:web`, `dev:landing`,
 | `@ihp/landing` | `apps/landing`    | Astro ^7.3.1, `output: 'static'`, `@astrojs/react`, Tailwind v4 + `@ihp/ui`                                                                    |
 | `@ihp/ui`      | `packages/ui`     | source-only TSX, `Button` + `Card`, no build step — consumed by landing only                                                                   |
 | `@ihp/config`  | `packages/config` | `tsconfig/base.json`, `tsconfig/nextjs.json`, `tailwind/theme.css`                                                                             |
+| `@ihp/email`   | `packages/email`  | source-only TS: email layout, templates, SES sender; transpiled by Next                                                                        |
+| `@ihp/clock`   | `packages/clock`  | source-only TS: zone-aware dates, shift minutes, company hours; transpiled by Next                                                             |
 | `@ihp/db`      | `packages/db`     | Prisma 7.10 + `@prisma/adapter-pg`, `prisma/schema.prisma`, `prisma/migrations/`; client generated into `src/generated/` by its `build` script |
 
 Built deps allowed in `pnpm-workspace.yaml`: `@prisma/engines`, `@tailwindcss/oxide`,
@@ -105,9 +107,10 @@ does not exist.
 
 Tests do exist: Vitest 5 + Testing Library + `vitest-axe` in `@ihp/web`
 (`apps/web/vitest.config.ts`, jsdom, setup at `src/test/setup.ts`), a `test` task in
-`turbo.json`, and `pnpm test` at the root. `@ihp/graph` has its own runner too
-(`packages/graph/vitest.config.ts`, node environment, no setup file); no other
-workspace does.
+`turbo.json`, and `pnpm test` at the root. `@ihp/graph`, `@ihp/email` and `@ihp/clock`
+have their own runners (`vitest.config.ts` in each, node environment, no setup file).
+`@ihp/email` is the only workspace that depends on `@aws-sdk/client-sesv2`; web's
+`src/lib/email/index.ts` re-exports it and adds the basePath-aware `portalUrl`.
 
 There is no email provider: password-reset and verification links are logged by
 `apps/web/src/lib/email.ts`, not sent. Nothing reads `REDIS_URL`.

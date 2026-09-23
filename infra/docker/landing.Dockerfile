@@ -16,6 +16,8 @@ COPY packages/config/package.json packages/config/
 COPY packages/proto/package.json packages/proto/
 COPY packages/rpc/package.json packages/rpc/
 COPY packages/graph/package.json packages/graph/
+COPY packages/email/package.json packages/email/
+COPY packages/clock/package.json packages/clock/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store && \
     pnpm install --frozen-lockfile

@@ -8,7 +8,7 @@ import { useEndBreak, useStartBreak, useTimeClock } from '../hooks/use-time-cloc
 import { useNow } from '../hooks/use-now'
 import { usePunch, type PunchKind } from '../hooks/use-punch'
 import type { AttendanceSettingsRow, AttendanceShiftRow } from '../schema'
-import { formatHours, minutesToClock } from '../utils/clock'
+import { formatHours, minutesToClock } from '@ihp/clock'
 import { dayState, liveBreakSeconds, liveWorkedSeconds } from '../utils/day'
 import { ClockReading } from './clock-reading'
 import { ClockStateBadge } from './clock-state-badge'

@@ -1,5 +1,5 @@
 import type { AttendanceAbsenceRow, AttendanceDayRow } from '../schema'
-import { formatTimeOfDay } from './clock'
+import { formatTimeOfDay } from '@ihp/clock'
 
 const HEADERS = [
   'Employee',

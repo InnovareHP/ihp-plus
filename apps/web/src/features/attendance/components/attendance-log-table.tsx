@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import type { AttendanceDayRow } from '../schema'
-import { formatHours, formatTimeOfDay } from '../utils/clock'
+import { formatHours, formatTimeOfDay } from '@ihp/clock'
 import { AttendanceStatusBadge } from './attendance-status-badge'
 import { SelfieLinks } from './selfie-links'
 

@@ -11,7 +11,7 @@ import {
   DEFAULT_ATTENDANCE_SETTINGS,
   type AttendanceSettingsRow,
 } from '../schema'
-import { minutesToClock } from '../utils/clock'
+import { minutesToClock } from '@ihp/clock'
 
 // Every zone the platform knows, so a company counts its day the way it actually works.
 const TIME_ZONES = Intl.supportedValuesOf('timeZone')
