@@ -91,7 +91,7 @@ export function FirstDayTasksSetup({ tasks }: FirstDayTasksSetupProps) {
           <TextInput
             {...register('title')}
             label="Task"
-            placeholder="Collect your laptop from IT"
+            placeholder="Collect your user credentials from IT"
             required
             autoComplete="off"
             error={errors.title?.message}
@@ -119,7 +119,7 @@ export function FirstDayTasksSetup({ tasks }: FirstDayTasksSetupProps) {
         empty={
           <EmptyState
             title="No first-day tasks yet"
-            description="Add what every new hire should get done in their first days, such as collecting a laptop or meeting their lead."
+            description="Add what every new hire should get done in their first days, such as collecting their user credentials or meeting their lead."
           />
         }
       />

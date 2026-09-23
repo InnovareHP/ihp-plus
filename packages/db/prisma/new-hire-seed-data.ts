@@ -4,8 +4,8 @@
 /** What every new hire ticks off in their first days, in order. */
 export const NEW_HIRE_TASK_SEED: readonly { title: string; description: string }[] = [
   {
-    title: 'Collect your laptop and badge',
-    description: 'Information Technology hands them over on your first morning.',
+    title: 'Collect your user credentials',
+    description: 'Information Technology hands over your sign-ins on your first morning.',
   },
   {
     title: 'Sign in to Outlook and Teams',
@@ -22,10 +22,6 @@ export const NEW_HIRE_TASK_SEED: readonly { title: string; description: string }
   {
     title: 'Complete HIPAA privacy training',
     description: 'Required before you open any member or patient record.',
-  },
-  {
-    title: 'Set up direct deposit with People & Culture',
-    description: 'Bring a voided cheque or your bank letter.',
   },
 ]
 
