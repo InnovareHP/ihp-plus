@@ -34,6 +34,7 @@ describe('shiftSchema', () => {
     requireNote: false,
     captureLocation: false,
     sendReminders: true,
+    holidayCountry: '',
     autoClockOutHours: 16,
   }
 

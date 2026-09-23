@@ -8,6 +8,8 @@ import {
   deleteHoliday,
   deleteShift,
   endBreak,
+  importHolidays,
+  listHolidayCountries,
   loadAttendance,
   loadAttendanceSettings,
   loadBoard,
@@ -156,6 +158,7 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
         captureLocation: request.captureLocation,
         autoClockOutHours: request.autoClockOutHours,
         sendReminders: request.sendReminders,
+        holidayCountry: request.holidayCountry,
       }),
     ),
   }),
@@ -172,7 +175,12 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
 
   saveHoliday: async (request) => ({
     holiday: holidayToProto(
-      await saveHoliday({ holidayId: request.holidayId, date: request.date, name: request.name }),
+      await saveHoliday({
+        holidayId: request.holidayId,
+        date: request.date,
+        name: request.name,
+        country: request.country,
+      }),
     ),
   }),
 
@@ -180,6 +188,14 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
     await deleteHoliday(request.holidayId)
     return {}
   },
+
+  listHolidayCountries: async () => ({ countries: await listHolidayCountries() }),
+
+  importHolidays: async (request) => ({
+    added: (await importHolidays({ year: request.year, country: request.country })).map(
+      holidayToProto,
+    ),
+  }),
 
   assignShift: async (request) => ({
     schedule: scheduleToProto(

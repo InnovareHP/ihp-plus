@@ -10,4 +10,5 @@ export const attendanceKeys = {
   schedules: () => [...attendanceKeys.all, 'schedules'] as const,
   shifts: () => [...attendanceKeys.all, 'shifts'] as const,
   holidays: (year: number) => [...attendanceKeys.all, 'holidays', year] as const,
+  holidayCountries: () => [...attendanceKeys.all, 'holiday-countries'] as const,
 }

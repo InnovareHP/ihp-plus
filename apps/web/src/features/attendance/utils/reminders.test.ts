@@ -9,6 +9,7 @@ const DAY_SHIFT: ShiftRules = {
   workdays: '1,2,3,4,5',
   autoClockOutHours: 16,
   sendReminders: true,
+  holidayCountry: 'PH',
 }
 
 const GRACE: Person = {
@@ -24,7 +25,7 @@ function org(overrides: Partial<OrgSnapshot> = {}): OrgSnapshot {
     organizationId: 'org-1',
     timeZone: 'Asia/Manila',
     people: [GRACE],
-    holidayToday: false,
+    holidaysToday: [],
     onLeaveToday: new Set(),
     clockedToday: new Set(),
     openDays: [],
@@ -62,9 +63,19 @@ describe('clock-in reminders', () => {
     const now = at('10:00')
     expect(dueReminders(org({ clockedToday: new Set(['u-1']) }), now)).toEqual([])
     expect(dueReminders(org({ onLeaveToday: new Set(['u-1']) }), now)).toEqual([])
-    expect(dueReminders(org({ holidayToday: true }), now)).toEqual([])
+    const holiday = { date: '2026-09-24', name: 'Company day', country: '' }
+    expect(dueReminders(org({ holidaysToday: [holiday] }), now)).toEqual([])
     expect(dueReminders(org({ people: [{ ...GRACE, since: '2026-09-25' }] }), now)).toEqual([])
     expect(dueReminders(org(), new Date('2026-09-26T10:00:00+08:00'))).toEqual([])
+  })
+
+  it('still reminds on another country’s holiday, but not on the shift’s own', () => {
+    const now = at('10:00')
+    const us = { date: '2026-09-24', name: 'US holiday', country: 'US' }
+    const ph = { date: '2026-09-24', name: 'PH holiday', country: 'PH' }
+
+    expect(dueReminders(org({ holidaysToday: [us] }), now)).toHaveLength(1)
+    expect(dueReminders(org({ holidaysToday: [ph] }), now)).toEqual([])
   })
 
   it('stays quiet when the shift has reminders off, and once a day shift is over', () => {

@@ -68,6 +68,8 @@ export interface AttendanceShiftRow {
   isDefault: boolean
   /** Emails a missed clock-in or a forgotten clock-out to whoever works it. */
   sendReminders: boolean
+  /** ISO country whose public holidays the shift gets off; empty follows only company-wide days. */
+  holidayCountry: string
 }
 
 export interface AttendanceScheduleRow {
@@ -156,6 +158,7 @@ export const DEFAULT_SHIFT: AttendanceShiftRow = {
   requireNote: false,
   captureLocation: false,
   isDefault: true,
+  holidayCountry: '',
 }
 
 export const shiftSchema = z
@@ -170,6 +173,7 @@ export const shiftSchema = z
     requireNote: z.boolean(),
     captureLocation: z.boolean(),
     sendReminders: z.boolean(),
+    holidayCountry: z.string().trim().toUpperCase().max(2),
     autoClockOutHours: z
       .number()
       .int()
@@ -240,6 +244,15 @@ export interface AttendanceHolidayRow {
   id: string
   date: string
   name: string
+  /** Empty when everyone gets the day off. */
+  country: string
+  /** True when the public holiday calendar filled it in rather than an admin. */
+  imported: boolean
+}
+
+export interface HolidayCountryOption {
+  code: string
+  name: string
 }
 
 export interface HolidayBook {
@@ -251,9 +264,17 @@ export const holidaySchema = z.object({
   holidayId: z.string().optional(),
   date: dateKey,
   name: z.string().trim().min(1, 'Name the holiday.').max(80, 'Keep the name under 80 characters.'),
+  country: z.string().trim().toUpperCase().max(2),
 })
 
 export type HolidayValues = z.infer<typeof holidaySchema>
+
+export const importHolidaysSchema = z.object({
+  year: z.number().int().min(2000).max(2100),
+  country: z.string().trim().toUpperCase().length(2, 'Pick a country.'),
+})
+
+export type ImportHolidaysValues = z.infer<typeof importHolidaysSchema>
 
 export const clockActionSchema = z.object({
   selfieKey: z.string().trim().default(''),

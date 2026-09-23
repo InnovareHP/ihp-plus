@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { sendDueReminders } from '@/features/attendance/reminders'
+import { fillUpcomingHolidays } from '@/features/attendance/holiday-calendar'
 import { isAuthorizedCron } from '@/lib/cron'
 
 // A cron target, never a cached answer.
@@ -11,10 +11,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const sent = await sendDueReminders()
-    return NextResponse.json({ sent })
+    const added = await fillUpcomingHolidays()
+    return NextResponse.json({ added })
   } catch (error) {
-    console.error('[cron] attendance reminders failed', error)
-    return NextResponse.json({ error: 'Could not send reminders.' }, { status: 500 })
+    console.error('[cron] filling the holiday calendar failed', error)
+    return NextResponse.json({ error: 'Could not fill the holiday calendar.' }, { status: 500 })
   }
 }

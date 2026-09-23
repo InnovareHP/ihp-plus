@@ -1,15 +1,22 @@
 'use client'
 
-import { Button, Card, Group, Select, Stack, Text, Title } from '@mantine/core'
+import { Badge, Button, Card, Divider, Group, Select, Stack, Text, Title } from '@mantine/core'
 import { useQueryClient } from '@tanstack/react-query'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { offerUndo } from '@/lib/undo'
 import { useUrlQueryParam } from '@/lib/use-url-query-param'
-import { useAddHoliday, useDeleteHoliday, useHolidays } from '../hooks/use-holidays'
+import {
+  useAddHoliday,
+  useDeleteHoliday,
+  useHolidayCountries,
+  useHolidays,
+  useImportHolidays,
+} from '../hooks/use-holidays'
 import { attendanceKeys } from '../query-keys'
 import type { AttendanceHolidayRow } from '../schema'
 import { AddHolidayForm } from './add-holiday-form'
+import { ImportHolidaysForm } from './import-holidays-form'
 
 // UTC because the key is a calendar date, and any other zone could print the day before.
 const dateFormat = new Intl.DateTimeFormat('en-US', {
@@ -32,6 +39,10 @@ export function HolidaysPanel() {
   const holidays = useHolidays(year)
   const add = useAddHoliday(year)
   const remove = useDeleteHoliday(year)
+  const countries = useHolidayCountries()
+  const fill = useImportHolidays()
+  const countryName = new Map((countries.data ?? []).map((one) => [one.code, one.name]))
+  const suggested = holidays.data?.find((row) => row.country)?.country ?? ''
   const queryClient = useQueryClient()
 
   function drop(row: AttendanceHolidayRow) {
@@ -68,6 +79,22 @@ export function HolidaysPanel() {
       ),
     },
     {
+      key: 'country',
+      header: 'Who gets it off',
+      render: (row) => (
+        <Group gap="xs" wrap="nowrap">
+          <Text size="sm">
+            {row.country ? (countryName.get(row.country) ?? row.country) : 'Everyone'}
+          </Text>
+          {row.imported ? (
+            <Badge size="xs" variant="light">
+              Public calendar
+            </Badge>
+          ) : null}
+        </Group>
+      ),
+    },
+    {
       key: 'actions',
       header: 'Actions',
       align: 'right',
@@ -97,8 +124,8 @@ export function HolidaysPanel() {
               Holidays
             </Title>
             <Text size="sm" c="dimmed">
-              Company days off. Nobody is marked absent on one, and anyone who works it still clocks
-              in as usual.
+              Days off. Nobody is marked absent on one, and anyone who works it still clocks in as
+              usual. A shift that follows a country gets its public holidays filled in each year.
             </Text>
           </Stack>
           <Select
@@ -113,7 +140,20 @@ export function HolidaysPanel() {
           />
         </Group>
 
-        <AddHolidayForm year={year} onAdd={(values) => add.mutateAsync(values)} />
+        <ImportHolidaysForm
+          year={year}
+          countries={countries.data ?? []}
+          suggested={suggested}
+          onImport={(values) => fill.mutateAsync(values)}
+        />
+
+        <Divider label="Or add one day" labelPosition="left" />
+
+        <AddHolidayForm
+          year={year}
+          countries={countries.data ?? []}
+          onAdd={(values) => add.mutateAsync(values)}
+        />
 
         <DataTable
           label={`Holidays in ${year}`}
@@ -125,11 +165,11 @@ export function HolidaysPanel() {
           isFetching={holidays.isFetching}
           onRetry={() => void holidays.refetch()}
           errorTitle="Could not load holidays"
-          minWidth={420}
+          minWidth={560}
           empty={
             <EmptyState
               title={`No holidays in ${year}`}
-              description="Add the days the company is closed so nobody reads as absent on them."
+              description="Fill in a country's public holidays above, or add the days the company is closed, so nobody reads as absent on them."
             />
           }
         />

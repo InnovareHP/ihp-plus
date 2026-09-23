@@ -38,6 +38,7 @@ const SHIFT: AttendanceShiftRow = {
   captureLocation: false,
   autoClockOutHours: 16,
   sendReminders: true,
+  holidayCountry: '',
   isDefault: true,
 }
 

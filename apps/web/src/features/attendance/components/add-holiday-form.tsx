@@ -2,17 +2,20 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Group, TextInput } from '@mantine/core'
-import { useForm } from 'react-hook-form'
-import { holidaySchema, type HolidayValues } from '../schema'
+import { Controller, useForm } from 'react-hook-form'
+import { holidaySchema, type HolidayCountryOption, type HolidayValues } from '../schema'
+import { CountrySelect } from './country-select'
 
 export interface AddHolidayFormProps {
   /** The year on screen, so the picker opens inside it. */
   year: number
+  countries: readonly HolidayCountryOption[]
   onAdd: (values: HolidayValues) => Promise<void>
 }
 
-export function AddHolidayForm({ year, onAdd }: AddHolidayFormProps) {
+export function AddHolidayForm({ year, countries, onAdd }: AddHolidayFormProps) {
   const {
+    control,
     register,
     handleSubmit,
     reset,
@@ -22,7 +25,7 @@ export function AddHolidayForm({ year, onAdd }: AddHolidayFormProps) {
     resolver: zodResolver(holidaySchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: { date: '', name: '' },
+    defaultValues: { date: '', name: '', country: '' },
   })
 
   async function submit(values: HolidayValues) {
@@ -58,6 +61,22 @@ export function AddHolidayForm({ year, onAdd }: AddHolidayFormProps) {
           flex={1}
           miw={200}
           error={errors.name?.message}
+        />
+        <Controller
+          control={control}
+          name="country"
+          render={({ field }) => (
+            <CountrySelect
+              label="Who gets it off"
+              noneLabel="Everyone"
+              countries={countries}
+              w={220}
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.country?.message}
+            />
+          )}
         />
       </Group>
       <Group justify="flex-end" mt="sm">

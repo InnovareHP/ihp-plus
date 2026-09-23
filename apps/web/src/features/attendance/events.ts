@@ -29,4 +29,6 @@ export const attendanceEvents = {
   holidayAddFailed: 'attendance.holiday.add_failed',
   holidayDeleted: 'attendance.holiday.deleted',
   holidayDeleteFailed: 'attendance.holiday.delete_failed',
+  holidaysImported: 'attendance.holiday.imported',
+  holidaysImportFailed: 'attendance.holiday.import_failed',
 } as const satisfies Record<string, EventName>

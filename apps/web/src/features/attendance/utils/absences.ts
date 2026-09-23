@@ -1,11 +1,14 @@
 import type { AttendanceAbsenceRow } from '../schema'
 import { isWorkday, shiftDateKey } from '@ihp/clock'
+import { holidayFor, type HolidayEntry } from './holidays'
 
 export interface RosterPerson {
   userId: string
   userName: string
   /** The shift's working days, "1,2,3,4,5". */
   workdays: string
+  /** The country whose public holidays their shift gets off; empty for company-wide days only. */
+  holidayCountry: string
   /** The first date they could have been expected in: joined, or started, whichever is later. */
   since: string
 }
@@ -16,7 +19,7 @@ export interface AbsenceInput {
   to: string
   /** Dates before this are settled; today is still running, so it is never counted. */
   today: string
-  holidays: ReadonlySet<string>
+  holidays: readonly HolidayEntry[]
   /** Keyed `${userId}|${date}`, valued with the leave's name. */
   leave: ReadonlyMap<string, string>
   /** Keyed `${userId}|${date}` for every day with a clock-in. */
@@ -41,7 +44,7 @@ export function absencesOf(input: AbsenceInput): AttendanceAbsenceRow[] {
 
     for (let date = first; date <= last; date = shiftDateKey(date, 1)) {
       if (!isWorkday(date, person.workdays)) continue
-      if (input.holidays.has(date)) continue
+      if (holidayFor(input.holidays, date, person.holidayCountry)) continue
 
       const key = personDateKey(person.userId, date)
       if (input.worked.has(key)) continue

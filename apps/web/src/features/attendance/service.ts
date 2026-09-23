@@ -9,6 +9,7 @@ import {
   attendanceSettingsSchema,
   clockActionSchema,
   holidaySchema,
+  importHolidaysSchema,
   DEFAULT_ATTENDANCE_SETTINGS,
   DEFAULT_SHIFT,
   shiftSchema,
@@ -28,11 +29,16 @@ import {
   type AttendanceStatus,
   type ClockActionValues,
   type HolidayBook,
+  type HolidayCountryOption,
   type HolidayValues,
+  type ImportHolidaysValues,
   type ShiftValues,
   type TimeClockView,
 } from './schema'
+import { fillHolidays, fillUpcomingHolidays, holidaySelect, toHolidayRow } from './holiday-calendar'
 import { absencesOf, personDateKey } from './utils/absences'
+import { holidayFor } from './utils/holidays'
+import { holidayCountries, isHolidayCountry } from './utils/public-holidays'
 import {
   isWorkday,
   lateSecondsFor,
@@ -57,6 +63,7 @@ const shiftFields = {
   captureLocation: true,
   autoClockOutHours: true,
   sendReminders: true,
+  holidayCountry: true,
 } as const
 
 async function requireMember() {
@@ -158,6 +165,7 @@ interface ShiftFields {
   captureLocation: boolean
   autoClockOutHours: number
   sendReminders: boolean
+  holidayCountry: string
 }
 
 function toShiftFields(shift: ShiftFields, assignedCount: number, isDefault: boolean) {
@@ -431,12 +439,14 @@ export async function loadTimeClock(): Promise<TimeClockView> {
 
   const names = new Map([[caller.userId, caller.name]])
   const todayKey = dateOf(workDateKey(new Date(), settings.timeZone))
-  const [holiday, leave] = await Promise.all([
-    db.attendanceHoliday.findUnique({
+  const [holidays, leave] = await Promise.all([
+    db.attendanceHoliday.findMany({
       where: {
-        organizationId_date: { organizationId: caller.organizationId, date: todayKey },
+        organizationId: caller.organizationId,
+        date: todayKey,
+        country: { in: ['', shift.holidayCountry] },
       },
-      select: { name: true },
+      select: { date: true, name: true, country: true },
     }),
     db.attendanceLeave.findUnique({
       where: { userId_date: { userId: caller.userId, date: todayKey } },
@@ -455,7 +465,11 @@ export async function loadTimeClock(): Promise<TimeClockView> {
     ),
     canManage: caller.canManage,
     shift,
-    holidayName: holiday?.name,
+    holidayName: holidayFor(
+      holidays.map((one) => ({ ...one, date: dateKeyOf(one.date) })),
+      dateKeyOf(todayKey),
+      shift.holidayCountry,
+    )?.name,
     leaveName: leave?.name,
   }
 }
@@ -695,7 +709,7 @@ async function absencesFor(
   const [holidays, leave] = await Promise.all([
     db.attendanceHoliday.findMany({
       where: { organizationId: caller.organizationId, date: window },
-      select: { date: true },
+      select: { date: true, name: true, country: true },
     }),
     db.attendanceLeave.findMany({
       where: { organizationId: caller.organizationId, userId: { in: userIds }, date: window },
@@ -708,12 +722,13 @@ async function absencesFor(
       userId: person.userId,
       userName: person.userName,
       workdays: person.shift.workdays,
+      holidayCountry: person.shift.holidayCountry,
       since: person.since,
     })),
     from: range.from,
     to: range.to,
     today: range.today,
-    holidays: new Set(holidays.map((one) => dateKeyOf(one.date))),
+    holidays: holidays.map((one) => ({ ...one, date: dateKeyOf(one.date) })),
     leave: new Map(leave.map((one) => [personDateKey(one.userId, dateKeyOf(one.date)), one.name])),
     worked: new Set(days.map((day) => personDateKey(day.userId, dateKeyOf(day.workDate)))),
   })
@@ -805,17 +820,15 @@ export async function loadBoard(date?: string): Promise<AttendanceBoard> {
   const today = workDateKey(now, settings.timeZone)
   const key = date || today
 
-  const [roster, found, holiday, leave] = await Promise.all([
+  const [roster, found, holidayRows, leave] = await Promise.all([
     rosterOf(caller.organizationId, settings),
     db.attendanceDay.findMany({
       where: { organizationId: caller.organizationId, workDate: dateOf(key) },
       select: daySelect,
     }),
-    db.attendanceHoliday.findUnique({
-      where: {
-        organizationId_date: { organizationId: caller.organizationId, date: dateOf(key) },
-      },
-      select: { name: true },
+    db.attendanceHoliday.findMany({
+      where: { organizationId: caller.organizationId, date: dateOf(key) },
+      select: { date: true, name: true, country: true },
     }),
     db.attendanceLeave.findMany({
       where: { organizationId: caller.organizationId, date: dateOf(key) },
@@ -826,6 +839,7 @@ export async function loadBoard(date?: string): Promise<AttendanceBoard> {
   const days = await settleForgottenDays(found, roster)
   const byUser = new Map((await rowsFor(days, caller)).map((row) => [row.userId, row]))
   const leaveByUser = new Map(leave.map((one) => [one.userId, one.name]))
+  const holidays = holidayRows.map((one) => ({ ...one, date: dateKeyOf(one.date) }))
   const nowMinutes = minutesOfDay(now, settings.timeZone)
 
   const rows = roster.map((person) => {
@@ -837,7 +851,7 @@ export async function loadBoard(date?: string): Promise<AttendanceBoard> {
           date: key,
           today,
           nowMinutes,
-          holidayName: holiday?.name,
+          holidayName: holidayFor(holidays, key, person.shift.holidayCountry)?.name,
           leaveName: leaveByUser.get(person.userId),
         })
     return {
@@ -1014,6 +1028,9 @@ export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow
   requireAdmin(caller, 'Only an admin sets shifts.')
 
   const { shiftId, ...shift } = shiftSchema.parse(values)
+  if (shift.holidayCountry && !isHolidayCountry(shift.holidayCountry)) {
+    throw new ConnectError('Pick a country from the holiday list.', Code.InvalidArgument)
+  }
 
   const clash = await db.attendanceShift.findFirst({
     where: {
@@ -1034,6 +1051,7 @@ export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow
       data: { organizationId: caller.organizationId, ...shift },
       select: shiftSelect,
     })
+    await fillFollowedCalendar(caller.organizationId, shift.holidayCountry)
     return toShiftRow(created, settings.defaultShiftId)
   }
 
@@ -1048,6 +1066,7 @@ export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow
     data: shift,
     select: shiftSelect,
   })
+  await fillFollowedCalendar(caller.organizationId, shift.holidayCountry)
 
   return toShiftRow(updated, settings.defaultShiftId)
 }
@@ -1169,10 +1188,17 @@ export async function assignShift(values: AssignShiftValues): Promise<Attendance
   }
 }
 
-const holidaySelect = { id: true, date: true, name: true } as const
-
-function toHolidayRow(holiday: { id: string; date: Date; name: string }): AttendanceHolidayRow {
-  return { id: holiday.id, date: dateKeyOf(holiday.date), name: holiday.name }
+/**
+ * A shift that starts following a country gets that country's days off straight away; a failure
+ * here must not undo the shift, since the yearly job fills the same years again.
+ */
+async function fillFollowedCalendar(organizationId: string, country: string) {
+  if (!country) return
+  try {
+    await fillUpcomingHolidays(new Date(), organizationId)
+  } catch (error) {
+    console.error('[attendance] filling the holiday calendar failed', error)
+  }
 }
 
 /** Everyone reads the calendar, since it says which days nobody is expected in. */
@@ -1195,12 +1221,16 @@ export async function saveHoliday(values: HolidayValues): Promise<AttendanceHoli
   const caller = await requireMember()
   requireAdmin(caller, 'Only an admin sets the holiday calendar.')
 
-  const { holidayId, date, name } = holidaySchema.parse(values)
+  const { holidayId, date, name, country } = holidaySchema.parse(values)
+  if (country && !isHolidayCountry(country)) {
+    throw new ConnectError('Pick a country from the holiday list.', Code.InvalidArgument)
+  }
 
   const clash = await db.attendanceHoliday.findFirst({
     where: {
       organizationId: caller.organizationId,
       date: dateOf(date),
+      country,
       ...(holidayId ? { NOT: { id: holidayId } } : {}),
     },
     select: { name: true },
@@ -1211,7 +1241,7 @@ export async function saveHoliday(values: HolidayValues): Promise<AttendanceHoli
 
   if (!holidayId) {
     const created = await db.attendanceHoliday.create({
-      data: { organizationId: caller.organizationId, date: dateOf(date), name },
+      data: { organizationId: caller.organizationId, date: dateOf(date), name, country },
       select: holidaySelect,
     })
     return toHolidayRow(created)
@@ -1225,7 +1255,7 @@ export async function saveHoliday(values: HolidayValues): Promise<AttendanceHoli
 
   const updated = await db.attendanceHoliday.update({
     where: { id: existing.id },
-    data: { date: dateOf(date), name },
+    data: { date: dateOf(date), name, country },
     select: holidaySelect,
   })
   return toHolidayRow(updated)
@@ -1239,4 +1269,24 @@ export async function deleteHoliday(holidayId: string): Promise<void> {
     where: { id: holidayId, organizationId: caller.organizationId },
   })
   if (count === 0) throw new ConnectError('That holiday is no longer there.', Code.NotFound)
+}
+
+export async function listHolidayCountries(): Promise<HolidayCountryOption[]> {
+  await requireMember()
+  return holidayCountries()
+}
+
+/** The on-demand fill: it runs even for a year filled before, putting back what is missing. */
+export async function importHolidays(
+  values: ImportHolidaysValues,
+): Promise<AttendanceHolidayRow[]> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin sets the holiday calendar.')
+
+  const { year, country } = importHolidaysSchema.parse(values)
+  if (!isHolidayCountry(country)) {
+    throw new ConnectError('Pick a country from the holiday list.', Code.InvalidArgument)
+  }
+
+  return fillHolidays(caller.organizationId, country, year)
 }

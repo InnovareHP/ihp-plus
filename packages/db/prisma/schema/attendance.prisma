@@ -43,6 +43,9 @@ model AttendanceShift {
   autoClockOutHours Int     @default(16)
   // Emails whoever works it when they have not clocked in, or are still clocked in, past the hour.
   sendReminders     Boolean @default(true)
+  // ISO country whose public holidays this shift gets off, such as "PH"; empty follows only the
+  // company-wide days.
+  holidayCountry    String  @default("")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -139,19 +142,38 @@ model AttendanceBreak {
   @@schema("attendance")
 }
 
-// A day the whole company is off, so nobody scheduled on it counts as absent.
+// A day off: for everyone when country is empty, otherwise only for shifts following that country.
 model AttendanceHoliday {
   id             String   @id @default(uuid())
   organizationId String
   date           DateTime @db.Date
   name           String
+  // Empty rather than null so the unique index below treats "everyone" as one value.
+  country        String   @default("")
+  // manual when an admin typed it, imported when it came from the public holiday calendar.
+  source         String   @default("manual")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Two names for one day off is a typo, not two holidays.
-  @@unique([organizationId, date])
+  // Two names for one day off in one calendar is a typo, not two holidays.
+  @@unique([organizationId, date, country])
+  @@index([organizationId, date])
   @@map("attendanceHoliday")
+  @@schema("attendance")
+}
+
+// Which country's calendar was filled for which year, so a day an admin deleted is not put back.
+model AttendanceHolidayImport {
+  id             String @id @default(uuid())
+  organizationId String
+  country        String
+  year           Int
+
+  importedAt DateTime @default(now())
+
+  @@unique([organizationId, country, year])
+  @@map("attendanceHolidayImport")
   @@schema("attendance")
 }
 

@@ -7,6 +7,7 @@ import {
   workDateKey,
   zonedInstant,
 } from '@ihp/clock'
+import { holidayFor, type HolidayEntry } from './holidays'
 
 export type ReminderKind = 'clock_in' | 'clock_out'
 
@@ -21,6 +22,8 @@ export interface ShiftRules {
   workdays: string
   autoClockOutHours: number
   sendReminders: boolean
+  /** Whose public holidays the shift gets off; empty for company-wide days only. */
+  holidayCountry: string
 }
 
 export interface Person {
@@ -43,8 +46,8 @@ export interface OrgSnapshot {
   organizationId: string
   timeZone: string
   people: readonly Person[]
-  /** True when today, in the organization's zone, is a company holiday. */
-  holidayToday: boolean
+  /** Every holiday falling today in the organization's zone, company-wide or for one country. */
+  holidaysToday: readonly HolidayEntry[]
   onLeaveToday: ReadonlySet<string>
   /** Everyone with any day recorded for today, running or closed. */
   clockedToday: ReadonlySet<string>
@@ -81,7 +84,9 @@ function shiftEnd(workDate: string, shift: ShiftRules, timeZone: string): Date |
 
 function clockInDue(org: OrgSnapshot, person: Person, today: string, minutes: number) {
   const { shift } = person
-  if (!shift.sendReminders || org.holidayToday) return false
+  if (!shift.sendReminders || holidayFor(org.holidaysToday, today, shift.holidayCountry)) {
+    return false
+  }
   if (today < person.since || !isWorkday(today, shift.workdays)) return false
   if (org.onLeaveToday.has(person.userId) || org.clockedToday.has(person.userId)) return false
   if (org.sent.has(sentKey(person.userId, today, 'clock_in'))) return false

@@ -5,8 +5,10 @@ import { Button, Divider, Group, Modal, NumberInput, Stack, Switch, TextInput } 
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { useSaveShift } from '../hooks/use-attendance-admin'
+import { useHolidayCountries } from '../hooks/use-holidays'
 import { shiftSchema, type AttendanceShiftRow, type ShiftValues } from '../schema'
 import { clockToMinutes, DEFAULT_WORKDAYS, minutesToClock } from '@ihp/clock'
+import { CountrySelect } from './country-select'
 import { WorkdaysField } from './workdays-field'
 
 export interface ShiftModalProps {
@@ -21,6 +23,7 @@ export interface ShiftModalProps {
 /** A shift is written once here and handed out under the organization. */
 export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps) {
   const save = useSaveShift()
+  const countries = useHolidayCountries()
 
   const {
     control,
@@ -43,6 +46,7 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
       requireNote: shift?.requireNote ?? defaults.requireNote,
       captureLocation: shift?.captureLocation ?? defaults.captureLocation,
       sendReminders: shift?.sendReminders ?? defaults.sendReminders,
+      holidayCountry: shift?.holidayCountry ?? defaults.holidayCountry,
       autoClockOutHours: shift?.autoClockOutHours ?? defaults.autoClockOutHours,
     },
   })
@@ -153,6 +157,26 @@ export function ShiftModal({ opened, onClose, shift, defaults }: ShiftModalProps
                 onChange={field.onChange}
                 onBlur={field.onBlur}
                 error={errors.workdays?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="holidayCountry"
+            render={({ field }) => (
+              <CountrySelect
+                label="Public holidays"
+                description="Whose public holidays this shift gets off. They are filled in for this year and next, then every December."
+                noneLabel="None — company days off only"
+                countries={countries.data ?? []}
+                disabled={countries.isPending}
+                placeholder={countries.isError ? 'Could not load countries' : undefined}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.holidayCountry?.message}
+                errorProps={{ role: 'alert' }}
               />
             )}
           />

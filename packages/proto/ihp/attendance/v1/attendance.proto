@@ -85,6 +85,8 @@ message AttendanceShift {
   bool is_default = 12;
   // Emails people on it who have not clocked in, or are still clocked in, well past the hour.
   bool send_reminders = 13;
+  // ISO country whose public holidays it gets off; empty follows only the company-wide days.
+  string holiday_country = 14;
 }
 
 // The shift one person works; absent means they work the company hours in the settings.
@@ -263,6 +265,7 @@ message SaveShiftRequest {
   bool capture_location = 9;
   int32 auto_clock_out_hours = 10;
   bool send_reminders = 11;
+  string holiday_country = 12;
 }
 
 message SaveShiftResponse {
@@ -285,12 +288,22 @@ message AssignShiftResponse {
   AttendanceSchedule schedule = 1;
 }
 
-// A day the whole company is off.
+// A day off: for everyone when country is empty, else for shifts following that country.
 message AttendanceHoliday {
   string id = 1;
   // YYYY-MM-DD.
   string date = 2;
   string name = 3;
+  string country = 4;
+  // True when it came from the public holiday calendar rather than an admin.
+  bool imported = 5;
+}
+
+// A country the public holiday calendar covers.
+message HolidayCountry {
+  // ISO 3166 alpha-2, such as "PH".
+  string code = 1;
+  string name = 2;
 }
 
 message ListHolidaysRequest {
@@ -307,6 +320,7 @@ message SaveHolidayRequest {
   optional string holiday_id = 1;
   string date = 2;
   string name = 3;
+  string country = 4;
 }
 
 message SaveHolidayResponse {
@@ -318,6 +332,22 @@ message DeleteHolidayRequest {
 }
 
 message DeleteHolidayResponse {}
+
+message ListHolidayCountriesRequest {}
+
+message ListHolidayCountriesResponse {
+  repeated HolidayCountry countries = 1;
+}
+
+message ImportHolidaysRequest {
+  int32 year = 1;
+  string country = 2;
+}
+
+message ImportHolidaysResponse {
+  // Only the days that were not on the calendar already.
+  repeated AttendanceHoliday added = 1;
+}
 
 service AttendanceService {
   rpc GetAttendanceSettings(GetAttendanceSettingsRequest) returns (GetAttendanceSettingsResponse);
@@ -339,4 +369,6 @@ service AttendanceService {
   rpc ListHolidays(ListHolidaysRequest) returns (ListHolidaysResponse);
   rpc SaveHoliday(SaveHolidayRequest) returns (SaveHolidayResponse);
   rpc DeleteHoliday(DeleteHolidayRequest) returns (DeleteHolidayResponse);
+  rpc ListHolidayCountries(ListHolidayCountriesRequest) returns (ListHolidayCountriesResponse);
+  rpc ImportHolidays(ImportHolidaysRequest) returns (ImportHolidaysResponse);
 }

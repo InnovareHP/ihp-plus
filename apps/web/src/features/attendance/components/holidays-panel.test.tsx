@@ -7,6 +7,8 @@ const rpc = vi.hoisted(() => ({
   listHolidays: vi.fn(),
   saveHoliday: vi.fn(),
   deleteHoliday: vi.fn(),
+  listHolidayCountries: vi.fn(),
+  importHolidays: vi.fn(),
 }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 const undo = vi.hoisted(() => ({ offerUndo: vi.fn(), UNDO_WINDOW_MS: 8000 }))
@@ -22,7 +24,24 @@ vi.mock('next/navigation', () => ({
 }))
 
 const YEAR = new Date().getFullYear()
-const CHRISTMAS = { id: 'h-1', date: `${YEAR}-12-25`, name: 'Christmas Day' }
+const CHRISTMAS = {
+  id: 'h-1',
+  date: `${YEAR}-12-25`,
+  name: 'Christmas Day',
+  country: '',
+  imported: false,
+}
+const RIZAL = {
+  id: 'h-3',
+  date: `${YEAR}-12-30`,
+  name: 'Rizal Day',
+  country: 'PH',
+  imported: true,
+}
+const COUNTRIES = [
+  { code: 'PH', name: 'Philippines' },
+  { code: 'US', name: 'United States of America' },
+]
 
 describe('HolidaysPanel', () => {
   beforeEach(() => {
@@ -31,6 +50,8 @@ describe('HolidaysPanel', () => {
     rpc.listHolidays.mockResolvedValue({ holidays: [CHRISTMAS], canManage: true })
     rpc.saveHoliday.mockResolvedValue({ id: 'h-2', date: `${YEAR}-01-01`, name: "New Year's Day" })
     rpc.deleteHoliday.mockResolvedValue(undefined)
+    rpc.listHolidayCountries.mockResolvedValue(COUNTRIES)
+    rpc.importHolidays.mockResolvedValue([RIZAL])
   })
 
   it('lists the year on screen', async () => {
@@ -71,7 +92,11 @@ describe('HolidaysPanel', () => {
     await user.click(within(form).getByRole('button', { name: 'Add holiday' }))
 
     expect(await screen.findByText("New Year's Day")).toBeInTheDocument()
-    expect(rpc.saveHoliday).toHaveBeenCalledWith({ date: `${YEAR}-01-01`, name: "New Year's Day" })
+    expect(rpc.saveHoliday).toHaveBeenCalledWith({
+      date: `${YEAR}-01-01`,
+      name: "New Year's Day",
+      country: '',
+    })
     resolve({ id: 'h-2', date: `${YEAR}-01-01`, name: "New Year's Day" })
   })
 
@@ -130,6 +155,69 @@ describe('HolidaysPanel', () => {
 
     expect(await screen.findByText('Christmas Day')).toBeInTheDocument()
     expect(rpc.deleteHoliday).not.toHaveBeenCalled()
+  })
+
+  it('says who gets each day off and which came from the public calendar', async () => {
+    rpc.listHolidays.mockResolvedValue({ holidays: [CHRISTMAS, RIZAL], canManage: true })
+    render(<HolidaysPanel />)
+
+    const rizal = (await screen.findByText('Rizal Day')).closest('tr') as HTMLElement
+    expect(within(rizal).getByText('Philippines')).toBeInTheDocument()
+    expect(within(rizal).getByText('Public calendar')).toBeInTheDocument()
+
+    const christmas = screen.getByText('Christmas Day').closest('tr') as HTMLElement
+    expect(within(christmas).getByText('Everyone')).toBeInTheDocument()
+  })
+
+  it('fills a country’s public holidays for the year in one go', async () => {
+    rpc.listHolidays.mockResolvedValue({ holidays: [RIZAL], canManage: true })
+    const user = userEvent.setup()
+    render(<HolidaysPanel />)
+    await screen.findByText('Rizal Day')
+
+    const form = screen.getByRole('form', { name: 'Fill in public holidays' })
+    // The country the calendar already follows is picked, so this is one click.
+    await waitFor(() =>
+      expect(within(form).getByRole('combobox', { name: /Public holidays/ })).toHaveValue(
+        'Philippines',
+      ),
+    )
+    await user.click(within(form).getByRole('button', { name: `Fill in ${YEAR}` }))
+
+    await waitFor(() =>
+      expect(rpc.importHolidays).toHaveBeenCalledWith({ year: YEAR, country: 'PH' }),
+    )
+    await waitFor(() =>
+      expect(toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ message: `Added 1 public holiday for ${YEAR}.` }),
+      ),
+    )
+  })
+
+  it('asks for a country before filling, and announces a refused fill', async () => {
+    rpc.importHolidays.mockRejectedValue(new Error('Only an admin sets the holiday calendar.'))
+    const user = userEvent.setup()
+    render(<HolidaysPanel />)
+    await screen.findByText('Christmas Day')
+
+    const form = screen.getByRole('form', { name: 'Fill in public holidays' })
+    await user.click(within(form).getByRole('button', { name: `Fill in ${YEAR}` }))
+    expect(await within(form).findByText('Pick a country.')).toBeInTheDocument()
+    expect(rpc.importHolidays).not.toHaveBeenCalled()
+
+    await user.click(within(form).getByRole('combobox', { name: /Public holidays/ }))
+    await user.click(await screen.findByRole('option', { name: 'United States of America' }))
+    await user.click(within(form).getByRole('button', { name: `Fill in ${YEAR}` }))
+
+    await waitFor(() =>
+      expect(toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          color: 'red',
+          autoClose: false,
+          message: 'Only an admin sets the holiday calendar.',
+        }),
+      ),
+    )
   })
 
   it('has no axe violations', async () => {

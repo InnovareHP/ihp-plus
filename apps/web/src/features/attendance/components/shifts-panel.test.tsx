@@ -21,6 +21,7 @@ const rpc = vi.hoisted(() => ({
   clockOut: vi.fn(),
   startBreak: vi.fn(),
   endBreak: vi.fn(),
+  listHolidayCountries: vi.fn(),
 }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
@@ -41,6 +42,7 @@ const MORNING: AttendanceShiftRow = {
   captureLocation: false,
   autoClockOutHours: 16,
   sendReminders: true,
+  holidayCountry: '',
   isDefault: false,
 }
 
@@ -53,6 +55,10 @@ describe('ShiftsPanel', () => {
     })
     rpc.saveShift.mockResolvedValue(MORNING)
     rpc.deleteShift.mockResolvedValue(undefined)
+    rpc.listHolidayCountries.mockResolvedValue([
+      { code: 'PH', name: 'Philippines' },
+      { code: 'US', name: 'United States of America' },
+    ])
   })
 
   it('lists a shift by name, hours and how many people work it', async () => {
@@ -106,6 +112,27 @@ describe('ShiftsPanel', () => {
     await waitFor(() =>
       expect(rpc.saveShift).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'Remote', sendReminders: false }),
+      ),
+    )
+  })
+
+  it('ties a shift to a country’s public holidays', async () => {
+    const user = userEvent.setup()
+    render(<ShiftsPanel />)
+
+    await user.click(await screen.findByRole('button', { name: 'New shift' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New shift' })
+
+    await user.type(within(dialog).getByRole('textbox', { name: 'Name' }), 'Manila day')
+    const country = within(dialog).getByRole('combobox', { name: /Public holidays/ })
+    expect(country).toHaveValue('None — company days off only')
+    await user.click(country)
+    await user.click(await screen.findByRole('option', { name: 'Philippines' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Save shift' }))
+
+    await waitFor(() =>
+      expect(rpc.saveShift).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Manila day', holidayCountry: 'PH' }),
       ),
     )
   })

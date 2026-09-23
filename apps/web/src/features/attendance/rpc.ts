@@ -25,7 +25,9 @@ import type {
   AssignShiftValues,
   ClockActionValues,
   HolidayBook,
+  HolidayCountryOption,
   HolidayValues,
+  ImportHolidaysValues,
   ShiftValues,
   TimeClockView,
 } from './schema'
@@ -204,6 +206,7 @@ export async function saveShift(values: ShiftValues): Promise<AttendanceShiftRow
       captureLocation: values.captureLocation,
       autoClockOutHours: values.autoClockOutHours,
       sendReminders: values.sendReminders,
+      holidayCountry: values.holidayCountry,
     }),
   )
   if (!response.shift) throw new Error('The server did not return the shift.')
@@ -235,6 +238,7 @@ export async function saveHoliday(values: HolidayValues): Promise<AttendanceHoli
       holidayId: values.holidayId,
       date: values.date,
       name: values.name,
+      country: values.country,
     }),
   )
   if (!response.holiday) throw new Error('The server did not return the holiday.')
@@ -243,4 +247,16 @@ export async function saveHoliday(values: HolidayValues): Promise<AttendanceHoli
 
 export async function deleteHoliday(holidayId: string): Promise<void> {
   await call(() => browserClients.attendance.deleteHoliday({ holidayId }))
+}
+
+export async function listHolidayCountries(): Promise<HolidayCountryOption[]> {
+  const response = await call(() => browserClients.attendance.listHolidayCountries({}))
+  return response.countries.map((country) => ({ code: country.code, name: country.name }))
+}
+
+export async function importHolidays(
+  values: ImportHolidaysValues,
+): Promise<AttendanceHolidayRow[]> {
+  const response = await call(() => browserClients.attendance.importHolidays(values))
+  return response.added.map(holidayFromProto)
 }

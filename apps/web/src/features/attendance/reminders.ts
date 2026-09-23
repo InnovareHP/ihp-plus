@@ -16,7 +16,7 @@ import {
   type ShiftRules,
 } from './utils/reminders'
 
-const COMPANY_SHIFT: ShiftRules = { ...COMPANY_HOURS, name: 'Company hours' }
+const COMPANY_SHIFT: ShiftRules = { ...COMPANY_HOURS, name: 'Company hours', holidayCountry: '' }
 
 const shiftSelect = {
   id: true,
@@ -27,6 +27,7 @@ const shiftSelect = {
   workdays: true,
   autoClockOutHours: true,
   sendReminders: true,
+  holidayCountry: true,
 } as const
 
 function dateKeyOf(date: Date) {
@@ -63,7 +64,7 @@ export async function loadSnapshots(now: Date): Promise<OrgSnapshot[]> {
     }),
     db.attendanceHoliday.findMany({
       where: { date: window },
-      select: { organizationId: true, date: true },
+      select: { organizationId: true, date: true, name: true, country: true },
     }),
     db.attendanceLeave.findMany({
       where: { date: window },
@@ -130,9 +131,9 @@ export async function loadSnapshots(now: Date): Promise<OrgSnapshot[]> {
       organizationId: id,
       timeZone,
       people,
-      holidayToday: holidays.some(
-        (one) => one.organizationId === id && dateKeyOf(one.date) === today,
-      ),
+      holidaysToday: holidays
+        .filter((one) => one.organizationId === id && dateKeyOf(one.date) === today)
+        .map((one) => ({ date: today, name: one.name, country: one.country })),
       onLeaveToday: new Set(
         leave
           .filter((one) => userIds.has(one.userId) && dateKeyOf(one.date) === today)

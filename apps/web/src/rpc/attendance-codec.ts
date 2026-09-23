@@ -138,11 +138,19 @@ export function holidayToProto(holiday: AttendanceHolidayRow): AttendanceHoliday
     id: holiday.id,
     date: holiday.date,
     name: holiday.name,
+    country: holiday.country,
+    imported: holiday.imported,
   }
 }
 
 export function holidayFromProto(holiday: AttendanceHolidayMessage): AttendanceHolidayRow {
-  return { id: holiday.id, date: holiday.date, name: holiday.name }
+  return {
+    id: holiday.id,
+    date: holiday.date,
+    name: holiday.name,
+    country: holiday.country,
+    imported: holiday.imported,
+  }
 }
 
 export function settingsToProto(settings: AttendanceSettingsRow): AttendanceSettingsMessage {
@@ -180,6 +188,7 @@ export function shiftToProto(shift: AttendanceShiftRow): AttendanceShiftMessage 
     autoClockOutHours: shift.autoClockOutHours,
     isDefault: shift.isDefault,
     sendReminders: shift.sendReminders,
+    holidayCountry: shift.holidayCountry,
   }
 }
 
@@ -200,6 +209,7 @@ export function shiftFromProto(shift: AttendanceShiftMessage | undefined): Atten
     autoClockOutHours: shift.autoClockOutHours,
     isDefault: shift.isDefault,
     sendReminders: shift.sendReminders,
+    holidayCountry: shift.holidayCountry,
   }
 }
 

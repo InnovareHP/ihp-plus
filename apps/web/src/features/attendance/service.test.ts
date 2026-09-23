@@ -47,6 +47,12 @@ const storage = vi.hoisted(() => ({ objectUrl: vi.fn(), deleteObject: vi.fn() })
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/activity', () => activity)
 vi.mock('@/lib/s3', () => storage)
+const calendar = vi.hoisted(() => ({ fillHolidays: vi.fn(), fillUpcomingHolidays: vi.fn() }))
+// The row mapping stays real; only the writes the fill makes are stood in for.
+vi.mock('./holiday-calendar', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./holiday-calendar')>()),
+  ...calendar,
+}))
 // membershipOf is pure, so the real one is kept: how a membership resolves has one definition.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/auth-guard')>()),
@@ -63,6 +69,7 @@ const {
   assignShift,
   deleteShift,
   deleteHoliday,
+  importHolidays,
   loadHolidays,
   loadTimeClock,
   saveHoliday,
@@ -86,6 +93,7 @@ const SHIFT = {
   captureLocation: false,
   autoClockOutHours: 16,
   sendReminders: true,
+  holidayCountry: '',
 }
 
 /** Nobody has a shift of their own, so everyone falls back to the company's. */
@@ -343,6 +351,7 @@ describe('what only an admin may do', () => {
       requireSelfie: true,
       autoClockOutHours: 12,
       sendReminders: true,
+      holidayCountry: '',
       _count: { assignments: 0 },
     })
 
@@ -359,6 +368,7 @@ describe('what only an admin may do', () => {
       captureLocation: false,
       autoClockOutHours: 12,
       sendReminders: true,
+      holidayCountry: '',
     })
 
     expect(saved).toMatchObject({
@@ -368,6 +378,7 @@ describe('what only an admin may do', () => {
       requireSelfie: true,
       autoClockOutHours: 12,
       sendReminders: true,
+      holidayCountry: '',
     })
   })
 
@@ -387,6 +398,7 @@ describe('what only an admin may do', () => {
         captureLocation: false,
         autoClockOutHours: 16,
         sendReminders: true,
+        holidayCountry: '',
       }),
     ).rejects.toMatchObject({ code: Code.AlreadyExists })
   })
@@ -448,6 +460,7 @@ describe('what only an admin may do', () => {
         captureLocation: false,
         autoClockOutHours: 16,
         sendReminders: true,
+        holidayCountry: '',
       }),
     ).rejects.toMatchObject({ code: Code.PermissionDenied })
     await expect(assignShift({ userId: 'user-2', shiftId: 'shift-1' })).rejects.toMatchObject({
@@ -505,7 +518,13 @@ describe('the holiday calendar', () => {
   it('reads one year to anyone, in date order', async () => {
     signedInAs('member')
     prisma.attendanceHoliday.findMany.mockResolvedValue([
-      { id: 'h-1', date: new Date('2026-12-25T00:00:00.000Z'), name: 'Christmas Day' },
+      {
+        id: 'h-1',
+        date: new Date('2026-12-25T00:00:00.000Z'),
+        name: 'Christmas Day',
+        country: '',
+        source: 'manual',
+      },
     ])
 
     const book = await loadHolidays(2026)
@@ -523,7 +542,9 @@ describe('the holiday calendar', () => {
       }),
     )
     expect(book).toEqual({
-      holidays: [{ id: 'h-1', date: '2026-12-25', name: 'Christmas Day' }],
+      holidays: [
+        { id: 'h-1', date: '2026-12-25', name: 'Christmas Day', country: '', imported: false },
+      ],
       canManage: false,
     })
   })
@@ -531,7 +552,9 @@ describe('the holiday calendar', () => {
   it('keeps writing the calendar to an admin', async () => {
     signedInAs('member')
 
-    await expect(saveHoliday({ date: '2026-12-25', name: 'Christmas Day' })).rejects.toMatchObject({
+    await expect(
+      saveHoliday({ date: '2026-12-25', name: 'Christmas Day', country: '' }),
+    ).rejects.toMatchObject({
       code: Code.PermissionDenied,
     })
     await expect(deleteHoliday('h-1')).rejects.toMatchObject({ code: Code.PermissionDenied })
@@ -544,16 +567,24 @@ describe('the holiday calendar', () => {
       id: 'h-1',
       date: new Date('2026-12-25T00:00:00.000Z'),
       name: 'Christmas Day',
+      country: '',
+      source: 'manual',
     })
 
-    await expect(saveHoliday({ date: '2026-12-25', name: 'Christmas Day' })).resolves.toEqual({
+    await expect(
+      saveHoliday({ date: '2026-12-25', name: 'Christmas Day', country: '' }),
+    ).resolves.toEqual({
       id: 'h-1',
       date: '2026-12-25',
       name: 'Christmas Day',
+      country: '',
+      imported: false,
     })
 
     prisma.attendanceHoliday.findFirst.mockResolvedValue({ name: 'Christmas Day' })
-    await expect(saveHoliday({ date: '2026-12-25', name: 'Xmas' })).rejects.toMatchObject({
+    await expect(
+      saveHoliday({ date: '2026-12-25', name: 'Xmas', country: '' }),
+    ).rejects.toMatchObject({
       code: Code.AlreadyExists,
       rawMessage: '2026-12-25 is already Christmas Day.',
     })
@@ -571,7 +602,9 @@ describe('the holiday calendar', () => {
     vi.setSystemTime(new Date('2026-12-25T08:00:00.000Z'))
     prisma.attendanceDay.findFirst.mockResolvedValue(null)
     prisma.attendanceDay.findUnique.mockResolvedValue(null)
-    prisma.attendanceHoliday.findUnique.mockResolvedValue({ name: 'Christmas Day' })
+    prisma.attendanceHoliday.findMany.mockResolvedValue([
+      { date: new Date('2026-12-25T00:00:00.000Z'), name: 'Christmas Day', country: '' },
+    ])
 
     const view = await loadTimeClock()
 
@@ -584,7 +617,7 @@ describe('the holiday calendar', () => {
     vi.setSystemTime(new Date('2026-10-06T08:00:00.000Z'))
     prisma.attendanceDay.findFirst.mockResolvedValue(null)
     prisma.attendanceDay.findUnique.mockResolvedValue(null)
-    prisma.attendanceHoliday.findUnique.mockResolvedValue(null)
+    prisma.attendanceHoliday.findMany.mockResolvedValue([])
     prisma.attendanceLeave.findUnique.mockResolvedValue({ name: 'Vacation leave' })
 
     const view = await loadTimeClock()
@@ -615,7 +648,7 @@ describe('days nobody clocked', () => {
   it('lists a missed weekday as absent and approved leave as leave, never a holiday', async () => {
     prisma.member.findMany.mockResolvedValue([memberRow('user-2', 'Ada')])
     prisma.attendanceHoliday.findMany.mockResolvedValue([
-      { date: new Date('2026-09-22T00:00:00.000Z') },
+      { date: new Date('2026-09-22T00:00:00.000Z'), name: 'Company day', country: '' },
     ])
     prisma.attendanceLeave.findMany.mockResolvedValue([
       { userId: 'user-2', date: new Date('2026-09-23T00:00:00.000Z'), name: 'Vacation leave' },
@@ -713,7 +746,7 @@ describe('days nobody clocked', () => {
       memberRow('user-3', 'Grace'),
       memberRow('user-4', 'Linus', { createdAt: new Date('2026-09-30T00:00:00.000Z') }),
     ])
-    prisma.attendanceHoliday.findUnique.mockResolvedValue(null)
+    prisma.attendanceHoliday.findMany.mockResolvedValue([])
     prisma.attendanceLeave.findMany.mockResolvedValue([{ userId: 'user-3', name: 'Sick leave' }])
 
     const early = await loadBoard()
@@ -732,9 +765,99 @@ describe('days nobody clocked', () => {
     const weekend = await loadBoard('2026-09-26')
     expect(weekend.rows[0]?.state).toBe('off')
 
-    prisma.attendanceHoliday.findUnique.mockResolvedValue({ name: 'Founders Day' })
+    prisma.attendanceHoliday.findMany.mockResolvedValue([
+      { date: new Date('2026-09-23T00:00:00.000Z'), name: 'Founders Day', country: '' },
+    ])
     const holiday = await loadBoard('2026-09-23')
     expect(holiday.rows[0]).toMatchObject({ state: 'holiday', offReason: 'Founders Day' })
+
+    // Another country's public holiday leaves someone on a shift without that country working.
+    prisma.attendanceHoliday.findMany.mockResolvedValue([
+      { date: new Date('2026-09-23T00:00:00.000Z'), name: 'Hari Raya', country: 'SG' },
+    ])
+    const elsewhere = await loadBoard('2026-09-23')
+    expect(elsewhere.rows[0]?.state).toBe('absent')
     vi.useRealTimers()
+  })
+})
+
+describe('holidays that follow the shift', () => {
+  const SHIFT = {
+    name: 'Manila day',
+    shiftStartMinutes: 540,
+    shiftEndMinutes: 1080,
+    graceMinutes: 15,
+    workdays: '1,2,3,4,5',
+    requireSelfie: false,
+    requireNote: false,
+    captureLocation: false,
+    autoClockOutHours: 16,
+    sendReminders: true,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    everybodyOn()
+    signedInAs('admin')
+    prisma.attendanceShift.findFirst.mockResolvedValue(null)
+    prisma.attendanceShift.create.mockResolvedValue({
+      id: 'shift-1',
+      ...SHIFT,
+      holidayCountry: 'PH',
+      _count: { assignments: 0 },
+    })
+    calendar.fillUpcomingHolidays.mockResolvedValue(40)
+  })
+
+  it('fills this year and next as soon as a shift follows a country', async () => {
+    await saveShift({ ...SHIFT, holidayCountry: 'PH' })
+
+    expect(prisma.attendanceShift.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ holidayCountry: 'PH' }) }),
+    )
+    expect(calendar.fillUpcomingHolidays).toHaveBeenCalledWith(expect.any(Date), 'org-1')
+  })
+
+  it('fills nothing for a shift that follows no country', async () => {
+    await saveShift({ ...SHIFT, holidayCountry: '' })
+
+    expect(calendar.fillUpcomingHolidays).not.toHaveBeenCalled()
+  })
+
+  it('keeps the shift when the fill fails, since the yearly job tries again', async () => {
+    calendar.fillUpcomingHolidays.mockRejectedValue(new Error('database down'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await expect(saveShift({ ...SHIFT, holidayCountry: 'PH' })).resolves.toMatchObject({
+      holidayCountry: 'PH',
+    })
+  })
+
+  it('refuses a country the holiday calendar does not know', async () => {
+    await expect(saveShift({ ...SHIFT, holidayCountry: 'XX' })).rejects.toMatchObject({
+      code: Code.InvalidArgument,
+    })
+    await expect(importHolidays({ year: 2026, country: 'XX' })).rejects.toMatchObject({
+      code: Code.InvalidArgument,
+    })
+  })
+
+  it('fills a year on demand for an admin only', async () => {
+    const rizal = {
+      id: 'h-1',
+      date: '2026-12-30',
+      name: 'Rizal Day',
+      country: 'PH',
+      imported: true,
+    }
+    calendar.fillHolidays.mockResolvedValue([rizal])
+
+    await expect(importHolidays({ year: 2026, country: 'ph' })).resolves.toEqual([rizal])
+    expect(calendar.fillHolidays).toHaveBeenCalledWith('org-1', 'PH', 2026)
+
+    signedInAs('member')
+    await expect(importHolidays({ year: 2026, country: 'PH' })).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
   })
 })
