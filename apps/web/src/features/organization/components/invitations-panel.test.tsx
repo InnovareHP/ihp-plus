@@ -146,8 +146,11 @@ describe('InvitationsPanel', () => {
     render(<InvitationsPanel invitedBy="Grace Hopper" />)
 
     await person.click(
-      await screen.findByRole('button', { name: 'Cancel the invitation to ada@innovarehp.com' }),
+      await screen.findByRole('button', {
+        name: 'Actions for the invitation to ada@innovarehp.com',
+      }),
     )
+    await person.click(await screen.findByRole('menuitem', { name: 'Cancel' }))
 
     await waitFor(() => expect(screen.queryByText('ada@innovarehp.com')).not.toBeInTheDocument())
     resolve({ ok: true })
@@ -158,8 +161,11 @@ describe('InvitationsPanel', () => {
     render(<InvitationsPanel invitedBy="Grace Hopper" />)
 
     await person.click(
-      await screen.findByRole('button', { name: 'Resend the invitation to ada@innovarehp.com' }),
+      await screen.findByRole('button', {
+        name: 'Actions for the invitation to ada@innovarehp.com',
+      }),
     )
+    await person.click(await screen.findByRole('menuitem', { name: 'Resend' }))
 
     await waitFor(() =>
       expect(actions.resendInvitation).toHaveBeenCalledWith({ invitationId: 'invite-1' }),

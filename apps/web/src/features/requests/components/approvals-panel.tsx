@@ -1,8 +1,9 @@
 'use client'
 
-import { Badge, Button, Group, Modal, Stack, Text } from '@mantine/core'
+import { Badge, Button, Menu, Modal, Stack, Text } from '@mantine/core'
 import Link from 'next/link'
 import { useState } from 'react'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
@@ -87,36 +88,20 @@ export function ApprovalsPanel() {
     {
       key: 'actions',
       header: 'Actions',
-      width: 260,
+      width: 90,
       align: 'right',
       render: (row) => (
-        <Group gap="xs" justify="flex-end" wrap="nowrap">
-          <Button
-            variant="subtle"
-            color="gray"
-            size="compact-sm"
-            aria-label={`${expanded === row.id ? 'Hide' : 'Show'} the answers on ${row.requesterName}'s ${row.formName} request`}
-            aria-expanded={expanded === row.id}
-            onClick={() => setExpanded(expanded === row.id ? null : row.id)}
-          >
-            Answers
-          </Button>
+        <RowActionsMenu name={`${row.requesterName}'s ${row.formName} request`}>
+          <Menu.Item onClick={() => setExpanded(expanded === row.id ? null : row.id)}>
+            {expanded === row.id ? 'Hide answers' : 'Show answers'}
+          </Menu.Item>
           {row.canDecide ? (
-            <Button
-              variant="subtle"
-              size="compact-sm"
-              aria-label={`Approve or reject ${row.requesterName}'s ${row.formName} request`}
-              onClick={() => setDeciding(row)}
-            >
-              Approve or reject
-            </Button>
+            <Menu.Item onClick={() => setDeciding(row)}>Approve or reject</Menu.Item>
           ) : (
-            // A cell with no control and no reason reads as a bug; say which rule applies.
-            <Text size="sm" c="dimmed">
-              {whyNotDecidable(row)}
-            </Text>
+            // A missing decision with no reason reads as a bug; say which rule applies.
+            <Menu.Item disabled>{whyNotDecidable(row)}</Menu.Item>
           )}
-        </Group>
+        </RowActionsMenu>
       ),
     },
   ]
@@ -208,7 +193,7 @@ export function ApprovalsPanel() {
 
 /**
  * Why a row offers no decision. The rules live in canDecide() on the server; this only has to
- * name the one that applies, so an empty Actions cell is never mistaken for a broken table.
+ * name the one that applies, so a missing decision is never mistaken for a broken menu.
  */
 function whyNotDecidable(row: RequestRow) {
   if (row.status !== 'pending') return 'Already decided'

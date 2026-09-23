@@ -89,26 +89,15 @@ export function LibraryBrowser() {
       key: 'actions',
       header: 'Actions',
       align: 'right',
-      width: 140,
+      width: 90,
       render: (entry) => (
-        <Group gap="xs" justify="flex-end" wrap="nowrap">
-          {entry.isFolder ? null : (
-            <Button
-              variant="subtle"
-              size="compact-sm"
-              loading={open.isPending && open.variables === entry.id}
-              onClick={() => open.mutate(entry.id)}
-            >
-              Download
-            </Button>
-          )}
-          <LibraryRowActions
-            entry={entry}
-            onDownload={() => open.mutate(entry.id)}
-            onRename={() => setRenaming(entry)}
-            onDelete={() => setDeleting(entry)}
-          />
-        </Group>
+        <LibraryRowActions
+          entry={entry}
+          isDownloading={open.isPending && open.variables === entry.id}
+          onDownload={() => open.mutate(entry.id)}
+          onRename={() => setRenaming(entry)}
+          onDelete={() => setDeleting(entry)}
+        />
       ),
     },
   ]

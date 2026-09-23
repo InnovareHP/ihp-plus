@@ -92,7 +92,8 @@ describe('LibraryBrowser', () => {
     const opener = vi.spyOn(window, 'open').mockReturnValue(null)
     render(<LibraryBrowser />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Download' }))
+    await userEvent.click(await screen.findByRole('button', { name: `Actions for ${FILE.name}` }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Download' }))
 
     await waitFor(() => expect(actions.libraryFileLink).toHaveBeenCalledWith({ itemId: 'file-1' }))
     expect(opener).toHaveBeenCalledWith('https://graph.test/d', '_blank', 'noopener,noreferrer')
@@ -102,7 +103,8 @@ describe('LibraryBrowser', () => {
     actions.libraryFileLink.mockResolvedValue({ ok: false, message: 'That file is gone.' })
     render(<LibraryBrowser />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Download' }))
+    await userEvent.click(await screen.findByRole('button', { name: `Actions for ${FILE.name}` }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Download' }))
 
     await waitFor(() => expect(announce.announceFailure).toHaveBeenCalledWith('That file is gone.'))
   })

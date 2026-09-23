@@ -240,17 +240,19 @@ describe('BluebookLibrary', () => {
     expect(actions.restoreDocument).toHaveBeenCalledWith({ id: 'doc-1' })
   })
 
-  it('gives a reader the download but no management menu', async () => {
+  it('gives a reader the open action but no management items', async () => {
     actions.listDocuments.mockResolvedValue(page([{ ...CHECKLIST, canManage: false }]))
+    const person = user()
     render(<BluebookLibrary />)
     await screen.findByText('Claim scrubbing checklist')
 
-    expect(
-      screen.getByRole('button', { name: 'Open Claim scrubbing checklist' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: 'Actions for Claim scrubbing checklist' }),
-    ).not.toBeInTheDocument()
+    await person.click(
+      screen.getByRole('button', { name: 'Actions for Claim scrubbing checklist' }),
+    )
+
+    expect(await screen.findByRole('menuitem', { name: 'Open' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Archive' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Edit details' })).not.toBeInTheDocument()
   })
 
   it('hides upload entirely from someone who leads nothing', async () => {
@@ -273,7 +275,10 @@ describe('BluebookLibrary', () => {
     render(<BluebookLibrary />)
     await screen.findByText('Claim scrubbing checklist')
 
-    await person.click(screen.getByRole('button', { name: 'Open Claim scrubbing checklist' }))
+    await person.click(
+      screen.getByRole('button', { name: 'Actions for Claim scrubbing checklist' }),
+    )
+    await person.click(await screen.findByRole('menuitem', { name: 'Open' }))
 
     await waitFor(() => expect(actions.documentLink).toHaveBeenCalledWith({ id: 'doc-1' }))
     expect(opener).toHaveBeenCalledWith('https://files/x', '_blank', 'noopener,noreferrer')

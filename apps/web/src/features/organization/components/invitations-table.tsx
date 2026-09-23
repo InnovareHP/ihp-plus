@@ -1,7 +1,8 @@
 'use client'
 
-import { Badge, Button, Group, Stack, Text } from '@mantine/core'
+import { Badge, Button, Group, Menu, Stack, Text } from '@mantine/core'
 import { useMemo } from 'react'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
@@ -107,29 +108,20 @@ export function InvitationsTable() {
     {
       key: 'actions',
       header: 'Actions',
-      width: 190,
+      width: 90,
       align: 'right',
       render: (row) => (
-        <Group gap="xs" justify="flex-end" wrap="nowrap">
-          <Button
-            variant="subtle"
-            size="compact-sm"
-            aria-label={`Resend the invitation to ${row.email}`}
-            loading={resend.isPending && resend.variables?.invitationId === row.id}
-            onClick={() => resend.mutate({ invitationId: row.id, email: row.email })}
-          >
+        <RowActionsMenu
+          name={`the invitation to ${row.email}`}
+          loading={resend.isPending && resend.variables?.invitationId === row.id}
+        >
+          <Menu.Item onClick={() => resend.mutate({ invitationId: row.id, email: row.email })}>
             Resend
-          </Button>
-          <Button
-            variant="subtle"
-            color="red"
-            size="compact-sm"
-            aria-label={`Cancel the invitation to ${row.email}`}
-            onClick={() => cancel.mutate({ invitationId: row.id })}
-          >
+          </Menu.Item>
+          <Menu.Item color="red" onClick={() => cancel.mutate({ invitationId: row.id })}>
             Cancel
-          </Button>
-        </Group>
+          </Menu.Item>
+        </RowActionsMenu>
       ),
     },
   ]

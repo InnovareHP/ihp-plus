@@ -96,22 +96,26 @@ describe('ApprovalsPanel', () => {
   })
 
   it('offers a decision only on rows the caller may decide', async () => {
+    const person = user()
     render(<ApprovalsPanel />)
 
     const theirs = await screen.findByRole('row', { name: /Ada Lovelace/ })
-    expect(
-      within(theirs).getByRole('button', { name: /Approve or reject Ada Lovelace/ }),
-    ).toBeInTheDocument()
+    await person.click(within(theirs).getByRole('button', { name: /Actions for Ada Lovelace/ }))
+    expect(await screen.findByRole('menuitem', { name: 'Approve or reject' })).toBeEnabled()
+    await person.keyboard('{Escape}')
 
     const mine = screen.getByRole('row', { name: /Grace Hopper/ })
-    expect(within(mine).queryByRole('button', { name: /Decide/ })).not.toBeInTheDocument()
+    await person.click(within(mine).getByRole('button', { name: /Actions for Grace Hopper/ }))
+    expect(await screen.findByRole('menuitem', { name: 'Your own request' })).toBeDisabled()
+    expect(screen.queryByRole('menuitem', { name: 'Approve or reject' })).not.toBeInTheDocument()
   })
 
   it('shows the answers inline without leaving the queue', async () => {
     const person = user()
     render(<ApprovalsPanel />)
 
-    await person.click(await screen.findByRole('button', { name: /Show the answers on Ada/ }))
+    await person.click(await screen.findByRole('button', { name: /Actions for Ada Lovelace/ }))
+    await person.click(await screen.findByRole('menuitem', { name: 'Show answers' }))
 
     expect(await screen.findByText('Laptop')).toBeInTheDocument()
   })
@@ -120,9 +124,8 @@ describe('ApprovalsPanel', () => {
     const person = user()
     render(<ApprovalsPanel />)
 
-    await person.click(
-      await screen.findByRole('button', { name: /Approve or reject Ada Lovelace/ }),
-    )
+    await person.click(await screen.findByRole('button', { name: /Actions for Ada Lovelace/ }))
+    await person.click(await screen.findByRole('menuitem', { name: 'Approve or reject' }))
     await person.click(await screen.findByRole('button', { name: 'Reject request' }))
 
     expect(
@@ -141,9 +144,8 @@ describe('ApprovalsPanel', () => {
     const person = user()
     render(<ApprovalsPanel />)
 
-    await person.click(
-      await screen.findByRole('button', { name: /Approve or reject Ada Lovelace/ }),
-    )
+    await person.click(await screen.findByRole('button', { name: /Actions for Ada Lovelace/ }))
+    await person.click(await screen.findByRole('menuitem', { name: 'Approve or reject' }))
     await person.click(await screen.findByRole('button', { name: 'Approve request' }))
 
     await waitFor(() =>
@@ -165,9 +167,8 @@ describe('ApprovalsPanel', () => {
     const person = user()
     render(<ApprovalsPanel />)
 
-    await person.click(
-      await screen.findByRole('button', { name: /Approve or reject Ada Lovelace/ }),
-    )
+    await person.click(await screen.findByRole('button', { name: /Actions for Ada Lovelace/ }))
+    await person.click(await screen.findByRole('menuitem', { name: 'Approve or reject' }))
     await person.click(await screen.findByRole('button', { name: 'Approve request' }))
 
     await waitFor(() => expect(rpc.decideRequest).toHaveBeenCalled())

@@ -1,9 +1,10 @@
 'use client'
 
-import { Badge, Button, Group, Modal, Stack, Text } from '@mantine/core'
+import { Badge, Button, Group, Menu, Modal, Stack, Text } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
@@ -117,29 +118,21 @@ export function EvaluationTracker() {
     {
       key: 'actions',
       header: 'Actions',
-      width: 180,
+      width: 90,
       align: 'right',
       render: (row) =>
-        row.status === 'pending' ? (
-          <Button
-            variant="subtle"
-            color="red"
-            size="compact-sm"
-            aria-label={`Cancel the ${row.formName} for ${row.employeeName}`}
-            onClick={() => cancel.mutate({ evaluationId: row.id })}
-          >
-            Cancel it
-          </Button>
-        ) : row.status === 'submitted' ? (
-          <Button
-            component={Link}
-            href={evaluationRoute(row.id)}
-            variant="subtle"
-            size="compact-sm"
-            aria-label={`Read the ${row.formName} for ${row.employeeName}`}
-          >
-            Read it
-          </Button>
+        row.status === 'pending' || row.status === 'submitted' ? (
+          <RowActionsMenu name={`the ${row.formName} for ${row.employeeName}`}>
+            {row.status === 'pending' ? (
+              <Menu.Item color="red" onClick={() => cancel.mutate({ evaluationId: row.id })}>
+                Cancel it
+              </Menu.Item>
+            ) : (
+              <Menu.Item component={Link} href={evaluationRoute(row.id)}>
+                Read it
+              </Menu.Item>
+            )}
+          </RowActionsMenu>
         ) : null,
     },
   ]

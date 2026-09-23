@@ -1,7 +1,6 @@
 'use client'
 
 import {
-  ActionIcon,
   Badge,
   Button,
   Flex,
@@ -14,14 +13,9 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAdjustments,
-  IconDotsVertical,
-  IconExternalLink,
-  IconUpload,
-  IconUsers,
-} from '@tabler/icons-react'
+import { IconAdjustments, IconExternalLink, IconUpload, IconUsers } from '@tabler/icons-react'
 import { useState } from 'react'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LinkButton } from '@/components/link-button'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
@@ -228,43 +222,32 @@ export function BluebookLibrary() {
     {
       key: 'actions',
       header: 'Actions',
-      width: 120,
+      width: 90,
       align: 'right',
       render: (row) => (
-        <Group gap={4} justify="flex-end" wrap="nowrap">
-          <Button
-            variant="light"
-            size="compact-sm"
+        <RowActionsMenu name={row.title} loading={open.isPending && open.variables === row.id}>
+          <Menu.Item
             leftSection={<IconExternalLink size={14} aria-hidden />}
-            aria-label={`Open ${row.title}`}
-            loading={open.isPending && open.variables === row.id}
             onClick={() => open.mutate(row.id)}
           >
             Open
-          </Button>
+          </Menu.Item>
           {row.canManage ? (
-            <Menu position="bottom-end" withinPortal>
-              <Menu.Target>
-                <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${row.title}`}>
-                  <IconDotsVertical size={16} aria-hidden />
-                </ActionIcon>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item onClick={() => setEditing(row)}>Edit details</Menu.Item>
-                {row.archivedAt ? (
-                  <Menu.Item onClick={() => restore.mutate({ id: row.id })}>Restore</Menu.Item>
-                ) : (
-                  <Menu.Item onClick={() => archiveWithUndo(row)}>Archive</Menu.Item>
-                )}
-                {isAdmin && row.archivedAt ? (
-                  <Menu.Item color="red" onClick={() => purge.mutate({ id: row.id })}>
-                    Delete for good
-                  </Menu.Item>
-                ) : null}
-              </Menu.Dropdown>
-            </Menu>
+            <>
+              <Menu.Item onClick={() => setEditing(row)}>Edit details</Menu.Item>
+              {row.archivedAt ? (
+                <Menu.Item onClick={() => restore.mutate({ id: row.id })}>Restore</Menu.Item>
+              ) : (
+                <Menu.Item onClick={() => archiveWithUndo(row)}>Archive</Menu.Item>
+              )}
+              {isAdmin && row.archivedAt ? (
+                <Menu.Item color="red" onClick={() => purge.mutate({ id: row.id })}>
+                  Delete for good
+                </Menu.Item>
+              ) : null}
+            </>
           ) : null}
-        </Group>
+        </RowActionsMenu>
       ),
     },
   ]
