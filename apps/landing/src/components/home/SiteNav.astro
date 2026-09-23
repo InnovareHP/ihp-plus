@@ -14,18 +14,18 @@ const link =
 
 <!--
   A zero-height sticky wrapper: the bar follows the page without taking space, so the hero keeps
-  the room it always had for it. Once scrolled, the bar frosts over whatever passes beneath.
+  the room it always had for it. Once scrolled, the same centred links sit in a frosted pill.
 -->
 <div class="sticky top-0 z-50 h-0">
   <nav
     aria-label="Primary"
     data-site-nav
     data-scrolled="false"
-    class="site-nav w-full px-4 pt-6 pb-3 transition-[background-color,box-shadow,backdrop-filter] duration-200 ease-out motion-reduce:transition-none sm:pt-[27px] sm:pb-4 data-[scrolled=true]:bg-night/95 data-[scrolled=true]:shadow-lg data-[scrolled=true]:shadow-night/20 data-[scrolled=true]:supports-[backdrop-filter]:bg-night/75 data-[scrolled=true]:supports-[backdrop-filter]:backdrop-blur-lg data-[scrolled=true]:supports-[backdrop-filter]:backdrop-saturate-150"
+    class="group px-4 pt-6 sm:pt-[27px] data-[scrolled=true]:pt-3 sm:data-[scrolled=true]:pt-3"
   >
     <!-- The lockup sits under the links, so the design leaves the middle of the bar open for it. -->
     <ul
-      class="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:gap-x-12 lg:gap-x-0"
+      class="mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-full border border-transparent transition-[background-color,border-color,box-shadow,backdrop-filter] duration-200 ease-out motion-reduce:transition-none sm:gap-x-12 lg:gap-x-0 group-data-[scrolled=true]:border-white/10 group-data-[scrolled=true]:bg-night/95 group-data-[scrolled=true]:px-6 group-data-[scrolled=true]:py-3 group-data-[scrolled=true]:shadow-lg group-data-[scrolled=true]:shadow-black/25 group-data-[scrolled=true]:supports-[backdrop-filter]:bg-night/65 group-data-[scrolled=true]:supports-[backdrop-filter]:backdrop-blur-xl group-data-[scrolled=true]:supports-[backdrop-filter]:backdrop-saturate-150 sm:group-data-[scrolled=true]:px-8"
     >
       {
         LEFT.map((item, index) => (
