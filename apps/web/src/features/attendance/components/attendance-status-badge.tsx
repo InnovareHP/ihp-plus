@@ -11,6 +11,14 @@ export function AttendanceStatusBadge({ day }: { day: AttendanceDayRow }) {
     )
   }
 
+  if (day.autoClosed) {
+    return (
+      <Badge color="orange" variant="light">
+        Missed clock-out
+      </Badge>
+    )
+  }
+
   return (
     <Badge color="gray" variant="light">
       {day.source === 'manual' ? 'Entered by hand' : 'Recorded'}

@@ -99,7 +99,7 @@ export function TimeClockCard() {
               {shiftLine(settings, shift)}
             </Text>
           </Stack>
-          <ClockStateBadge state={state} />
+          <ClockStateBadge state={state === 'absent' ? 'expected' : state} />
         </Group>
 
         <ClockReading day={today} now={now} state={state} timeZone={settings.timeZone} />

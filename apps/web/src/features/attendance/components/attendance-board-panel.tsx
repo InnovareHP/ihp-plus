@@ -40,7 +40,20 @@ export function AttendanceBoardPanel({ timeZone }: AttendanceBoardPanelProps) {
         </Stack>
       ),
     },
-    { key: 'state', header: 'State', render: (row) => <ClockStateBadge state={row.state} /> },
+    {
+      key: 'state',
+      header: 'State',
+      render: (row) => (
+        <Stack gap={2} align="flex-start">
+          <ClockStateBadge state={row.state} />
+          {row.offReason ? (
+            <Text size="xs" c="dimmed">
+              {row.offReason}
+            </Text>
+          ) : null}
+        </Stack>
+      ),
+    },
     { key: 'in', header: 'In', render: (row) => formatTimeOfDay(row.day?.clockInAt, timeZone) },
     {
       key: 'out',
@@ -105,7 +118,7 @@ export function AttendanceBoardPanel({ timeZone }: AttendanceBoardPanelProps) {
           />
         </Group>
 
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="md">
           <StatCard
             label="Present"
             value={board.data?.presentCount ?? 0}
@@ -119,7 +132,12 @@ export function AttendanceBoardPanel({ timeZone }: AttendanceBoardPanelProps) {
           <StatCard
             label="Absent"
             value={board.data?.absentCount ?? 0}
-            hint="No clock in on this day"
+            hint="Scheduled, past their start, and no clock in"
+          />
+          <StatCard
+            label="On leave"
+            value={board.data?.leaveCount ?? 0}
+            hint="Approved time off for this day"
           />
         </SimpleGrid>
 

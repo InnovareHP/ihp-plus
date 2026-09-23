@@ -22,6 +22,7 @@ const DAY: AttendanceDayRow = {
   isOpen: false,
   onBreak: false,
   breaks: [],
+  autoClosed: false,
 }
 
 describe('timesheetCsv', () => {
@@ -32,6 +33,30 @@ describe('timesheetCsv', () => {
       'Employee,Date,Clock in,Clock out,Worked hours,Break hours,Late minutes,Status,Source,Note',
     )
     expect(row).toContain('Grace Reyes,2026-09-22,09:05,18:05,8.00,1.00,10,recorded,clock')
+  })
+
+  it('marks a missed clock-out and lists the days nobody clocked, newest first', () => {
+    const rows = timesheetCsv([{ ...DAY, autoClosed: true }], 'UTC', [
+      {
+        userId: 'user-1',
+        userName: 'Grace Reyes',
+        workDate: '2026-09-23',
+        kind: 'leave',
+        leaveName: 'Vacation leave',
+      },
+      {
+        userId: 'user-1',
+        userName: 'Grace Reyes',
+        workDate: '2026-09-21',
+        kind: 'absent',
+        leaveName: undefined,
+      },
+    ]).split('\n')
+
+    expect(rows[1]).toBe('Grace Reyes,2026-09-23,,,0.00,0.00,0,leave,,Vacation leave')
+    expect(rows[2]).toContain('Grace Reyes,2026-09-22,')
+    expect(rows[2]).toContain(',missed clock-out,')
+    expect(rows[3]).toBe('Grace Reyes,2026-09-21,,,0.00,0.00,0,absent,,')
   })
 
   it('quotes a note that carries a comma', () => {

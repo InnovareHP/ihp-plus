@@ -22,6 +22,7 @@ import {
   startBreak,
 } from '@/features/attendance/service'
 import {
+  absenceToProto,
   boardRowToProto,
   dayToProto,
   holidayToProto,
@@ -92,6 +93,7 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
       totalWorkedSeconds: log.totalWorkedSeconds,
       totalBreakSeconds: log.totalBreakSeconds,
       totalLateSeconds: log.totalLateSeconds,
+      absences: log.absences.map(absenceToProto),
     }
   },
 
@@ -103,6 +105,7 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
       presentCount: board.presentCount,
       lateCount: board.lateCount,
       absentCount: board.absentCount,
+      leaveCount: board.leaveCount,
     }
   },
 

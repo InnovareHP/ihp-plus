@@ -94,6 +94,8 @@ model AttendanceDay {
   status String @default("open")
   // clock when the buttons produced it, manual when somebody wrote it up.
   source String @default("clock")
+  // True when nobody clocked out and the shift's limit closed the day, until an admin corrects it.
+  autoClosed Boolean @default(false)
   note   String?
 
   clockInSelfieKey  String?

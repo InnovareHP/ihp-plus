@@ -13,6 +13,7 @@ import {
   DEFAULT_SHIFT,
   shiftSchema,
   type AssignShiftValues,
+  type AttendanceAbsenceRow,
   type AttendanceBoard,
   type AttendanceDayRow,
   type AttendanceDayValues,
@@ -31,8 +32,11 @@ import {
   type ShiftValues,
   type TimeClockView,
 } from './schema'
+import { absencesOf, personDateKey } from './utils/absences'
 import {
+  isWorkday,
   lateSecondsFor,
+  minutesOfDay,
   shiftDateKey,
   workDateKey,
   workedSecondsFor,
@@ -97,6 +101,7 @@ const daySelect = {
   clockOutSelfieKey: true,
   clockInLocation: true,
   clockOutLocation: true,
+  autoClosed: true,
   breaks: {
     select: { id: true, startedAt: true, endedAt: true, seconds: true },
     orderBy: { startedAt: 'asc' },
@@ -126,6 +131,7 @@ interface DayRecord {
   clockOutSelfieKey: string | null
   clockInLocation: string | null
   clockOutLocation: string | null
+  autoClosed: boolean
   breaks: BreakRecord[]
 }
 
@@ -271,6 +277,7 @@ async function toDayRow(
     clockOutLocation: viewer.canManage ? (day.clockOutLocation ?? undefined) : undefined,
     isOpen: day.clockOutAt === null,
     onBreak: day.breaks.some((one) => one.endedAt === null),
+    autoClosed: day.autoClosed,
     breaks: day.breaks.map((one) => ({
       id: one.id,
       startedAt: one.startedAt.toISOString(),
@@ -330,6 +337,7 @@ async function closeForgottenDay(day: DayRecord, hours: number): Promise<DayReco
       breakSeconds,
       workedSeconds: workedSecondsFor(day.clockInAt, clockOutAt, breakSeconds),
       status: 'recorded',
+      autoClosed: true,
       note: day.note ?? 'Closed automatically.',
     },
     select: daySelect,
@@ -587,35 +595,203 @@ export interface AttendanceQuery {
   everyone?: boolean
 }
 
+/** A year is the longest range a timesheet is read over; absences are counted day by day. */
+const MAX_RANGE_DAYS = 366
+
+function daysBetween(from: string, to: string) {
+  return (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000
+}
+
+interface RosterEntry {
+  userId: string
+  userName: string
+  jobTitle: string | undefined
+  shift: AttendanceShiftRow
+  /** The first date they could have been expected in. */
+  since: string
+}
+
+/**
+ * Everyone the clock expects, each with the shift they are measured against. A suspended account
+ * is expected nowhere, so it is left out rather than reported absent every day.
+ */
+async function rosterOf(
+  organizationId: string,
+  settings: AttendanceSettingsRow,
+  userId?: string,
+): Promise<RosterEntry[]> {
+  const scope = userId ? { userId } : {}
+  const [members, assignments, fallback] = await Promise.all([
+    db.member.findMany({
+      where: { organizationId, ...scope },
+      select: {
+        userId: true,
+        createdAt: true,
+        user: {
+          select: {
+            name: true,
+            preferredName: true,
+            jobTitle: true,
+            startDate: true,
+            banned: true,
+          },
+        },
+      },
+    }),
+    db.attendanceSchedule.findMany({
+      where: { organizationId, ...scope },
+      select: { userId: true, shift: { select: shiftFields } },
+    }),
+    defaultShiftOf(organizationId, settings),
+  ])
+
+  const byUser = new Map(assignments.map((row) => [row.userId, row.shift]))
+
+  return members
+    .filter((member) => !member.user.banned)
+    .map((member) => {
+      const own = byUser.get(member.userId)
+      const joined = workDateKey(member.createdAt, settings.timeZone)
+      // A start date is a calendar date, so it is read as one rather than shifted into the zone.
+      const started = member.user.startDate?.toISOString().slice(0, 10)
+      return {
+        userId: member.userId,
+        userName: member.user.preferredName ?? member.user.name,
+        jobTitle: member.user.jobTitle ?? undefined,
+        shift: own ? toShiftFields(own, 0, false) : fallback,
+        since: started && started > joined ? started : joined,
+      }
+    })
+    .sort((a, b) => a.userName.localeCompare(b.userName))
+}
+
+/** Closes any day in the list its person forgot to clock out of, as their own clock would. */
+async function settleForgottenDays(
+  days: DayRecord[],
+  roster: readonly RosterEntry[],
+): Promise<DayRecord[]> {
+  const shifts = new Map(roster.map((person) => [person.userId, person.shift]))
+  return Promise.all(
+    days.map((day) => {
+      const shift = shifts.get(day.userId)
+      return day.clockOutAt === null && shift
+        ? closeForgottenDay(day, shift.autoClockOutHours)
+        : day
+    }),
+  )
+}
+
+async function absencesFor(
+  caller: Caller,
+  roster: readonly RosterEntry[],
+  days: readonly DayRecord[],
+  range: { from: string; to: string; today: string },
+): Promise<AttendanceAbsenceRow[]> {
+  const userIds = roster.map((person) => person.userId)
+  const window = { gte: dateOf(range.from), lte: dateOf(range.to) }
+
+  const [holidays, leave] = await Promise.all([
+    db.attendanceHoliday.findMany({
+      where: { organizationId: caller.organizationId, date: window },
+      select: { date: true },
+    }),
+    db.attendanceLeave.findMany({
+      where: { organizationId: caller.organizationId, userId: { in: userIds }, date: window },
+      select: { userId: true, date: true, name: true },
+    }),
+  ])
+
+  return absencesOf({
+    people: roster.map((person) => ({
+      userId: person.userId,
+      userName: person.userName,
+      workdays: person.shift.workdays,
+      since: person.since,
+    })),
+    from: range.from,
+    to: range.to,
+    today: range.today,
+    holidays: new Set(holidays.map((one) => dateKeyOf(one.date))),
+    leave: new Map(leave.map((one) => [personDateKey(one.userId, dateKeyOf(one.date)), one.name])),
+    worked: new Set(days.map((day) => personDateKey(day.userId, dateKeyOf(day.workDate)))),
+  })
+}
+
 export async function loadAttendance(query: AttendanceQuery): Promise<AttendanceLog> {
   const caller = await requireMember()
   const somebodyElse = Boolean(query.everyone || (query.userId && query.userId !== caller.userId))
   if (somebodyElse) requireAdmin(caller, 'Only an admin reads other people’s hours.')
 
-  const days = await db.attendanceDay.findMany({
-    where: {
-      organizationId: caller.organizationId,
-      ...(query.everyone ? {} : { userId: query.userId || caller.userId }),
-      workDate: { gte: dateOf(query.from), lte: dateOf(query.to) },
-    },
-    select: daySelect,
-    orderBy: [{ workDate: 'desc' }, { clockInAt: 'desc' }],
-  })
+  const span = daysBetween(query.from, query.to)
+  if (!(span >= 0)) {
+    throw new ConnectError(
+      'The range has to end on or after the day it starts.',
+      Code.InvalidArgument,
+    )
+  }
+  if (span >= MAX_RANGE_DAYS) {
+    throw new ConnectError('Pick a range of a year or less.', Code.InvalidArgument)
+  }
 
-  const rows = await rowsFor(days, caller)
+  const settings = await settingsOf(caller.organizationId)
+  const userId = query.everyone ? undefined : query.userId || caller.userId
+
+  const [found, roster] = await Promise.all([
+    db.attendanceDay.findMany({
+      where: {
+        organizationId: caller.organizationId,
+        ...(userId ? { userId } : {}),
+        workDate: { gte: dateOf(query.from), lte: dateOf(query.to) },
+      },
+      select: daySelect,
+      orderBy: [{ workDate: 'desc' }, { clockInAt: 'desc' }],
+    }),
+    rosterOf(caller.organizationId, settings, userId),
+  ])
+
+  const days = await settleForgottenDays(found, roster)
+  const [rows, absences] = await Promise.all([
+    rowsFor(days, caller),
+    absencesFor(caller, roster, days, {
+      from: query.from,
+      to: query.to,
+      today: workDateKey(new Date(), settings.timeZone),
+    }),
+  ])
 
   return {
     days: rows,
     totalWorkedSeconds: rows.reduce((total, day) => total + day.workedSeconds, 0),
     totalBreakSeconds: rows.reduce((total, day) => total + day.breakSeconds, 0),
     totalLateSeconds: rows.reduce((total, day) => total + day.lateSeconds, 0),
+    absences,
   }
 }
 
-function stateOf(day: AttendanceDayRow | undefined): AttendanceState {
-  if (!day) return 'absent'
+function stateOf(day: AttendanceDayRow): AttendanceState {
   if (!day.isOpen) return 'out'
   return day.onBreak ? 'break' : 'in'
+}
+
+/** Why somebody with no clock-in that day was not in, most specific reason first. */
+function missingStateOf(input: {
+  person: RosterEntry
+  date: string
+  today: string
+  nowMinutes: number
+  holidayName: string | undefined
+  leaveName: string | undefined
+}): { state: AttendanceState; offReason: string | undefined } {
+  const { person, date } = input
+  if (input.leaveName) return { state: 'leave', offReason: input.leaveName }
+  if (input.holidayName) return { state: 'holiday', offReason: input.holidayName }
+  if (date < person.since || !isWorkday(date, person.shift.workdays)) {
+    return { state: 'off', offReason: undefined }
+  }
+
+  const due = person.shift.shiftStartMinutes + person.shift.graceMinutes
+  const stillDue = date > input.today || (date === input.today && input.nowMinutes < due)
+  return { state: stillDue ? 'expected' : 'absent', offReason: undefined }
 }
 
 export async function loadBoard(date?: string): Promise<AttendanceBoard> {
@@ -623,43 +799,61 @@ export async function loadBoard(date?: string): Promise<AttendanceBoard> {
   requireAdmin(caller, 'Only an admin sees who is in today.')
 
   const settings = await settingsOf(caller.organizationId)
-  const key = date || workDateKey(new Date(), settings.timeZone)
+  const now = new Date()
+  const today = workDateKey(now, settings.timeZone)
+  const key = date || today
 
-  const [members, days] = await Promise.all([
-    db.member.findMany({
-      where: { organizationId: caller.organizationId },
-      select: {
-        userId: true,
-        user: { select: { name: true, preferredName: true, jobTitle: true } },
-      },
-    }),
+  const [roster, found, holiday, leave] = await Promise.all([
+    rosterOf(caller.organizationId, settings),
     db.attendanceDay.findMany({
       where: { organizationId: caller.organizationId, workDate: dateOf(key) },
       select: daySelect,
     }),
+    db.attendanceHoliday.findUnique({
+      where: {
+        organizationId_date: { organizationId: caller.organizationId, date: dateOf(key) },
+      },
+      select: { name: true },
+    }),
+    db.attendanceLeave.findMany({
+      where: { organizationId: caller.organizationId, date: dateOf(key) },
+      select: { userId: true, name: true },
+    }),
   ])
 
+  const days = await settleForgottenDays(found, roster)
   const byUser = new Map((await rowsFor(days, caller)).map((row) => [row.userId, row]))
+  const leaveByUser = new Map(leave.map((one) => [one.userId, one.name]))
+  const nowMinutes = minutesOfDay(now, settings.timeZone)
 
-  const rows = members
-    .map((member) => {
-      const day = byUser.get(member.userId)
-      return {
-        userId: member.userId,
-        userName: member.user.preferredName ?? member.user.name,
-        jobTitle: member.user.jobTitle ?? undefined,
-        day,
-        state: stateOf(day),
-      }
-    })
-    .sort((a, b) => a.userName.localeCompare(b.userName))
+  const rows = roster.map((person) => {
+    const day = byUser.get(person.userId)
+    const reason = day
+      ? { state: stateOf(day), offReason: undefined }
+      : missingStateOf({
+          person,
+          date: key,
+          today,
+          nowMinutes,
+          holidayName: holiday?.name,
+          leaveName: leaveByUser.get(person.userId),
+        })
+    return {
+      userId: person.userId,
+      userName: person.userName,
+      jobTitle: person.jobTitle,
+      day,
+      ...reason,
+    }
+  })
 
   return {
     rows,
     date: key,
-    presentCount: rows.filter((row) => row.state !== 'absent').length,
+    presentCount: rows.filter((row) => row.day !== undefined).length,
     lateCount: rows.filter((row) => (row.day?.lateSeconds ?? 0) > 0).length,
     absentCount: rows.filter((row) => row.state === 'absent').length,
+    leaveCount: rows.filter((row) => row.state === 'leave').length,
   }
 }
 
@@ -718,6 +912,8 @@ export async function saveAttendanceDay(values: AttendanceDayValues): Promise<At
     }),
     status: clockOutAt ? 'recorded' : 'open',
     source: 'manual',
+    // A correction supplies the clock-out somebody forgot, so the day stops reading as missed.
+    autoClosed: false,
     note: parsed.note || null,
     editedById: caller.userId,
   }

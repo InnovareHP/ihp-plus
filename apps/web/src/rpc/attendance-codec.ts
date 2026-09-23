@@ -1,4 +1,5 @@
 import type {
+  AttendanceAbsence as AttendanceAbsenceMessage,
   AttendanceBoardRow as AttendanceBoardRowMessage,
   AttendanceDay as AttendanceDayMessage,
   AttendanceHoliday as AttendanceHolidayMessage,
@@ -9,6 +10,7 @@ import type {
 import {
   DEFAULT_ATTENDANCE_SETTINGS,
   DEFAULT_SHIFT,
+  type AttendanceAbsenceRow,
   type AttendanceBoardRow,
   type AttendanceDayRow,
   type AttendanceHolidayRow,
@@ -30,8 +32,19 @@ function sourceOf(value: string): AttendanceSource {
   return value === 'manual' ? 'manual' : 'clock'
 }
 
+const STATES: readonly AttendanceState[] = [
+  'in',
+  'break',
+  'out',
+  'absent',
+  'leave',
+  'holiday',
+  'off',
+  'expected',
+]
+
 function stateOf(value: string): AttendanceState {
-  return value === 'in' || value === 'break' || value === 'out' ? value : 'absent'
+  return STATES.find((state) => state === value) ?? 'absent'
 }
 
 export function dayToProto(day: AttendanceDayRow): AttendanceDayMessage {
@@ -63,6 +76,7 @@ export function dayToProto(day: AttendanceDayRow): AttendanceDayMessage {
       seconds: one.seconds,
       isRunning: one.isRunning,
     })),
+    autoClosed: day.autoClosed,
   }
 }
 
@@ -93,6 +107,28 @@ export function dayFromProto(day: AttendanceDayMessage): AttendanceDayRow {
       seconds: one.seconds,
       isRunning: one.isRunning,
     })),
+    autoClosed: day.autoClosed,
+  }
+}
+
+export function absenceToProto(absence: AttendanceAbsenceRow): AttendanceAbsenceMessage {
+  return {
+    $typeName: 'ihp.attendance.v1.AttendanceAbsence',
+    userId: absence.userId,
+    userName: absence.userName,
+    workDate: absence.workDate,
+    kind: absence.kind,
+    leaveName: absence.leaveName,
+  }
+}
+
+export function absenceFromProto(absence: AttendanceAbsenceMessage): AttendanceAbsenceRow {
+  return {
+    userId: absence.userId,
+    userName: absence.userName,
+    workDate: absence.workDate,
+    kind: absence.kind === 'leave' ? 'leave' : 'absent',
+    leaveName: absence.leaveName,
   }
 }
 
@@ -207,6 +243,7 @@ export function boardRowToProto(row: AttendanceBoardRow): AttendanceBoardRowMess
     jobTitle: row.jobTitle,
     day: row.day ? dayToProto(row.day) : undefined,
     state: row.state,
+    offReason: row.offReason,
   }
 }
 
@@ -217,5 +254,6 @@ export function boardRowFromProto(row: AttendanceBoardRowMessage): AttendanceBoa
     jobTitle: row.jobTitle,
     day: row.day ? dayFromProto(row.day) : undefined,
     state: stateOf(row.state),
+    offReason: row.offReason,
   }
 }

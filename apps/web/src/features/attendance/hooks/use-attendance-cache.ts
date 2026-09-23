@@ -30,7 +30,7 @@ export async function editLogs(
   for (const [key, log] of previous) {
     if (!log) continue
     const days = edit(log.days)
-    queryClient.setQueryData<AttendanceLog>(key, { days, ...totalsOf(days) })
+    queryClient.setQueryData<AttendanceLog>(key, { ...log, days, ...totalsOf(days) })
   }
 
   return previous

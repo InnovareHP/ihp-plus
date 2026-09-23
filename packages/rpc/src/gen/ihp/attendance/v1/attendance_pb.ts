@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ihp/attendance/v1/attendance.proto.
  */
 export const file_ihp_attendance_v1_attendance: GenFile = /*@__PURE__*/
-  fileDesc("CiJpaHAvYXR0ZW5kYW5jZS92MS9hdHRlbmRhbmNlLnByb3RvEhFpaHAuYXR0ZW5kYW5jZS52MSJ6Cg9BdHRlbmRhbmNlQnJlYWsSCgoCaWQYASABKAkSEgoKc3RhcnRlZF9hdBgCIAEoCRIVCghlbmRlZF9hdBgDIAEoCUgAiAEBEg8KB3NlY29uZHMYBCABKAUSEgoKaXNfcnVubmluZxgFIAEoCEILCglfZW5kZWRfYXQi1QQKDUF0dGVuZGFuY2VEYXkSCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIRCgl1c2VyX25hbWUYAyABKAkSEQoJd29ya19kYXRlGAQgASgJEhMKC2Nsb2NrX2luX2F0GAUgASgJEhkKDGNsb2NrX291dF9hdBgGIAEoCUgAiAEBEhYKDndvcmtlZF9zZWNvbmRzGAcgASgFEhUKDWJyZWFrX3NlY29uZHMYCCABKAUSFAoMbGF0ZV9zZWNvbmRzGAkgASgFEg4KBnN0YXR1cxgKIAEoCRIOCgZzb3VyY2UYCyABKAkSEQoEbm90ZRgMIAEoCUgBiAEBEiAKE2Nsb2NrX2luX3NlbGZpZV91cmwYDSABKAlIAogBARIhChRjbG9ja19vdXRfc2VsZmllX3VybBgOIAEoCUgDiAEBEh4KEWNsb2NrX2luX2xvY2F0aW9uGA8gASgJSASIAQESHwoSY2xvY2tfb3V0X2xvY2F0aW9uGBAgASgJSAWIAQESDwoHaXNfb3BlbhgRIAEoCBIQCghvbl9icmVhaxgSIAEoCBIyCgZicmVha3MYEyADKAsyIi5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlQnJlYWtCDwoNX2Nsb2NrX291dF9hdEIHCgVfbm90ZUIWChRfY2xvY2tfaW5fc2VsZmllX3VybEIXChVfY2xvY2tfb3V0X3NlbGZpZV91cmxCFAoSX2Nsb2NrX2luX2xvY2F0aW9uQhUKE19jbG9ja19vdXRfbG9jYXRpb25KBAgUEBUikQEKEkF0dGVuZGFuY2VTZXR0aW5ncxIRCgl0aW1lX3pvbmUYCiABKAkSHQoQZGVmYXVsdF9zaGlmdF9pZBgLIAEoCUgAiAEBQhMKEV9kZWZhdWx0X3NoaWZ0X2lkSgQIARACSgQIAhADSgQIAxAESgQIBBAFSgQIBRAGSgQIBhAHSgQIBxAISgQICBAJSgQICRAKIp4CCg9BdHRlbmRhbmNlU2hpZnQSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIbChNzaGlmdF9zdGFydF9taW51dGVzGAMgASgFEhkKEXNoaWZ0X2VuZF9taW51dGVzGAQgASgFEhUKDWdyYWNlX21pbnV0ZXMYBSABKAUSEAoId29ya2RheXMYBiABKAkSFgoOYXNzaWduZWRfY291bnQYByABKAUSFgoOcmVxdWlyZV9zZWxmaWUYCCABKAgSFAoMcmVxdWlyZV9ub3RlGAkgASgIEhgKEGNhcHR1cmVfbG9jYXRpb24YCiABKAgSHAoUYXV0b19jbG9ja19vdXRfaG91cnMYCyABKAUSEgoKaXNfZGVmYXVsdBgMIAEoCCKfAgoSQXR0ZW5kYW5jZVNjaGVkdWxlEg8KB3VzZXJfaWQYASABKAkSEQoJdXNlcl9uYW1lGAIgASgJEhsKE3NoaWZ0X3N0YXJ0X21pbnV0ZXMYAyABKAUSGQoRc2hpZnRfZW5kX21pbnV0ZXMYBCABKAUSFQoNZ3JhY2VfbWludXRlcxgFIAEoBRIQCgh3b3JrZGF5cxgGIAEoCRISCgppc19kZWZhdWx0GAcgASgIEhUKCHNoaWZ0X2lkGAggASgJSACIAQESFwoKc2hpZnRfbmFtZRgJIAEoCUgBiAEBEhYKCWpvYl90aXRsZRgKIAEoCUgCiAEBQgsKCV9zaGlmdF9pZEINCgtfc2hpZnRfbmFtZUIMCgpfam9iX3RpdGxlIh4KHEdldEF0dGVuZGFuY2VTZXR0aW5nc1JlcXVlc3QibAodR2V0QXR0ZW5kYW5jZVNldHRpbmdzUmVzcG9uc2USNwoIc2V0dGluZ3MYASABKAsyJS5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2V0dGluZ3MSEgoKY2FuX21hbmFnZRgCIAEoCCJaCh9VcGRhdGVBdHRlbmRhbmNlU2V0dGluZ3NSZXF1ZXN0EjcKCHNldHRpbmdzGAEgASgLMiUuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZVNldHRpbmdzIlsKIFVwZGF0ZUF0dGVuZGFuY2VTZXR0aW5nc1Jlc3BvbnNlEjcKCHNldHRpbmdzGAEgASgLMiUuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZVNldHRpbmdzIhUKE0dldFRpbWVDbG9ja1JlcXVlc3Qi4wIKFEdldFRpbWVDbG9ja1Jlc3BvbnNlEjQKBXRvZGF5GAEgASgLMiAuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZURheUgAiAEBEjcKCHNldHRpbmdzGAIgASgLMiUuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZVNldHRpbmdzEjcKCHNjaGVkdWxlGAMgASgLMiUuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZVNjaGVkdWxlEhIKCmNhbl9tYW5hZ2UYBCABKAgSMQoFc2hpZnQYBSABKAsyIi5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2hpZnQSGQoMaG9saWRheV9uYW1lGAYgASgJSAGIAQESFwoKbGVhdmVfbmFtZRgHIAEoCUgCiAEBQggKBl90b2RheUIPCg1faG9saWRheV9uYW1lQg0KC19sZWF2ZV9uYW1lIngKDkNsb2NrSW5SZXF1ZXN0EhcKCnNlbGZpZV9rZXkYASABKAlIAIgBARIVCghsb2NhdGlvbhgCIAEoCUgBiAEBEhEKBG5vdGUYAyABKAlIAogBAUINCgtfc2VsZmllX2tleUILCglfbG9jYXRpb25CBwoFX25vdGUiQAoPQ2xvY2tJblJlc3BvbnNlEi0KA2RheRgBIAEoCzIgLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VEYXkieQoPQ2xvY2tPdXRSZXF1ZXN0EhcKCnNlbGZpZV9rZXkYASABKAlIAIgBARIVCghsb2NhdGlvbhgCIAEoCUgBiAEBEhEKBG5vdGUYAyABKAlIAogBAUINCgtfc2VsZmllX2tleUILCglfbG9jYXRpb25CBwoFX25vdGUiQQoQQ2xvY2tPdXRSZXNwb25zZRItCgNkYXkYASABKAsyIC5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlRGF5IhMKEVN0YXJ0QnJlYWtSZXF1ZXN0IkMKElN0YXJ0QnJlYWtSZXNwb25zZRItCgNkYXkYASABKAsyIC5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlRGF5IhEKD0VuZEJyZWFrUmVxdWVzdCJBChBFbmRCcmVha1Jlc3BvbnNlEi0KA2RheRgBIAEoCzIgLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VEYXkiZQoVTGlzdEF0dGVuZGFuY2VSZXF1ZXN0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSFAoHdXNlcl9pZBgDIAEoCUgAiAEBEhAKCGV2ZXJ5b25lGAQgASgIQgoKCF91c2VyX2lkIp8BChZMaXN0QXR0ZW5kYW5jZVJlc3BvbnNlEi4KBGRheXMYASADKAsyIC5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlRGF5EhwKFHRvdGFsX3dvcmtlZF9zZWNvbmRzGAIgASgFEhsKE3RvdGFsX2JyZWFrX3NlY29uZHMYAyABKAUSGgoSdG90YWxfbGF0ZV9zZWNvbmRzGAQgASgFIjcKGUdldEF0dGVuZGFuY2VCb2FyZFJlcXVlc3QSEQoEZGF0ZRgBIAEoCUgAiAEBQgcKBV9kYXRlIqkBChJBdHRlbmRhbmNlQm9hcmRSb3cSDwoHdXNlcl9pZBgBIAEoCRIRCgl1c2VyX25hbWUYAiABKAkSFgoJam9iX3RpdGxlGAMgASgJSACIAQESMgoDZGF5GAQgASgLMiAuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZURheUgBiAEBEg0KBXN0YXRlGAUgASgJQgwKCl9qb2JfdGl0bGVCBgoEX2RheSKgAQoaR2V0QXR0ZW5kYW5jZUJvYXJkUmVzcG9uc2USMwoEcm93cxgBIAMoCzIlLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VCb2FyZFJvdxIMCgRkYXRlGAIgASgJEhUKDXByZXNlbnRfY291bnQYAyABKAUSEgoKbGF0ZV9jb3VudBgEIAEoBRIUCgxhYnNlbnRfY291bnQYBSABKAUi2AEKGFNhdmVBdHRlbmRhbmNlRGF5UmVxdWVzdBITCgZkYXlfaWQYASABKAlIAIgBARIPCgd1c2VyX2lkGAIgASgJEhEKCXdvcmtfZGF0ZRgDIAEoCRIVCg1jbG9ja19pbl90aW1lGAQgASgJEhsKDmNsb2NrX291dF90aW1lGAUgASgJSAGIAQESFQoNYnJlYWtfbWludXRlcxgGIAEoBRIRCgRub3RlGAcgASgJSAKIAQFCCQoHX2RheV9pZEIRCg9fY2xvY2tfb3V0X3RpbWVCBwoFX25vdGUiSgoZU2F2ZUF0dGVuZGFuY2VEYXlSZXNwb25zZRItCgNkYXkYASABKAsyIC5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlRGF5IiwKGkRlbGV0ZUF0dGVuZGFuY2VEYXlSZXF1ZXN0Eg4KBmRheV9pZBgBIAEoCSIdChtEZWxldGVBdHRlbmRhbmNlRGF5UmVzcG9uc2UiFgoUTGlzdFNjaGVkdWxlc1JlcXVlc3QivgEKFUxpc3RTY2hlZHVsZXNSZXNwb25zZRI4CglzY2hlZHVsZXMYASADKAsyJS5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2NoZWR1bGUSNwoIc2V0dGluZ3MYAiABKAsyJS5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2V0dGluZ3MSMgoGc2hpZnRzGAMgAygLMiIuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZVNoaWZ0IhMKEUxpc3RTaGlmdHNSZXF1ZXN0IoEBChJMaXN0U2hpZnRzUmVzcG9uc2USMgoGc2hpZnRzGAEgAygLMiIuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZVNoaWZ0EjcKCHNldHRpbmdzGAIgASgLMiUuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZVNldHRpbmdzIosCChBTYXZlU2hpZnRSZXF1ZXN0EhUKCHNoaWZ0X2lkGAEgASgJSACIAQESDAoEbmFtZRgCIAEoCRIbChNzaGlmdF9zdGFydF9taW51dGVzGAMgASgFEhkKEXNoaWZ0X2VuZF9taW51dGVzGAQgASgFEhUKDWdyYWNlX21pbnV0ZXMYBSABKAUSEAoId29ya2RheXMYBiABKAkSFgoOcmVxdWlyZV9zZWxmaWUYByABKAgSFAoMcmVxdWlyZV9ub3RlGAggASgIEhgKEGNhcHR1cmVfbG9jYXRpb24YCSABKAgSHAoUYXV0b19jbG9ja19vdXRfaG91cnMYCiABKAVCCwoJX3NoaWZ0X2lkIkYKEVNhdmVTaGlmdFJlc3BvbnNlEjEKBXNoaWZ0GAEgASgLMiIuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZVNoaWZ0IiYKEkRlbGV0ZVNoaWZ0UmVxdWVzdBIQCghzaGlmdF9pZBgBIAEoCSIVChNEZWxldGVTaGlmdFJlc3BvbnNlIkkKEkFzc2lnblNoaWZ0UmVxdWVzdBIPCgd1c2VyX2lkGAEgASgJEhUKCHNoaWZ0X2lkGAIgASgJSACIAQFCCwoJX3NoaWZ0X2lkIk4KE0Fzc2lnblNoaWZ0UmVzcG9uc2USNwoIc2NoZWR1bGUYASABKAsyJS5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2NoZWR1bGUiOwoRQXR0ZW5kYW5jZUhvbGlkYXkSCgoCaWQYASABKAkSDAoEZGF0ZRgCIAEoCRIMCgRuYW1lGAMgASgJIiMKE0xpc3RIb2xpZGF5c1JlcXVlc3QSDAoEeWVhchgBIAEoBSJiChRMaXN0SG9saWRheXNSZXNwb25zZRI2Cghob2xpZGF5cxgBIAMoCzIkLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VIb2xpZGF5EhIKCmNhbl9tYW5hZ2UYAiABKAgiWAoSU2F2ZUhvbGlkYXlSZXF1ZXN0EhcKCmhvbGlkYXlfaWQYASABKAlIAIgBARIMCgRkYXRlGAIgASgJEgwKBG5hbWUYAyABKAlCDQoLX2hvbGlkYXlfaWQiTAoTU2F2ZUhvbGlkYXlSZXNwb25zZRI1Cgdob2xpZGF5GAEgASgLMiQuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZUhvbGlkYXkiKgoURGVsZXRlSG9saWRheVJlcXVlc3QSEgoKaG9saWRheV9pZBgBIAEoCSIXChVEZWxldGVIb2xpZGF5UmVzcG9uc2Uygw8KEUF0dGVuZGFuY2VTZXJ2aWNlEnoKFUdldEF0dGVuZGFuY2VTZXR0aW5ncxIvLmlocC5hdHRlbmRhbmNlLnYxLkdldEF0dGVuZGFuY2VTZXR0aW5nc1JlcXVlc3QaMC5paHAuYXR0ZW5kYW5jZS52MS5HZXRBdHRlbmRhbmNlU2V0dGluZ3NSZXNwb25zZRKDAQoYVXBkYXRlQXR0ZW5kYW5jZVNldHRpbmdzEjIuaWhwLmF0dGVuZGFuY2UudjEuVXBkYXRlQXR0ZW5kYW5jZVNldHRpbmdzUmVxdWVzdBozLmlocC5hdHRlbmRhbmNlLnYxLlVwZGF0ZUF0dGVuZGFuY2VTZXR0aW5nc1Jlc3BvbnNlEl8KDEdldFRpbWVDbG9jaxImLmlocC5hdHRlbmRhbmNlLnYxLkdldFRpbWVDbG9ja1JlcXVlc3QaJy5paHAuYXR0ZW5kYW5jZS52MS5HZXRUaW1lQ2xvY2tSZXNwb25zZRJQCgdDbG9ja0luEiEuaWhwLmF0dGVuZGFuY2UudjEuQ2xvY2tJblJlcXVlc3QaIi5paHAuYXR0ZW5kYW5jZS52MS5DbG9ja0luUmVzcG9uc2USUwoIQ2xvY2tPdXQSIi5paHAuYXR0ZW5kYW5jZS52MS5DbG9ja091dFJlcXVlc3QaIy5paHAuYXR0ZW5kYW5jZS52MS5DbG9ja091dFJlc3BvbnNlElkKClN0YXJ0QnJlYWsSJC5paHAuYXR0ZW5kYW5jZS52MS5TdGFydEJyZWFrUmVxdWVzdBolLmlocC5hdHRlbmRhbmNlLnYxLlN0YXJ0QnJlYWtSZXNwb25zZRJTCghFbmRCcmVhaxIiLmlocC5hdHRlbmRhbmNlLnYxLkVuZEJyZWFrUmVxdWVzdBojLmlocC5hdHRlbmRhbmNlLnYxLkVuZEJyZWFrUmVzcG9uc2USZQoOTGlzdEF0dGVuZGFuY2USKC5paHAuYXR0ZW5kYW5jZS52MS5MaXN0QXR0ZW5kYW5jZVJlcXVlc3QaKS5paHAuYXR0ZW5kYW5jZS52MS5MaXN0QXR0ZW5kYW5jZVJlc3BvbnNlEnEKEkdldEF0dGVuZGFuY2VCb2FyZBIsLmlocC5hdHRlbmRhbmNlLnYxLkdldEF0dGVuZGFuY2VCb2FyZFJlcXVlc3QaLS5paHAuYXR0ZW5kYW5jZS52MS5HZXRBdHRlbmRhbmNlQm9hcmRSZXNwb25zZRJuChFTYXZlQXR0ZW5kYW5jZURheRIrLmlocC5hdHRlbmRhbmNlLnYxLlNhdmVBdHRlbmRhbmNlRGF5UmVxdWVzdBosLmlocC5hdHRlbmRhbmNlLnYxLlNhdmVBdHRlbmRhbmNlRGF5UmVzcG9uc2USdAoTRGVsZXRlQXR0ZW5kYW5jZURheRItLmlocC5hdHRlbmRhbmNlLnYxLkRlbGV0ZUF0dGVuZGFuY2VEYXlSZXF1ZXN0Gi4uaWhwLmF0dGVuZGFuY2UudjEuRGVsZXRlQXR0ZW5kYW5jZURheVJlc3BvbnNlEmIKDUxpc3RTY2hlZHVsZXMSJy5paHAuYXR0ZW5kYW5jZS52MS5MaXN0U2NoZWR1bGVzUmVxdWVzdBooLmlocC5hdHRlbmRhbmNlLnYxLkxpc3RTY2hlZHVsZXNSZXNwb25zZRJZCgpMaXN0U2hpZnRzEiQuaWhwLmF0dGVuZGFuY2UudjEuTGlzdFNoaWZ0c1JlcXVlc3QaJS5paHAuYXR0ZW5kYW5jZS52MS5MaXN0U2hpZnRzUmVzcG9uc2USVgoJU2F2ZVNoaWZ0EiMuaWhwLmF0dGVuZGFuY2UudjEuU2F2ZVNoaWZ0UmVxdWVzdBokLmlocC5hdHRlbmRhbmNlLnYxLlNhdmVTaGlmdFJlc3BvbnNlElwKC0RlbGV0ZVNoaWZ0EiUuaWhwLmF0dGVuZGFuY2UudjEuRGVsZXRlU2hpZnRSZXF1ZXN0GiYuaWhwLmF0dGVuZGFuY2UudjEuRGVsZXRlU2hpZnRSZXNwb25zZRJcCgtBc3NpZ25TaGlmdBIlLmlocC5hdHRlbmRhbmNlLnYxLkFzc2lnblNoaWZ0UmVxdWVzdBomLmlocC5hdHRlbmRhbmNlLnYxLkFzc2lnblNoaWZ0UmVzcG9uc2USXwoMTGlzdEhvbGlkYXlzEiYuaWhwLmF0dGVuZGFuY2UudjEuTGlzdEhvbGlkYXlzUmVxdWVzdBonLmlocC5hdHRlbmRhbmNlLnYxLkxpc3RIb2xpZGF5c1Jlc3BvbnNlElwKC1NhdmVIb2xpZGF5EiUuaWhwLmF0dGVuZGFuY2UudjEuU2F2ZUhvbGlkYXlSZXF1ZXN0GiYuaWhwLmF0dGVuZGFuY2UudjEuU2F2ZUhvbGlkYXlSZXNwb25zZRJiCg1EZWxldGVIb2xpZGF5EicuaWhwLmF0dGVuZGFuY2UudjEuRGVsZXRlSG9saWRheVJlcXVlc3QaKC5paHAuYXR0ZW5kYW5jZS52MS5EZWxldGVIb2xpZGF5UmVzcG9uc2ViBnByb3RvMw");
+  fileDesc("CiJpaHAvYXR0ZW5kYW5jZS92MS9hdHRlbmRhbmNlLnByb3RvEhFpaHAuYXR0ZW5kYW5jZS52MSJ6Cg9BdHRlbmRhbmNlQnJlYWsSCgoCaWQYASABKAkSEgoKc3RhcnRlZF9hdBgCIAEoCRIVCghlbmRlZF9hdBgDIAEoCUgAiAEBEg8KB3NlY29uZHMYBCABKAUSEgoKaXNfcnVubmluZxgFIAEoCEILCglfZW5kZWRfYXQi6gQKDUF0dGVuZGFuY2VEYXkSCgoCaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIRCgl1c2VyX25hbWUYAyABKAkSEQoJd29ya19kYXRlGAQgASgJEhMKC2Nsb2NrX2luX2F0GAUgASgJEhkKDGNsb2NrX291dF9hdBgGIAEoCUgAiAEBEhYKDndvcmtlZF9zZWNvbmRzGAcgASgFEhUKDWJyZWFrX3NlY29uZHMYCCABKAUSFAoMbGF0ZV9zZWNvbmRzGAkgASgFEg4KBnN0YXR1cxgKIAEoCRIOCgZzb3VyY2UYCyABKAkSEQoEbm90ZRgMIAEoCUgBiAEBEiAKE2Nsb2NrX2luX3NlbGZpZV91cmwYDSABKAlIAogBARIhChRjbG9ja19vdXRfc2VsZmllX3VybBgOIAEoCUgDiAEBEh4KEWNsb2NrX2luX2xvY2F0aW9uGA8gASgJSASIAQESHwoSY2xvY2tfb3V0X2xvY2F0aW9uGBAgASgJSAWIAQESDwoHaXNfb3BlbhgRIAEoCBIQCghvbl9icmVhaxgSIAEoCBIyCgZicmVha3MYEyADKAsyIi5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlQnJlYWsSEwoLYXV0b19jbG9zZWQYFSABKAhCDwoNX2Nsb2NrX291dF9hdEIHCgVfbm90ZUIWChRfY2xvY2tfaW5fc2VsZmllX3VybEIXChVfY2xvY2tfb3V0X3NlbGZpZV91cmxCFAoSX2Nsb2NrX2luX2xvY2F0aW9uQhUKE19jbG9ja19vdXRfbG9jYXRpb25KBAgUEBUigAEKEUF0dGVuZGFuY2VBYnNlbmNlEg8KB3VzZXJfaWQYASABKAkSEQoJdXNlcl9uYW1lGAIgASgJEhEKCXdvcmtfZGF0ZRgDIAEoCRIMCgRraW5kGAQgASgJEhcKCmxlYXZlX25hbWUYBSABKAlIAIgBAUINCgtfbGVhdmVfbmFtZSKRAQoSQXR0ZW5kYW5jZVNldHRpbmdzEhEKCXRpbWVfem9uZRgKIAEoCRIdChBkZWZhdWx0X3NoaWZ0X2lkGAsgASgJSACIAQFCEwoRX2RlZmF1bHRfc2hpZnRfaWRKBAgBEAJKBAgCEANKBAgDEARKBAgEEAVKBAgFEAZKBAgGEAdKBAgHEAhKBAgIEAlKBAgJEAoingIKD0F0dGVuZGFuY2VTaGlmdBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhsKE3NoaWZ0X3N0YXJ0X21pbnV0ZXMYAyABKAUSGQoRc2hpZnRfZW5kX21pbnV0ZXMYBCABKAUSFQoNZ3JhY2VfbWludXRlcxgFIAEoBRIQCgh3b3JrZGF5cxgGIAEoCRIWCg5hc3NpZ25lZF9jb3VudBgHIAEoBRIWCg5yZXF1aXJlX3NlbGZpZRgIIAEoCBIUCgxyZXF1aXJlX25vdGUYCSABKAgSGAoQY2FwdHVyZV9sb2NhdGlvbhgKIAEoCBIcChRhdXRvX2Nsb2NrX291dF9ob3VycxgLIAEoBRISCgppc19kZWZhdWx0GAwgASgIIp8CChJBdHRlbmRhbmNlU2NoZWR1bGUSDwoHdXNlcl9pZBgBIAEoCRIRCgl1c2VyX25hbWUYAiABKAkSGwoTc2hpZnRfc3RhcnRfbWludXRlcxgDIAEoBRIZChFzaGlmdF9lbmRfbWludXRlcxgEIAEoBRIVCg1ncmFjZV9taW51dGVzGAUgASgFEhAKCHdvcmtkYXlzGAYgASgJEhIKCmlzX2RlZmF1bHQYByABKAgSFQoIc2hpZnRfaWQYCCABKAlIAIgBARIXCgpzaGlmdF9uYW1lGAkgASgJSAGIAQESFgoJam9iX3RpdGxlGAogASgJSAKIAQFCCwoJX3NoaWZ0X2lkQg0KC19zaGlmdF9uYW1lQgwKCl9qb2JfdGl0bGUiHgocR2V0QXR0ZW5kYW5jZVNldHRpbmdzUmVxdWVzdCJsCh1HZXRBdHRlbmRhbmNlU2V0dGluZ3NSZXNwb25zZRI3CghzZXR0aW5ncxgBIAEoCzIlLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VTZXR0aW5ncxISCgpjYW5fbWFuYWdlGAIgASgIIloKH1VwZGF0ZUF0dGVuZGFuY2VTZXR0aW5nc1JlcXVlc3QSNwoIc2V0dGluZ3MYASABKAsyJS5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2V0dGluZ3MiWwogVXBkYXRlQXR0ZW5kYW5jZVNldHRpbmdzUmVzcG9uc2USNwoIc2V0dGluZ3MYASABKAsyJS5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2V0dGluZ3MiFQoTR2V0VGltZUNsb2NrUmVxdWVzdCLjAgoUR2V0VGltZUNsb2NrUmVzcG9uc2USNAoFdG9kYXkYASABKAsyIC5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlRGF5SACIAQESNwoIc2V0dGluZ3MYAiABKAsyJS5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2V0dGluZ3MSNwoIc2NoZWR1bGUYAyABKAsyJS5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2NoZWR1bGUSEgoKY2FuX21hbmFnZRgEIAEoCBIxCgVzaGlmdBgFIAEoCzIiLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VTaGlmdBIZCgxob2xpZGF5X25hbWUYBiABKAlIAYgBARIXCgpsZWF2ZV9uYW1lGAcgASgJSAKIAQFCCAoGX3RvZGF5Qg8KDV9ob2xpZGF5X25hbWVCDQoLX2xlYXZlX25hbWUieAoOQ2xvY2tJblJlcXVlc3QSFwoKc2VsZmllX2tleRgBIAEoCUgAiAEBEhUKCGxvY2F0aW9uGAIgASgJSAGIAQESEQoEbm90ZRgDIAEoCUgCiAEBQg0KC19zZWxmaWVfa2V5QgsKCV9sb2NhdGlvbkIHCgVfbm90ZSJACg9DbG9ja0luUmVzcG9uc2USLQoDZGF5GAEgASgLMiAuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZURheSJ5Cg9DbG9ja091dFJlcXVlc3QSFwoKc2VsZmllX2tleRgBIAEoCUgAiAEBEhUKCGxvY2F0aW9uGAIgASgJSAGIAQESEQoEbm90ZRgDIAEoCUgCiAEBQg0KC19zZWxmaWVfa2V5QgsKCV9sb2NhdGlvbkIHCgVfbm90ZSJBChBDbG9ja091dFJlc3BvbnNlEi0KA2RheRgBIAEoCzIgLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VEYXkiEwoRU3RhcnRCcmVha1JlcXVlc3QiQwoSU3RhcnRCcmVha1Jlc3BvbnNlEi0KA2RheRgBIAEoCzIgLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VEYXkiEQoPRW5kQnJlYWtSZXF1ZXN0IkEKEEVuZEJyZWFrUmVzcG9uc2USLQoDZGF5GAEgASgLMiAuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZURheSJlChVMaXN0QXR0ZW5kYW5jZVJlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCRIUCgd1c2VyX2lkGAMgASgJSACIAQESEAoIZXZlcnlvbmUYBCABKAhCCgoIX3VzZXJfaWQi1wEKFkxpc3RBdHRlbmRhbmNlUmVzcG9uc2USLgoEZGF5cxgBIAMoCzIgLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VEYXkSHAoUdG90YWxfd29ya2VkX3NlY29uZHMYAiABKAUSGwoTdG90YWxfYnJlYWtfc2Vjb25kcxgDIAEoBRIaChJ0b3RhbF9sYXRlX3NlY29uZHMYBCABKAUSNgoIYWJzZW5jZXMYBSADKAsyJC5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlQWJzZW5jZSI3ChlHZXRBdHRlbmRhbmNlQm9hcmRSZXF1ZXN0EhEKBGRhdGUYASABKAlIAIgBAUIHCgVfZGF0ZSLRAQoSQXR0ZW5kYW5jZUJvYXJkUm93Eg8KB3VzZXJfaWQYASABKAkSEQoJdXNlcl9uYW1lGAIgASgJEhYKCWpvYl90aXRsZRgDIAEoCUgAiAEBEjIKA2RheRgEIAEoCzIgLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VEYXlIAYgBARINCgVzdGF0ZRgFIAEoCRIXCgpvZmZfcmVhc29uGAYgASgJSAKIAQFCDAoKX2pvYl90aXRsZUIGCgRfZGF5Qg0KC19vZmZfcmVhc29uIrUBChpHZXRBdHRlbmRhbmNlQm9hcmRSZXNwb25zZRIzCgRyb3dzGAEgAygLMiUuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZUJvYXJkUm93EgwKBGRhdGUYAiABKAkSFQoNcHJlc2VudF9jb3VudBgDIAEoBRISCgpsYXRlX2NvdW50GAQgASgFEhQKDGFic2VudF9jb3VudBgFIAEoBRITCgtsZWF2ZV9jb3VudBgGIAEoBSLYAQoYU2F2ZUF0dGVuZGFuY2VEYXlSZXF1ZXN0EhMKBmRheV9pZBgBIAEoCUgAiAEBEg8KB3VzZXJfaWQYAiABKAkSEQoJd29ya19kYXRlGAMgASgJEhUKDWNsb2NrX2luX3RpbWUYBCABKAkSGwoOY2xvY2tfb3V0X3RpbWUYBSABKAlIAYgBARIVCg1icmVha19taW51dGVzGAYgASgFEhEKBG5vdGUYByABKAlIAogBAUIJCgdfZGF5X2lkQhEKD19jbG9ja19vdXRfdGltZUIHCgVfbm90ZSJKChlTYXZlQXR0ZW5kYW5jZURheVJlc3BvbnNlEi0KA2RheRgBIAEoCzIgLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VEYXkiLAoaRGVsZXRlQXR0ZW5kYW5jZURheVJlcXVlc3QSDgoGZGF5X2lkGAEgASgJIh0KG0RlbGV0ZUF0dGVuZGFuY2VEYXlSZXNwb25zZSIWChRMaXN0U2NoZWR1bGVzUmVxdWVzdCK+AQoVTGlzdFNjaGVkdWxlc1Jlc3BvbnNlEjgKCXNjaGVkdWxlcxgBIAMoCzIlLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VTY2hlZHVsZRI3CghzZXR0aW5ncxgCIAEoCzIlLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VTZXR0aW5ncxIyCgZzaGlmdHMYAyADKAsyIi5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2hpZnQiEwoRTGlzdFNoaWZ0c1JlcXVlc3QigQEKEkxpc3RTaGlmdHNSZXNwb25zZRIyCgZzaGlmdHMYASADKAsyIi5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2hpZnQSNwoIc2V0dGluZ3MYAiABKAsyJS5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2V0dGluZ3MiiwIKEFNhdmVTaGlmdFJlcXVlc3QSFQoIc2hpZnRfaWQYASABKAlIAIgBARIMCgRuYW1lGAIgASgJEhsKE3NoaWZ0X3N0YXJ0X21pbnV0ZXMYAyABKAUSGQoRc2hpZnRfZW5kX21pbnV0ZXMYBCABKAUSFQoNZ3JhY2VfbWludXRlcxgFIAEoBRIQCgh3b3JrZGF5cxgGIAEoCRIWCg5yZXF1aXJlX3NlbGZpZRgHIAEoCBIUCgxyZXF1aXJlX25vdGUYCCABKAgSGAoQY2FwdHVyZV9sb2NhdGlvbhgJIAEoCBIcChRhdXRvX2Nsb2NrX291dF9ob3VycxgKIAEoBUILCglfc2hpZnRfaWQiRgoRU2F2ZVNoaWZ0UmVzcG9uc2USMQoFc2hpZnQYASABKAsyIi5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlU2hpZnQiJgoSRGVsZXRlU2hpZnRSZXF1ZXN0EhAKCHNoaWZ0X2lkGAEgASgJIhUKE0RlbGV0ZVNoaWZ0UmVzcG9uc2UiSQoSQXNzaWduU2hpZnRSZXF1ZXN0Eg8KB3VzZXJfaWQYASABKAkSFQoIc2hpZnRfaWQYAiABKAlIAIgBAUILCglfc2hpZnRfaWQiTgoTQXNzaWduU2hpZnRSZXNwb25zZRI3CghzY2hlZHVsZRgBIAEoCzIlLmlocC5hdHRlbmRhbmNlLnYxLkF0dGVuZGFuY2VTY2hlZHVsZSI7ChFBdHRlbmRhbmNlSG9saWRheRIKCgJpZBgBIAEoCRIMCgRkYXRlGAIgASgJEgwKBG5hbWUYAyABKAkiIwoTTGlzdEhvbGlkYXlzUmVxdWVzdBIMCgR5ZWFyGAEgASgFImIKFExpc3RIb2xpZGF5c1Jlc3BvbnNlEjYKCGhvbGlkYXlzGAEgAygLMiQuaWhwLmF0dGVuZGFuY2UudjEuQXR0ZW5kYW5jZUhvbGlkYXkSEgoKY2FuX21hbmFnZRgCIAEoCCJYChJTYXZlSG9saWRheVJlcXVlc3QSFwoKaG9saWRheV9pZBgBIAEoCUgAiAEBEgwKBGRhdGUYAiABKAkSDAoEbmFtZRgDIAEoCUINCgtfaG9saWRheV9pZCJMChNTYXZlSG9saWRheVJlc3BvbnNlEjUKB2hvbGlkYXkYASABKAsyJC5paHAuYXR0ZW5kYW5jZS52MS5BdHRlbmRhbmNlSG9saWRheSIqChREZWxldGVIb2xpZGF5UmVxdWVzdBISCgpob2xpZGF5X2lkGAEgASgJIhcKFURlbGV0ZUhvbGlkYXlSZXNwb25zZTKDDwoRQXR0ZW5kYW5jZVNlcnZpY2USegoVR2V0QXR0ZW5kYW5jZVNldHRpbmdzEi8uaWhwLmF0dGVuZGFuY2UudjEuR2V0QXR0ZW5kYW5jZVNldHRpbmdzUmVxdWVzdBowLmlocC5hdHRlbmRhbmNlLnYxLkdldEF0dGVuZGFuY2VTZXR0aW5nc1Jlc3BvbnNlEoMBChhVcGRhdGVBdHRlbmRhbmNlU2V0dGluZ3MSMi5paHAuYXR0ZW5kYW5jZS52MS5VcGRhdGVBdHRlbmRhbmNlU2V0dGluZ3NSZXF1ZXN0GjMuaWhwLmF0dGVuZGFuY2UudjEuVXBkYXRlQXR0ZW5kYW5jZVNldHRpbmdzUmVzcG9uc2USXwoMR2V0VGltZUNsb2NrEiYuaWhwLmF0dGVuZGFuY2UudjEuR2V0VGltZUNsb2NrUmVxdWVzdBonLmlocC5hdHRlbmRhbmNlLnYxLkdldFRpbWVDbG9ja1Jlc3BvbnNlElAKB0Nsb2NrSW4SIS5paHAuYXR0ZW5kYW5jZS52MS5DbG9ja0luUmVxdWVzdBoiLmlocC5hdHRlbmRhbmNlLnYxLkNsb2NrSW5SZXNwb25zZRJTCghDbG9ja091dBIiLmlocC5hdHRlbmRhbmNlLnYxLkNsb2NrT3V0UmVxdWVzdBojLmlocC5hdHRlbmRhbmNlLnYxLkNsb2NrT3V0UmVzcG9uc2USWQoKU3RhcnRCcmVhaxIkLmlocC5hdHRlbmRhbmNlLnYxLlN0YXJ0QnJlYWtSZXF1ZXN0GiUuaWhwLmF0dGVuZGFuY2UudjEuU3RhcnRCcmVha1Jlc3BvbnNlElMKCEVuZEJyZWFrEiIuaWhwLmF0dGVuZGFuY2UudjEuRW5kQnJlYWtSZXF1ZXN0GiMuaWhwLmF0dGVuZGFuY2UudjEuRW5kQnJlYWtSZXNwb25zZRJlCg5MaXN0QXR0ZW5kYW5jZRIoLmlocC5hdHRlbmRhbmNlLnYxLkxpc3RBdHRlbmRhbmNlUmVxdWVzdBopLmlocC5hdHRlbmRhbmNlLnYxLkxpc3RBdHRlbmRhbmNlUmVzcG9uc2UScQoSR2V0QXR0ZW5kYW5jZUJvYXJkEiwuaWhwLmF0dGVuZGFuY2UudjEuR2V0QXR0ZW5kYW5jZUJvYXJkUmVxdWVzdBotLmlocC5hdHRlbmRhbmNlLnYxLkdldEF0dGVuZGFuY2VCb2FyZFJlc3BvbnNlEm4KEVNhdmVBdHRlbmRhbmNlRGF5EisuaWhwLmF0dGVuZGFuY2UudjEuU2F2ZUF0dGVuZGFuY2VEYXlSZXF1ZXN0GiwuaWhwLmF0dGVuZGFuY2UudjEuU2F2ZUF0dGVuZGFuY2VEYXlSZXNwb25zZRJ0ChNEZWxldGVBdHRlbmRhbmNlRGF5Ei0uaWhwLmF0dGVuZGFuY2UudjEuRGVsZXRlQXR0ZW5kYW5jZURheVJlcXVlc3QaLi5paHAuYXR0ZW5kYW5jZS52MS5EZWxldGVBdHRlbmRhbmNlRGF5UmVzcG9uc2USYgoNTGlzdFNjaGVkdWxlcxInLmlocC5hdHRlbmRhbmNlLnYxLkxpc3RTY2hlZHVsZXNSZXF1ZXN0GiguaWhwLmF0dGVuZGFuY2UudjEuTGlzdFNjaGVkdWxlc1Jlc3BvbnNlElkKCkxpc3RTaGlmdHMSJC5paHAuYXR0ZW5kYW5jZS52MS5MaXN0U2hpZnRzUmVxdWVzdBolLmlocC5hdHRlbmRhbmNlLnYxLkxpc3RTaGlmdHNSZXNwb25zZRJWCglTYXZlU2hpZnQSIy5paHAuYXR0ZW5kYW5jZS52MS5TYXZlU2hpZnRSZXF1ZXN0GiQuaWhwLmF0dGVuZGFuY2UudjEuU2F2ZVNoaWZ0UmVzcG9uc2USXAoLRGVsZXRlU2hpZnQSJS5paHAuYXR0ZW5kYW5jZS52MS5EZWxldGVTaGlmdFJlcXVlc3QaJi5paHAuYXR0ZW5kYW5jZS52MS5EZWxldGVTaGlmdFJlc3BvbnNlElwKC0Fzc2lnblNoaWZ0EiUuaWhwLmF0dGVuZGFuY2UudjEuQXNzaWduU2hpZnRSZXF1ZXN0GiYuaWhwLmF0dGVuZGFuY2UudjEuQXNzaWduU2hpZnRSZXNwb25zZRJfCgxMaXN0SG9saWRheXMSJi5paHAuYXR0ZW5kYW5jZS52MS5MaXN0SG9saWRheXNSZXF1ZXN0GicuaWhwLmF0dGVuZGFuY2UudjEuTGlzdEhvbGlkYXlzUmVzcG9uc2USXAoLU2F2ZUhvbGlkYXkSJS5paHAuYXR0ZW5kYW5jZS52MS5TYXZlSG9saWRheVJlcXVlc3QaJi5paHAuYXR0ZW5kYW5jZS52MS5TYXZlSG9saWRheVJlc3BvbnNlEmIKDURlbGV0ZUhvbGlkYXkSJy5paHAuYXR0ZW5kYW5jZS52MS5EZWxldGVIb2xpZGF5UmVxdWVzdBooLmlocC5hdHRlbmRhbmNlLnYxLkRlbGV0ZUhvbGlkYXlSZXNwb25zZWIGcHJvdG8z");
 
 /**
  * A break inside a day; one with no ended_at is the break being taken right now.
@@ -159,6 +159,13 @@ export type AttendanceDay = Message<"ihp.attendance.v1.AttendanceDay"> & {
    * @generated from field: repeated ihp.attendance.v1.AttendanceBreak breaks = 19;
    */
   breaks: AttendanceBreak[];
+
+  /**
+   * Nobody clocked out, so the shift's limit closed the day; cleared once an admin corrects it.
+   *
+   * @generated from field: bool auto_closed = 21;
+   */
+  autoClosed: boolean;
 };
 
 /**
@@ -167,6 +174,47 @@ export type AttendanceDay = Message<"ihp.attendance.v1.AttendanceDay"> & {
  */
 export const AttendanceDaySchema: GenMessage<AttendanceDay> = /*@__PURE__*/
   messageDesc(file_ihp_attendance_v1_attendance, 1);
+
+/**
+ * A scheduled day with no clock-in: excused by approved leave, or missed.
+ *
+ * @generated from message ihp.attendance.v1.AttendanceAbsence
+ */
+export type AttendanceAbsence = Message<"ihp.attendance.v1.AttendanceAbsence"> & {
+  /**
+   * @generated from field: string user_id = 1;
+   */
+  userId: string;
+
+  /**
+   * @generated from field: string user_name = 2;
+   */
+  userName: string;
+
+  /**
+   * @generated from field: string work_date = 3;
+   */
+  workDate: string;
+
+  /**
+   * absent or leave.
+   *
+   * @generated from field: string kind = 4;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: optional string leave_name = 5;
+   */
+  leaveName?: string | undefined;
+};
+
+/**
+ * Describes the message ihp.attendance.v1.AttendanceAbsence.
+ * Use `create(AttendanceAbsenceSchema)` to create a new message.
+ */
+export const AttendanceAbsenceSchema: GenMessage<AttendanceAbsence> = /*@__PURE__*/
+  messageDesc(file_ihp_attendance_v1_attendance, 2);
 
 /**
  * How the organization runs its clock. Every member reads it; only an admin writes it.
@@ -192,7 +240,7 @@ export type AttendanceSettings = Message<"ihp.attendance.v1.AttendanceSettings">
  * Use `create(AttendanceSettingsSchema)` to create a new message.
  */
 export const AttendanceSettingsSchema: GenMessage<AttendanceSettings> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 2);
+  messageDesc(file_ihp_attendance_v1_attendance, 3);
 
 /**
  * A named set of hours and the rules that go with them, written once and given to as many people
@@ -273,7 +321,7 @@ export type AttendanceShift = Message<"ihp.attendance.v1.AttendanceShift"> & {
  * Use `create(AttendanceShiftSchema)` to create a new message.
  */
 export const AttendanceShiftSchema: GenMessage<AttendanceShift> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 3);
+  messageDesc(file_ihp_attendance_v1_attendance, 4);
 
 /**
  * The shift one person works; absent means they work the company hours in the settings.
@@ -339,7 +387,7 @@ export type AttendanceSchedule = Message<"ihp.attendance.v1.AttendanceSchedule">
  * Use `create(AttendanceScheduleSchema)` to create a new message.
  */
 export const AttendanceScheduleSchema: GenMessage<AttendanceSchedule> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 4);
+  messageDesc(file_ihp_attendance_v1_attendance, 5);
 
 /**
  * @generated from message ihp.attendance.v1.GetAttendanceSettingsRequest
@@ -352,7 +400,7 @@ export type GetAttendanceSettingsRequest = Message<"ihp.attendance.v1.GetAttenda
  * Use `create(GetAttendanceSettingsRequestSchema)` to create a new message.
  */
 export const GetAttendanceSettingsRequestSchema: GenMessage<GetAttendanceSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 5);
+  messageDesc(file_ihp_attendance_v1_attendance, 6);
 
 /**
  * @generated from message ihp.attendance.v1.GetAttendanceSettingsResponse
@@ -376,7 +424,7 @@ export type GetAttendanceSettingsResponse = Message<"ihp.attendance.v1.GetAttend
  * Use `create(GetAttendanceSettingsResponseSchema)` to create a new message.
  */
 export const GetAttendanceSettingsResponseSchema: GenMessage<GetAttendanceSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 6);
+  messageDesc(file_ihp_attendance_v1_attendance, 7);
 
 /**
  * @generated from message ihp.attendance.v1.UpdateAttendanceSettingsRequest
@@ -393,7 +441,7 @@ export type UpdateAttendanceSettingsRequest = Message<"ihp.attendance.v1.UpdateA
  * Use `create(UpdateAttendanceSettingsRequestSchema)` to create a new message.
  */
 export const UpdateAttendanceSettingsRequestSchema: GenMessage<UpdateAttendanceSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 7);
+  messageDesc(file_ihp_attendance_v1_attendance, 8);
 
 /**
  * @generated from message ihp.attendance.v1.UpdateAttendanceSettingsResponse
@@ -410,7 +458,7 @@ export type UpdateAttendanceSettingsResponse = Message<"ihp.attendance.v1.Update
  * Use `create(UpdateAttendanceSettingsResponseSchema)` to create a new message.
  */
 export const UpdateAttendanceSettingsResponseSchema: GenMessage<UpdateAttendanceSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 8);
+  messageDesc(file_ihp_attendance_v1_attendance, 9);
 
 /**
  * Everything the clock screen needs in one call: today's row, the rules, and this person's shift.
@@ -425,7 +473,7 @@ export type GetTimeClockRequest = Message<"ihp.attendance.v1.GetTimeClockRequest
  * Use `create(GetTimeClockRequestSchema)` to create a new message.
  */
 export const GetTimeClockRequestSchema: GenMessage<GetTimeClockRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 9);
+  messageDesc(file_ihp_attendance_v1_attendance, 10);
 
 /**
  * @generated from message ihp.attendance.v1.GetTimeClockResponse
@@ -478,7 +526,7 @@ export type GetTimeClockResponse = Message<"ihp.attendance.v1.GetTimeClockRespon
  * Use `create(GetTimeClockResponseSchema)` to create a new message.
  */
 export const GetTimeClockResponseSchema: GenMessage<GetTimeClockResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 10);
+  messageDesc(file_ihp_attendance_v1_attendance, 11);
 
 /**
  * @generated from message ihp.attendance.v1.ClockInRequest
@@ -505,7 +553,7 @@ export type ClockInRequest = Message<"ihp.attendance.v1.ClockInRequest"> & {
  * Use `create(ClockInRequestSchema)` to create a new message.
  */
 export const ClockInRequestSchema: GenMessage<ClockInRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 11);
+  messageDesc(file_ihp_attendance_v1_attendance, 12);
 
 /**
  * @generated from message ihp.attendance.v1.ClockInResponse
@@ -522,7 +570,7 @@ export type ClockInResponse = Message<"ihp.attendance.v1.ClockInResponse"> & {
  * Use `create(ClockInResponseSchema)` to create a new message.
  */
 export const ClockInResponseSchema: GenMessage<ClockInResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 12);
+  messageDesc(file_ihp_attendance_v1_attendance, 13);
 
 /**
  * @generated from message ihp.attendance.v1.ClockOutRequest
@@ -549,7 +597,7 @@ export type ClockOutRequest = Message<"ihp.attendance.v1.ClockOutRequest"> & {
  * Use `create(ClockOutRequestSchema)` to create a new message.
  */
 export const ClockOutRequestSchema: GenMessage<ClockOutRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 13);
+  messageDesc(file_ihp_attendance_v1_attendance, 14);
 
 /**
  * @generated from message ihp.attendance.v1.ClockOutResponse
@@ -566,7 +614,7 @@ export type ClockOutResponse = Message<"ihp.attendance.v1.ClockOutResponse"> & {
  * Use `create(ClockOutResponseSchema)` to create a new message.
  */
 export const ClockOutResponseSchema: GenMessage<ClockOutResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 14);
+  messageDesc(file_ihp_attendance_v1_attendance, 15);
 
 /**
  * @generated from message ihp.attendance.v1.StartBreakRequest
@@ -579,7 +627,7 @@ export type StartBreakRequest = Message<"ihp.attendance.v1.StartBreakRequest"> &
  * Use `create(StartBreakRequestSchema)` to create a new message.
  */
 export const StartBreakRequestSchema: GenMessage<StartBreakRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 15);
+  messageDesc(file_ihp_attendance_v1_attendance, 16);
 
 /**
  * @generated from message ihp.attendance.v1.StartBreakResponse
@@ -596,7 +644,7 @@ export type StartBreakResponse = Message<"ihp.attendance.v1.StartBreakResponse">
  * Use `create(StartBreakResponseSchema)` to create a new message.
  */
 export const StartBreakResponseSchema: GenMessage<StartBreakResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 16);
+  messageDesc(file_ihp_attendance_v1_attendance, 17);
 
 /**
  * @generated from message ihp.attendance.v1.EndBreakRequest
@@ -609,7 +657,7 @@ export type EndBreakRequest = Message<"ihp.attendance.v1.EndBreakRequest"> & {
  * Use `create(EndBreakRequestSchema)` to create a new message.
  */
 export const EndBreakRequestSchema: GenMessage<EndBreakRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 17);
+  messageDesc(file_ihp_attendance_v1_attendance, 18);
 
 /**
  * @generated from message ihp.attendance.v1.EndBreakResponse
@@ -626,7 +674,7 @@ export type EndBreakResponse = Message<"ihp.attendance.v1.EndBreakResponse"> & {
  * Use `create(EndBreakResponseSchema)` to create a new message.
  */
 export const EndBreakResponseSchema: GenMessage<EndBreakResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 18);
+  messageDesc(file_ihp_attendance_v1_attendance, 19);
 
 /**
  * Both halves of the log: a member reads their own, an admin reads anyone's.
@@ -664,7 +712,7 @@ export type ListAttendanceRequest = Message<"ihp.attendance.v1.ListAttendanceReq
  * Use `create(ListAttendanceRequestSchema)` to create a new message.
  */
 export const ListAttendanceRequestSchema: GenMessage<ListAttendanceRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 19);
+  messageDesc(file_ihp_attendance_v1_attendance, 20);
 
 /**
  * @generated from message ihp.attendance.v1.ListAttendanceResponse
@@ -689,6 +737,13 @@ export type ListAttendanceResponse = Message<"ihp.attendance.v1.ListAttendanceRe
    * @generated from field: int32 total_late_seconds = 4;
    */
   totalLateSeconds: number;
+
+  /**
+   * Settled days only: today is still running, so it is never counted.
+   *
+   * @generated from field: repeated ihp.attendance.v1.AttendanceAbsence absences = 5;
+   */
+  absences: AttendanceAbsence[];
 };
 
 /**
@@ -696,7 +751,7 @@ export type ListAttendanceResponse = Message<"ihp.attendance.v1.ListAttendanceRe
  * Use `create(ListAttendanceResponseSchema)` to create a new message.
  */
 export const ListAttendanceResponseSchema: GenMessage<ListAttendanceResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 20);
+  messageDesc(file_ihp_attendance_v1_attendance, 21);
 
 /**
  * Who is in, who is late, who is still on the clock.
@@ -717,7 +772,7 @@ export type GetAttendanceBoardRequest = Message<"ihp.attendance.v1.GetAttendance
  * Use `create(GetAttendanceBoardRequestSchema)` to create a new message.
  */
 export const GetAttendanceBoardRequestSchema: GenMessage<GetAttendanceBoardRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 21);
+  messageDesc(file_ihp_attendance_v1_attendance, 22);
 
 /**
  * @generated from message ihp.attendance.v1.AttendanceBoardRow
@@ -744,11 +799,18 @@ export type AttendanceBoardRow = Message<"ihp.attendance.v1.AttendanceBoardRow">
   day?: AttendanceDay | undefined;
 
   /**
-   * in, break, out or absent.
+   * in, break or out with a clock-in; otherwise absent, leave, holiday, off or expected.
    *
    * @generated from field: string state = 5;
    */
   state: string;
+
+  /**
+   * The leave or holiday behind a leave or holiday state.
+   *
+   * @generated from field: optional string off_reason = 6;
+   */
+  offReason?: string | undefined;
 };
 
 /**
@@ -756,7 +818,7 @@ export type AttendanceBoardRow = Message<"ihp.attendance.v1.AttendanceBoardRow">
  * Use `create(AttendanceBoardRowSchema)` to create a new message.
  */
 export const AttendanceBoardRowSchema: GenMessage<AttendanceBoardRow> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 22);
+  messageDesc(file_ihp_attendance_v1_attendance, 23);
 
 /**
  * @generated from message ihp.attendance.v1.GetAttendanceBoardResponse
@@ -786,6 +848,11 @@ export type GetAttendanceBoardResponse = Message<"ihp.attendance.v1.GetAttendanc
    * @generated from field: int32 absent_count = 5;
    */
   absentCount: number;
+
+  /**
+   * @generated from field: int32 leave_count = 6;
+   */
+  leaveCount: number;
 };
 
 /**
@@ -793,7 +860,7 @@ export type GetAttendanceBoardResponse = Message<"ihp.attendance.v1.GetAttendanc
  * Use `create(GetAttendanceBoardResponseSchema)` to create a new message.
  */
 export const GetAttendanceBoardResponseSchema: GenMessage<GetAttendanceBoardResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 23);
+  messageDesc(file_ihp_attendance_v1_attendance, 24);
 
 /**
  * An admin correcting a day, or a member writing one up where the rules allow it. The times are
@@ -845,7 +912,7 @@ export type SaveAttendanceDayRequest = Message<"ihp.attendance.v1.SaveAttendance
  * Use `create(SaveAttendanceDayRequestSchema)` to create a new message.
  */
 export const SaveAttendanceDayRequestSchema: GenMessage<SaveAttendanceDayRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 24);
+  messageDesc(file_ihp_attendance_v1_attendance, 25);
 
 /**
  * @generated from message ihp.attendance.v1.SaveAttendanceDayResponse
@@ -862,7 +929,7 @@ export type SaveAttendanceDayResponse = Message<"ihp.attendance.v1.SaveAttendanc
  * Use `create(SaveAttendanceDayResponseSchema)` to create a new message.
  */
 export const SaveAttendanceDayResponseSchema: GenMessage<SaveAttendanceDayResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 25);
+  messageDesc(file_ihp_attendance_v1_attendance, 26);
 
 /**
  * @generated from message ihp.attendance.v1.DeleteAttendanceDayRequest
@@ -879,7 +946,7 @@ export type DeleteAttendanceDayRequest = Message<"ihp.attendance.v1.DeleteAttend
  * Use `create(DeleteAttendanceDayRequestSchema)` to create a new message.
  */
 export const DeleteAttendanceDayRequestSchema: GenMessage<DeleteAttendanceDayRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 26);
+  messageDesc(file_ihp_attendance_v1_attendance, 27);
 
 /**
  * @generated from message ihp.attendance.v1.DeleteAttendanceDayResponse
@@ -892,7 +959,7 @@ export type DeleteAttendanceDayResponse = Message<"ihp.attendance.v1.DeleteAtten
  * Use `create(DeleteAttendanceDayResponseSchema)` to create a new message.
  */
 export const DeleteAttendanceDayResponseSchema: GenMessage<DeleteAttendanceDayResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 27);
+  messageDesc(file_ihp_attendance_v1_attendance, 28);
 
 /**
  * @generated from message ihp.attendance.v1.ListSchedulesRequest
@@ -905,7 +972,7 @@ export type ListSchedulesRequest = Message<"ihp.attendance.v1.ListSchedulesReque
  * Use `create(ListSchedulesRequestSchema)` to create a new message.
  */
 export const ListSchedulesRequestSchema: GenMessage<ListSchedulesRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 28);
+  messageDesc(file_ihp_attendance_v1_attendance, 29);
 
 /**
  * @generated from message ihp.attendance.v1.ListSchedulesResponse
@@ -932,7 +999,7 @@ export type ListSchedulesResponse = Message<"ihp.attendance.v1.ListSchedulesResp
  * Use `create(ListSchedulesResponseSchema)` to create a new message.
  */
 export const ListSchedulesResponseSchema: GenMessage<ListSchedulesResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 29);
+  messageDesc(file_ihp_attendance_v1_attendance, 30);
 
 /**
  * @generated from message ihp.attendance.v1.ListShiftsRequest
@@ -945,7 +1012,7 @@ export type ListShiftsRequest = Message<"ihp.attendance.v1.ListShiftsRequest"> &
  * Use `create(ListShiftsRequestSchema)` to create a new message.
  */
 export const ListShiftsRequestSchema: GenMessage<ListShiftsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 30);
+  messageDesc(file_ihp_attendance_v1_attendance, 31);
 
 /**
  * @generated from message ihp.attendance.v1.ListShiftsResponse
@@ -967,7 +1034,7 @@ export type ListShiftsResponse = Message<"ihp.attendance.v1.ListShiftsResponse">
  * Use `create(ListShiftsResponseSchema)` to create a new message.
  */
 export const ListShiftsResponseSchema: GenMessage<ListShiftsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 31);
+  messageDesc(file_ihp_attendance_v1_attendance, 32);
 
 /**
  * @generated from message ihp.attendance.v1.SaveShiftRequest
@@ -1031,7 +1098,7 @@ export type SaveShiftRequest = Message<"ihp.attendance.v1.SaveShiftRequest"> & {
  * Use `create(SaveShiftRequestSchema)` to create a new message.
  */
 export const SaveShiftRequestSchema: GenMessage<SaveShiftRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 32);
+  messageDesc(file_ihp_attendance_v1_attendance, 33);
 
 /**
  * @generated from message ihp.attendance.v1.SaveShiftResponse
@@ -1048,7 +1115,7 @@ export type SaveShiftResponse = Message<"ihp.attendance.v1.SaveShiftResponse"> &
  * Use `create(SaveShiftResponseSchema)` to create a new message.
  */
 export const SaveShiftResponseSchema: GenMessage<SaveShiftResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 33);
+  messageDesc(file_ihp_attendance_v1_attendance, 34);
 
 /**
  * @generated from message ihp.attendance.v1.DeleteShiftRequest
@@ -1065,7 +1132,7 @@ export type DeleteShiftRequest = Message<"ihp.attendance.v1.DeleteShiftRequest">
  * Use `create(DeleteShiftRequestSchema)` to create a new message.
  */
 export const DeleteShiftRequestSchema: GenMessage<DeleteShiftRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 34);
+  messageDesc(file_ihp_attendance_v1_attendance, 35);
 
 /**
  * @generated from message ihp.attendance.v1.DeleteShiftResponse
@@ -1078,7 +1145,7 @@ export type DeleteShiftResponse = Message<"ihp.attendance.v1.DeleteShiftResponse
  * Use `create(DeleteShiftResponseSchema)` to create a new message.
  */
 export const DeleteShiftResponseSchema: GenMessage<DeleteShiftResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 35);
+  messageDesc(file_ihp_attendance_v1_attendance, 36);
 
 /**
  * Assigning is done where people are managed; an empty shift_id puts them back on the default.
@@ -1102,7 +1169,7 @@ export type AssignShiftRequest = Message<"ihp.attendance.v1.AssignShiftRequest">
  * Use `create(AssignShiftRequestSchema)` to create a new message.
  */
 export const AssignShiftRequestSchema: GenMessage<AssignShiftRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 36);
+  messageDesc(file_ihp_attendance_v1_attendance, 37);
 
 /**
  * @generated from message ihp.attendance.v1.AssignShiftResponse
@@ -1119,7 +1186,7 @@ export type AssignShiftResponse = Message<"ihp.attendance.v1.AssignShiftResponse
  * Use `create(AssignShiftResponseSchema)` to create a new message.
  */
 export const AssignShiftResponseSchema: GenMessage<AssignShiftResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 37);
+  messageDesc(file_ihp_attendance_v1_attendance, 38);
 
 /**
  * A day the whole company is off.
@@ -1150,7 +1217,7 @@ export type AttendanceHoliday = Message<"ihp.attendance.v1.AttendanceHoliday"> &
  * Use `create(AttendanceHolidaySchema)` to create a new message.
  */
 export const AttendanceHolidaySchema: GenMessage<AttendanceHoliday> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 38);
+  messageDesc(file_ihp_attendance_v1_attendance, 39);
 
 /**
  * @generated from message ihp.attendance.v1.ListHolidaysRequest
@@ -1167,7 +1234,7 @@ export type ListHolidaysRequest = Message<"ihp.attendance.v1.ListHolidaysRequest
  * Use `create(ListHolidaysRequestSchema)` to create a new message.
  */
 export const ListHolidaysRequestSchema: GenMessage<ListHolidaysRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 39);
+  messageDesc(file_ihp_attendance_v1_attendance, 40);
 
 /**
  * @generated from message ihp.attendance.v1.ListHolidaysResponse
@@ -1189,7 +1256,7 @@ export type ListHolidaysResponse = Message<"ihp.attendance.v1.ListHolidaysRespon
  * Use `create(ListHolidaysResponseSchema)` to create a new message.
  */
 export const ListHolidaysResponseSchema: GenMessage<ListHolidaysResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 40);
+  messageDesc(file_ihp_attendance_v1_attendance, 41);
 
 /**
  * @generated from message ihp.attendance.v1.SaveHolidayRequest
@@ -1218,7 +1285,7 @@ export type SaveHolidayRequest = Message<"ihp.attendance.v1.SaveHolidayRequest">
  * Use `create(SaveHolidayRequestSchema)` to create a new message.
  */
 export const SaveHolidayRequestSchema: GenMessage<SaveHolidayRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 41);
+  messageDesc(file_ihp_attendance_v1_attendance, 42);
 
 /**
  * @generated from message ihp.attendance.v1.SaveHolidayResponse
@@ -1235,7 +1302,7 @@ export type SaveHolidayResponse = Message<"ihp.attendance.v1.SaveHolidayResponse
  * Use `create(SaveHolidayResponseSchema)` to create a new message.
  */
 export const SaveHolidayResponseSchema: GenMessage<SaveHolidayResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 42);
+  messageDesc(file_ihp_attendance_v1_attendance, 43);
 
 /**
  * @generated from message ihp.attendance.v1.DeleteHolidayRequest
@@ -1252,7 +1319,7 @@ export type DeleteHolidayRequest = Message<"ihp.attendance.v1.DeleteHolidayReque
  * Use `create(DeleteHolidayRequestSchema)` to create a new message.
  */
 export const DeleteHolidayRequestSchema: GenMessage<DeleteHolidayRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 43);
+  messageDesc(file_ihp_attendance_v1_attendance, 44);
 
 /**
  * @generated from message ihp.attendance.v1.DeleteHolidayResponse
@@ -1265,7 +1332,7 @@ export type DeleteHolidayResponse = Message<"ihp.attendance.v1.DeleteHolidayResp
  * Use `create(DeleteHolidayResponseSchema)` to create a new message.
  */
 export const DeleteHolidayResponseSchema: GenMessage<DeleteHolidayResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_attendance_v1_attendance, 44);
+  messageDesc(file_ihp_attendance_v1_attendance, 45);
 
 /**
  * @generated from service ihp.attendance.v1.AttendanceService

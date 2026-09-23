@@ -5,8 +5,12 @@ export type AttendanceStatus = 'open' | 'recorded'
 
 export type AttendanceSource = 'clock' | 'manual'
 
-/** What the board says about a person right now. */
-export type AttendanceState = 'in' | 'break' | 'out' | 'absent'
+/**
+ * What the board says about a person on a day. The last four only come from the board: leave and
+ * holiday excuse the day, off is outside their shift, and expected is before their start and grace.
+ */
+export type AttendanceState =
+  'in' | 'break' | 'out' | 'absent' | 'leave' | 'holiday' | 'off' | 'expected'
 
 export interface AttendanceBreakRow {
   id: string
@@ -36,6 +40,17 @@ export interface AttendanceDayRow {
   isOpen: boolean
   onBreak: boolean
   breaks: AttendanceBreakRow[]
+  /** Nobody clocked out, so the shift's limit closed it; cleared once an admin corrects it. */
+  autoClosed: boolean
+}
+
+/** A scheduled day with no clock-in: excused by approved leave, or simply missed. */
+export interface AttendanceAbsenceRow {
+  userId: string
+  userName: string
+  workDate: string
+  kind: 'absent' | 'leave'
+  leaveName: string | undefined
 }
 
 export interface AttendanceShiftRow {
@@ -72,6 +87,8 @@ export interface AttendanceBoardRow {
   jobTitle: string | undefined
   day: AttendanceDayRow | undefined
   state: AttendanceState
+  /** The leave or holiday behind a leave or holiday state. */
+  offReason: string | undefined
 }
 
 export interface AttendanceBoard {
@@ -80,6 +97,7 @@ export interface AttendanceBoard {
   presentCount: number
   lateCount: number
   absentCount: number
+  leaveCount: number
 }
 
 export interface AttendanceLog {
@@ -87,6 +105,7 @@ export interface AttendanceLog {
   totalWorkedSeconds: number
   totalBreakSeconds: number
   totalLateSeconds: number
+  absences: AttendanceAbsenceRow[]
 }
 
 export interface TimeClockView {

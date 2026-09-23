@@ -1,4 +1,4 @@
-import type { AttendanceDayRow } from '../schema'
+import type { AttendanceAbsenceRow, AttendanceDayRow } from '../schema'
 import { formatTimeOfDay } from './clock'
 
 const HEADERS = [
@@ -25,24 +25,38 @@ function hours(seconds: number) {
   return (seconds / 3600).toFixed(2)
 }
 
-/** The timesheet as payroll reads it: one row per person per day, hours in decimals. */
-export function timesheetCsv(days: readonly AttendanceDayRow[], timeZone: string): string {
-  const rows = days.map((day) =>
-    [
-      day.userName,
-      day.workDate,
+/**
+ * The timesheet as payroll reads it: one row per person per day, hours in decimals, with the
+ * scheduled days nobody clocked alongside so an unpaid day is not simply missing from the file.
+ */
+export function timesheetCsv(
+  days: readonly AttendanceDayRow[],
+  timeZone: string,
+  absences: readonly AttendanceAbsenceRow[] = [],
+): string {
+  const worked = days.map((day) => ({
+    name: day.userName,
+    date: day.workDate,
+    cells: [
       day.clockInAt ? formatTimeOfDay(day.clockInAt, timeZone) : '',
       day.clockOutAt ? formatTimeOfDay(day.clockOutAt, timeZone) : '',
       hours(day.workedSeconds),
       hours(day.breakSeconds),
       String(Math.round(day.lateSeconds / 60)),
-      day.status,
+      day.autoClosed ? 'missed clock-out' : day.status,
       day.source,
       day.note ?? '',
-    ]
-      .map(cell)
-      .join(','),
-  )
+    ],
+  }))
+  const missed = absences.map((absence) => ({
+    name: absence.userName,
+    date: absence.workDate,
+    cells: ['', '', hours(0), hours(0), '0', absence.kind, '', absence.leaveName ?? ''],
+  }))
+
+  const rows = [...worked, ...missed]
+    .sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name))
+    .map((row) => [row.name, row.date, ...row.cells].map(cell).join(','))
 
   return [HEADERS.join(','), ...rows].join('\n')
 }

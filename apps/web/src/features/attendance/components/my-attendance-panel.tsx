@@ -3,6 +3,7 @@
 import { Card, Group, Stack, Text, Title } from '@mantine/core'
 import { useAttendanceRange } from '../hooks/use-attendance-range'
 import { useAttendanceLog, useTimeClock } from '../hooks/use-time-clock'
+import { AbsencesTable } from './absences-table'
 import { AttendanceLogTable } from './attendance-log-table'
 import { AttendanceRangeFields } from './attendance-range-fields'
 import { DayTotals } from './day-totals'
@@ -31,6 +32,7 @@ export function MyAttendancePanel() {
             <AttendanceRangeFields from={range.from} to={range.to} onChange={range.setRange} />
             <ExportTimesheetButton
               days={log.data?.days}
+              absences={log.data?.absences}
               from={range.from}
               to={range.to}
               timeZone={timeZone}
@@ -52,6 +54,14 @@ export function MyAttendancePanel() {
           onRetry={() => void log.refetch()}
           timeZone={timeZone}
           emptyHint="Clock in on the card above and today will show up here."
+        />
+
+        <AbsencesTable
+          absences={log.data?.absences}
+          isPending={log.isPending}
+          isError={log.isError}
+          isFetching={log.isFetching}
+          onRetry={() => void log.refetch()}
         />
       </Stack>
     </Card>

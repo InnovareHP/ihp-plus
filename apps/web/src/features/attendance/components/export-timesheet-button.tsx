@@ -4,23 +4,31 @@ import { Button } from '@mantine/core'
 import { IconDownload } from '@tabler/icons-react'
 import { track } from '@/lib/analytics'
 import { attendanceEvents } from '../events'
-import type { AttendanceDayRow } from '../schema'
+import type { AttendanceAbsenceRow, AttendanceDayRow } from '../schema'
 import { downloadCsv, timesheetCsv } from '../utils/csv'
 
 export interface ExportTimesheetButtonProps {
   days: readonly AttendanceDayRow[] | undefined
+  absences?: readonly AttendanceAbsenceRow[] | undefined
   from: string
   to: string
   timeZone: string
 }
 
 /** Payroll wants the range as a file, not a screenshot of a table. */
-export function ExportTimesheetButton({ days, from, to, timeZone }: ExportTimesheetButtonProps) {
+export function ExportTimesheetButton({
+  days,
+  absences,
+  from,
+  to,
+  timeZone,
+}: ExportTimesheetButtonProps) {
   const rows = days ?? []
+  const missed = absences ?? []
 
   function download() {
-    downloadCsv(`timesheet-${from}-to-${to}.csv`, timesheetCsv(rows, timeZone))
-    track(attendanceEvents.exported, { days: rows.length })
+    downloadCsv(`timesheet-${from}-to-${to}.csv`, timesheetCsv(rows, timeZone, missed))
+    track(attendanceEvents.exported, { days: rows.length, absences: missed.length })
   }
 
   return (
@@ -28,7 +36,7 @@ export function ExportTimesheetButton({ days, from, to, timeZone }: ExportTimesh
       variant="default"
       leftSection={<IconDownload size={18} />}
       onClick={download}
-      disabled={rows.length === 0}
+      disabled={rows.length === 0 && missed.length === 0}
     >
       Export CSV
     </Button>

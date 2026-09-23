@@ -27,7 +27,7 @@ const prisma = vi.hoisted(() => ({
     delete: vi.fn(),
   },
   attendanceBreak: { create: vi.fn(), update: vi.fn() },
-  attendanceLeave: { findUnique: vi.fn() },
+  attendanceLeave: { findUnique: vi.fn(), findMany: vi.fn() },
   attendanceHoliday: {
     findUnique: vi.fn(),
     findFirst: vi.fn(),
@@ -97,6 +97,23 @@ function everybodyOn(shift: Record<string, unknown> = SHIFT) {
   prisma.attendanceShift.findFirst.mockResolvedValue(shift)
 }
 
+/** A member row as the roster reads it, joined long before any range under test. */
+function memberRow(userId: string, name: string, overrides: Record<string, unknown> = {}) {
+  return {
+    userId,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    user: { name, preferredName: null, jobTitle: null, startDate: null, banned: false },
+    ...overrides,
+  }
+}
+
+beforeEach(() => {
+  prisma.member.findMany.mockResolvedValue([])
+  prisma.attendanceSchedule.findMany.mockResolvedValue([])
+  prisma.attendanceHoliday.findMany.mockResolvedValue([])
+  prisma.attendanceLeave.findMany.mockResolvedValue([])
+})
+
 function signedInAs(role: string) {
   guard.getSession.mockResolvedValue({ user: { id: 'user-1', name: 'Grace Reyes' } })
   guard.readProfile.mockResolvedValue({
@@ -125,6 +142,7 @@ function dayRecord(overrides: Record<string, unknown> = {}) {
     clockInLocation: null,
     clockOutLocation: null,
     breaks: [],
+    autoClosed: false,
     ...overrides,
   }
 }
@@ -220,7 +238,9 @@ describe('the clock', () => {
 
     await expect(startBreak()).rejects.toMatchObject({ code: Code.FailedPrecondition })
     expect(prisma.attendanceDay.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ status: 'recorded' }) }),
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'recorded', autoClosed: true }),
+      }),
     )
     vi.useRealTimers()
   })
@@ -568,6 +588,147 @@ describe('the holiday calendar', () => {
       select: { name: true },
     })
     expect(view.leaveName).toBe('Vacation leave')
+    vi.useRealTimers()
+  })
+})
+
+describe('days nobody clocked', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    signedInAs('admin')
+    everybodyOn()
+    prisma.user.findMany.mockResolvedValue([])
+    prisma.attendanceDay.findMany.mockResolvedValue([])
+    prisma.attendanceHoliday.findMany.mockResolvedValue([])
+    prisma.attendanceLeave.findMany.mockResolvedValue([])
+    prisma.attendanceSchedule.findMany.mockResolvedValue([])
+    // Thursday 24 September 2026; Monday the 21st to Wednesday the 23rd are settled.
+    vi.setSystemTime(new Date('2026-09-24T12:00:00.000Z'))
+  })
+
+  it('lists a missed weekday as absent and approved leave as leave, never a holiday', async () => {
+    prisma.member.findMany.mockResolvedValue([memberRow('user-2', 'Ada')])
+    prisma.attendanceHoliday.findMany.mockResolvedValue([
+      { date: new Date('2026-09-22T00:00:00.000Z') },
+    ])
+    prisma.attendanceLeave.findMany.mockResolvedValue([
+      { userId: 'user-2', date: new Date('2026-09-23T00:00:00.000Z'), name: 'Vacation leave' },
+    ])
+
+    const log = await loadAttendance({ from: '2026-09-19', to: '2026-09-24', everyone: true })
+
+    expect(log.absences).toEqual([
+      {
+        userId: 'user-2',
+        userName: 'Ada',
+        workDate: '2026-09-23',
+        kind: 'leave',
+        leaveName: 'Vacation leave',
+      },
+      {
+        userId: 'user-2',
+        userName: 'Ada',
+        workDate: '2026-09-21',
+        kind: 'absent',
+        leaveName: undefined,
+      },
+    ])
+    vi.useRealTimers()
+  })
+
+  it('leaves a suspended account and the days before somebody started out of it', async () => {
+    prisma.member.findMany.mockResolvedValue([
+      memberRow('user-2', 'Ada', {
+        user: {
+          name: 'Ada',
+          preferredName: null,
+          jobTitle: null,
+          startDate: new Date('2026-09-23T00:00:00.000Z'),
+          banned: false,
+        },
+      }),
+      memberRow('user-3', 'Grace', {
+        user: { name: 'Grace', preferredName: null, jobTitle: null, startDate: null, banned: true },
+      }),
+    ])
+
+    const log = await loadAttendance({ from: '2026-09-21', to: '2026-09-24', everyone: true })
+
+    expect(log.absences.map((row) => `${row.userName} ${row.workDate}`)).toEqual(['Ada 2026-09-23'])
+    vi.useRealTimers()
+  })
+
+  it('refuses a range that runs backwards or past a year', async () => {
+    await expect(
+      loadAttendance({ from: '2026-09-24', to: '2026-09-01', everyone: true }),
+    ).rejects.toMatchObject({ code: Code.InvalidArgument })
+    await expect(
+      loadAttendance({ from: '2025-01-01', to: '2026-09-01', everyone: true }),
+    ).rejects.toMatchObject({ code: Code.InvalidArgument })
+    vi.useRealTimers()
+  })
+
+  it('closes a forgotten day on the timesheet and marks the clock-out missed', async () => {
+    prisma.member.findMany.mockResolvedValue([memberRow('user-1', 'Grace')])
+    prisma.attendanceDay.findMany.mockResolvedValue([dayRecord()])
+    prisma.attendanceDay.update.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+      Promise.resolve(dayRecord(data)),
+    )
+
+    const log = await loadAttendance({ from: '2026-09-22', to: '2026-09-22', everyone: true })
+
+    expect(log.days[0]).toMatchObject({ isOpen: false, autoClosed: true })
+    vi.useRealTimers()
+  })
+
+  it('stops reading as a missed clock-out once an admin corrects the day', async () => {
+    prisma.attendanceDay.upsert.mockImplementation(
+      ({ update }: { update: Record<string, unknown> }) => Promise.resolve(dayRecord(update)),
+    )
+
+    const day = await saveAttendanceDay({
+      userId: 'user-1',
+      workDate: '2026-09-22',
+      clockInTime: '09:00',
+      clockOutTime: '18:00',
+      breakMinutes: 60,
+      note: '',
+    })
+
+    expect(day.autoClosed).toBe(false)
+    vi.useRealTimers()
+  })
+
+  it('tells the board why each person without a clock-in is not in', async () => {
+    // 08:00 on Thursday: before the 09:00 start and its grace.
+    vi.setSystemTime(new Date('2026-09-24T08:00:00.000Z'))
+    prisma.member.findMany.mockResolvedValue([
+      memberRow('user-2', 'Ada'),
+      memberRow('user-3', 'Grace'),
+      memberRow('user-4', 'Linus', { createdAt: new Date('2026-09-30T00:00:00.000Z') }),
+    ])
+    prisma.attendanceHoliday.findUnique.mockResolvedValue(null)
+    prisma.attendanceLeave.findMany.mockResolvedValue([{ userId: 'user-3', name: 'Sick leave' }])
+
+    const early = await loadBoard()
+    expect(early.rows.map((row) => [row.userName, row.state, row.offReason])).toEqual([
+      ['Ada', 'expected', undefined],
+      ['Grace', 'leave', 'Sick leave'],
+      ['Linus', 'off', undefined],
+    ])
+    expect(early).toMatchObject({ absentCount: 0, leaveCount: 1 })
+
+    vi.setSystemTime(new Date('2026-09-24T10:00:00.000Z'))
+    const late = await loadBoard()
+    expect(late.rows[0]?.state).toBe('absent')
+    expect(late.absentCount).toBe(1)
+
+    const weekend = await loadBoard('2026-09-26')
+    expect(weekend.rows[0]?.state).toBe('off')
+
+    prisma.attendanceHoliday.findUnique.mockResolvedValue({ name: 'Founders Day' })
+    const holiday = await loadBoard('2026-09-23')
+    expect(holiday.rows[0]).toMatchObject({ state: 'holiday', offReason: 'Founders Day' })
     vi.useRealTimers()
   })
 })

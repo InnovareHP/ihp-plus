@@ -2,6 +2,7 @@
 
 import { ConnectError } from '@ihp/rpc'
 import {
+  absenceFromProto,
   boardRowFromProto,
   dayFromProto,
   holidayFromProto,
@@ -126,6 +127,7 @@ export async function listAttendance(range: AttendanceRange): Promise<Attendance
     totalWorkedSeconds: response.totalWorkedSeconds,
     totalBreakSeconds: response.totalBreakSeconds,
     totalLateSeconds: response.totalLateSeconds,
+    absences: response.absences.map(absenceFromProto),
   }
 }
 
@@ -137,6 +139,7 @@ export async function getAttendanceBoard(date: string): Promise<AttendanceBoard>
     presentCount: response.presentCount,
     lateCount: response.lateCount,
     absentCount: response.absentCount,
+    leaveCount: response.leaveCount,
   }
 }
 

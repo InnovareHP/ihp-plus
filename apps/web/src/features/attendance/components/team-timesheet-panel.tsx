@@ -8,6 +8,7 @@ import { useAttendanceLog } from '../hooks/use-time-clock'
 import type { AttendanceDayRow } from '../schema'
 import { AttendanceDayActions } from './attendance-day-actions'
 import { AttendanceDayModal } from './attendance-day-modal'
+import { AbsencesTable } from './absences-table'
 import { AttendanceLogTable } from './attendance-log-table'
 import { AttendanceRangeFields } from './attendance-range-fields'
 import { DayTotals } from './day-totals'
@@ -58,6 +59,7 @@ export function TeamTimesheetPanel({ timeZone }: TeamTimesheetPanelProps) {
             <AttendanceRangeFields from={range.from} to={range.to} onChange={range.setRange} />
             <ExportTimesheetButton
               days={log.data?.days}
+              absences={log.data?.absences}
               from={range.from}
               to={range.to}
               timeZone={timeZone}
@@ -81,6 +83,15 @@ export function TeamTimesheetPanel({ timeZone }: TeamTimesheetPanelProps) {
           timeZone={timeZone}
           actions={(day) => <AttendanceDayActions day={day} onCorrect={setCorrecting} />}
           emptyHint="Nobody clocked in over this range — widen the dates or add a day by hand."
+        />
+
+        <AbsencesTable
+          absences={log.data?.absences}
+          isPending={log.isPending}
+          isError={log.isError}
+          isFetching={log.isFetching}
+          onRetry={() => void log.refetch()}
+          showPerson={!range.userId}
         />
 
         {correcting ? (

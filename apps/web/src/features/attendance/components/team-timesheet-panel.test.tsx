@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, userEvent, waitFor } from '@/test/render'
+import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import type { AttendanceDayRow } from '../schema'
 import { TeamTimesheetPanel } from './team-timesheet-panel'
 
@@ -54,6 +54,7 @@ const DAY: AttendanceDayRow = {
   isOpen: false,
   onBreak: false,
   breaks: [],
+  autoClosed: false,
 }
 
 describe('TeamTimesheetPanel', () => {
@@ -64,6 +65,7 @@ describe('TeamTimesheetPanel', () => {
       totalWorkedSeconds: 8 * 3600,
       totalBreakSeconds: 3600,
       totalLateSeconds: 0,
+      absences: [],
     })
     rpc.listSchedules.mockResolvedValue({
       schedules: [],
@@ -71,6 +73,44 @@ describe('TeamTimesheetPanel', () => {
       shifts: [],
     })
     rpc.deleteAttendanceDay.mockResolvedValue(undefined)
+  })
+
+  it('lists the scheduled days nobody clocked, and a missed clock-out on its row', async () => {
+    rpc.listAttendance.mockResolvedValue({
+      days: [{ ...DAY, autoClosed: true }],
+      totalWorkedSeconds: 8 * 3600,
+      totalBreakSeconds: 3600,
+      totalLateSeconds: 0,
+      absences: [
+        {
+          userId: 'user-2',
+          userName: 'Ada Lovelace',
+          workDate: '2026-09-21',
+          kind: 'absent',
+          leaveName: undefined,
+        },
+        {
+          userId: 'user-2',
+          userName: 'Ada Lovelace',
+          workDate: '2026-09-18',
+          kind: 'leave',
+          leaveName: 'Vacation leave',
+        },
+      ],
+    })
+    render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
+
+    const table = await screen.findByRole('table', { name: 'Days not clocked' })
+    expect(within(table).getByText('Absent')).toBeInTheDocument()
+    expect(within(table).getByText('On leave: Vacation leave')).toBeInTheDocument()
+    expect(screen.getByText(/1 absent, 1 on leave/)).toBeInTheDocument()
+    expect(screen.getByText('Missed clock-out')).toBeInTheDocument()
+  })
+
+  it('says so when every scheduled day was clocked', async () => {
+    render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
+
+    expect(await screen.findByText('No missed days')).toBeInTheDocument()
   })
 
   it('reads the times in the company zone, not the browser one', async () => {

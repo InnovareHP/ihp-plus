@@ -39,6 +39,18 @@ message AttendanceDay {
   bool is_open = 17;
   bool on_break = 18;
   repeated AttendanceBreak breaks = 19;
+  // Nobody clocked out, so the shift's limit closed the day; cleared once an admin corrects it.
+  bool auto_closed = 21;
+}
+
+// A scheduled day with no clock-in: excused by approved leave, or missed.
+message AttendanceAbsence {
+  string user_id = 1;
+  string user_name = 2;
+  string work_date = 3;
+  // absent or leave.
+  string kind = 4;
+  optional string leave_name = 5;
 }
 
 // How the organization runs its clock. Every member reads it; only an admin writes it.
@@ -168,6 +180,8 @@ message ListAttendanceResponse {
   int32 total_worked_seconds = 2;
   int32 total_break_seconds = 3;
   int32 total_late_seconds = 4;
+  // Settled days only: today is still running, so it is never counted.
+  repeated AttendanceAbsence absences = 5;
 }
 
 // Who is in, who is late, who is still on the clock.
@@ -181,8 +195,10 @@ message AttendanceBoardRow {
   string user_name = 2;
   optional string job_title = 3;
   optional AttendanceDay day = 4;
-  // in, break, out or absent.
+  // in, break or out with a clock-in; otherwise absent, leave, holiday, off or expected.
   string state = 5;
+  // The leave or holiday behind a leave or holiday state.
+  optional string off_reason = 6;
 }
 
 message GetAttendanceBoardResponse {
@@ -191,6 +207,7 @@ message GetAttendanceBoardResponse {
   int32 present_count = 3;
   int32 late_count = 4;
   int32 absent_count = 5;
+  int32 leave_count = 6;
 }
 
 // An admin correcting a day, or a member writing one up where the rules allow it. The times are

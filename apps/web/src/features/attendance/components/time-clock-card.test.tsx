@@ -71,6 +71,7 @@ function day(overrides: Partial<AttendanceDayRow> = {}): AttendanceDayRow {
     isOpen: true,
     onBreak: false,
     breaks: [],
+    autoClosed: false,
     ...overrides,
   }
 }
