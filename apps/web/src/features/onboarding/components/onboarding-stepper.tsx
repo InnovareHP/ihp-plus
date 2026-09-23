@@ -18,12 +18,14 @@ import {
   type OnboardingValues,
 } from '../schema'
 import { useCompleteOnboarding } from '../hooks/use-complete-onboarding'
+import { clearDraft, readDraft, writeDraft } from '../utils/draft'
 import { EmploymentStep, type TeamOption } from './employment-step'
 import { PersonalStep } from './personal-step'
 import { PhotoStep } from './photo-step'
 import { ReviewStep } from './review-step'
 
 export interface OnboardingStepperProps {
+  userId: string
   email: string
   teams: readonly TeamOption[]
   photoUrl: string | undefined
@@ -37,6 +39,7 @@ function clampStep(raw: string | null) {
 }
 
 export function OnboardingStepper({
+  userId,
   email,
   teams,
   photoUrl,
@@ -55,6 +58,9 @@ export function OnboardingStepper({
   })
   const {
     handleSubmit,
+    reset,
+    getValues,
+    subscribe,
     trigger,
     setFocus,
     setError,
@@ -70,6 +76,18 @@ export function OnboardingStepper({
     started.current = true
     track(onboardingEvents.started)
   }, [])
+
+  // localStorage is the external store: restored after hydration so the server HTML still matches.
+  useEffect(() => {
+    const draft = readDraft(userId)
+    if (Object.keys(draft).length > 0) {
+      reset({ ...getValues(), ...draft }, { keepDefaultValues: true })
+    }
+    return subscribe({
+      formState: { values: true },
+      callback: ({ values }) => writeDraft(userId, values),
+    })
+  }, [userId, reset, getValues, subscribe])
 
   function goToStep(next: number) {
     router.push(`${routes.onboarding}?step=${next}`)
@@ -114,6 +132,7 @@ export function OnboardingStepper({
       return
     }
 
+    clearDraft(userId)
     track(onboardingEvents.completed)
     router.replace(routes.dashboard)
     router.refresh()

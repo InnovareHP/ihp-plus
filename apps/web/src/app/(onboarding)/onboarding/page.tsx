@@ -48,6 +48,7 @@ export default async function OnboardingPage() {
         </Stack>
 
         <OnboardingStepper
+          userId={user.id}
           email={user.email}
           teams={teams.map((team) => ({ value: team.id, label: team.name }))}
           photoUrl={photoUrl}

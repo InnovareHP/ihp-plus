@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { render, screen, userEvent, waitFor } from '@/test/render'
 import type { OnboardingValues } from '../schema'
+import { draftKey } from '../utils/draft'
 import { OnboardingStepper } from './onboarding-stepper'
 
 const router = vi.hoisted(() => ({ replace: vi.fn(), refresh: vi.fn() }))
@@ -61,6 +62,7 @@ const defaultValues: OnboardingValues = {
 function renderStepper(values: Partial<OnboardingValues> = {}) {
   return render(
     <OnboardingStepper
+      userId="user-1"
       email="ada@innovarehp.com"
       teams={TEAMS}
       photoUrl={undefined}
@@ -83,6 +85,7 @@ function jpeg(name: string) {
 describe('OnboardingStepper', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.localStorage.clear()
     url.write('')
     actions.completeOnboarding.mockResolvedValue({ ok: true })
     actions.uploadPhoto.mockResolvedValue({
@@ -287,6 +290,45 @@ describe('OnboardingStepper', () => {
     expect(screen.getByRole('combobox', { name: /Department/ })).toHaveValue(
       'Information Technology',
     )
+  })
+
+  it('brings typed answers back after a refresh', async () => {
+    const person = user()
+    const first = renderStepper()
+
+    await person.type(screen.getByLabelText(/First name/), 'Ada')
+    await person.type(screen.getByLabelText(/Phone number/), '6095550134')
+    first.unmount()
+
+    renderStepper()
+
+    await waitFor(() => expect(screen.getByLabelText(/First name/)).toHaveValue('Ada'))
+    expect(screen.getByLabelText(/Phone number/)).toHaveValue('6095550134')
+  })
+
+  it('forgets the saved answers once setup is finished', async () => {
+    const person = user()
+    renderStepper({ firstName: 'Ada', lastName: 'Lovelace', startDate: '2026-01-05' })
+
+    url.write('step=3')
+    await person.click(await screen.findByLabelText('These details are correct.'))
+    await person.click(screen.getByRole('button', { name: 'Finish setup' }))
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'))
+    expect(window.localStorage.getItem(draftKey('user-1'))).toBeNull()
+  })
+
+  it('keeps the saved answers when finishing fails', async () => {
+    actions.completeOnboarding.mockResolvedValue({ ok: false, message: 'Could not save.' })
+    const person = user()
+    renderStepper({ firstName: 'Ada', lastName: 'Lovelace', startDate: '2026-01-05' })
+
+    url.write('step=3')
+    await person.click(await screen.findByLabelText('These details are correct.'))
+    await person.click(screen.getByRole('button', { name: 'Finish setup' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not save.')
+    expect(window.localStorage.getItem(draftKey('user-1'))).toContain('Ada')
   })
 
   it('has no axe violations on any step', async () => {
