@@ -7,6 +7,8 @@ const MESSAGES: Record<string, string> = {
   PASSWORD_TOO_SHORT: 'That password is too short.',
   ACCOUNT_NOT_LINKED:
     'That Outlook account is not linked to this email. Sign in with a password first.',
+  YOU_ARE_NOT_ALLOWED_TO_IMPERSONATE_USERS: 'Only a portal admin can sign in as someone else.',
+  YOU_CANNOT_IMPERSONATE_ADMINS: 'You cannot sign in as another portal admin.',
   FAILED_TO_CREATE_USER: 'The account could not be created. Try again in a moment.',
 }
 

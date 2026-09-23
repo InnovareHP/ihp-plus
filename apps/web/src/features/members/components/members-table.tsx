@@ -1,6 +1,7 @@
 'use client'
 
 import { Badge, Button, Group, Select, Stack, Text } from '@mantine/core'
+import { useImpersonate } from '@/features/auth/hooks/use-impersonation'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { MemberShiftSelect } from '@/features/attendance/components/member-shift-select'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
@@ -29,7 +30,12 @@ const PORTAL_OPTIONS = PORTAL_ROLES.map((role) => ({
   label: PORTAL_ROLE_LABELS[role],
 }))
 
-export function MembersTable() {
+// Portal admins can sign in as someone; the auth plugin refuses another admin or a suspended account.
+function canSignInAs(row: MemberRow) {
+  return !row.isSelf && !row.banned && row.portalRole !== 'admin'
+}
+
+export function MembersTable({ canImpersonate = false }: { canImpersonate?: boolean }) {
   const { query, setQuery, clearFilters } = useMemberQuery()
   const members = useMembers(query)
   const options = useMemberFilterOptions()
@@ -82,6 +88,7 @@ export function MembersTable() {
   const employmentStatus = useSetEmploymentStatus()
   const portalRole = useSetPortalRole()
   const banned = useSetBanned()
+  const impersonate = useImpersonate()
 
   // The column key is the server's sort key, so a header click needs no translation table.
   const columns: DataTableColumn<MemberRow>[] = [
@@ -203,6 +210,18 @@ export function MembersTable() {
               {row.banned ? `Restore ${row.name}` : `Suspend ${row.name}`}
             </Button>
           )}
+          {canImpersonate && canSignInAs(row) ? (
+            <Button
+              variant="subtle"
+              size="compact-sm"
+              disabled={impersonate.isPending}
+              onClick={() => impersonate.mutate(row.userId)}
+            >
+              {impersonate.isPending && impersonate.variables === row.userId
+                ? 'Signing in…'
+                : `Sign in as ${row.name}`}
+            </Button>
+          ) : null}
         </Group>
       ),
     },

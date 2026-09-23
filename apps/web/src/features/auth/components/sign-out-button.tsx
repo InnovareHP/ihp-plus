@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@mantine/core'
-import { useSignOut } from '../use-sign-out'
+import { useSignOut } from '../hooks/use-sign-out'
 
 export function SignOutButton() {
   const signOut = useSignOut()

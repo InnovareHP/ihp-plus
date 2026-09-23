@@ -11,12 +11,14 @@ const actions = vi.hoisted(() => ({
 }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
-const nav = vi.hoisted(() => ({ search: '', replace: vi.fn() }))
+const nav = vi.hoisted(() => ({ search: '', replace: vi.fn(), refresh: vi.fn() }))
+const admin = vi.hoisted(() => ({ impersonateUser: vi.fn() }))
 
 vi.mock('../rpc', () => actions)
+vi.mock('@/lib/auth-client', () => ({ authClient: { admin } }))
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: nav.replace }),
+  useRouter: () => ({ replace: nav.replace, refresh: nav.refresh }),
   usePathname: () => '/organization/members',
   useSearchParams: () => new URLSearchParams(nav.search),
 }))
@@ -154,6 +156,61 @@ describe('MembersTable', () => {
     await waitFor(() => expect(actions.setBanned).toHaveBeenCalled())
     await waitFor(() => expect(screen.getAllByText('Active').length).toBe(2))
     expect(toast.show).toHaveBeenCalled()
+  })
+
+  it('offers sign in as only to a portal admin, and never for themselves or another admin', async () => {
+    const { unmount } = render(<MembersTable />)
+    await screen.findByText('Ada Lovelace')
+    expect(screen.queryByRole('button', { name: /Sign in as/ })).not.toBeInTheDocument()
+    unmount()
+
+    render(<MembersTable canImpersonate />)
+    expect(await screen.findByRole('button', { name: 'Sign in as Ada Lovelace' })).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: 'Sign in as Grace Hopper' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('does not offer sign in as for a suspended member', async () => {
+    actions.listMembers.mockResolvedValue(page([{ ...ADA, banned: true }, SELF]))
+    render(<MembersTable canImpersonate />)
+
+    await screen.findByText('Ada Lovelace')
+    expect(screen.queryByRole('button', { name: /Sign in as/ })).not.toBeInTheDocument()
+  })
+
+  it('signs in as the member and lands on their dashboard', async () => {
+    admin.impersonateUser.mockResolvedValue({ data: {}, error: null })
+    const person = user()
+    render(<MembersTable canImpersonate />)
+
+    await person.click(await screen.findByRole('button', { name: 'Sign in as Ada Lovelace' }))
+
+    expect(admin.impersonateUser).toHaveBeenCalledWith({ userId: 'user-1' })
+    await waitFor(() => expect(nav.replace).toHaveBeenCalledWith('/'))
+    expect(nav.refresh).toHaveBeenCalled()
+  })
+
+  it('announces a refused sign in as and stays on the list', async () => {
+    admin.impersonateUser.mockResolvedValue({
+      data: null,
+      error: { code: 'YOU_CANNOT_IMPERSONATE_ADMINS', message: 'You cannot impersonate admins' },
+    })
+    const person = user()
+    render(<MembersTable canImpersonate />)
+
+    await person.click(await screen.findByRole('button', { name: 'Sign in as Ada Lovelace' }))
+
+    await waitFor(() =>
+      expect(toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          color: 'red',
+          autoClose: false,
+          message: 'You cannot sign in as another portal admin.',
+        }),
+      ),
+    )
+    expect(nav.replace).not.toHaveBeenCalled()
   })
 
   it('offers a retry when the list cannot load', async () => {

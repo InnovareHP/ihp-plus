@@ -19,7 +19,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { RunningClockChip } from '@/features/attendance/components/running-clock-chip'
-import { useSignOut } from '@/features/auth/use-sign-out'
+import { useStopImpersonating } from '@/features/auth/hooks/use-impersonation'
+import { useSignOut } from '@/features/auth/hooks/use-sign-out'
 import { MentionsMenu } from '@/features/tasks/components/mentions-menu'
 import {
   RunningTimerButton,
@@ -29,6 +30,7 @@ import { isNavItemActive, visibleSections } from '@/lib/navigation'
 import { routes } from '@/lib/routes'
 import { AppLogo } from './app-logo'
 import { ColorSchemeToggle } from './color-scheme-toggle'
+import { ImpersonationBanner } from './impersonation-banner'
 import { NavGroup } from './nav-group'
 import { NavItemLink } from './nav-item-link'
 
@@ -37,6 +39,8 @@ export interface DashboardShellProps {
   organization: { name: string; role?: string }
   canManageOrganization?: boolean
   canApproveRequests?: boolean
+  /** True while a portal admin is signed in as this user. */
+  impersonating?: boolean
   children: ReactNode
 }
 
@@ -54,6 +58,7 @@ export function DashboardShell({
   organization,
   canManageOrganization = false,
   canApproveRequests = false,
+  impersonating = false,
   children,
 }: DashboardShellProps) {
   const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure(false)
@@ -62,6 +67,7 @@ export function DashboardShell({
   const [sidebarShown, { toggle: toggleSidebar }] = useDisclosure(true)
   const pathname = usePathname()
   const signOut = useSignOut()
+  const stopImpersonating = useStopImpersonating()
   const sections = visibleSections({ canManageOrganization, canApproveRequests })
 
   useHotkeys([['Escape', closeNav]])
@@ -212,7 +218,16 @@ export function DashboardShell({
         </AppShell.Section>
       </AppShell.Navbar>
 
-      <AppShell.Main id="main">{children}</AppShell.Main>
+      <AppShell.Main id="main">
+        {impersonating ? (
+          <ImpersonationBanner
+            name={user.name}
+            isPending={stopImpersonating.isPending}
+            onReturn={() => stopImpersonating.mutate()}
+          />
+        ) : null}
+        {children}
+      </AppShell.Main>
     </AppShell>
   )
 }

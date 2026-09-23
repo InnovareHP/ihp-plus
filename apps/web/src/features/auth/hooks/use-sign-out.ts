@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
 import { routes } from '@/lib/routes'
-import { authErrorMessage } from './messages'
+import { authErrorMessage } from '../messages'
 
 // Not optimistic: the server clears the cookie and the redirect to sign-in is the feedback.
 export function useSignOut() {

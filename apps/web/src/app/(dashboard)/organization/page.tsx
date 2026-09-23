@@ -9,7 +9,7 @@ import { requireOrganizationManager } from '@/lib/auth-guard'
 export const metadata: Metadata = { title: 'Organization' }
 
 export default async function OrganizationPage() {
-  const { user, profile } = await requireOrganizationManager()
+  const { user, profile, membership } = await requireOrganizationManager()
 
   return (
     <PageShell>
@@ -26,7 +26,10 @@ export default async function OrganizationPage() {
           </Stack>
         }
       >
-        <OrganizationTabs invitedBy={profile.preferredName ?? user.name} />
+        <OrganizationTabs
+          invitedBy={profile.preferredName ?? user.name}
+          canImpersonate={membership.portalRole === 'admin'}
+        />
       </Suspense>
     </PageShell>
   )

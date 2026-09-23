@@ -25,7 +25,13 @@ function tabOf(value: string | null): OrganizationTab {
     : 'overview'
 }
 
-export function OrganizationTabs({ invitedBy }: { invitedBy: string }) {
+export function OrganizationTabs({
+  invitedBy,
+  canImpersonate = false,
+}: {
+  invitedBy: string
+  canImpersonate?: boolean
+}) {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
@@ -54,7 +60,7 @@ export function OrganizationTabs({ invitedBy }: { invitedBy: string }) {
         <OrganizationPanel />
       </Tabs.Panel>
       <Tabs.Panel value="members">
-        <MembersTable />
+        <MembersTable canImpersonate={canImpersonate} />
       </Tabs.Panel>
       <Tabs.Panel value="departments">
         <TeamsPanel />

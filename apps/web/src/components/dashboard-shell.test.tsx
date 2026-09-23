@@ -7,8 +7,10 @@ import { DashboardShell } from './dashboard-shell'
 // A literal, not routes.dashboard: vi.hoisted runs before the import it would read.
 const nav = vi.hoisted(() => ({ pathname: '/' }))
 const auth = vi.hoisted(() => ({ useSignOut: vi.fn() }))
+const impersonation = vi.hoisted(() => ({ useStopImpersonating: vi.fn() }))
 
-vi.mock('@/features/auth/use-sign-out', () => auth)
+vi.mock('@/features/auth/hooks/use-sign-out', () => auth)
+vi.mock('@/features/auth/hooks/use-impersonation', () => impersonation)
 vi.mock('next/navigation', () => ({ usePathname: () => nav.pathname }))
 
 const USER = { name: 'Dana Reyes', email: 'dana@ihp.example', jobTitle: 'Admissions liaison' }
@@ -30,6 +32,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   nav.pathname = routes.dashboard
   auth.useSignOut.mockReturnValue({ isPending: false, mutate: vi.fn() })
+  impersonation.useStopImpersonating.mockReturnValue({ isPending: false, mutate: vi.fn() })
 })
 
 describe('DashboardShell navigation', () => {
@@ -161,5 +164,26 @@ describe('DashboardShell sidebar controls', () => {
       'aria-expanded',
       'false',
     )
+  })
+})
+
+describe('DashboardShell impersonation', () => {
+  it('shows no banner on an ordinary session', () => {
+    renderShell()
+
+    expect(screen.queryByText(/You are signed in as/)).not.toBeInTheDocument()
+  })
+
+  it('names who the admin is signed in as and returns them to their own account', async () => {
+    const stop = vi.fn()
+    impersonation.useStopImpersonating.mockReturnValue({ isPending: false, mutate: stop })
+    const user = userEvent.setup()
+    const { container } = renderShell({ impersonating: true })
+
+    expect(screen.getByRole('status')).toHaveTextContent('You are signed in as Dana Reyes')
+    await user.click(screen.getByRole('button', { name: 'Return to your account' }))
+
+    expect(stop).toHaveBeenCalled()
+    expect(await axe(container)).toHaveNoViolations()
   })
 })
