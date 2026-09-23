@@ -3,29 +3,33 @@ const year = new Date().getFullYear()
 ---
 
 <footer class="bg-ink text-white">
-  <div
-    class="mx-auto flex max-w-[1280px] flex-col gap-10 px-4 pt-[62px] pb-12 sm:px-8 lg:flex-row lg:items-end lg:justify-between lg:px-[104px]"
-  >
-    <div data-motion="fade">
+  <div class="mx-auto max-w-[1280px] px-4 pt-16 pb-8 sm:px-8 lg:px-[104px]">
+    <div
+      data-motion="fade"
+      class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-10"
+    >
       <img
         src="/brand/logo-on-dark.svg"
         width="104"
         height="63"
         alt="IHP+"
-        class="h-[63px] w-[104px] lg:-ml-[4px]"
+        class="h-[63px] w-[104px]"
       />
-      <p class="mt-[62px] max-w-[190px] text-xs leading-[1.5]">
+      <!-- One sentence per line; a narrow box used to break "Michigan" onto a line of its own. -->
+      <p class="text-sm leading-relaxed text-white/80 sm:text-right">
         IHP+ by Innovare HP.<br />
         Proudly founded and based in Michigan.<br />
         Serving clients globally.
       </p>
     </div>
 
-    <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/70">
+    <div
+      class="mt-10 flex flex-col-reverse gap-3 border-t border-white/15 pt-6 text-xs text-white/70 sm:flex-row sm:items-center sm:justify-between"
+    >
       <p>© {year} Innovare HP</p>
       <a
         href="https://portal.ihpplusglobal.com"
-        class="rounded-sm text-white underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none"
+        class="w-fit rounded-sm text-white underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none"
       >
         Sign in to IHP+
       </a>
