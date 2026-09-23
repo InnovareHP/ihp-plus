@@ -12,26 +12,69 @@ const link =
   'rounded-sm text-[13px] text-white underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none'
 ---
 
-<!-- The lockup sits under the links, so the design leaves the middle of the bar open for it. -->
-<nav aria-label="Primary" class="w-full pt-6 sm:pt-[27px]">
-  <ul class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:gap-x-12 lg:gap-x-0">
-    {
-      LEFT.map((item, index) => (
-        <li class={index === LEFT.length - 1 ? 'lg:mr-[300px]' : 'lg:mr-12'}>
-          <a href={item.href} class={link}>
-            {item.label}
-          </a>
-        </li>
-      ))
+<!--
+  A zero-height sticky wrapper: the bar follows the page without taking space, so the hero keeps
+  the room it always had for it. Once scrolled, the bar frosts over whatever passes beneath.
+-->
+<div class="sticky top-0 z-50 h-0">
+  <nav
+    aria-label="Primary"
+    data-site-nav
+    data-scrolled="false"
+    class="site-nav w-full px-4 pt-6 pb-3 transition-[background-color,box-shadow,backdrop-filter] duration-200 ease-out motion-reduce:transition-none sm:pt-[27px] sm:pb-4 data-[scrolled=true]:bg-night/95 data-[scrolled=true]:shadow-lg data-[scrolled=true]:shadow-night/20 data-[scrolled=true]:supports-[backdrop-filter]:bg-night/75 data-[scrolled=true]:supports-[backdrop-filter]:backdrop-blur-lg data-[scrolled=true]:supports-[backdrop-filter]:backdrop-saturate-150"
+  >
+    <!-- The lockup sits under the links, so the design leaves the middle of the bar open for it. -->
+    <ul
+      class="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:gap-x-12 lg:gap-x-0"
+    >
+      {
+        LEFT.map((item, index) => (
+          <li class={index === LEFT.length - 1 ? 'lg:mr-[300px]' : 'lg:mr-12'}>
+            <a href={item.href} class={link}>
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+      {
+        RIGHT.map((item, index) => (
+          <li class={index === RIGHT.length - 1 ? '' : 'lg:mr-12'}>
+            <a href={item.href} class={link}>
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</div>
+
+<style is:global>
+  /* Anchored sections land below the bar rather than under it. */
+  html {
+    scroll-padding-top: 5rem;
+  }
+</style>
+
+<script>
+  // The only script the nav ships: it flips one attribute, and the classes above do the rest.
+  const nav = document.querySelector<HTMLElement>('[data-site-nav]')
+  if (nav) {
+    let queued = false
+    const update = () => {
+      queued = false
+      nav.dataset.scrolled = String(window.scrollY > 24)
     }
-    {
-      RIGHT.map((item, index) => (
-        <li class={index === RIGHT.length - 1 ? '' : 'lg:mr-12'}>
-          <a href={item.href} class={link}>
-            {item.label}
-          </a>
-        </li>
-      ))
-    }
-  </ul>
-</nav>
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (queued) return
+        queued = true
+        requestAnimationFrame(update)
+      },
+      { passive: true },
+    )
+    // A reload part-way down the page starts frosted, not clear.
+    update()
+  }
+</script>

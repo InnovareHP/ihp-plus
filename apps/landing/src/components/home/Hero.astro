@@ -12,7 +12,6 @@ const photo = {
   quality: 70,
 }
 import bulge from '../../assets/home/hero-bulge.svg'
-import SiteNav from './SiteNav.astro'
 import StartBadge from './StartBadge.astro'
 ---
 
@@ -32,7 +31,8 @@ import StartBadge from './StartBadge.astro'
   </div>
 
   <div class="relative flex h-full flex-col items-center px-4 text-center">
-    <SiteNav />
+    <!-- Holds the place the sticky nav sits over, so the lockup lands where the design has it. -->
+    <div aria-hidden="true" class="h-[44px] w-full shrink-0 sm:h-[47px]"></div>
 
     <img
       src="/brand/logo-on-dark.svg"
