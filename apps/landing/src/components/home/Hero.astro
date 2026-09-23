@@ -1,6 +1,16 @@
 ---
-import { Image } from 'astro:assets'
-import heroPhoto from '../../assets/home/hero-photo.png'
+import { Picture } from 'astro:assets'
+import heroPhoto from '../../assets/home/hero-photo.jpg'
+
+// One srcset for both layers, so the browser downloads the photo once and paints it twice.
+const photo = {
+  src: heroPhoto,
+  alt: '',
+  formats: ['avif', 'webp'] as const,
+  widths: [640, 960, 1280, 1920, 2560],
+  sizes: '100vw',
+  quality: 70,
+}
 import bulge from '../../assets/home/hero-bulge.svg'
 import SiteNav from './SiteNav.astro'
 import StartBadge from './StartBadge.astro'
@@ -9,18 +19,16 @@ import StartBadge from './StartBadge.astro'
 <section class="hero relative isolate z-10 bg-canvas" aria-labelledby="hero-heading">
   <!-- Rounded panel plus the bulge that cradles the badge: two masks over one photo, aligned. -->
   <div class="hero-panel absolute inset-x-0 top-0 overflow-hidden rounded-b-[50px]">
-    <Image
-      src={heroPhoto}
-      alt=""
-      widths={[640, 1024, 1600]}
-      sizes="100vw"
+    <Picture
+      {...photo}
+      formats={[...photo.formats]}
       loading="eager"
       fetchpriority="high"
       class="hero-photo"
     />
   </div>
   <div class="hero-bulge absolute bottom-0 left-1/2" style={`--bulge: url(${bulge.src})`}>
-    <Image src={heroPhoto} alt="" widths={[640, 1024, 1600]} sizes="100vw" class="hero-photo" />
+    <Picture {...photo} formats={[...photo.formats]} loading="eager" class="hero-photo" />
   </div>
 
   <div class="relative flex h-full flex-col items-center px-4 text-center">
@@ -31,23 +39,25 @@ import StartBadge from './StartBadge.astro'
       width="90"
       height="55"
       alt="IHP+"
-      class="mt-10 h-[55px] w-[90px] sm:mt-[62px]"
+      class="mt-12 h-[55px] w-[90px] sm:mt-[72px] lg:mt-[96px] lg:h-[67px] lg:w-[110px]"
     />
 
-    <h1 id="hero-heading" class="mt-6 flex flex-col items-center sm:mt-[23px]">
+    <h1 id="hero-heading" class="mt-7 flex flex-col items-center sm:mt-[28px]">
       <span
-        class="font-display text-[2.75rem] leading-[1.1] font-medium text-white sm:text-[64px] sm:leading-[70px]"
+        class="font-display text-[2.75rem] leading-[1.1] font-medium text-white sm:text-[64px] sm:leading-[70px] lg:text-[76px] lg:leading-[82px]"
       >
         POWERED BY
       </span>
       <span
-        class="font-poster text-brand-gradient text-[3.5rem] leading-[1] font-extrabold tracking-[0.02em] sm:text-[100px] sm:leading-[128px]"
+        class="font-poster text-brand-gradient text-[3.5rem] leading-[1] font-extrabold tracking-[0.02em] sm:text-[100px] sm:leading-[128px] lg:text-[120px] lg:leading-[140px]"
       >
         POSSIBILITIES
       </span>
     </h1>
 
-    <p class="mt-6 max-w-[837px] text-base text-white sm:mt-5 sm:text-xl">
+    <p
+      class="mt-7 max-w-[837px] lg:max-w-[920px] text-base text-white sm:mt-6 sm:text-xl lg:text-[22px] lg:leading-[1.5]"
+    >
       IHP+ turns possibility into progress — pairing bold marketing with dependable technology to
       grow your brand and build your systems, all under one roof.
     </p>
@@ -62,7 +72,7 @@ import StartBadge from './StartBadge.astro'
 <style>
   .hero {
     /* Every photo layer is sized off the section, so the panel and the bulge line up exactly. */
-    --hero-h: 640px;
+    --hero-h: 700px;
     --bulge-h: 95px;
     --bulge-w: 237.26px;
     container-type: inline-size;
@@ -70,12 +80,12 @@ import StartBadge from './StartBadge.astro'
   }
   @media (min-width: 640px) {
     .hero {
-      --hero-h: 700px;
+      --hero-h: 780px;
     }
   }
   @media (min-width: 1024px) {
     .hero {
-      --hero-h: 747px;
+      --hero-h: 880px;
     }
   }
 
