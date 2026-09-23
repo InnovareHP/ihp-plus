@@ -14,6 +14,8 @@ export const requestEvents = {
   requestWithdrawFailed: 'requests.request.withdraw_failed',
   requestDecided: 'requests.request.decided',
   requestDecideFailed: 'requests.request.decide_failed',
+  leaveCancelled: 'requests.leave.cancelled',
+  leaveCancelFailed: 'requests.leave.cancel_failed',
   approverAdded: 'requests.approver.added',
   approverChangeFailed: 'requests.approver.change_failed',
 } as const satisfies Record<string, EventName>

@@ -51,6 +51,11 @@ const PENDING: RequestRow = {
   createdAt: '2026-09-05T09:00:00Z',
   canDecide: true,
   isMine: false,
+  canCancel: false,
+  timeOff: false,
+  cancelledBy: undefined,
+  cancelledAt: undefined,
+  cancellationNote: undefined,
 }
 
 const MINE: RequestRow = {
@@ -61,6 +66,11 @@ const MINE: RequestRow = {
   // Nobody decides their own request, whatever their role.
   canDecide: false,
   isMine: true,
+  canCancel: false,
+  timeOff: false,
+  cancelledBy: undefined,
+  cancelledAt: undefined,
+  cancellationNote: undefined,
 }
 
 function page(rows: RequestRow[]) {

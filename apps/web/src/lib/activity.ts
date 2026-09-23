@@ -17,6 +17,7 @@ export const ACTIVITY_LABELS = {
   'request.approved': 'Approved',
   'request.rejected': 'Turned down',
   'request.withdrawn': 'Withdrawn',
+  'request.cancelled': 'Leave cancelled',
   'evaluation.assigned': 'Evaluation assigned',
   'evaluation.submitted': 'Evaluation submitted',
   'evaluation.cancelled': 'Evaluation cancelled',

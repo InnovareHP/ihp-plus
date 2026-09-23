@@ -1,5 +1,6 @@
 import { db } from '@ihp/db'
 import {
+  leaveCancelledTemplate,
   portalUrl,
   requestDecidedTemplate,
   requestReceivedTemplate,
@@ -21,6 +22,14 @@ export interface SubmittedRequest {
   formName: string
   requesterId: string
   requesterName: string
+}
+
+export interface CancelledRequest {
+  submissionId: string
+  requesterId: string
+  formName: string
+  cancellerName: string
+  note: string
 }
 
 export interface DecidedRequest {
@@ -161,4 +170,30 @@ async function adminIds(organizationId: string) {
     db.user.findMany({ where: { role: 'admin' }, select: { id: true } }),
   ])
   return [...members.map((row) => row.userId), ...portalAdmins.map((row) => row.id)]
+}
+
+/** Tells the requester their leave was taken back and why. Never throws: it is already cancelled. */
+export async function notifyRequesterCancelled(request: CancelledRequest) {
+  try {
+    const requester = await db.user.findUnique({
+      where: { id: request.requesterId },
+      select: { email: true },
+    })
+    if (!requester) return
+
+    void sendEmail({
+      to: requester.email,
+      ...leaveCancelledTemplate({
+        formName: request.formName,
+        cancellerName: request.cancellerName,
+        note: request.note,
+        url: portalUrl(requestRoute(request.submissionId)),
+      }),
+    })
+  } catch (error) {
+    console.error(
+      `[requests] could not tell the requester ${request.submissionId} was cancelled`,
+      error,
+    )
+  }
 }

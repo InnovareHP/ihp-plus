@@ -4,9 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { track } from '@/lib/analytics'
 import { announceFailure } from '@/lib/announce'
 import { useOptimisticPagesMutation } from '@/lib/optimistic'
+// Cancelled leave changes the time clock, which this feature does not own.
+import { attendanceKeys } from '@/features/attendance/query-keys'
 import { requestEvents } from '../events'
 import { requestKeys } from '../query-keys'
 import {
+  cancelRequest,
   decideRequest,
   getRequest,
   listAvailableForms,
@@ -16,6 +19,7 @@ import {
   withdrawRequest,
 } from '../rpc'
 import type {
+  CancelRequestValues,
   DecisionValues,
   FormField,
   MyRequestQuery,
@@ -158,6 +162,27 @@ export function useDecideOne() {
     onError: (error: Error) => {
       track(requestEvents.requestDecideFailed, { reason: error.message })
       announceFailure(error.message)
+    },
+  })
+}
+
+// Not optimistic: taking leave back changes the clock and the calendar, which only the server
+// can say it did; the button's own pending label covers the wait.
+export function useCancelRequest() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (values: CancelRequestValues) => cancelRequest(values),
+    onSuccess: (row) => {
+      track(requestEvents.leaveCancelled)
+      queryClient.setQueryData(requestKeys.detail(row.id), row)
+      queryClient.invalidateQueries({ queryKey: requestKeys.queues() })
+      queryClient.invalidateQueries({ queryKey: requestKeys.mines() })
+      // The cancelled days are workdays again on every attendance screen.
+      queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
+    },
+    onError: (error: Error) => {
+      track(requestEvents.leaveCancelFailed, { reason: error.message })
     },
   })
 }

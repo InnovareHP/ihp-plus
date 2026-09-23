@@ -1,6 +1,7 @@
 import type { ServiceImpl } from '@ihp/rpc'
 import { RequestsService } from '@ihp/rpc/requests'
 import {
+  cancelRequest,
   decideRequest,
   deleteForm,
   loadApprovers,
@@ -137,6 +138,12 @@ export const requests: ServiceImpl<typeof RequestsService> = {
         decision: requestStatusFromProto(request.decision) as Decision,
         note: request.note,
       }),
+    ),
+  }),
+
+  cancelRequest: async (request) => ({
+    submission: submissionToProto(
+      await cancelRequest({ submissionId: request.submissionId, note: request.note }),
     ),
   }),
 

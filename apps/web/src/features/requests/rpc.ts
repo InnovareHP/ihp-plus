@@ -16,6 +16,7 @@ import {
   valuesToProto,
 } from '@/rpc/requests-codec'
 import type {
+  CancelRequestValues,
   DecisionValues,
   DepartmentApproversRow,
   FormDraftValues,
@@ -179,6 +180,13 @@ export async function decideRequest(values: DecisionValues): Promise<RequestRow>
       decision: requestStatusToProto(values.decision),
       note: values.note,
     }),
+  )
+  return requiredSubmission(response.submission)
+}
+
+export async function cancelRequest(values: CancelRequestValues): Promise<RequestRow> {
+  const response = await call(() =>
+    browserClients.requests.cancelRequest({ submissionId: values.submissionId, note: values.note }),
   )
   return requiredSubmission(response.submission)
 }

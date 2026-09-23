@@ -6,7 +6,13 @@ export const FIELD_TYPES = ['text', 'textarea', 'number', 'date', 'select', 'che
 export const FORM_STATUSES = ['draft', 'published', 'archived'] as const
 // A request form runs the approval queue; an evaluation form is assigned to a supervisor.
 export const FORM_KINDS = ['request', 'evaluation'] as const
-export const REQUEST_STATUSES = ['pending', 'approved', 'rejected', 'withdrawn'] as const
+export const REQUEST_STATUSES = [
+  'pending',
+  'approved',
+  'rejected',
+  'withdrawn',
+  'cancelled',
+] as const
 export const REQUEST_STATUS_FILTERS = ['all', ...REQUEST_STATUSES] as const
 export const DECISIONS = ['approved', 'rejected'] as const
 
@@ -37,6 +43,7 @@ export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
   approved: 'Approved',
   rejected: 'Rejected',
   withdrawn: 'Withdrawn',
+  cancelled: 'Cancelled',
 }
 
 export const REQUEST_STATUS_COLORS: Record<RequestStatus, string> = {
@@ -44,6 +51,7 @@ export const REQUEST_STATUS_COLORS: Record<RequestStatus, string> = {
   approved: 'green',
   rejected: 'red',
   withdrawn: 'gray',
+  cancelled: 'gray',
 }
 
 export const formFieldSchema = z
@@ -84,6 +92,16 @@ export const setFormStatusSchema = z.object({
 
 export const formIdSchema = z.object({ formId: z.string().min(1) })
 export const submissionIdSchema = z.object({ submissionId: z.string().min(1) })
+
+export const CANCELLATION_NEEDS_REASON =
+  'Say why the leave is cancelled, so the requester knows what changed.'
+
+export const cancelRequestSchema = z.object({
+  submissionId: z.string().min(1),
+  note: z.string().trim().min(1, CANCELLATION_NEEDS_REASON).max(1000),
+})
+
+export type CancelRequestValues = z.infer<typeof cancelRequestSchema>
 
 export const REJECTION_NEEDS_REASON =
   'Say why it was rejected, so the requester knows what to change.'
@@ -151,6 +169,12 @@ export interface RequestRow {
   createdAt: string
   canDecide: boolean
   isMine: boolean
+  /** Approved on a time off form, and the caller may take the leave back off the clock. */
+  canCancel: boolean
+  timeOff: boolean
+  cancelledBy: string | undefined
+  cancelledAt: string | undefined
+  cancellationNote: string | undefined
 }
 
 export interface DepartmentApproversRow {

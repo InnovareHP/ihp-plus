@@ -84,6 +84,13 @@ model RequestSubmission {
   decidedAt    DateTime?
   decisionNote String?
 
+  // Snapshot of the form's flag at submission, so a cancel knows the request booked leave.
+  timeOff          Boolean   @default(false)
+  // An approved time off request can be cancelled later; the approval above stays on record.
+  cancelledById    String?
+  cancelledAt      DateTime?
+  cancellationNote String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

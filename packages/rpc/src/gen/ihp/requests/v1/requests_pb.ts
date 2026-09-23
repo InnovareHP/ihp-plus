@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ihp/requests/v1/requests.proto.
  */
 export const file_ihp_requests_v1_requests: GenFile = /*@__PURE__*/
-  fileDesc("Ch5paHAvcmVxdWVzdHMvdjEvcmVxdWVzdHMucHJvdG8SD2locC5yZXF1ZXN0cy52MSLKAQoJRm9ybUZpZWxkEgoKAmlkGAEgASgJEigKBHR5cGUYAiABKA4yGi5paHAucmVxdWVzdHMudjEuRmllbGRUeXBlEg0KBWxhYmVsGAMgASgJEgwKBGhlbHAYBCABKAkSEAoIcmVxdWlyZWQYBSABKAgSDwoHb3B0aW9ucxgGIAMoCRIQCgNtaW4YByABKAFIAIgBARIQCgNtYXgYCCABKAFIAYgBARITCgtwbGFjZWhvbGRlchgJIAEoCUIGCgRfbWluQgYKBF9tYXgiKAoHVGVhbVJlZhIPCgd0ZWFtX2lkGAEgASgJEgwKBG5hbWUYAiABKAkipwIKC1JlcXVlc3RGb3JtEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSKwoGc3RhdHVzGAQgASgOMhsuaWhwLnJlcXVlc3RzLnYxLkZvcm1TdGF0dXMSKgoGZmllbGRzGAUgAygLMhouaWhwLnJlcXVlc3RzLnYxLkZvcm1GaWVsZBInCgV0ZWFtcxgGIAMoCzIYLmlocC5yZXF1ZXN0cy52MS5UZWFtUmVmEhgKEHN1Ym1pc3Npb25fY291bnQYByABKAUSEgoKdXBkYXRlZF9hdBgIIAEoCRInCgRraW5kGAkgASgOMhkuaWhwLnJlcXVlc3RzLnYxLkZvcm1LaW5kEhAKCHRpbWVfb2ZmGAogASgIImwKCkZpZWxkVmFsdWUSEAoIZmllbGRfaWQYASABKAkSDgoEdGV4dBgCIAEoCUgAEhAKBm51bWJlchgDIAEoAUgAEhEKB2Jvb2xlYW4YBCABKAhIABIOCgRkYXRlGAUgASgJSABCBwoFdmFsdWUi1wMKEVJlcXVlc3RTdWJtaXNzaW9uEgoKAmlkGAEgASgJEg8KB2Zvcm1faWQYAiABKAkSEQoJZm9ybV9uYW1lGAMgASgJEioKBmZpZWxkcxgEIAMoCzIaLmlocC5yZXF1ZXN0cy52MS5Gb3JtRmllbGQSKwoGdmFsdWVzGAUgAygLMhsuaWhwLnJlcXVlc3RzLnYxLkZpZWxkVmFsdWUSFAoMcmVxdWVzdGVyX2lkGAYgASgJEhYKDnJlcXVlc3Rlcl9uYW1lGAcgASgJEhYKCXRlYW1fbmFtZRgIIAEoCUgAiAEBEi4KBnN0YXR1cxgJIAEoDjIeLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0U3RhdHVzEhcKCmRlY2lkZWRfYnkYCiABKAlIAYgBARIXCgpkZWNpZGVkX2F0GAsgASgJSAKIAQESGgoNZGVjaXNpb25fbm90ZRgMIAEoCUgDiAEBEhIKCmNyZWF0ZWRfYXQYDSABKAkSEgoKY2FuX2RlY2lkZRgOIAEoCBIPCgdpc19taW5lGA8gASgIQgwKCl90ZWFtX25hbWVCDQoLX2RlY2lkZWRfYnlCDQoLX2RlY2lkZWRfYXRCEAoOX2RlY2lzaW9uX25vdGUidgoIUGFnZUluZm8SDAoEcGFnZRgBIAEoBRIRCglwYWdlX3NpemUYAiABKAUSDQoFdG90YWwYAyABKAUSEgoKcGFnZV9jb3VudBgEIAEoBRIUCgxoYXNfcHJldmlvdXMYBSABKAgSEAoIaGFzX25leHQYBiABKAgiOAoIQXBwcm92ZXISDwoHdXNlcl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWVtYWlsGAMgASgJImcKE0RlcGFydG1lbnRBcHByb3ZlcnMSDwoHdGVhbV9pZBgBIAEoCRIRCgl0ZWFtX25hbWUYAiABKAkSLAoJYXBwcm92ZXJzGAMgAygLMhkuaWhwLnJlcXVlc3RzLnYxLkFwcHJvdmVyIsIBChBMaXN0Rm9ybXNSZXF1ZXN0EicKBGtpbmQYASABKA4yGS5paHAucmVxdWVzdHMudjEuRm9ybUtpbmQSDgoGc2VhcmNoGAIgASgJEisKBnN0YXR1cxgDIAEoDjIbLmlocC5yZXF1ZXN0cy52MS5Gb3JtU3RhdHVzEhAKCHRlYW1faWRzGAQgAygJEhUKDXVucGxhY2VkX29ubHkYBSABKAgSDAoEcGFnZRgGIAEoBRIRCglwYWdlX3NpemUYByABKAUibgoRTGlzdEZvcm1zUmVzcG9uc2USKwoFZm9ybXMYASADKAsyHC5paHAucmVxdWVzdHMudjEuUmVxdWVzdEZvcm0SLAoJcGFnZV9pbmZvGAIgASgLMhkuaWhwLnJlcXVlc3RzLnYxLlBhZ2VJbmZvIiEKDkdldEZvcm1SZXF1ZXN0Eg8KB2Zvcm1faWQYASABKAkiPQoPR2V0Rm9ybVJlc3BvbnNlEioKBGZvcm0YASABKAsyHC5paHAucmVxdWVzdHMudjEuUmVxdWVzdEZvcm0izwEKD1NhdmVGb3JtUmVxdWVzdBIUCgdmb3JtX2lkGAEgASgJSACIAQESDAoEbmFtZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIqCgZmaWVsZHMYBCADKAsyGi5paHAucmVxdWVzdHMudjEuRm9ybUZpZWxkEhAKCHRlYW1faWRzGAUgAygJEicKBGtpbmQYBiABKA4yGS5paHAucmVxdWVzdHMudjEuRm9ybUtpbmQSEAoIdGltZV9vZmYYByABKAhCCgoIX2Zvcm1faWQiPgoQU2F2ZUZvcm1SZXNwb25zZRIqCgRmb3JtGAEgASgLMhwuaWhwLnJlcXVlc3RzLnYxLlJlcXVlc3RGb3JtIlQKFFNldEZvcm1TdGF0dXNSZXF1ZXN0Eg8KB2Zvcm1faWQYASABKAkSKwoGc3RhdHVzGAIgASgOMhsuaWhwLnJlcXVlc3RzLnYxLkZvcm1TdGF0dXMiQwoVU2V0Rm9ybVN0YXR1c1Jlc3BvbnNlEioKBGZvcm0YASABKAsyHC5paHAucmVxdWVzdHMudjEuUmVxdWVzdEZvcm0iJAoRRGVsZXRlRm9ybVJlcXVlc3QSDwoHZm9ybV9pZBgBIAEoCSIUChJEZWxldGVGb3JtUmVzcG9uc2UiGwoZTGlzdEF2YWlsYWJsZUZvcm1zUmVxdWVzdCJJChpMaXN0QXZhaWxhYmxlRm9ybXNSZXNwb25zZRIrCgVmb3JtcxgBIAMoCzIcLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0Rm9ybSJUChRTdWJtaXRSZXF1ZXN0UmVxdWVzdBIPCgdmb3JtX2lkGAEgASgJEisKBnZhbHVlcxgCIAMoCzIbLmlocC5yZXF1ZXN0cy52MS5GaWVsZFZhbHVlIk8KFVN1Ym1pdFJlcXVlc3RSZXNwb25zZRI2CgpzdWJtaXNzaW9uGAEgASgLMiIuaWhwLnJlcXVlc3RzLnYxLlJlcXVlc3RTdWJtaXNzaW9uIn4KFUxpc3RNeVJlcXVlc3RzUmVxdWVzdBI0CgZzdGF0dXMYASABKA4yJC5paHAucmVxdWVzdHMudjEuUmVxdWVzdFN0YXR1c0ZpbHRlchIOCgZzZWFyY2gYAiABKAkSDAoEcGFnZRgDIAEoBRIRCglwYWdlX3NpemUYBCABKAUieAoWTGlzdE15UmVxdWVzdHNSZXNwb25zZRIwCgRyb3dzGAEgAygLMiIuaWhwLnJlcXVlc3RzLnYxLlJlcXVlc3RTdWJtaXNzaW9uEiwKCXBhZ2VfaW5mbxgCIAEoCzIZLmlocC5yZXF1ZXN0cy52MS5QYWdlSW5mbyIvChZXaXRoZHJhd1JlcXVlc3RSZXF1ZXN0EhUKDXN1Ym1pc3Npb25faWQYASABKAkiUQoXV2l0aGRyYXdSZXF1ZXN0UmVzcG9uc2USNgoKc3VibWlzc2lvbhgBIAEoCzIiLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0U3VibWlzc2lvbiKOAQoTTGlzdFJlcXVlc3RzUmVxdWVzdBI0CgZzdGF0dXMYASABKA4yJC5paHAucmVxdWVzdHMudjEuUmVxdWVzdFN0YXR1c0ZpbHRlchIOCgZzZWFyY2gYAiABKAkSEAoIdGVhbV9pZHMYAyADKAkSDAoEcGFnZRgEIAEoBRIRCglwYWdlX3NpemUYBSABKAUidgoUTGlzdFJlcXVlc3RzUmVzcG9uc2USMAoEcm93cxgBIAMoCzIiLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0U3VibWlzc2lvbhIsCglwYWdlX2luZm8YAiABKAsyGS5paHAucmVxdWVzdHMudjEuUGFnZUluZm8iKgoRR2V0UmVxdWVzdFJlcXVlc3QSFQoNc3VibWlzc2lvbl9pZBgBIAEoCSJMChJHZXRSZXF1ZXN0UmVzcG9uc2USNgoKc3VibWlzc2lvbhgBIAEoCzIiLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0U3VibWlzc2lvbiJtChREZWNpZGVSZXF1ZXN0UmVxdWVzdBIVCg1zdWJtaXNzaW9uX2lkGAEgASgJEjAKCGRlY2lzaW9uGAIgASgOMh4uaWhwLnJlcXVlc3RzLnYxLlJlcXVlc3RTdGF0dXMSDAoEbm90ZRgDIAEoCSJPChVEZWNpZGVSZXF1ZXN0UmVzcG9uc2USNgoKc3VibWlzc2lvbhgBIAEoCzIiLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0U3VibWlzc2lvbiIWChRMaXN0QXBwcm92ZXJzUmVxdWVzdCJSChVMaXN0QXBwcm92ZXJzUmVzcG9uc2USOQoLZGVwYXJ0bWVudHMYASADKAsyJC5paHAucmVxdWVzdHMudjEuRGVwYXJ0bWVudEFwcHJvdmVycyJIChJTZXRBcHByb3ZlclJlcXVlc3QSDwoHdGVhbV9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEhAKCGFwcHJvdmVyGAMgASgIIk8KE1NldEFwcHJvdmVyUmVzcG9uc2USOAoKZGVwYXJ0bWVudBgBIAEoCzIkLmlocC5yZXF1ZXN0cy52MS5EZXBhcnRtZW50QXBwcm92ZXJzKrEBCglGaWVsZFR5cGUSGgoWRklFTERfVFlQRV9VTlNQRUNJRklFRBAAEhMKD0ZJRUxEX1RZUEVfVEVYVBABEhcKE0ZJRUxEX1RZUEVfVEVYVEFSRUEQAhIVChFGSUVMRF9UWVBFX05VTUJFUhADEhMKD0ZJRUxEX1RZUEVfREFURRAEEhUKEUZJRUxEX1RZUEVfU0VMRUNUEAUSFwoTRklFTERfVFlQRV9DSEVDS0JPWBAGKnUKCkZvcm1TdGF0dXMSGwoXRk9STV9TVEFUVVNfVU5TUEVDSUZJRUQQABIVChFGT1JNX1NUQVRVU19EUkFGVBABEhkKFUZPUk1fU1RBVFVTX1BVQkxJU0hFRBACEhgKFEZPUk1fU1RBVFVTX0FSQ0hJVkVEEAMqVgoIRm9ybUtpbmQSGQoVRk9STV9LSU5EX1VOU1BFQ0lGSUVEEAASFQoRRk9STV9LSU5EX1JFUVVFU1QQARIYChRGT1JNX0tJTkRfRVZBTFVBVElPThACKqMBCg1SZXF1ZXN0U3RhdHVzEh4KGlJFUVVFU1RfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGgoWUkVRVUVTVF9TVEFUVVNfUEVORElORxABEhsKF1JFUVVFU1RfU1RBVFVTX0FQUFJPVkVEEAISGwoXUkVRVUVTVF9TVEFUVVNfUkVKRUNURUQQAxIcChhSRVFVRVNUX1NUQVRVU19XSVRIRFJBV04QBCrrAQoTUmVxdWVzdFN0YXR1c0ZpbHRlchIlCiFSRVFVRVNUX1NUQVRVU19GSUxURVJfVU5TUEVDSUZJRUQQABIdChlSRVFVRVNUX1NUQVRVU19GSUxURVJfQUxMEAESIQodUkVRVUVTVF9TVEFUVVNfRklMVEVSX1BFTkRJTkcQAhIiCh5SRVFVRVNUX1NUQVRVU19GSUxURVJfQVBQUk9WRUQQAxIiCh5SRVFVRVNUX1NUQVRVU19GSUxURVJfUkVKRUNURUQQBBIjCh9SRVFVRVNUX1NUQVRVU19GSUxURVJfV0lUSERSQVdOEAUyoQoKD1JlcXVlc3RzU2VydmljZRJSCglMaXN0Rm9ybXMSIS5paHAucmVxdWVzdHMudjEuTGlzdEZvcm1zUmVxdWVzdBoiLmlocC5yZXF1ZXN0cy52MS5MaXN0Rm9ybXNSZXNwb25zZRJMCgdHZXRGb3JtEh8uaWhwLnJlcXVlc3RzLnYxLkdldEZvcm1SZXF1ZXN0GiAuaWhwLnJlcXVlc3RzLnYxLkdldEZvcm1SZXNwb25zZRJPCghTYXZlRm9ybRIgLmlocC5yZXF1ZXN0cy52MS5TYXZlRm9ybVJlcXVlc3QaIS5paHAucmVxdWVzdHMudjEuU2F2ZUZvcm1SZXNwb25zZRJeCg1TZXRGb3JtU3RhdHVzEiUuaWhwLnJlcXVlc3RzLnYxLlNldEZvcm1TdGF0dXNSZXF1ZXN0GiYuaWhwLnJlcXVlc3RzLnYxLlNldEZvcm1TdGF0dXNSZXNwb25zZRJVCgpEZWxldGVGb3JtEiIuaWhwLnJlcXVlc3RzLnYxLkRlbGV0ZUZvcm1SZXF1ZXN0GiMuaWhwLnJlcXVlc3RzLnYxLkRlbGV0ZUZvcm1SZXNwb25zZRJtChJMaXN0QXZhaWxhYmxlRm9ybXMSKi5paHAucmVxdWVzdHMudjEuTGlzdEF2YWlsYWJsZUZvcm1zUmVxdWVzdBorLmlocC5yZXF1ZXN0cy52MS5MaXN0QXZhaWxhYmxlRm9ybXNSZXNwb25zZRJeCg1TdWJtaXRSZXF1ZXN0EiUuaWhwLnJlcXVlc3RzLnYxLlN1Ym1pdFJlcXVlc3RSZXF1ZXN0GiYuaWhwLnJlcXVlc3RzLnYxLlN1Ym1pdFJlcXVlc3RSZXNwb25zZRJhCg5MaXN0TXlSZXF1ZXN0cxImLmlocC5yZXF1ZXN0cy52MS5MaXN0TXlSZXF1ZXN0c1JlcXVlc3QaJy5paHAucmVxdWVzdHMudjEuTGlzdE15UmVxdWVzdHNSZXNwb25zZRJkCg9XaXRoZHJhd1JlcXVlc3QSJy5paHAucmVxdWVzdHMudjEuV2l0aGRyYXdSZXF1ZXN0UmVxdWVzdBooLmlocC5yZXF1ZXN0cy52MS5XaXRoZHJhd1JlcXVlc3RSZXNwb25zZRJbCgxMaXN0UmVxdWVzdHMSJC5paHAucmVxdWVzdHMudjEuTGlzdFJlcXVlc3RzUmVxdWVzdBolLmlocC5yZXF1ZXN0cy52MS5MaXN0UmVxdWVzdHNSZXNwb25zZRJVCgpHZXRSZXF1ZXN0EiIuaWhwLnJlcXVlc3RzLnYxLkdldFJlcXVlc3RSZXF1ZXN0GiMuaWhwLnJlcXVlc3RzLnYxLkdldFJlcXVlc3RSZXNwb25zZRJeCg1EZWNpZGVSZXF1ZXN0EiUuaWhwLnJlcXVlc3RzLnYxLkRlY2lkZVJlcXVlc3RSZXF1ZXN0GiYuaWhwLnJlcXVlc3RzLnYxLkRlY2lkZVJlcXVlc3RSZXNwb25zZRJeCg1MaXN0QXBwcm92ZXJzEiUuaWhwLnJlcXVlc3RzLnYxLkxpc3RBcHByb3ZlcnNSZXF1ZXN0GiYuaWhwLnJlcXVlc3RzLnYxLkxpc3RBcHByb3ZlcnNSZXNwb25zZRJYCgtTZXRBcHByb3ZlchIjLmlocC5yZXF1ZXN0cy52MS5TZXRBcHByb3ZlclJlcXVlc3QaJC5paHAucmVxdWVzdHMudjEuU2V0QXBwcm92ZXJSZXNwb25zZWIGcHJvdG8z");
+  fileDesc("Ch5paHAvcmVxdWVzdHMvdjEvcmVxdWVzdHMucHJvdG8SD2locC5yZXF1ZXN0cy52MSLKAQoJRm9ybUZpZWxkEgoKAmlkGAEgASgJEigKBHR5cGUYAiABKA4yGi5paHAucmVxdWVzdHMudjEuRmllbGRUeXBlEg0KBWxhYmVsGAMgASgJEgwKBGhlbHAYBCABKAkSEAoIcmVxdWlyZWQYBSABKAgSDwoHb3B0aW9ucxgGIAMoCRIQCgNtaW4YByABKAFIAIgBARIQCgNtYXgYCCABKAFIAYgBARITCgtwbGFjZWhvbGRlchgJIAEoCUIGCgRfbWluQgYKBF9tYXgiKAoHVGVhbVJlZhIPCgd0ZWFtX2lkGAEgASgJEgwKBG5hbWUYAiABKAkipwIKC1JlcXVlc3RGb3JtEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSKwoGc3RhdHVzGAQgASgOMhsuaWhwLnJlcXVlc3RzLnYxLkZvcm1TdGF0dXMSKgoGZmllbGRzGAUgAygLMhouaWhwLnJlcXVlc3RzLnYxLkZvcm1GaWVsZBInCgV0ZWFtcxgGIAMoCzIYLmlocC5yZXF1ZXN0cy52MS5UZWFtUmVmEhgKEHN1Ym1pc3Npb25fY291bnQYByABKAUSEgoKdXBkYXRlZF9hdBgIIAEoCRInCgRraW5kGAkgASgOMhkuaWhwLnJlcXVlc3RzLnYxLkZvcm1LaW5kEhAKCHRpbWVfb2ZmGAogASgIImwKCkZpZWxkVmFsdWUSEAoIZmllbGRfaWQYASABKAkSDgoEdGV4dBgCIAEoCUgAEhAKBm51bWJlchgDIAEoAUgAEhEKB2Jvb2xlYW4YBCABKAhIABIOCgRkYXRlGAUgASgJSABCBwoFdmFsdWUiiwUKEVJlcXVlc3RTdWJtaXNzaW9uEgoKAmlkGAEgASgJEg8KB2Zvcm1faWQYAiABKAkSEQoJZm9ybV9uYW1lGAMgASgJEioKBmZpZWxkcxgEIAMoCzIaLmlocC5yZXF1ZXN0cy52MS5Gb3JtRmllbGQSKwoGdmFsdWVzGAUgAygLMhsuaWhwLnJlcXVlc3RzLnYxLkZpZWxkVmFsdWUSFAoMcmVxdWVzdGVyX2lkGAYgASgJEhYKDnJlcXVlc3Rlcl9uYW1lGAcgASgJEhYKCXRlYW1fbmFtZRgIIAEoCUgAiAEBEi4KBnN0YXR1cxgJIAEoDjIeLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0U3RhdHVzEhcKCmRlY2lkZWRfYnkYCiABKAlIAYgBARIXCgpkZWNpZGVkX2F0GAsgASgJSAKIAQESGgoNZGVjaXNpb25fbm90ZRgMIAEoCUgDiAEBEhIKCmNyZWF0ZWRfYXQYDSABKAkSEgoKY2FuX2RlY2lkZRgOIAEoCBIPCgdpc19taW5lGA8gASgIEhIKCmNhbl9jYW5jZWwYECABKAgSEAoIdGltZV9vZmYYESABKAgSGQoMY2FuY2VsbGVkX2J5GBIgASgJSASIAQESGQoMY2FuY2VsbGVkX2F0GBMgASgJSAWIAQESHgoRY2FuY2VsbGF0aW9uX25vdGUYFCABKAlIBogBAUIMCgpfdGVhbV9uYW1lQg0KC19kZWNpZGVkX2J5Qg0KC19kZWNpZGVkX2F0QhAKDl9kZWNpc2lvbl9ub3RlQg8KDV9jYW5jZWxsZWRfYnlCDwoNX2NhbmNlbGxlZF9hdEIUChJfY2FuY2VsbGF0aW9uX25vdGUiOwoUQ2FuY2VsUmVxdWVzdFJlcXVlc3QSFQoNc3VibWlzc2lvbl9pZBgBIAEoCRIMCgRub3RlGAIgASgJIk8KFUNhbmNlbFJlcXVlc3RSZXNwb25zZRI2CgpzdWJtaXNzaW9uGAEgASgLMiIuaWhwLnJlcXVlc3RzLnYxLlJlcXVlc3RTdWJtaXNzaW9uInYKCFBhZ2VJbmZvEgwKBHBhZ2UYASABKAUSEQoJcGFnZV9zaXplGAIgASgFEg0KBXRvdGFsGAMgASgFEhIKCnBhZ2VfY291bnQYBCABKAUSFAoMaGFzX3ByZXZpb3VzGAUgASgIEhAKCGhhc19uZXh0GAYgASgIIjgKCEFwcHJvdmVyEg8KB3VzZXJfaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVlbWFpbBgDIAEoCSJnChNEZXBhcnRtZW50QXBwcm92ZXJzEg8KB3RlYW1faWQYASABKAkSEQoJdGVhbV9uYW1lGAIgASgJEiwKCWFwcHJvdmVycxgDIAMoCzIZLmlocC5yZXF1ZXN0cy52MS5BcHByb3ZlciLCAQoQTGlzdEZvcm1zUmVxdWVzdBInCgRraW5kGAEgASgOMhkuaWhwLnJlcXVlc3RzLnYxLkZvcm1LaW5kEg4KBnNlYXJjaBgCIAEoCRIrCgZzdGF0dXMYAyABKA4yGy5paHAucmVxdWVzdHMudjEuRm9ybVN0YXR1cxIQCgh0ZWFtX2lkcxgEIAMoCRIVCg11bnBsYWNlZF9vbmx5GAUgASgIEgwKBHBhZ2UYBiABKAUSEQoJcGFnZV9zaXplGAcgASgFIm4KEUxpc3RGb3Jtc1Jlc3BvbnNlEisKBWZvcm1zGAEgAygLMhwuaWhwLnJlcXVlc3RzLnYxLlJlcXVlc3RGb3JtEiwKCXBhZ2VfaW5mbxgCIAEoCzIZLmlocC5yZXF1ZXN0cy52MS5QYWdlSW5mbyIhCg5HZXRGb3JtUmVxdWVzdBIPCgdmb3JtX2lkGAEgASgJIj0KD0dldEZvcm1SZXNwb25zZRIqCgRmb3JtGAEgASgLMhwuaWhwLnJlcXVlc3RzLnYxLlJlcXVlc3RGb3JtIs8BCg9TYXZlRm9ybVJlcXVlc3QSFAoHZm9ybV9pZBgBIAEoCUgAiAEBEgwKBG5hbWUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSKgoGZmllbGRzGAQgAygLMhouaWhwLnJlcXVlc3RzLnYxLkZvcm1GaWVsZBIQCgh0ZWFtX2lkcxgFIAMoCRInCgRraW5kGAYgASgOMhkuaWhwLnJlcXVlc3RzLnYxLkZvcm1LaW5kEhAKCHRpbWVfb2ZmGAcgASgIQgoKCF9mb3JtX2lkIj4KEFNhdmVGb3JtUmVzcG9uc2USKgoEZm9ybRgBIAEoCzIcLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0Rm9ybSJUChRTZXRGb3JtU3RhdHVzUmVxdWVzdBIPCgdmb3JtX2lkGAEgASgJEisKBnN0YXR1cxgCIAEoDjIbLmlocC5yZXF1ZXN0cy52MS5Gb3JtU3RhdHVzIkMKFVNldEZvcm1TdGF0dXNSZXNwb25zZRIqCgRmb3JtGAEgASgLMhwuaWhwLnJlcXVlc3RzLnYxLlJlcXVlc3RGb3JtIiQKEURlbGV0ZUZvcm1SZXF1ZXN0Eg8KB2Zvcm1faWQYASABKAkiFAoSRGVsZXRlRm9ybVJlc3BvbnNlIhsKGUxpc3RBdmFpbGFibGVGb3Jtc1JlcXVlc3QiSQoaTGlzdEF2YWlsYWJsZUZvcm1zUmVzcG9uc2USKwoFZm9ybXMYASADKAsyHC5paHAucmVxdWVzdHMudjEuUmVxdWVzdEZvcm0iVAoUU3VibWl0UmVxdWVzdFJlcXVlc3QSDwoHZm9ybV9pZBgBIAEoCRIrCgZ2YWx1ZXMYAiADKAsyGy5paHAucmVxdWVzdHMudjEuRmllbGRWYWx1ZSJPChVTdWJtaXRSZXF1ZXN0UmVzcG9uc2USNgoKc3VibWlzc2lvbhgBIAEoCzIiLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0U3VibWlzc2lvbiJ+ChVMaXN0TXlSZXF1ZXN0c1JlcXVlc3QSNAoGc3RhdHVzGAEgASgOMiQuaWhwLnJlcXVlc3RzLnYxLlJlcXVlc3RTdGF0dXNGaWx0ZXISDgoGc2VhcmNoGAIgASgJEgwKBHBhZ2UYAyABKAUSEQoJcGFnZV9zaXplGAQgASgFIngKFkxpc3RNeVJlcXVlc3RzUmVzcG9uc2USMAoEcm93cxgBIAMoCzIiLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0U3VibWlzc2lvbhIsCglwYWdlX2luZm8YAiABKAsyGS5paHAucmVxdWVzdHMudjEuUGFnZUluZm8iLwoWV2l0aGRyYXdSZXF1ZXN0UmVxdWVzdBIVCg1zdWJtaXNzaW9uX2lkGAEgASgJIlEKF1dpdGhkcmF3UmVxdWVzdFJlc3BvbnNlEjYKCnN1Ym1pc3Npb24YASABKAsyIi5paHAucmVxdWVzdHMudjEuUmVxdWVzdFN1Ym1pc3Npb24ijgEKE0xpc3RSZXF1ZXN0c1JlcXVlc3QSNAoGc3RhdHVzGAEgASgOMiQuaWhwLnJlcXVlc3RzLnYxLlJlcXVlc3RTdGF0dXNGaWx0ZXISDgoGc2VhcmNoGAIgASgJEhAKCHRlYW1faWRzGAMgAygJEgwKBHBhZ2UYBCABKAUSEQoJcGFnZV9zaXplGAUgASgFInYKFExpc3RSZXF1ZXN0c1Jlc3BvbnNlEjAKBHJvd3MYASADKAsyIi5paHAucmVxdWVzdHMudjEuUmVxdWVzdFN1Ym1pc3Npb24SLAoJcGFnZV9pbmZvGAIgASgLMhkuaWhwLnJlcXVlc3RzLnYxLlBhZ2VJbmZvIioKEUdldFJlcXVlc3RSZXF1ZXN0EhUKDXN1Ym1pc3Npb25faWQYASABKAkiTAoSR2V0UmVxdWVzdFJlc3BvbnNlEjYKCnN1Ym1pc3Npb24YASABKAsyIi5paHAucmVxdWVzdHMudjEuUmVxdWVzdFN1Ym1pc3Npb24ibQoURGVjaWRlUmVxdWVzdFJlcXVlc3QSFQoNc3VibWlzc2lvbl9pZBgBIAEoCRIwCghkZWNpc2lvbhgCIAEoDjIeLmlocC5yZXF1ZXN0cy52MS5SZXF1ZXN0U3RhdHVzEgwKBG5vdGUYAyABKAkiTwoVRGVjaWRlUmVxdWVzdFJlc3BvbnNlEjYKCnN1Ym1pc3Npb24YASABKAsyIi5paHAucmVxdWVzdHMudjEuUmVxdWVzdFN1Ym1pc3Npb24iFgoUTGlzdEFwcHJvdmVyc1JlcXVlc3QiUgoVTGlzdEFwcHJvdmVyc1Jlc3BvbnNlEjkKC2RlcGFydG1lbnRzGAEgAygLMiQuaWhwLnJlcXVlc3RzLnYxLkRlcGFydG1lbnRBcHByb3ZlcnMiSAoSU2V0QXBwcm92ZXJSZXF1ZXN0Eg8KB3RlYW1faWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIQCghhcHByb3ZlchgDIAEoCCJPChNTZXRBcHByb3ZlclJlc3BvbnNlEjgKCmRlcGFydG1lbnQYASABKAsyJC5paHAucmVxdWVzdHMudjEuRGVwYXJ0bWVudEFwcHJvdmVycyqxAQoJRmllbGRUeXBlEhoKFkZJRUxEX1RZUEVfVU5TUEVDSUZJRUQQABITCg9GSUVMRF9UWVBFX1RFWFQQARIXChNGSUVMRF9UWVBFX1RFWFRBUkVBEAISFQoRRklFTERfVFlQRV9OVU1CRVIQAxITCg9GSUVMRF9UWVBFX0RBVEUQBBIVChFGSUVMRF9UWVBFX1NFTEVDVBAFEhcKE0ZJRUxEX1RZUEVfQ0hFQ0tCT1gQBip1CgpGb3JtU3RhdHVzEhsKF0ZPUk1fU1RBVFVTX1VOU1BFQ0lGSUVEEAASFQoRRk9STV9TVEFUVVNfRFJBRlQQARIZChVGT1JNX1NUQVRVU19QVUJMSVNIRUQQAhIYChRGT1JNX1NUQVRVU19BUkNISVZFRBADKlYKCEZvcm1LaW5kEhkKFUZPUk1fS0lORF9VTlNQRUNJRklFRBAAEhUKEUZPUk1fS0lORF9SRVFVRVNUEAESGAoURk9STV9LSU5EX0VWQUxVQVRJT04QAirBAQoNUmVxdWVzdFN0YXR1cxIeChpSRVFVRVNUX1NUQVRVU19VTlNQRUNJRklFRBAAEhoKFlJFUVVFU1RfU1RBVFVTX1BFTkRJTkcQARIbChdSRVFVRVNUX1NUQVRVU19BUFBST1ZFRBACEhsKF1JFUVVFU1RfU1RBVFVTX1JFSkVDVEVEEAMSHAoYUkVRVUVTVF9TVEFUVVNfV0lUSERSQVdOEAQSHAoYUkVRVUVTVF9TVEFUVVNfQ0FOQ0VMTEVEEAUqkAIKE1JlcXVlc3RTdGF0dXNGaWx0ZXISJQohUkVRVUVTVF9TVEFUVVNfRklMVEVSX1VOU1BFQ0lGSUVEEAASHQoZUkVRVUVTVF9TVEFUVVNfRklMVEVSX0FMTBABEiEKHVJFUVVFU1RfU1RBVFVTX0ZJTFRFUl9QRU5ESU5HEAISIgoeUkVRVUVTVF9TVEFUVVNfRklMVEVSX0FQUFJPVkVEEAMSIgoeUkVRVUVTVF9TVEFUVVNfRklMVEVSX1JFSkVDVEVEEAQSIwofUkVRVUVTVF9TVEFUVVNfRklMVEVSX1dJVEhEUkFXThAFEiMKH1JFUVVFU1RfU1RBVFVTX0ZJTFRFUl9DQU5DRUxMRUQQBjKBCwoPUmVxdWVzdHNTZXJ2aWNlElIKCUxpc3RGb3JtcxIhLmlocC5yZXF1ZXN0cy52MS5MaXN0Rm9ybXNSZXF1ZXN0GiIuaWhwLnJlcXVlc3RzLnYxLkxpc3RGb3Jtc1Jlc3BvbnNlEkwKB0dldEZvcm0SHy5paHAucmVxdWVzdHMudjEuR2V0Rm9ybVJlcXVlc3QaIC5paHAucmVxdWVzdHMudjEuR2V0Rm9ybVJlc3BvbnNlEk8KCFNhdmVGb3JtEiAuaWhwLnJlcXVlc3RzLnYxLlNhdmVGb3JtUmVxdWVzdBohLmlocC5yZXF1ZXN0cy52MS5TYXZlRm9ybVJlc3BvbnNlEl4KDVNldEZvcm1TdGF0dXMSJS5paHAucmVxdWVzdHMudjEuU2V0Rm9ybVN0YXR1c1JlcXVlc3QaJi5paHAucmVxdWVzdHMudjEuU2V0Rm9ybVN0YXR1c1Jlc3BvbnNlElUKCkRlbGV0ZUZvcm0SIi5paHAucmVxdWVzdHMudjEuRGVsZXRlRm9ybVJlcXVlc3QaIy5paHAucmVxdWVzdHMudjEuRGVsZXRlRm9ybVJlc3BvbnNlEm0KEkxpc3RBdmFpbGFibGVGb3JtcxIqLmlocC5yZXF1ZXN0cy52MS5MaXN0QXZhaWxhYmxlRm9ybXNSZXF1ZXN0GisuaWhwLnJlcXVlc3RzLnYxLkxpc3RBdmFpbGFibGVGb3Jtc1Jlc3BvbnNlEl4KDVN1Ym1pdFJlcXVlc3QSJS5paHAucmVxdWVzdHMudjEuU3VibWl0UmVxdWVzdFJlcXVlc3QaJi5paHAucmVxdWVzdHMudjEuU3VibWl0UmVxdWVzdFJlc3BvbnNlEmEKDkxpc3RNeVJlcXVlc3RzEiYuaWhwLnJlcXVlc3RzLnYxLkxpc3RNeVJlcXVlc3RzUmVxdWVzdBonLmlocC5yZXF1ZXN0cy52MS5MaXN0TXlSZXF1ZXN0c1Jlc3BvbnNlEmQKD1dpdGhkcmF3UmVxdWVzdBInLmlocC5yZXF1ZXN0cy52MS5XaXRoZHJhd1JlcXVlc3RSZXF1ZXN0GiguaWhwLnJlcXVlc3RzLnYxLldpdGhkcmF3UmVxdWVzdFJlc3BvbnNlElsKDExpc3RSZXF1ZXN0cxIkLmlocC5yZXF1ZXN0cy52MS5MaXN0UmVxdWVzdHNSZXF1ZXN0GiUuaWhwLnJlcXVlc3RzLnYxLkxpc3RSZXF1ZXN0c1Jlc3BvbnNlElUKCkdldFJlcXVlc3QSIi5paHAucmVxdWVzdHMudjEuR2V0UmVxdWVzdFJlcXVlc3QaIy5paHAucmVxdWVzdHMudjEuR2V0UmVxdWVzdFJlc3BvbnNlEl4KDURlY2lkZVJlcXVlc3QSJS5paHAucmVxdWVzdHMudjEuRGVjaWRlUmVxdWVzdFJlcXVlc3QaJi5paHAucmVxdWVzdHMudjEuRGVjaWRlUmVxdWVzdFJlc3BvbnNlEl4KDUNhbmNlbFJlcXVlc3QSJS5paHAucmVxdWVzdHMudjEuQ2FuY2VsUmVxdWVzdFJlcXVlc3QaJi5paHAucmVxdWVzdHMudjEuQ2FuY2VsUmVxdWVzdFJlc3BvbnNlEl4KDUxpc3RBcHByb3ZlcnMSJS5paHAucmVxdWVzdHMudjEuTGlzdEFwcHJvdmVyc1JlcXVlc3QaJi5paHAucmVxdWVzdHMudjEuTGlzdEFwcHJvdmVyc1Jlc3BvbnNlElgKC1NldEFwcHJvdmVyEiMuaWhwLnJlcXVlc3RzLnYxLlNldEFwcHJvdmVyUmVxdWVzdBokLmlocC5yZXF1ZXN0cy52MS5TZXRBcHByb3ZlclJlc3BvbnNlYgZwcm90bzM");
 
 /**
  * @generated from message ihp.requests.v1.FormField
@@ -297,6 +297,33 @@ export type RequestSubmission = Message<"ihp.requests.v1.RequestSubmission"> & {
    * @generated from field: bool is_mine = 15;
    */
   isMine: boolean;
+
+  /**
+   * Approved on a time off form, and the caller may take the leave back off the clock.
+   *
+   * @generated from field: bool can_cancel = 16;
+   */
+  canCancel: boolean;
+
+  /**
+   * @generated from field: bool time_off = 17;
+   */
+  timeOff: boolean;
+
+  /**
+   * @generated from field: optional string cancelled_by = 18;
+   */
+  cancelledBy?: string | undefined;
+
+  /**
+   * @generated from field: optional string cancelled_at = 19;
+   */
+  cancelledAt?: string | undefined;
+
+  /**
+   * @generated from field: optional string cancellation_note = 20;
+   */
+  cancellationNote?: string | undefined;
 };
 
 /**
@@ -305,6 +332,47 @@ export type RequestSubmission = Message<"ihp.requests.v1.RequestSubmission"> & {
  */
 export const RequestSubmissionSchema: GenMessage<RequestSubmission> = /*@__PURE__*/
   messageDesc(file_ihp_requests_v1_requests, 4);
+
+/**
+ * @generated from message ihp.requests.v1.CancelRequestRequest
+ */
+export type CancelRequestRequest = Message<"ihp.requests.v1.CancelRequestRequest"> & {
+  /**
+   * @generated from field: string submission_id = 1;
+   */
+  submissionId: string;
+
+  /**
+   * Required: the requester is told why their leave was taken back.
+   *
+   * @generated from field: string note = 2;
+   */
+  note: string;
+};
+
+/**
+ * Describes the message ihp.requests.v1.CancelRequestRequest.
+ * Use `create(CancelRequestRequestSchema)` to create a new message.
+ */
+export const CancelRequestRequestSchema: GenMessage<CancelRequestRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_requests_v1_requests, 5);
+
+/**
+ * @generated from message ihp.requests.v1.CancelRequestResponse
+ */
+export type CancelRequestResponse = Message<"ihp.requests.v1.CancelRequestResponse"> & {
+  /**
+   * @generated from field: ihp.requests.v1.RequestSubmission submission = 1;
+   */
+  submission?: RequestSubmission | undefined;
+};
+
+/**
+ * Describes the message ihp.requests.v1.CancelRequestResponse.
+ * Use `create(CancelRequestResponseSchema)` to create a new message.
+ */
+export const CancelRequestResponseSchema: GenMessage<CancelRequestResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_requests_v1_requests, 6);
 
 /**
  * @generated from message ihp.requests.v1.PageInfo
@@ -346,7 +414,7 @@ export type PageInfo = Message<"ihp.requests.v1.PageInfo"> & {
  * Use `create(PageInfoSchema)` to create a new message.
  */
 export const PageInfoSchema: GenMessage<PageInfo> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 5);
+  messageDesc(file_ihp_requests_v1_requests, 7);
 
 /**
  * @generated from message ihp.requests.v1.Approver
@@ -373,7 +441,7 @@ export type Approver = Message<"ihp.requests.v1.Approver"> & {
  * Use `create(ApproverSchema)` to create a new message.
  */
 export const ApproverSchema: GenMessage<Approver> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 6);
+  messageDesc(file_ihp_requests_v1_requests, 8);
 
 /**
  * @generated from message ihp.requests.v1.DepartmentApprovers
@@ -400,7 +468,7 @@ export type DepartmentApprovers = Message<"ihp.requests.v1.DepartmentApprovers">
  * Use `create(DepartmentApproversSchema)` to create a new message.
  */
 export const DepartmentApproversSchema: GenMessage<DepartmentApprovers> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 7);
+  messageDesc(file_ihp_requests_v1_requests, 9);
 
 /**
  * @generated from message ihp.requests.v1.ListFormsRequest
@@ -451,7 +519,7 @@ export type ListFormsRequest = Message<"ihp.requests.v1.ListFormsRequest"> & {
  * Use `create(ListFormsRequestSchema)` to create a new message.
  */
 export const ListFormsRequestSchema: GenMessage<ListFormsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 8);
+  messageDesc(file_ihp_requests_v1_requests, 10);
 
 /**
  * @generated from message ihp.requests.v1.ListFormsResponse
@@ -473,7 +541,7 @@ export type ListFormsResponse = Message<"ihp.requests.v1.ListFormsResponse"> & {
  * Use `create(ListFormsResponseSchema)` to create a new message.
  */
 export const ListFormsResponseSchema: GenMessage<ListFormsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 9);
+  messageDesc(file_ihp_requests_v1_requests, 11);
 
 /**
  * @generated from message ihp.requests.v1.GetFormRequest
@@ -490,7 +558,7 @@ export type GetFormRequest = Message<"ihp.requests.v1.GetFormRequest"> & {
  * Use `create(GetFormRequestSchema)` to create a new message.
  */
 export const GetFormRequestSchema: GenMessage<GetFormRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 10);
+  messageDesc(file_ihp_requests_v1_requests, 12);
 
 /**
  * @generated from message ihp.requests.v1.GetFormResponse
@@ -507,7 +575,7 @@ export type GetFormResponse = Message<"ihp.requests.v1.GetFormResponse"> & {
  * Use `create(GetFormResponseSchema)` to create a new message.
  */
 export const GetFormResponseSchema: GenMessage<GetFormResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 11);
+  messageDesc(file_ihp_requests_v1_requests, 13);
 
 /**
  * One call creates and updates: an absent form_id is a create.
@@ -556,7 +624,7 @@ export type SaveFormRequest = Message<"ihp.requests.v1.SaveFormRequest"> & {
  * Use `create(SaveFormRequestSchema)` to create a new message.
  */
 export const SaveFormRequestSchema: GenMessage<SaveFormRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 12);
+  messageDesc(file_ihp_requests_v1_requests, 14);
 
 /**
  * @generated from message ihp.requests.v1.SaveFormResponse
@@ -573,7 +641,7 @@ export type SaveFormResponse = Message<"ihp.requests.v1.SaveFormResponse"> & {
  * Use `create(SaveFormResponseSchema)` to create a new message.
  */
 export const SaveFormResponseSchema: GenMessage<SaveFormResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 13);
+  messageDesc(file_ihp_requests_v1_requests, 15);
 
 /**
  * @generated from message ihp.requests.v1.SetFormStatusRequest
@@ -595,7 +663,7 @@ export type SetFormStatusRequest = Message<"ihp.requests.v1.SetFormStatusRequest
  * Use `create(SetFormStatusRequestSchema)` to create a new message.
  */
 export const SetFormStatusRequestSchema: GenMessage<SetFormStatusRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 14);
+  messageDesc(file_ihp_requests_v1_requests, 16);
 
 /**
  * @generated from message ihp.requests.v1.SetFormStatusResponse
@@ -612,7 +680,7 @@ export type SetFormStatusResponse = Message<"ihp.requests.v1.SetFormStatusRespon
  * Use `create(SetFormStatusResponseSchema)` to create a new message.
  */
 export const SetFormStatusResponseSchema: GenMessage<SetFormStatusResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 15);
+  messageDesc(file_ihp_requests_v1_requests, 17);
 
 /**
  * @generated from message ihp.requests.v1.DeleteFormRequest
@@ -629,7 +697,7 @@ export type DeleteFormRequest = Message<"ihp.requests.v1.DeleteFormRequest"> & {
  * Use `create(DeleteFormRequestSchema)` to create a new message.
  */
 export const DeleteFormRequestSchema: GenMessage<DeleteFormRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 16);
+  messageDesc(file_ihp_requests_v1_requests, 18);
 
 /**
  * @generated from message ihp.requests.v1.DeleteFormResponse
@@ -642,7 +710,7 @@ export type DeleteFormResponse = Message<"ihp.requests.v1.DeleteFormResponse"> &
  * Use `create(DeleteFormResponseSchema)` to create a new message.
  */
 export const DeleteFormResponseSchema: GenMessage<DeleteFormResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 17);
+  messageDesc(file_ihp_requests_v1_requests, 19);
 
 /**
  * @generated from message ihp.requests.v1.ListAvailableFormsRequest
@@ -655,7 +723,7 @@ export type ListAvailableFormsRequest = Message<"ihp.requests.v1.ListAvailableFo
  * Use `create(ListAvailableFormsRequestSchema)` to create a new message.
  */
 export const ListAvailableFormsRequestSchema: GenMessage<ListAvailableFormsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 18);
+  messageDesc(file_ihp_requests_v1_requests, 20);
 
 /**
  * @generated from message ihp.requests.v1.ListAvailableFormsResponse
@@ -672,7 +740,7 @@ export type ListAvailableFormsResponse = Message<"ihp.requests.v1.ListAvailableF
  * Use `create(ListAvailableFormsResponseSchema)` to create a new message.
  */
 export const ListAvailableFormsResponseSchema: GenMessage<ListAvailableFormsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 19);
+  messageDesc(file_ihp_requests_v1_requests, 21);
 
 /**
  * @generated from message ihp.requests.v1.SubmitRequestRequest
@@ -694,7 +762,7 @@ export type SubmitRequestRequest = Message<"ihp.requests.v1.SubmitRequestRequest
  * Use `create(SubmitRequestRequestSchema)` to create a new message.
  */
 export const SubmitRequestRequestSchema: GenMessage<SubmitRequestRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 20);
+  messageDesc(file_ihp_requests_v1_requests, 22);
 
 /**
  * @generated from message ihp.requests.v1.SubmitRequestResponse
@@ -711,7 +779,7 @@ export type SubmitRequestResponse = Message<"ihp.requests.v1.SubmitRequestRespon
  * Use `create(SubmitRequestResponseSchema)` to create a new message.
  */
 export const SubmitRequestResponseSchema: GenMessage<SubmitRequestResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 21);
+  messageDesc(file_ihp_requests_v1_requests, 23);
 
 /**
  * @generated from message ihp.requests.v1.ListMyRequestsRequest
@@ -743,7 +811,7 @@ export type ListMyRequestsRequest = Message<"ihp.requests.v1.ListMyRequestsReque
  * Use `create(ListMyRequestsRequestSchema)` to create a new message.
  */
 export const ListMyRequestsRequestSchema: GenMessage<ListMyRequestsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 22);
+  messageDesc(file_ihp_requests_v1_requests, 24);
 
 /**
  * @generated from message ihp.requests.v1.ListMyRequestsResponse
@@ -765,7 +833,7 @@ export type ListMyRequestsResponse = Message<"ihp.requests.v1.ListMyRequestsResp
  * Use `create(ListMyRequestsResponseSchema)` to create a new message.
  */
 export const ListMyRequestsResponseSchema: GenMessage<ListMyRequestsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 23);
+  messageDesc(file_ihp_requests_v1_requests, 25);
 
 /**
  * @generated from message ihp.requests.v1.WithdrawRequestRequest
@@ -782,7 +850,7 @@ export type WithdrawRequestRequest = Message<"ihp.requests.v1.WithdrawRequestReq
  * Use `create(WithdrawRequestRequestSchema)` to create a new message.
  */
 export const WithdrawRequestRequestSchema: GenMessage<WithdrawRequestRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 24);
+  messageDesc(file_ihp_requests_v1_requests, 26);
 
 /**
  * @generated from message ihp.requests.v1.WithdrawRequestResponse
@@ -799,7 +867,7 @@ export type WithdrawRequestResponse = Message<"ihp.requests.v1.WithdrawRequestRe
  * Use `create(WithdrawRequestResponseSchema)` to create a new message.
  */
 export const WithdrawRequestResponseSchema: GenMessage<WithdrawRequestResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 25);
+  messageDesc(file_ihp_requests_v1_requests, 27);
 
 /**
  * @generated from message ihp.requests.v1.ListRequestsRequest
@@ -836,7 +904,7 @@ export type ListRequestsRequest = Message<"ihp.requests.v1.ListRequestsRequest">
  * Use `create(ListRequestsRequestSchema)` to create a new message.
  */
 export const ListRequestsRequestSchema: GenMessage<ListRequestsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 26);
+  messageDesc(file_ihp_requests_v1_requests, 28);
 
 /**
  * @generated from message ihp.requests.v1.ListRequestsResponse
@@ -858,7 +926,7 @@ export type ListRequestsResponse = Message<"ihp.requests.v1.ListRequestsResponse
  * Use `create(ListRequestsResponseSchema)` to create a new message.
  */
 export const ListRequestsResponseSchema: GenMessage<ListRequestsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 27);
+  messageDesc(file_ihp_requests_v1_requests, 29);
 
 /**
  * @generated from message ihp.requests.v1.GetRequestRequest
@@ -875,7 +943,7 @@ export type GetRequestRequest = Message<"ihp.requests.v1.GetRequestRequest"> & {
  * Use `create(GetRequestRequestSchema)` to create a new message.
  */
 export const GetRequestRequestSchema: GenMessage<GetRequestRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 28);
+  messageDesc(file_ihp_requests_v1_requests, 30);
 
 /**
  * @generated from message ihp.requests.v1.GetRequestResponse
@@ -892,7 +960,7 @@ export type GetRequestResponse = Message<"ihp.requests.v1.GetRequestResponse"> &
  * Use `create(GetRequestResponseSchema)` to create a new message.
  */
 export const GetRequestResponseSchema: GenMessage<GetRequestResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 29);
+  messageDesc(file_ihp_requests_v1_requests, 31);
 
 /**
  * @generated from message ihp.requests.v1.DecideRequestRequest
@@ -921,7 +989,7 @@ export type DecideRequestRequest = Message<"ihp.requests.v1.DecideRequestRequest
  * Use `create(DecideRequestRequestSchema)` to create a new message.
  */
 export const DecideRequestRequestSchema: GenMessage<DecideRequestRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 30);
+  messageDesc(file_ihp_requests_v1_requests, 32);
 
 /**
  * @generated from message ihp.requests.v1.DecideRequestResponse
@@ -938,7 +1006,7 @@ export type DecideRequestResponse = Message<"ihp.requests.v1.DecideRequestRespon
  * Use `create(DecideRequestResponseSchema)` to create a new message.
  */
 export const DecideRequestResponseSchema: GenMessage<DecideRequestResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 31);
+  messageDesc(file_ihp_requests_v1_requests, 33);
 
 /**
  * @generated from message ihp.requests.v1.ListApproversRequest
@@ -951,7 +1019,7 @@ export type ListApproversRequest = Message<"ihp.requests.v1.ListApproversRequest
  * Use `create(ListApproversRequestSchema)` to create a new message.
  */
 export const ListApproversRequestSchema: GenMessage<ListApproversRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 32);
+  messageDesc(file_ihp_requests_v1_requests, 34);
 
 /**
  * @generated from message ihp.requests.v1.ListApproversResponse
@@ -968,7 +1036,7 @@ export type ListApproversResponse = Message<"ihp.requests.v1.ListApproversRespon
  * Use `create(ListApproversResponseSchema)` to create a new message.
  */
 export const ListApproversResponseSchema: GenMessage<ListApproversResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 33);
+  messageDesc(file_ihp_requests_v1_requests, 35);
 
 /**
  * @generated from message ihp.requests.v1.SetApproverRequest
@@ -995,7 +1063,7 @@ export type SetApproverRequest = Message<"ihp.requests.v1.SetApproverRequest"> &
  * Use `create(SetApproverRequestSchema)` to create a new message.
  */
 export const SetApproverRequestSchema: GenMessage<SetApproverRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 34);
+  messageDesc(file_ihp_requests_v1_requests, 36);
 
 /**
  * @generated from message ihp.requests.v1.SetApproverResponse
@@ -1012,7 +1080,7 @@ export type SetApproverResponse = Message<"ihp.requests.v1.SetApproverResponse">
  * Use `create(SetApproverResponseSchema)` to create a new message.
  */
 export const SetApproverResponseSchema: GenMessage<SetApproverResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_requests_v1_requests, 35);
+  messageDesc(file_ihp_requests_v1_requests, 37);
 
 /**
  * @generated from enum ihp.requests.v1.FieldType
@@ -1151,6 +1219,13 @@ export enum RequestStatus {
    * @generated from enum value: REQUEST_STATUS_WITHDRAWN = 4;
    */
   WITHDRAWN = 4,
+
+  /**
+   * An approved time off request whose leave was taken back off the clock.
+   *
+   * @generated from enum value: REQUEST_STATUS_CANCELLED = 5;
+   */
+  CANCELLED = 5,
 }
 
 /**
@@ -1194,6 +1269,11 @@ export enum RequestStatusFilter {
    * @generated from enum value: REQUEST_STATUS_FILTER_WITHDRAWN = 5;
    */
   WITHDRAWN = 5,
+
+  /**
+   * @generated from enum value: REQUEST_STATUS_FILTER_CANCELLED = 6;
+   */
+  CANCELLED = 6,
 }
 
 /**
@@ -1307,6 +1387,14 @@ export const RequestsService: GenService<{
     methodKind: "unary";
     input: typeof DecideRequestRequestSchema;
     output: typeof DecideRequestResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.requests.v1.RequestsService.CancelRequest
+   */
+  cancelRequest: {
+    methodKind: "unary";
+    input: typeof CancelRequestRequestSchema;
+    output: typeof CancelRequestResponseSchema;
   },
   /**
    * Admins appoint the approvers.

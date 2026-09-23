@@ -10,14 +10,17 @@ import {
   notifyApprovers,
   notifyApproversWithdrawn,
   notifyRequester,
+  notifyRequesterCancelled,
   notifyRequesterReceived,
 } from './notifications'
 import {
   answerSchemaOf,
+  cancelRequestSchema,
   decisionSchema,
   formDraftSchema,
   formFieldSchema,
   publishBlockers,
+  type CancelRequestValues,
   type DecisionValues,
   type DepartmentApproversRow,
   type FieldValue,
@@ -358,6 +361,7 @@ export async function submitRequest(input: {
       requesterId: caller.userId,
       teamId: caller.team.id,
       teamName: caller.team.name,
+      timeOff: form.timeOff,
     },
   })
 
@@ -422,7 +426,20 @@ function toRequestRow(
     createdAt: submission.createdAt.toISOString(),
     canDecide: canDecide(submission, caller),
     isMine: submission.requesterId === caller.userId,
+    canCancel: canCancel(submission, caller),
+    timeOff: submission.timeOff,
+    cancelledBy: undefined,
+    cancelledAt: submission.cancelledAt?.toISOString(),
+    cancellationNote: submission.cancellationNote ?? undefined,
   }
+}
+
+// Whoever could have approved the leave may take it back; nobody cancels their own this way.
+function canCancel(submission: SubmissionRecord, caller: Caller) {
+  if (submission.status !== 'approved' || !submission.timeOff) return false
+  if (submission.requesterId === caller.userId) return false
+  if (caller.isAdmin) return true
+  return Boolean(submission.teamId && caller.approverTeamIds.includes(submission.teamId))
 }
 
 // An admin sees every department; an approver only the ones they were appointed to. Nobody
@@ -673,6 +690,7 @@ async function requesterNames(submissions: readonly SubmissionRecord[]) {
   for (const submission of submissions) {
     ids.add(submission.requesterId)
     if (submission.decidedById) ids.add(submission.decidedById)
+    if (submission.cancelledById) ids.add(submission.cancelledById)
   }
   if (ids.size === 0) return new Map<string, string>()
 
@@ -692,6 +710,9 @@ function withDecider(
     ...row,
     decidedBy: submission.decidedById
       ? (names.get(submission.decidedById) ?? 'Unknown')
+      : undefined,
+    cancelledBy: submission.cancelledById
+      ? (names.get(submission.cancelledById) ?? 'Unknown')
       : undefined,
   }
 }
@@ -766,4 +787,71 @@ export async function setApprover(input: SetApproverValues): Promise<DepartmentA
   const department = departments.find((row) => row.teamId === team.id)
   if (!department) throw new ConnectError('That department no longer exists.', Code.NotFound)
   return department
+}
+
+/**
+ * Takes approved time off back off the clock: the leave days it booked are removed in the same
+ * transaction, so the calendar and timesheets never show a cancelled day as leave.
+ */
+export async function cancelRequest(input: CancelRequestValues): Promise<RequestRow> {
+  const caller = await requireRequester()
+  const parsed = cancelRequestSchema.safeParse(input)
+  if (!parsed.success) {
+    throw new ConnectError(
+      parsed.error.issues[0]?.message ?? 'That cancellation is not valid.',
+      Code.InvalidArgument,
+    )
+  }
+
+  const submission = await db.requestSubmission.findFirst({
+    where: { id: parsed.data.submissionId, organizationId: caller.organizationId },
+  })
+  if (!submission) throw new ConnectError('That request no longer exists.', Code.NotFound)
+
+  if (!canCancel(submission, caller)) {
+    const settled = submission.status !== 'approved' || !submission.timeOff
+    throw new ConnectError(
+      settled ? 'Only approved time off can be cancelled.' : 'You cannot cancel this request.',
+      settled ? Code.FailedPrecondition : Code.PermissionDenied,
+    )
+  }
+
+  const updated = await db.$transaction(async (tx) => {
+    await tx.attendanceLeave.deleteMany({ where: { submissionId: submission.id } })
+    return tx.requestSubmission.update({
+      where: { id: submission.id },
+      data: {
+        status: 'cancelled',
+        cancelledById: caller.userId,
+        cancelledAt: new Date(),
+        cancellationNote: parsed.data.note,
+      },
+    })
+  })
+
+  // Not awaited: the leave is already off the clock whether or not the mail goes promptly.
+  void notifyRequesterCancelled({
+    submissionId: updated.id,
+    requesterId: updated.requesterId,
+    formName: updated.formName,
+    cancellerName: caller.name,
+    note: parsed.data.note,
+  })
+
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'request',
+    subjectId: updated.id,
+    action: 'request.cancelled',
+    actorId: caller.userId,
+    actorName: caller.name,
+    detail: parsed.data.note,
+  })
+
+  const names = await requesterNames([updated])
+  return withDecider(
+    toRequestRow(updated, names.get(updated.requesterId) ?? 'Unknown', caller),
+    names,
+    updated,
+  )
 }

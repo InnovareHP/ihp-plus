@@ -4,6 +4,7 @@ import { Alert, Badge, Card, Group, Stack, Text } from '@mantine/core'
 import { PageSection } from '@/components/page-section'
 import { REQUEST_STATUS_COLORS, REQUEST_STATUS_LABELS, type RequestRow } from '../schema'
 import { useRequest } from '../hooks/use-requests'
+import { CancelLeavePanel } from './cancel-leave-panel'
 import { DecisionPanel } from './decision-panel'
 import { FormAnswers } from '@/components/form-answers'
 
@@ -32,11 +33,25 @@ export function RequestDetail({ initial }: { initial: RequestRow }) {
         </Group>
       </Card>
 
+      {row.status === 'cancelled' ? (
+        <Alert
+          color="gray"
+          variant="light"
+          title={`Cancelled${row.cancelledBy ? ` by ${row.cancelledBy}` : ''}${row.cancelledAt ? ` on ${stamp.format(new Date(row.cancelledAt))}` : ''}`}
+        >
+          <Text size="sm">{row.cancellationNote || 'No reason was left.'}</Text>
+          <Text size="xs" c="dimmed" mt={4}>
+            The days it booked are workdays again on the time clock.
+          </Text>
+        </Alert>
+      ) : null}
+
       {row.status !== 'pending' && (row.decidedBy || row.decisionNote) ? (
         <Alert
-          color={REQUEST_STATUS_COLORS[row.status]}
+          // A cancelled request was approved first, and that decision stays on record.
+          color={REQUEST_STATUS_COLORS[row.status === 'cancelled' ? 'approved' : row.status]}
           variant="light"
-          title={`${REQUEST_STATUS_LABELS[row.status]}${row.decidedBy ? ` by ${row.decidedBy}` : ''}`}
+          title={`${REQUEST_STATUS_LABELS[row.status === 'cancelled' ? 'approved' : row.status]}${row.decidedBy ? ` by ${row.decidedBy}` : ''}`}
         >
           <Text size="sm">{row.decisionNote || 'No note was left.'}</Text>
         </Alert>
@@ -47,6 +62,7 @@ export function RequestDetail({ initial }: { initial: RequestRow }) {
       </PageSection>
 
       {row.canDecide ? <DecisionPanel row={row} /> : null}
+      {row.canCancel ? <CancelLeavePanel row={row} /> : null}
     </Stack>
   )
 }

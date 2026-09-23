@@ -525,3 +525,24 @@ export function clockOutReminderTemplate(options: {
     }),
   }
 }
+
+export function leaveCancelledTemplate(options: {
+  formName: string
+  cancellerName: string
+  note: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `Your ${options.formName} was cancelled`,
+    ...renderEmail({
+      preheader: `${options.cancellerName} cancelled your approved ${options.formName}.`,
+      heading: `Your ${options.formName} was cancelled`,
+      body: [
+        `${options.cancellerName} cancelled the ${options.formName} they had approved, so those days are workdays on your time clock again.`,
+        `Their reason: ${options.note}`,
+      ],
+      action: { label: 'Open the request', url: options.url },
+      footnote: 'If you still need the time off, raise a new request with the dates that work now.',
+    }),
+  }
+}

@@ -75,6 +75,7 @@ const REQUEST_STATUS_TO_PROTO: Record<SubmissionStatus, RequestStatus> = {
   approved: RequestStatus.APPROVED,
   rejected: RequestStatus.REJECTED,
   withdrawn: RequestStatus.WITHDRAWN,
+  cancelled: RequestStatus.CANCELLED,
 }
 
 const REQUEST_STATUS_FROM_PROTO: Record<RequestStatus, SubmissionStatus> = {
@@ -83,6 +84,7 @@ const REQUEST_STATUS_FROM_PROTO: Record<RequestStatus, SubmissionStatus> = {
   [RequestStatus.APPROVED]: 'approved',
   [RequestStatus.REJECTED]: 'rejected',
   [RequestStatus.WITHDRAWN]: 'withdrawn',
+  [RequestStatus.CANCELLED]: 'cancelled',
 }
 
 const STATUS_FILTER_TO_PROTO: Record<StatusFilter, RequestStatusFilter> = {
@@ -91,6 +93,7 @@ const STATUS_FILTER_TO_PROTO: Record<StatusFilter, RequestStatusFilter> = {
   approved: RequestStatusFilter.APPROVED,
   rejected: RequestStatusFilter.REJECTED,
   withdrawn: RequestStatusFilter.WITHDRAWN,
+  cancelled: RequestStatusFilter.CANCELLED,
 }
 
 const STATUS_FILTER_FROM_PROTO: Record<RequestStatusFilter, StatusFilter> = {
@@ -100,6 +103,7 @@ const STATUS_FILTER_FROM_PROTO: Record<RequestStatusFilter, StatusFilter> = {
   [RequestStatusFilter.APPROVED]: 'approved',
   [RequestStatusFilter.REJECTED]: 'rejected',
   [RequestStatusFilter.WITHDRAWN]: 'withdrawn',
+  [RequestStatusFilter.CANCELLED]: 'cancelled',
 }
 
 export function fieldTypeToProto(type: Type) {
@@ -277,6 +281,11 @@ export function submissionToProto(row: RequestRow): RequestSubmissionMessage {
     createdAt: row.createdAt,
     canDecide: row.canDecide,
     isMine: row.isMine,
+    canCancel: row.canCancel,
+    timeOff: row.timeOff,
+    cancelledBy: row.cancelledBy,
+    cancelledAt: row.cancelledAt,
+    cancellationNote: row.cancellationNote,
   }
 }
 
@@ -299,6 +308,11 @@ export function submissionFromProto(message: RequestSubmissionMessage): RequestR
     createdAt: message.createdAt,
     canDecide: message.canDecide,
     isMine: message.isMine,
+    canCancel: message.canCancel,
+    timeOff: message.timeOff,
+    cancelledBy: message.cancelledBy,
+    cancelledAt: message.cancelledAt,
+    cancellationNote: message.cancellationNote,
   }
 }
 

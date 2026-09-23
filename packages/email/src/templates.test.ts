@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
 import {
   clientFolderSharedTemplate,
+  leaveCancelledTemplate,
   clientOwnerAssignedTemplate,
   clockInReminderTemplate,
   clockOutReminderTemplate,
@@ -359,5 +360,20 @@ describe('time clock reminders', () => {
     })
 
     expect(email.text).not.toContain('closes the day')
+  })
+})
+
+describe('cancelled leave', () => {
+  it('tells the requester who cancelled it, why, and that the days count again', () => {
+    const email = leaveCancelledTemplate({
+      formName: 'Vacation leave',
+      cancellerName: 'Ada Lovelace',
+      note: 'The audit moved to that week.',
+      url: 'https://ihp.test/app/requests/view/sub-1',
+    })
+
+    expect(email.subject).toBe('Your Vacation leave was cancelled')
+    expect(email.text).toContain('workdays on your time clock again')
+    expect(email.text).toContain('The audit moved to that week.')
   })
 })

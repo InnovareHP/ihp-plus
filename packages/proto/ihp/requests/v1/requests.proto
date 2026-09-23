@@ -35,6 +35,8 @@ enum RequestStatus {
   REQUEST_STATUS_APPROVED = 2;
   REQUEST_STATUS_REJECTED = 3;
   REQUEST_STATUS_WITHDRAWN = 4;
+  // An approved time off request whose leave was taken back off the clock.
+  REQUEST_STATUS_CANCELLED = 5;
 }
 
 // Filter value: ALL is the queue's default, and has no stored counterpart.
@@ -45,6 +47,7 @@ enum RequestStatusFilter {
   REQUEST_STATUS_FILTER_APPROVED = 3;
   REQUEST_STATUS_FILTER_REJECTED = 4;
   REQUEST_STATUS_FILTER_WITHDRAWN = 5;
+  REQUEST_STATUS_FILTER_CANCELLED = 6;
 }
 
 message FormField {
@@ -117,6 +120,22 @@ message RequestSubmission {
   // Resolved for the caller: an approver for this department, or an admin.
   bool can_decide = 14;
   bool is_mine = 15;
+  // Approved on a time off form, and the caller may take the leave back off the clock.
+  bool can_cancel = 16;
+  bool time_off = 17;
+  optional string cancelled_by = 18;
+  optional string cancelled_at = 19;
+  optional string cancellation_note = 20;
+}
+
+message CancelRequestRequest {
+  string submission_id = 1;
+  // Required: the requester is told why their leave was taken back.
+  string note = 2;
+}
+
+message CancelRequestResponse {
+  RequestSubmission submission = 1;
 }
 
 message PageInfo {
@@ -296,6 +315,7 @@ service RequestsService {
   rpc ListRequests(ListRequestsRequest) returns (ListRequestsResponse);
   rpc GetRequest(GetRequestRequest) returns (GetRequestResponse);
   rpc DecideRequest(DecideRequestRequest) returns (DecideRequestResponse);
+  rpc CancelRequest(CancelRequestRequest) returns (CancelRequestResponse);
 
   // Admins appoint the approvers.
   rpc ListApprovers(ListApproversRequest) returns (ListApproversResponse);
