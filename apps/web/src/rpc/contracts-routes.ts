@@ -3,6 +3,8 @@ import type { ContractsService } from '@ihp/rpc/contracts'
 import {
   createCatalogItem,
   createContract,
+  setCatalogItemArchived,
+  updateCatalogItem,
   loadCatalog,
   loadContract,
   loadContractActivity,
@@ -92,7 +94,9 @@ export const contracts: ServiceImpl<typeof ContractsService> = {
     ),
   }),
 
-  listCatalog: async () => ({ items: (await loadCatalog()).map(catalogToProto) }),
+  listCatalog: async (request) => ({
+    items: (await loadCatalog(request.includeArchived)).map(catalogToProto),
+  }),
 
   getContractTemplate: async () => ({
     template: { $typeName: 'ihp.contracts.v1.ContractTemplate', ...(await loadContractTemplate()) },
@@ -106,6 +110,25 @@ export const contracts: ServiceImpl<typeof ContractsService> = {
         standardTerms: request.standardTerms,
       })),
     },
+  }),
+
+  updateCatalogItem: async (request) => ({
+    item: catalogToProto(
+      await updateCatalogItem(request.itemId, {
+        category: request.section,
+        name: request.name,
+        description: request.description,
+        priceMinCents: request.priceMinCents,
+        priceMaxCents: request.priceMaxCents,
+        unit: catalogUnitFromProto(request.unit),
+        percentOfSpend: request.percentOfSpend,
+        defaultTerms: request.defaultTerms,
+      }),
+    ),
+  }),
+
+  setCatalogItemArchived: async (request) => ({
+    item: catalogToProto(await setCatalogItemArchived(request.itemId, request.archived)),
   }),
 
   createCatalogItem: async (request) => ({

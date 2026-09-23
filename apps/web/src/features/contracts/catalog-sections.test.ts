@@ -13,6 +13,7 @@ function item(id: string, category: string): CatalogItemRow {
     unit: 'project',
     percentOfSpend: undefined,
     defaultTerms: undefined,
+    archived: false,
   }
 }
 

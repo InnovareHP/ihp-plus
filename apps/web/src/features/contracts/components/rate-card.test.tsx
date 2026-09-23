@@ -4,7 +4,13 @@ import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import type { CatalogItemRow } from '../schema'
 import { RateCard } from './rate-card'
 
-const rpc = vi.hoisted(() => ({ listCatalog: vi.fn(), createCatalogItem: vi.fn() }))
+const rpc = vi.hoisted(() => ({
+  listCatalog: vi.fn(),
+  createCatalogItem: vi.fn(),
+  updateCatalogItem: vi.fn(),
+  setCatalogItemArchived: vi.fn(),
+}))
+const undo = vi.hoisted(() => ({ offerUndo: vi.fn(), UNDO_WINDOW_MS: 8000 }))
 const lookups = vi.hoisted(() => ({
   listLookupOptions: vi.fn(),
   addLookupOptions: vi.fn(),
@@ -13,6 +19,7 @@ const lookups = vi.hoisted(() => ({
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
+vi.mock('@/lib/undo', () => undo)
 vi.mock('@/features/lookups/actions', () => lookups)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 
@@ -26,6 +33,7 @@ const LOGO: CatalogItemRow = {
   unit: 'project',
   percentOfSpend: undefined,
   defaultTerms: undefined,
+  archived: false,
 }
 
 const user = () => userEvent.setup()
@@ -164,5 +172,94 @@ describe('RateCard', () => {
     await person.click(await screen.findByRole('button', { name: 'Add service' }))
     await screen.findByRole('dialog', { name: 'Add a service' })
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  describe('editing and archiving', () => {
+    beforeEach(() => {
+      rpc.listCatalog.mockResolvedValue([LOGO])
+      rpc.updateCatalogItem.mockResolvedValue({ ...LOGO, priceMinCents: 200_000 })
+      rpc.setCatalogItemArchived.mockResolvedValue({ ...LOGO, archived: true })
+    })
+
+    it('asks a manager for the archived services too', async () => {
+      render(<RateCard canManage />)
+      await screen.findByText('Logo design')
+      expect(rpc.listCatalog).toHaveBeenCalledWith(true)
+    })
+
+    it('offers no row actions to someone who cannot change the card', async () => {
+      render(<RateCard canManage={false} />)
+
+      expect(await screen.findByText('Logo design')).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: 'Actions for Logo design' }),
+      ).not.toBeInTheDocument()
+      expect(rpc.listCatalog).toHaveBeenCalledWith(false)
+    })
+
+    it('opens a service with its values filled in and saves the correction', async () => {
+      const person = user()
+      render(<RateCard canManage />)
+
+      await person.click(await screen.findByRole('button', { name: 'Actions for Logo design' }))
+      await person.click(await screen.findByRole('menuitem', { name: 'Edit' }))
+
+      const dialog = await screen.findByRole('dialog', { name: 'Edit Logo design' })
+      expect(within(dialog).getByLabelText(/Service name/)).toHaveValue('Logo design')
+      const from = within(dialog).getByLabelText(/Price from/)
+      await person.clear(from)
+      await person.type(from, '2000')
+      await person.click(within(dialog).getByRole('button', { name: 'Save changes' }))
+
+      await waitFor(() =>
+        expect(rpc.updateCatalogItem).toHaveBeenCalledWith(
+          'item-1',
+          expect.objectContaining({ name: 'Logo design', priceMinCents: 200_000 }),
+        ),
+      )
+    })
+
+    it('archives at once and only tells the server when undo is passed up', async () => {
+      const person = user()
+      render(<RateCard canManage />)
+
+      await person.click(await screen.findByRole('button', { name: 'Actions for Logo design' }))
+      await person.click(await screen.findByRole('menuitem', { name: 'Archive' }))
+
+      expect(await screen.findByRole('table', { name: 'Archived services' })).toBeInTheDocument()
+      expect(rpc.setCatalogItemArchived).not.toHaveBeenCalled()
+
+      undo.offerUndo.mock.calls[0]?.[0]?.onCommit()
+      await waitFor(() => expect(rpc.setCatalogItemArchived).toHaveBeenCalledWith('item-1', true))
+    })
+
+    it('puts an archived service back on undo', async () => {
+      const person = user()
+      render(<RateCard canManage />)
+
+      await person.click(await screen.findByRole('button', { name: 'Actions for Logo design' }))
+      await person.click(await screen.findByRole('menuitem', { name: 'Archive' }))
+      await screen.findByRole('table', { name: 'Archived services' })
+
+      undo.offerUndo.mock.calls[0]?.[0]?.onUndo()
+
+      await waitFor(() =>
+        expect(screen.queryByRole('table', { name: 'Archived services' })).not.toBeInTheDocument(),
+      )
+      expect(rpc.setCatalogItemArchived).not.toHaveBeenCalled()
+    })
+
+    it('restores an archived service to the card', async () => {
+      rpc.listCatalog.mockResolvedValue([{ ...LOGO, archived: true }])
+      rpc.setCatalogItemArchived.mockResolvedValue(LOGO)
+      const person = user()
+      render(<RateCard canManage />)
+
+      expect(await screen.findByText('Every service is archived')).toBeInTheDocument()
+      await person.click(screen.getByRole('button', { name: 'Actions for Logo design' }))
+      await person.click(await screen.findByRole('menuitem', { name: 'Restore to the rate card' }))
+
+      await waitFor(() => expect(rpc.setCatalogItemArchived).toHaveBeenCalledWith('item-1', false))
+    })
   })
 })

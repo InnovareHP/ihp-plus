@@ -3,10 +3,13 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { track } from '@/lib/analytics'
 import { announceFailure, announceSuccess } from '@/lib/announce'
+import { useOptimisticListMutation } from '@/lib/optimistic'
 import { contractEvents } from './events'
 import { contractKeys } from './query-keys'
 import {
   createCatalogItem,
+  setCatalogItemArchived,
+  updateCatalogItem,
   createContract,
   getContract,
   getContractTemplate,
@@ -19,6 +22,7 @@ import {
   updateContractTemplate,
 } from './rpc'
 import type {
+  CatalogItemRow,
   CatalogItemValues,
   ContractDraftValues,
   ContractQuery,
@@ -44,10 +48,11 @@ export function useContract(contractId: string) {
   })
 }
 
-export function useCatalog() {
+/** The active card for pricing a contract; a manager's rate card also asks for the archived. */
+export function useCatalog(includeArchived = false) {
   return useQuery({
-    queryKey: contractKeys.catalog(),
-    queryFn: listCatalog,
+    queryKey: contractKeys.catalog(includeArchived),
+    queryFn: () => listCatalog(includeArchived),
     // The rate card changes far less often than the contracts priced from it.
     staleTime: 5 * 60 * 1000,
   })
@@ -154,7 +159,7 @@ export function useCreateCatalogItem() {
       track(contractEvents.catalogItemAddFailed, { reason: error.message })
       announceFailure(error.message)
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: contractKeys.catalog() }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: contractKeys.catalogs() }),
   })
 }
 
@@ -172,5 +177,43 @@ export function useContractActivity(contractId: string) {
   return useQuery({
     queryKey: contractKeys.activity(contractId),
     queryFn: () => listContractActivity(contractId),
+  })
+}
+
+export function useUpdateCatalogItem() {
+  return useOptimisticListMutation<CatalogItemRow, { itemId: string; values: CatalogItemValues }>({
+    // The manager's card holds the archived too, so it is the list the edit is applied to.
+    queryKey: contractKeys.catalog(true),
+    mutationFn: async ({ itemId, values }) => {
+      await updateCatalogItem(itemId, values)
+    },
+    apply: (rows, { itemId, values }) =>
+      rows.map((row) =>
+        row.id === itemId
+          ? {
+              ...row,
+              ...values,
+              description: values.description || undefined,
+              defaultTerms: values.defaultTerms || undefined,
+            }
+          : row,
+      ),
+    successEvent: contractEvents.catalogItemEdited,
+    failureEvent: contractEvents.catalogItemEditFailed,
+    alsoInvalidate: [contractKeys.catalog(false)],
+  })
+}
+
+export function useSetCatalogItemArchived() {
+  return useOptimisticListMutation<CatalogItemRow, { itemId: string; archived: boolean }>({
+    queryKey: contractKeys.catalog(true),
+    mutationFn: async ({ itemId, archived }) => {
+      await setCatalogItemArchived(itemId, archived)
+    },
+    apply: (rows, { itemId, archived }) =>
+      rows.map((row) => (row.id === itemId ? { ...row, archived } : row)),
+    successEvent: contractEvents.catalogItemArchived,
+    failureEvent: contractEvents.catalogItemArchiveFailed,
+    alsoInvalidate: [contractKeys.catalog(false)],
   })
 }

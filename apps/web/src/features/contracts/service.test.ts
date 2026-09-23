@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { contractQuerySchema } from './schema'
 
 const prisma = vi.hoisted(() => ({
-  catalogItem: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
+  catalogItem: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
   lookupOption: { findMany: vi.fn() },
   contract: {
     count: vi.fn(),
@@ -54,6 +54,9 @@ const {
   loadContractsPage,
   setContractStatus,
   updateContract,
+  loadCatalog,
+  setCatalogItemArchived,
+  updateCatalogItem,
 } = await import('./service')
 
 const listContracts = (query: Record<string, unknown> = {}) =>
@@ -689,5 +692,116 @@ describe('loadContract', () => {
     prisma.contract.findFirst.mockResolvedValue(null)
 
     expect(await codeOf(() => loadContract('contract-1'))).toBe(Code.NotFound)
+  })
+})
+
+describe('editing and retiring rate card services', () => {
+  const EDIT = {
+    category: 'Creative services',
+    name: 'Logo design',
+    description: 'A mark, its variants and a style sheet',
+    priceMinCents: 200_000,
+    priceMaxCents: 350_000,
+    unit: 'project' as const,
+  }
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    signedInAs()
+    prisma.lookupOption.findMany.mockResolvedValue([{ value: 'Creative services', sortOrder: 0 }])
+    prisma.catalogItem.update.mockImplementation(async ({ data }) => ({
+      ...{
+        id: 'catalog-1',
+        category: 'Creative services',
+        name: 'Logo design',
+        description: null,
+        priceMinCents: 150_000,
+        priceMaxCents: 300_000,
+        unit: 'project',
+        percentOfSpend: null,
+        defaultTerms: null,
+        archivedAt: null,
+      },
+      ...data,
+    }))
+  })
+
+  it('corrects a service in place', async () => {
+    prisma.catalogItem.findFirst
+      .mockResolvedValueOnce({ id: 'catalog-1', category: 'Creative services' })
+      .mockResolvedValueOnce(null)
+
+    const updated = await updateCatalogItem('catalog-1', EDIT)
+
+    expect(prisma.catalogItem.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'catalog-1' },
+        data: expect.objectContaining({ priceMinCents: 200_000, priceMaxCents: 350_000 }),
+      }),
+    )
+    expect(updated).toMatchObject({ priceMinCents: 200_000, archived: false })
+  })
+
+  it('keeps a service in a section since removed from the list, but moves nothing new into it', async () => {
+    prisma.lookupOption.findMany.mockResolvedValue([{ value: 'Website', sortOrder: 0 }])
+    prisma.catalogItem.findFirst
+      .mockResolvedValueOnce({ id: 'catalog-1', category: 'Creative services' })
+      .mockResolvedValueOnce(null)
+    await expect(updateCatalogItem('catalog-1', EDIT)).resolves.toBeDefined()
+
+    prisma.catalogItem.findFirst.mockResolvedValueOnce({ id: 'catalog-1', category: 'Website' })
+    expect(await codeOf(() => updateCatalogItem('catalog-1', EDIT))).toBe(Code.InvalidArgument)
+  })
+
+  it('refuses a rename onto another service, and says to restore an archived one', async () => {
+    prisma.catalogItem.findFirst
+      .mockResolvedValueOnce({ id: 'catalog-1', category: 'Creative services' })
+      .mockResolvedValueOnce({ archivedAt: new Date('2026-09-01T00:00:00.000Z') })
+
+    const error = await updateCatalogItem('catalog-1', EDIT).catch((thrown: unknown) =>
+      ConnectError.from(thrown),
+    )
+    expect(error).toMatchObject({
+      code: Code.AlreadyExists,
+      rawMessage: 'An archived service already has that name in this section. Restore it instead.',
+    })
+    expect(prisma.catalogItem.update).not.toHaveBeenCalled()
+  })
+
+  it('archives and restores, and only a manager may', async () => {
+    prisma.catalogItem.findFirst.mockResolvedValue({
+      id: 'catalog-1',
+      category: 'Creative services',
+    })
+
+    await setCatalogItemArchived('catalog-1', true)
+    expect(prisma.catalogItem.update.mock.calls[0]?.[0].data.archivedAt).toBeInstanceOf(Date)
+
+    await setCatalogItemArchived('catalog-1', false)
+    expect(prisma.catalogItem.update.mock.calls[1]?.[0].data).toEqual({ archivedAt: null })
+
+    signedInAs({ organizationRole: 'member', portalRole: 'user' })
+    expect(await codeOf(() => setCatalogItemArchived('catalog-1', true))).toBe(
+      Code.PermissionDenied,
+    )
+  })
+
+  it('says a service in another organization is gone', async () => {
+    prisma.catalogItem.findFirst.mockResolvedValue(null)
+
+    expect(await codeOf(() => setCatalogItemArchived('catalog-9', true))).toBe(Code.NotFound)
+  })
+
+  it('shows archived services to a manager who asks, and to nobody else', async () => {
+    prisma.catalogItem.findMany.mockResolvedValue([])
+
+    await loadCatalog(true)
+    expect(prisma.catalogItem.findMany.mock.calls[0]?.[0].where.archivedAt).toBeUndefined()
+
+    await loadCatalog()
+    expect(prisma.catalogItem.findMany.mock.calls[1]?.[0].where.archivedAt).toBeNull()
+
+    signedInAs({ organizationRole: 'member', portalRole: 'user' })
+    expect(await codeOf(() => loadCatalog(true))).toBe(Code.PermissionDenied)
   })
 })

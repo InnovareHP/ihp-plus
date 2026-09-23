@@ -1,12 +1,16 @@
 import { Badge, Group, Table, Text } from '@mantine/core'
+import type { ReactNode } from 'react'
 import { formatPriceRange, type CatalogItemRow } from '../schema'
 
 export function CategoryTable({
   label,
   items,
+  actions,
 }: {
   label: string
   items: readonly CatalogItemRow[]
+  /** Only where the viewer may change the card. */
+  actions?: (item: CatalogItemRow) => ReactNode
 }) {
   return (
     <Table.ScrollContainer minWidth={640}>
@@ -18,6 +22,11 @@ export function CategoryTable({
             <Table.Th scope="col" w={220}>
               Price
             </Table.Th>
+            {actions ? (
+              <Table.Th scope="col" w={90} ta="right">
+                Actions
+              </Table.Th>
+            ) : null}
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -46,6 +55,7 @@ export function CategoryTable({
                   ) : null}
                 </Group>
               </Table.Td>
+              {actions ? <Table.Td ta="right">{actions(item)}</Table.Td> : null}
             </Table.Tr>
           ))}
         </Table.Tbody>

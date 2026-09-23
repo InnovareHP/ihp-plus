@@ -167,6 +167,8 @@ export interface CatalogItemRow {
   percentOfSpend: number | undefined
   /** What including this service commits the contract to. */
   defaultTerms: string | undefined
+  /** Off the rate card and the picker; only a manager's archived list shows it. */
+  archived: boolean
 }
 
 /** The organization's boilerplate, which every contract starts from. */

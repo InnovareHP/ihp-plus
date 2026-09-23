@@ -260,6 +260,7 @@ export function catalogToProto(item: CatalogItemRow): CatalogItem {
     unit: UNIT_TO[item.unit],
     percentOfSpend: item.percentOfSpend,
     defaultTerms: item.defaultTerms,
+    archived: item.archived,
   }
 }
 
@@ -274,6 +275,7 @@ export function catalogFromProto(message: CatalogItem): CatalogItemRow {
     unit: UNIT_FROM[message.unit],
     percentOfSpend: message.percentOfSpend,
     defaultTerms: message.defaultTerms,
+    archived: message.archived,
   }
 }
 

@@ -84,6 +84,7 @@ const CATALOG_SELECT = {
   unit: true,
   percentOfSpend: true,
   defaultTerms: true,
+  archivedAt: true,
 } satisfies Prisma.CatalogItemSelect
 
 function catalogRowOf(row: Prisma.CatalogItemGetPayload<{ select: typeof CATALOG_SELECT }>) {
@@ -97,14 +98,16 @@ function catalogRowOf(row: Prisma.CatalogItemGetPayload<{ select: typeof CATALOG
     unit: row.unit as CatalogUnit,
     percentOfSpend: row.percentOfSpend ?? undefined,
     defaultTerms: row.defaultTerms ?? undefined,
+    archived: row.archivedAt !== null,
   } satisfies CatalogItemRow
 }
 
-export async function loadCatalog(): Promise<CatalogItemRow[]> {
-  const { organizationId } = await caller()
+export async function loadCatalog(includeArchived = false): Promise<CatalogItemRow[]> {
+  const who = includeArchived ? await requireManager() : await caller()
+  const { organizationId } = who
 
   const rows = await db.catalogItem.findMany({
-    where: { organizationId, archivedAt: null },
+    where: { organizationId, ...(includeArchived ? {} : { archivedAt: null }) },
     orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
     select: CATALOG_SELECT,
   })
@@ -133,11 +136,9 @@ export async function createCatalogItem(input: unknown): Promise<CatalogItemRow>
 
   const existing = await db.catalogItem.findFirst({
     where: { organizationId, category: values.category, name: values.name },
-    select: { id: true },
+    select: { archivedAt: true },
   })
-  if (existing) {
-    throw new ConnectError('That service is already on the rate card.', Code.AlreadyExists)
-  }
+  if (existing) throw duplicateOf(existing)
 
   const created = await db.catalogItem.create({
     data: {
@@ -155,6 +156,93 @@ export async function createCatalogItem(input: unknown): Promise<CatalogItemRow>
   })
 
   return catalogRowOf(created)
+}
+
+// A retired service still owns its name, so the way out is to bring it back, not to re-add it.
+function duplicateOf(existing: { archivedAt: Date | null }) {
+  return new ConnectError(
+    existing.archivedAt
+      ? 'An archived service already has that name in this section. Restore it instead.'
+      : 'That service is already on the rate card.',
+    Code.AlreadyExists,
+  )
+}
+
+async function catalogItemOrThrow(organizationId: string, itemId: string) {
+  const item = await db.catalogItem.findFirst({
+    where: { id: itemId, organizationId },
+    select: { id: true, category: true },
+  })
+  if (!item) throw new ConnectError('That service is no longer on the rate card.', Code.NotFound)
+  return item
+}
+
+/** A correction to a service; contract lines already priced from it keep what was agreed. */
+export async function updateCatalogItem(itemId: string, input: unknown): Promise<CatalogItemRow> {
+  const { organizationId } = await requireManager()
+  const parsed = catalogItemSchema.safeParse(input)
+  if (!parsed.success) {
+    throw new ConnectError(
+      parsed.error.issues[0]?.message ?? 'Check the highlighted fields.',
+      Code.InvalidArgument,
+    )
+  }
+
+  const values = parsed.data
+  const current = await catalogItemOrThrow(organizationId, itemId)
+  // A section since removed from the list may stay where it is, but nothing new moves into it.
+  if (values.category !== current.category) {
+    const sections = await listFor(organizationId, 'catalogSection')
+    if (!sections.some((section) => section.value === values.category)) {
+      throw new ConnectError(
+        'That section is not on the list any more. Choose another, or ask an admin to add it.',
+        Code.InvalidArgument,
+      )
+    }
+  }
+
+  const clash = await db.catalogItem.findFirst({
+    where: {
+      organizationId,
+      category: values.category,
+      name: values.name,
+      NOT: { id: current.id },
+    },
+    select: { archivedAt: true },
+  })
+  if (clash) throw duplicateOf(clash)
+
+  const updated = await db.catalogItem.update({
+    where: { id: current.id },
+    data: {
+      category: values.category,
+      name: values.name,
+      description: values.description || null,
+      priceMinCents: values.priceMinCents,
+      priceMaxCents: values.priceMaxCents,
+      unit: values.unit,
+      percentOfSpend: values.percentOfSpend ?? null,
+      defaultTerms: values.defaultTerms || null,
+    },
+    select: CATALOG_SELECT,
+  })
+  return catalogRowOf(updated)
+}
+
+/** Retires a service or brings it back; archived ones leave the card and the contract picker. */
+export async function setCatalogItemArchived(
+  itemId: string,
+  archived: boolean,
+): Promise<CatalogItemRow> {
+  const { organizationId } = await requireManager()
+  const current = await catalogItemOrThrow(organizationId, itemId)
+
+  const updated = await db.catalogItem.update({
+    where: { id: current.id },
+    data: { archivedAt: archived ? new Date() : null },
+    select: CATALOG_SELECT,
+  })
+  return catalogRowOf(updated)
 }
 
 // ---- Terms template ----

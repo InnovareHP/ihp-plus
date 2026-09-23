@@ -2,25 +2,63 @@
 
 import { Alert, Button, Group, Skeleton, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
+import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { IconPlus } from '@tabler/icons-react'
 import { LookupOptionsModal } from '@/components/lookup-options-modal'
 import { PageSection } from '@/components/page-section'
 import { EmptyState } from '@/components/empty-state'
 import { useLookupLists } from '@/features/lookups/hooks/use-lookup-admin'
+import { offerUndo } from '@/lib/undo'
+import { contractKeys } from '../query-keys'
 import { groupBySection } from '../catalog-sections'
-import { CATALOG_LOOKUP_KINDS } from '../schema'
-import { useCatalog } from '../use-contracts'
+import { CATALOG_LOOKUP_KINDS, type CatalogItemRow } from '../schema'
+import { useCatalog, useSetCatalogItemArchived } from '../use-contracts'
+import { CatalogItemActions } from './catalog-item-actions'
 import { CatalogItemFormModal } from './catalog-item-form-modal'
 import { CategoryTable } from './category-table'
 
 /** The published rate card, grouped under the sections an admin curates. */
 export function RateCard({ canManage }: { canManage: boolean }) {
-  const catalog = useCatalog()
+  // A manager's card also holds the archived services, so they can be brought back.
+  const catalog = useCatalog(canManage)
   const lists = useLookupLists(CATALOG_LOOKUP_KINDS)
+  const archive = useSetCatalogItemArchived()
+  const queryClient = useQueryClient()
   const [adding, addModal] = useDisclosure(false)
   const [managing, manageModal] = useDisclosure(false)
+  // Which service the edit modal is open on is a disclosure nothing else reads.
+  const [editing, setEditing] = useState<CatalogItemRow | undefined>(undefined)
 
   const sections = lists.data?.catalogSection ?? []
+  const active = catalog.data?.filter((item) => !item.archived) ?? []
+  const archived = catalog.data?.filter((item) => item.archived) ?? []
+
+  function archiveWithUndo(item: CatalogItemRow) {
+    // Undo over confirm: the row leaves at once, and the server is only told when the toast closes.
+    const key = contractKeys.catalog(true)
+    const previous = queryClient.getQueryData<CatalogItemRow[]>(key)
+    queryClient.setQueryData<CatalogItemRow[]>(key, (rows) =>
+      rows?.map((row) => (row.id === item.id ? { ...row, archived: true } : row)),
+    )
+    offerUndo({
+      message: `Archived ${item.name}`,
+      undoLabel: 'Undo',
+      onUndo: () => queryClient.setQueryData(key, previous),
+      onCommit: () => archive.mutate({ itemId: item.id, archived: true }),
+    })
+  }
+
+  const rowActions = canManage
+    ? (item: CatalogItemRow) => (
+        <CatalogItemActions
+          item={item}
+          onEdit={setEditing}
+          onArchive={archiveWithUndo}
+          onRestore={(row) => archive.mutate({ itemId: row.id, archived: false })}
+        />
+      )
+    : undefined
 
   const addButton = canManage ? (
     <Button leftSection={<IconPlus size={16} aria-hidden />} onClick={addModal.open}>
@@ -43,6 +81,16 @@ export function RateCard({ canManage }: { canManage: boolean }) {
         sections={sections}
         onManageSections={manageModal.open}
       />
+      {editing ? (
+        <CatalogItemFormModal
+          key={editing.id}
+          opened
+          onClose={() => setEditing(undefined)}
+          sections={sections}
+          onManageSections={manageModal.open}
+          item={editing}
+        />
+      ) : null}
       <LookupOptionsModal
         opened={managing}
         onClose={manageModal.close}
@@ -76,7 +124,7 @@ export function RateCard({ canManage }: { canManage: boolean }) {
     )
   }
 
-  if (catalog.data.length === 0) {
+  if (active.length === 0 && archived.length === 0) {
     return (
       <>
         <EmptyState
@@ -96,11 +144,25 @@ export function RateCard({ canManage }: { canManage: boolean }) {
   return (
     <Stack gap="lg">
       {toolbar}
-      {groupBySection(catalog.data, sections).map(({ section, items }) => (
+      {active.length === 0 ? (
+        <EmptyState
+          title="Every service is archived"
+          description="Restore one below, or add a new service to price contracts from."
+        />
+      ) : null}
+      {groupBySection(active, sections).map(({ section, items }) => (
         <PageSection key={section} title={section}>
-          <CategoryTable label={section} items={items} />
+          <CategoryTable label={section} items={items} actions={rowActions} />
         </PageSection>
       ))}
+      {canManage && archived.length > 0 ? (
+        <PageSection
+          title="Archived services"
+          description="Off the rate card and the contract picker. Contracts already priced from them are unchanged."
+        >
+          <CategoryTable label="Archived services" items={archived} actions={rowActions} />
+        </PageSection>
+      ) : null}
       {modals}
     </Stack>
   )

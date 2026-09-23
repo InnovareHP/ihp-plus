@@ -10,6 +10,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Text,
   Textarea,
   TextInput,
 } from '@mantine/core'
@@ -20,9 +21,10 @@ import {
   CATALOG_UNIT_LABELS,
   catalogItemSchema,
   type CatalogItemInput,
+  type CatalogItemRow,
   type CatalogItemValues,
 } from '../schema'
-import { useCreateCatalogItem } from '../use-contracts'
+import { useCreateCatalogItem, useUpdateCatalogItem } from '../use-contracts'
 
 const UNIT_OPTIONS = CATALOG_UNITS.map((value) => ({
   value,
@@ -46,6 +48,21 @@ export interface CatalogItemFormModalProps {
   /** The catalogSection lookup list, in the admin's order. */
   sections: string[]
   onManageSections: () => void
+  /** Present when correcting a service rather than adding one. */
+  item?: CatalogItemRow
+}
+
+function valuesOf(item: CatalogItemRow): CatalogItemInput {
+  return {
+    category: item.category,
+    name: item.name,
+    description: item.description ?? '',
+    priceMinCents: item.priceMinCents,
+    priceMaxCents: item.priceMaxCents,
+    unit: item.unit,
+    percentOfSpend: item.percentOfSpend,
+    defaultTerms: item.defaultTerms ?? '',
+  }
 }
 
 export function CatalogItemFormModal({
@@ -53,8 +70,14 @@ export function CatalogItemFormModal({
   onClose,
   sections,
   onManageSections,
+  item,
 }: CatalogItemFormModalProps) {
   const create = useCreateCatalogItem()
+  const update = useUpdateCatalogItem()
+  const noun = item ? 'save the service' : 'add the service'
+  // A section since taken off the list stays offered for the service already filed under it.
+  const sectionOptions =
+    item && !sections.includes(item.category) ? [item.category, ...sections] : sections
   const {
     control,
     register,
@@ -66,19 +89,20 @@ export function CatalogItemFormModal({
     resolver: zodResolver(catalogItemSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: EMPTY_ITEM,
+    defaultValues: item ? valuesOf(item) : EMPTY_ITEM,
   })
 
   async function onSubmit(values: CatalogItemValues) {
     try {
-      await create.mutateAsync(values)
+      if (item) await update.mutateAsync({ itemId: item.id, values })
+      else await create.mutateAsync(values)
     } catch (error) {
       setError('root', {
-        message: error instanceof Error ? error.message : 'Could not add the service.',
+        message: error instanceof Error ? error.message : `Could not ${noun}.`,
       })
       return
     }
-    reset(EMPTY_ITEM)
+    if (!item) reset(EMPTY_ITEM)
     onClose()
   }
 
@@ -86,14 +110,19 @@ export function CatalogItemFormModal({
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Add a service"
+      title={item ? `Edit ${item.name}` : 'Add a service'}
       size="lg"
       centered
-      closeButtonProps={{ 'aria-label': 'Close add a service' }}
+      closeButtonProps={{ 'aria-label': item ? 'Close edit service' : 'Close add a service' }}
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Stack gap="md">
-          <FormError message={errors.root?.message} title="Could not add the service" />
+          <FormError message={errors.root?.message} title={`Could not ${noun}`} />
+          {item ? (
+            <Text size="sm" c="dimmed">
+              Contracts already priced from this service keep the lines they agreed.
+            </Text>
+          ) : null}
 
           <Controller
             control={control}
@@ -107,7 +136,7 @@ export function CatalogItemFormModal({
                     Manage sections
                   </Anchor>
                 }
-                data={sections}
+                data={sectionOptions}
                 allowDeselect={false}
                 searchable
                 nothingFoundMessage="No match — add it under Manage sections"
@@ -226,7 +255,13 @@ export function CatalogItemFormModal({
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
-              {isSubmitting ? 'Adding…' : 'Add service'}
+              {isSubmitting
+                ? item
+                  ? 'Saving…'
+                  : 'Adding…'
+                : item
+                  ? 'Save changes'
+                  : 'Add service'}
             </Button>
           </Group>
         </Stack>

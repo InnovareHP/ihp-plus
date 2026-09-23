@@ -134,9 +134,41 @@ export async function updateContractTemplate(
   }
 }
 
-export async function listCatalog(): Promise<CatalogItemRow[]> {
-  const response = await call(() => browserClients.contracts.listCatalog({}))
+export async function listCatalog(includeArchived = false): Promise<CatalogItemRow[]> {
+  const response = await call(() => browserClients.contracts.listCatalog({ includeArchived }))
   return response.items.map(catalogFromProto)
+}
+
+export async function updateCatalogItem(
+  itemId: string,
+  values: CatalogItemValues,
+): Promise<CatalogItemRow> {
+  const response = await call(() =>
+    browserClients.contracts.updateCatalogItem({
+      itemId,
+      section: values.category,
+      name: values.name,
+      description: values.description,
+      priceMinCents: values.priceMinCents,
+      priceMaxCents: values.priceMaxCents,
+      unit: unitToProto(values.unit),
+      percentOfSpend: values.percentOfSpend,
+      defaultTerms: values.defaultTerms,
+    }),
+  )
+  if (!response.item) throw new Error('The server did not return the service.')
+  return catalogFromProto(response.item)
+}
+
+export async function setCatalogItemArchived(
+  itemId: string,
+  archived: boolean,
+): Promise<CatalogItemRow> {
+  const response = await call(() =>
+    browserClients.contracts.setCatalogItemArchived({ itemId, archived }),
+  )
+  if (!response.item) throw new Error('The server did not return the service.')
+  return catalogFromProto(response.item)
 }
 
 export async function createCatalogItem(values: CatalogItemValues): Promise<CatalogItemRow> {

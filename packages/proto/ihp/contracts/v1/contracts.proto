@@ -65,6 +65,8 @@ message CatalogItem {
   optional int32 percent_of_spend = 8;
   // What including this service commits the contract to, appended when it is picked.
   optional string default_terms = 9;
+  // Retired from the rate card and the contract picker; contracts priced from it keep their lines.
+  bool archived = 11;
 }
 
 // The boilerplate every contract starts from, one per organization.
@@ -244,7 +246,10 @@ message SetContractStatusResponse {
   ContractDetail contract = 1;
 }
 
-message ListCatalogRequest {}
+message ListCatalogRequest {
+  // Managers only: the archived services too, so they can be restored.
+  bool include_archived = 1;
+}
 
 message ListCatalogResponse {
   repeated CatalogItem items = 1;
@@ -282,6 +287,32 @@ message CreateCatalogItemResponse {
   CatalogItem item = 1;
 }
 
+// A correction: contracts already priced from the service keep the lines they agreed.
+message UpdateCatalogItemRequest {
+  string item_id = 1;
+  string section = 2;
+  string name = 3;
+  string description = 4;
+  int32 price_min_cents = 5;
+  int32 price_max_cents = 6;
+  CatalogUnit unit = 7;
+  optional int32 percent_of_spend = 8;
+  string default_terms = 9;
+}
+
+message UpdateCatalogItemResponse {
+  CatalogItem item = 1;
+}
+
+message SetCatalogItemArchivedRequest {
+  string item_id = 1;
+  bool archived = 2;
+}
+
+message SetCatalogItemArchivedResponse {
+  CatalogItem item = 1;
+}
+
 service ContractsService {
   rpc ListContracts(ListContractsRequest) returns (ListContractsResponse);
   rpc GetContract(GetContractRequest) returns (GetContractResponse);
@@ -290,6 +321,8 @@ service ContractsService {
   rpc SetContractStatus(SetContractStatusRequest) returns (SetContractStatusResponse);
   rpc ListCatalog(ListCatalogRequest) returns (ListCatalogResponse);
   rpc CreateCatalogItem(CreateCatalogItemRequest) returns (CreateCatalogItemResponse);
+  rpc UpdateCatalogItem(UpdateCatalogItemRequest) returns (UpdateCatalogItemResponse);
+  rpc SetCatalogItemArchived(SetCatalogItemArchivedRequest) returns (SetCatalogItemArchivedResponse);
   rpc GetContractTemplate(GetContractTemplateRequest) returns (GetContractTemplateResponse);
   rpc UpdateContractTemplate(UpdateContractTemplateRequest) returns (UpdateContractTemplateResponse);
   rpc ListContractInvoices(ListContractInvoicesRequest) returns (ListContractInvoicesResponse);

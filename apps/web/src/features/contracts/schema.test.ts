@@ -11,6 +11,7 @@ function item(overrides: Partial<CatalogItemRow> & { id: string }): CatalogItemR
     unit: 'month',
     percentOfSpend: undefined,
     defaultTerms: undefined,
+    archived: false,
     ...overrides,
   }
 }
