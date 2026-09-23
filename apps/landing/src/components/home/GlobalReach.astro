@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets'
 import globe from '../../assets/home/global-reach-bg.png'
 import DiamondArrow from './DiamondArrow.astro'
+import GlobeLinks from './GlobeLinks.astro'
 ---
 
 <section
@@ -11,13 +12,17 @@ import DiamondArrow from './DiamondArrow.astro'
 >
   <!-- The artwork leaves its top tab transparent; the stats section's mint shows through it. -->
   <div class="global-tab-fill absolute top-0 left-1/2 -z-10 -translate-x-1/2 bg-mint-100"></div>
-  <Image
-    src={globe}
-    alt=""
-    widths={[1327, 2654]}
-    sizes="1327px"
-    class="global-art absolute top-0 left-1/2 -z-10 -translate-x-1/2"
-  />
+  <!-- The links share the artwork's box, so the scroll motion turns and scales them together. -->
+  <div class="global-art absolute top-0 left-1/2 -z-10 -translate-x-1/2">
+    <Image
+      src={globe}
+      alt=""
+      widths={[1327, 2654]}
+      sizes="1327px"
+      class="absolute inset-0 size-full max-w-none"
+    />
+    <GlobeLinks />
+  </div>
 
   <div class="relative mx-auto flex max-w-[1280px] flex-col items-center px-4 text-center">
     <p
