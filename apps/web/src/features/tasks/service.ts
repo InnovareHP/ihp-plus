@@ -3,7 +3,8 @@ import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { loadActivity, recordActivity } from '@/lib/activity'
-import { deleteObject, objectUrl } from '@/lib/s3'
+import { deleteObject, isObjectStorageConfigured, objectUrl } from '@/lib/s3'
+import { taskAttachmentUrl } from '@/lib/routes'
 import { notifyComment } from './notifications'
 import { mentionsEveryone } from './utils/mentions'
 import {
@@ -920,27 +921,20 @@ async function peopleNames(ids: readonly string[]) {
   return new Map(people.map((person) => [person.id, person.preferredName ?? person.name]))
 }
 
-// Storage being unconfigured must not blank the panel: the row still lists the file, it just
-// cannot be opened.
-async function signedUrl(fileKey: string) {
-  try {
-    return await objectUrl(fileKey)
-  } catch {
-    return ''
-  }
-}
-
 async function toAttachmentRows(
   records: readonly AttachmentRecord[],
   names: ReadonlyMap<string, string>,
 ): Promise<TaskAttachmentRow[]> {
+  // Storage being unconfigured must not blank the panel: the row still lists the file, it just
+  // cannot be opened.
+  const storageReady = isObjectStorageConfigured()
   return Promise.all(
     records.map(async (record) => ({
       id: record.id,
       fileName: record.fileName,
       contentType: record.contentType,
       fileSize: record.fileSize,
-      url: await signedUrl(record.fileKey),
+      url: storageReady ? taskAttachmentUrl(record.id) : '',
       uploadedByName: names.get(record.uploadedById ?? '') ?? 'Removed teammate',
       createdAt: record.createdAt.toISOString(),
       commentId: record.commentId ?? undefined,
@@ -1586,4 +1580,18 @@ async function forgetObject(fileKey: string) {
   } catch {
     // Left for whoever reconciles the bucket.
   }
+}
+
+/**
+ * A freshly signed link to one task file, for the attachment route to redirect to. Anyone in the
+ * organization may open it, the same people who can read the task it hangs off.
+ */
+export async function attachmentDownloadUrl(attachmentId: string): Promise<string> {
+  const caller = await requireMember()
+  const attachment = await db.taskAttachment.findFirst({
+    where: { id: attachmentId, organizationId: caller.organizationId },
+    select: { fileKey: true },
+  })
+  if (!attachment) throw new ConnectError('That file is no longer there.', Code.NotFound)
+  return objectUrl(attachment.fileKey)
 }

@@ -135,3 +135,11 @@ export function withBasePath(route: string) {
 }
 
 export const AUTH_BASE_PATH = withBasePath('/api/auth')
+
+/**
+ * A task file's permanent link: the route signs a fresh storage URL on every open, so the link
+ * never expires the way a presigned one does. A plain href, so basePath is written in here.
+ */
+export function taskAttachmentUrl(attachmentId: string) {
+  return withBasePath(`/api/tasks/attachments/${encodeURIComponent(attachmentId)}`)
+}

@@ -46,7 +46,7 @@ const prisma = vi.hoisted(() => ({
   },
   taskTimeSettings: { findUnique: vi.fn(), upsert: vi.fn() },
   taskComment: { findMany: vi.fn(), create: vi.fn() },
-  taskAttachment: { findMany: vi.fn(), updateMany: vi.fn() },
+  taskAttachment: { findMany: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn() },
   member: { findMany: vi.fn() },
   user: { findMany: vi.fn() },
   $transaction: vi.fn(),
@@ -54,9 +54,18 @@ const prisma = vi.hoisted(() => ({
 
 const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
 const activity = vi.hoisted(() => ({ recordActivity: vi.fn(), loadActivity: vi.fn() }))
+const storage = vi.hoisted(() => ({
+  isObjectStorageConfigured: vi.fn(() => false),
+  objectUrl: vi.fn(),
+  deleteObject: vi.fn(),
+}))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/activity', () => activity)
+vi.mock('@/lib/s3', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/s3')>()),
+  ...storage,
+}))
 // membershipOf is pure, so the real one is kept: how a membership resolves has one definition.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/auth-guard')>()),
@@ -64,6 +73,7 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 }))
 
 const {
+  attachmentDownloadUrl,
   createStatus,
   deleteTimeEntry,
   logTime,
@@ -960,5 +970,78 @@ describe('loadConversation', () => {
     const conversation = await loadConversation('task-1')
 
     expect(conversation.comments[0]?.attachments.map((file) => file.id)).toEqual(['file-1'])
+  })
+})
+
+describe('task files', () => {
+  it('links a file through the app, never a signature that runs out', async () => {
+    storage.isObjectStorageConfigured.mockReturnValue(true)
+    prisma.task.findFirst.mockResolvedValue(TASK_RECORD)
+    prisma.taskComment.findMany.mockResolvedValue([
+      {
+        id: 'comment-1',
+        taskId: 'task-1',
+        authorId: 'user-1',
+        body: 'The receipt.',
+        editedAt: null,
+        createdAt: new Date('2026-09-02T00:00:00.000Z'),
+        mentions: [],
+        attachments: [],
+      },
+    ])
+    prisma.taskAttachment.findMany.mockResolvedValue([
+      {
+        id: 'file-1',
+        fileKey: 'org-1/task-1/receipt.png',
+        fileName: 'receipt.png',
+        contentType: 'image/png',
+        fileSize: 2048,
+        uploadedById: 'user-1',
+        commentId: 'comment-1',
+        createdAt: new Date('2026-09-02T00:00:00.000Z'),
+      },
+    ])
+
+    const conversation = await loadConversation('task-1')
+
+    expect(conversation.comments[0]?.attachments[0]?.url).toBe('/app/api/tasks/attachments/file-1')
+    expect(storage.objectUrl).not.toHaveBeenCalled()
+  })
+
+  it('signs a fresh link each time a file is opened', async () => {
+    prisma.taskAttachment.findFirst.mockResolvedValue({ fileKey: 'tasks/org-1/file-1.png' })
+    storage.objectUrl
+      .mockResolvedValueOnce('https://s3.test/file-1.png?sig=first')
+      .mockResolvedValueOnce('https://s3.test/file-1.png?sig=second')
+
+    await expect(attachmentDownloadUrl('file-1')).resolves.toBe(
+      'https://s3.test/file-1.png?sig=first',
+    )
+    await expect(attachmentDownloadUrl('file-1')).resolves.toBe(
+      'https://s3.test/file-1.png?sig=second',
+    )
+    expect(prisma.taskAttachment.findFirst).toHaveBeenCalledWith({
+      where: { id: 'file-1', organizationId: 'org-1' },
+      select: { fileKey: true },
+    })
+  })
+
+  it('will not sign a file from another organization or one that is gone', async () => {
+    prisma.taskAttachment.findFirst.mockResolvedValue(null)
+
+    const error = await attachmentDownloadUrl('file-9').catch((thrown: unknown) =>
+      ConnectError.from(thrown),
+    )
+    expect(error).toMatchObject({ code: Code.NotFound })
+    expect(storage.objectUrl).not.toHaveBeenCalled()
+  })
+
+  it('asks a signed-out caller to sign in first', async () => {
+    guard.getSession.mockResolvedValue(null)
+
+    const error = await attachmentDownloadUrl('file-1').catch((thrown: unknown) =>
+      ConnectError.from(thrown),
+    )
+    expect(error).toMatchObject({ code: Code.Unauthenticated })
   })
 })
