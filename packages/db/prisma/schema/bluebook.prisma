@@ -8,6 +8,8 @@ model BluebookDocument {
   // company-wide shelf every department reads, which is what a null teamId used to mean.
   teams          BluebookDocumentTeam[]
   acknowledgements BluebookAcknowledgement[]
+  // Whether new hires must read it; the checklist owns that list, not the bluebook.
+  newHireRequirements NewHireDocument[]
 
   title       String
   description String?

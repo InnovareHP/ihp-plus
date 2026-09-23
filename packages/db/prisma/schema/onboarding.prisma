@@ -1,0 +1,70 @@
+// A new hire's first days: what they have to read, finish and be given before they are settled
+// in, in its own Postgres schema. It stays out of auth.prisma because `pnpm db:auth-schema`
+// rewrites that file wholesale.
+
+// One row per new hire. Its presence is what makes someone a new hire, so colleagues who were
+// already here when the checklist shipped never get one.
+model NewHireChecklist {
+  id             String @id @default(uuid())
+  // Plain columns, not relations: a relation field would have to be added to the generated
+  // User and Organization models in auth.prisma.
+  organizationId String
+  userId         String
+
+  startedAt   DateTime  @default(now())
+  // Stamped once every step is done, or when an admin closes it by hand; a document added to
+  // the required reading afterwards never reopens a finished checklist.
+  completedAt DateTime?
+  /// Set only when an admin closed it rather than the steps finishing it.
+  closedById  String?
+
+  @@unique([organizationId, userId])
+  @@index([organizationId, completedAt])
+  @@map("newHireChecklist")
+  @@schema("onboarding")
+}
+
+// A bluebook document every new hire must acknowledge, where its shelves reach them.
+model NewHireDocument {
+  id             String           @id @default(uuid())
+  organizationId String
+  documentId     String
+  document       BluebookDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt      DateTime         @default(now())
+
+  @@unique([organizationId, documentId])
+  @@map("newHireDocument")
+  @@schema("onboarding")
+}
+
+// One item on the first-day task list the organization gives every new hire.
+model NewHireTask {
+  id             String  @id @default(uuid())
+  organizationId String
+  title          String
+  description    String?
+  sortOrder      Int     @default(0)
+
+  // Archiving rather than deleting: whoever already ticked it off keeps that on record.
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  completions NewHireTaskCompletion[]
+
+  @@index([organizationId, archivedAt])
+  @@map("newHireTask")
+  @@schema("onboarding")
+}
+
+// One new hire ticking off one first-day task; unticking deletes the row.
+model NewHireTaskCompletion {
+  id          String      @id @default(uuid())
+  taskId      String
+  task        NewHireTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId      String
+  completedAt DateTime    @default(now())
+
+  @@unique([taskId, userId])
+  @@index([userId])
+  @@map("newHireTaskCompletion")
+  @@schema("onboarding")
+}
