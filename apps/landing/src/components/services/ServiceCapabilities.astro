@@ -1,0 +1,54 @@
+---
+import type { Service } from '../../data/services'
+import { SERVICES, servicePath } from '../../data/services'
+import Eyebrow from '../home/Eyebrow.astro'
+import SectionHeading from '../home/SectionHeading.astro'
+import CapabilityCard from './CapabilityCard.astro'
+import RelatedServiceLink from './RelatedServiceLink.astro'
+
+interface Props {
+  service: Service
+}
+
+const { service } = Astro.props
+const others = SERVICES.filter((other) => other.slug !== service.slug)
+---
+
+<section id="capabilities" class="bg-canvas" aria-labelledby="capabilities-heading">
+  <div class="mx-auto max-w-[1280px] px-4 pt-20 pb-24 sm:px-8 lg:px-[104px] lg:pt-28 lg:pb-32">
+    <div class="grid gap-4 lg:grid-cols-[244px_1fr] lg:gap-0">
+      <div class="lg:pt-[17px]">
+        <Eyebrow label="What's included" />
+      </div>
+      <SectionHeading id="capabilities-heading" {...service.capabilitiesHeading} />
+    </div>
+
+    <ul class="mt-12 grid gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3">
+      {
+        service.capabilities.map((capability, index) => (
+          <CapabilityCard index={index} title={capability.title} body={capability.body} />
+        ))
+      }
+    </ul>
+
+    <div class="mt-20 rounded-[30px] bg-brand-800 p-6 sm:p-10 lg:mt-24">
+      <h2 class="font-display text-[32px] leading-[1.1] font-medium text-white sm:text-[40px]">
+        One team, <span class="font-extrabold text-mint-300">every service.</span>
+      </h2>
+      <p class="mt-3 max-w-[560px] text-base text-white/80">
+        Pair {service.name.toLowerCase()} with the rest of IHP+ and it all runs through one workflow.
+      </p>
+      <div class="mt-8 grid gap-4 md:grid-cols-2">
+        {
+          others.map((other) => (
+            <RelatedServiceLink
+              href={servicePath(other.slug)}
+              index={other.index}
+              name={other.name}
+            />
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>

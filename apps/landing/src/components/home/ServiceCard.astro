@@ -18,11 +18,12 @@ interface Props {
   body: string
   photo: ImageMetadata
   photoAlt: string
+  href: string
   /** Where the photo's focal point sits, as the design crops it. */
   photoPosition?: string
 }
 
-const { layout, title, body, photo, photoAlt, photoPosition = 'center' } = Astro.props
+const { layout, title, body, photo, photoAlt, href, photoPosition = 'center' } = Astro.props
 
 const shape = { marketing: cardMarketing, it: cardIt, finance: cardFinance }[layout]
 const onBlue = layout === 'it'
@@ -43,7 +44,7 @@ const onBlue = layout === 'it'
     />
   </div>
 
-  <a href="#contact" class="service-card__arrow" aria-label={`Talk to us about ${title}`}>
+  <a href={href} class="service-card__arrow" aria-label={`Explore ${title}`}>
     <img src={(onBlue ? circleMint : circleBlue).src} alt="" width="61" height="61" />
     <img
       src={(onBlue ? arrowOnMint : arrowOnBlue).src}

@@ -9,6 +9,8 @@ interface Props {
   imageAlt?: string
   /** Pages that should never appear in search results, such as the 404. */
   noindex?: boolean
+  /** Extra schema.org nodes for this page, appended to the site-wide graph. */
+  graph?: Record<string, unknown>[]
 }
 
 const SITE_NAME = 'IHP+'
@@ -20,6 +22,7 @@ const {
   image = '/og-image.jpg',
   imageAlt = `IHP+ — ${SLOGAN}`,
   noindex = false,
+  graph = [],
 } = Astro.props
 
 // Absolute URLs, because crawlers and link unfurlers do not resolve relative ones.
@@ -51,6 +54,7 @@ const structuredData = {
       inLanguage: 'en-US',
       publisher: { '@id': organizationId },
     },
+    ...graph,
   ],
 }
 ---

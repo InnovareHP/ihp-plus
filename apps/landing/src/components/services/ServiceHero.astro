@@ -1,0 +1,250 @@
+---
+import type { Service } from '../../data/services'
+import HeroConsole from './HeroConsole.astro'
+
+interface Props {
+  service: Service
+}
+
+const { service } = Astro.props
+const [plain, gradient] = service.headline
+---
+
+<section class="svc-hero relative isolate overflow-hidden rounded-b-[50px] bg-night text-white">
+  <div class="svc-grid absolute inset-0 -z-10" aria-hidden="true"></div>
+  <div class="svc-orb svc-orb-blue absolute -z-10" aria-hidden="true"></div>
+  <div class="svc-orb svc-orb-mint absolute -z-10" aria-hidden="true"></div>
+  <div class="svc-scan absolute inset-0 -z-10" aria-hidden="true"></div>
+
+  <div class="mx-auto max-w-[1280px] px-4 pb-24 sm:px-8 lg:px-[104px] lg:pb-32">
+    <!-- Holds the place the sticky nav sits over. -->
+    <div aria-hidden="true" class="h-[44px] sm:h-[47px]"></div>
+
+    <a
+      href="/"
+      class="svc-rise mx-auto mt-8 block w-fit rounded-sm focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:ring-offset-4 focus-visible:ring-offset-night focus-visible:outline-none lg:mt-10"
+    >
+      <img src="/brand/logo-on-dark.svg" width="72" height="44" alt="IHP+ home" class="h-11 w-18" />
+    </a>
+
+    <div
+      class="mt-12 grid items-center gap-16 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:gap-20"
+    >
+      <div>
+        <nav aria-label="Breadcrumb" class="svc-rise" style="--d: 1">
+          <ol class="flex flex-wrap items-center gap-2 font-mono text-xs text-white/70">
+            <li>
+              <a
+                href="/"
+                class="rounded-sm hover:text-white focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none"
+                >Home</a
+              >
+            </li>
+            <li aria-hidden="true">/</li>
+            <li>
+              <a
+                href="/#services"
+                class="rounded-sm hover:text-white focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none"
+                >Services</a
+              >
+            </li>
+            <li aria-hidden="true">/</li>
+            <li aria-current="page" class="text-mint-300">{service.name}</li>
+          </ol>
+        </nav>
+
+        <p
+          class="svc-rise mt-6 inline-flex items-center gap-2.5 rounded-full border border-mint-300/30 bg-mint-300/10 px-4 py-1.5 font-mono text-xs tracking-[0.08em] text-mint-300 uppercase"
+          style="--d: 2"
+        >
+          <span class="svc-dot size-1.5 rounded-full bg-mint-300" aria-hidden="true"></span>
+          Service {service.index} · {service.name}
+        </p>
+
+        <h1 id="service-heading" class="mt-6 uppercase">
+          <span
+            class="svc-rise block font-display text-[3rem] leading-[1] font-medium sm:text-[72px] lg:text-[84px]"
+            style="--d: 3">{plain}</span
+          >
+          <span
+            class="svc-rise font-poster text-brand-gradient block text-[3.75rem] leading-[1.05] font-extrabold tracking-[0.02em] sm:text-[96px] lg:text-[112px]"
+            style="--d: 4">{gradient}</span
+          >
+        </h1>
+
+        <p
+          class="svc-rise mt-6 max-w-[560px] text-base text-white/80 sm:text-lg lg:text-xl lg:leading-[1.6]"
+          style="--d: 5"
+        >
+          {service.lede}
+        </p>
+
+        <ul class="svc-rise mt-8 grid gap-3 text-sm sm:text-base" style="--d: 6">
+          {
+            service.highlights.map((item) => (
+              <li class="flex items-center gap-3">
+                <svg
+                  viewBox="0 0 20 20"
+                  class="size-5 shrink-0 text-mint-300"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="0.75"
+                    y="0.75"
+                    width="18.5"
+                    height="18.5"
+                    rx="5"
+                    stroke="currentColor"
+                    stroke-opacity="0.4"
+                    stroke-width="1.5"
+                  />
+                  <path
+                    d="M6 10.5l2.5 2.5L14 7.5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                {item}
+              </li>
+            ))
+          }
+        </ul>
+
+        <div class="svc-rise mt-10 flex flex-wrap gap-4" style="--d: 7">
+          <a
+            href="#contact"
+            class="group inline-flex min-h-12 items-center gap-2 rounded-full bg-mint-300 px-7 py-3 font-semibold text-ink transition-colors duration-200 hover:bg-mint-200 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-night focus-visible:outline-none"
+          >
+            Start a project
+            <span
+              aria-hidden="true"
+              class="transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transition-none"
+              >→</span
+            >
+          </a>
+          <a
+            href="#capabilities"
+            class="inline-flex min-h-12 items-center rounded-full border border-white/25 px-7 py-3 font-semibold text-white transition-colors duration-200 hover:border-white/60 hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:ring-offset-2 focus-visible:ring-offset-night focus-visible:outline-none"
+          >
+            See what's included
+          </a>
+        </div>
+      </div>
+
+      <div class="svc-rise mx-auto w-full max-w-[500px] lg:mx-0" style="--d: 4">
+        <HeroConsole
+          file={service.console.file}
+          lines={service.console.lines}
+          tags={service.tags}
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* A blueprint grid that fades out toward the edges, so it reads as depth rather than a pattern. */
+  .svc-grid {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.06) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 70% at 60% 40%, #000 30%, transparent 75%);
+  }
+  .svc-orb {
+    border-radius: 9999px;
+    filter: blur(90px);
+    opacity: 0.45;
+  }
+  .svc-orb-blue {
+    top: -120px;
+    right: -80px;
+    width: 560px;
+    height: 560px;
+    background: var(--color-brand-600);
+  }
+  .svc-orb-mint {
+    bottom: -220px;
+    left: -160px;
+    width: 480px;
+    height: 480px;
+    background: var(--color-mint-300);
+    opacity: 0.18;
+  }
+  /* The layer moves, not the line, so the sweep animates transform alone. */
+  .svc-scan {
+    opacity: 0;
+  }
+  .svc-scan::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--color-mint-300), transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .svc-rise {
+      animation: svc-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: calc(var(--d, 0) * 0.08s);
+    }
+    .svc-grid {
+      animation: svc-pan 24s linear infinite;
+    }
+    .svc-orb-blue {
+      animation: svc-drift 14s ease-in-out infinite;
+    }
+    .svc-orb-mint {
+      animation: svc-drift 18s ease-in-out infinite reverse;
+    }
+    .svc-scan {
+      animation: svc-scan 7s ease-in-out 1.5s infinite;
+    }
+    .svc-dot {
+      animation: svc-blink 1.6s ease-in-out infinite;
+    }
+  }
+
+  @keyframes svc-rise {
+    from {
+      opacity: 0;
+      translate: 0 28px;
+      filter: blur(8px);
+    }
+  }
+  @keyframes svc-pan {
+    to {
+      background-position:
+        56px 56px,
+        56px 56px;
+    }
+  }
+  @keyframes svc-drift {
+    50% {
+      translate: -60px 40px;
+      scale: 1.1;
+    }
+  }
+  @keyframes svc-scan {
+    0% {
+      translate: 0 0;
+      opacity: 0;
+    }
+    15%,
+    85% {
+      opacity: 0.5;
+    }
+    100% {
+      translate: 0 100%;
+      opacity: 0;
+    }
+  }
+  @keyframes svc-blink {
+    50% {
+      opacity: 0.3;
+    }
+  }
+</style>

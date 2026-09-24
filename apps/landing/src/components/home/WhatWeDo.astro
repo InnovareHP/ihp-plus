@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets'
 import servicesBg from '../../assets/home/services-bg.png'
+import { servicePath } from '../../data/services'
 import marketingPhoto from '../../assets/home/service-marketing.png'
 import itPhoto from '../../assets/home/service-it.png'
 import financePhoto from '../../assets/home/service-finance.png'
@@ -51,6 +52,7 @@ import ServiceCard from './ServiceCard.astro'
       <ServiceCard
         layout="marketing"
         title="Marketing & Creative"
+        href={servicePath('marketing-creative')}
         body="From strategy to content — we help your brand get seen, get heard, and get chosen."
         photo={marketingPhoto}
         photoAlt="A marketing team gathered around a laptop, reviewing a campaign together."
@@ -59,6 +61,7 @@ import ServiceCard from './ServiceCard.astro'
       <ServiceCard
         layout="it"
         title="IT & Web Solutions"
+        href={servicePath('it-web-solutions')}
         body="From websites to full platforms — we build, ship, and maintain the systems your business runs on."
         photo={itPhoto}
         photoAlt="A developer at a desk with code on two monitors."
@@ -66,6 +69,7 @@ import ServiceCard from './ServiceCard.astro'
       <ServiceCard
         layout="finance"
         title="Finance & Accounting"
+        href={servicePath('finance-accounting')}
         body="Accurate bookkeeping, reporting, and financial support — managed end to end."
         photo={financePhoto}
         photoAlt="An accountant working late at a desk beside a computer screen."

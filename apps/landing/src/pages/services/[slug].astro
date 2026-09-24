@@ -1,0 +1,63 @@
+---
+import type { GetStaticPaths } from 'astro'
+import Layout from '../../layouts/Layout.astro'
+import Contact from '../../components/home/Contact.astro'
+import SiteFooter from '../../components/home/SiteFooter.astro'
+import SiteNav from '../../components/home/SiteNav.astro'
+import ServiceCapabilities from '../../components/services/ServiceCapabilities.astro'
+import ServiceHero from '../../components/services/ServiceHero.astro'
+import { SERVICES, servicePath, type Service } from '../../data/services'
+
+export const getStaticPaths = (() =>
+  SERVICES.map((service) => ({
+    params: { slug: service.slug },
+    props: { service },
+  }))) satisfies GetStaticPaths
+
+interface Props {
+  service: Service
+}
+
+const { service } = Astro.props
+const site = Astro.site ?? new URL('https://www.ihpplusglobal.com')
+const url = new URL(servicePath(service.slug), site).href
+
+const graph = [
+  {
+    '@type': 'Service',
+    '@id': `${url}#service`,
+    name: service.name,
+    serviceType: service.name,
+    description: service.seoDescription,
+    url,
+    provider: { '@id': new URL('/#organization', site).href },
+    areaServed: 'Worldwide',
+  },
+  {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: site.href },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Services',
+        item: new URL('/#services', site).href,
+      },
+      { '@type': 'ListItem', position: 3, name: service.name, item: url },
+    ],
+  },
+]
+---
+
+<Layout title={service.seoTitle} description={service.seoDescription} graph={graph}>
+  <SiteNav />
+  <ServiceHero service={service} />
+  <ServiceCapabilities service={service} />
+  <Contact />
+  <SiteFooter slot="footer" />
+</Layout>
+
+<script>
+  // The home motion script guards every section, so here it only animates what this page shares.
+  import '../../scripts/home-motion'
+</script>

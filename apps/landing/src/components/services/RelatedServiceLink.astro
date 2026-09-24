@@ -1,0 +1,24 @@
+---
+interface Props {
+  href: string
+  index: string
+  name: string
+}
+
+const { href, index, name } = Astro.props
+---
+
+<a
+  href={href}
+  class="group flex items-center justify-between gap-6 rounded-[20px] border border-white/15 px-6 py-5 text-white transition-colors duration-200 hover:border-mint-300 hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-800 focus-visible:outline-none motion-reduce:transition-none"
+>
+  <span>
+    <span class="block font-mono text-xs text-mint-300">Service {index}</span>
+    <span class="mt-1 block font-display text-[28px] leading-[1.1] font-semibold">{name}</span>
+  </span>
+  <span
+    aria-hidden="true"
+    class="grid size-11 shrink-0 place-items-center rounded-full bg-mint-300 text-ink transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transition-none"
+    >→</span
+  >
+</a>
