@@ -1,0 +1,95 @@
+---
+import { servicePath } from '../../data/services'
+
+interface Props {
+  /** The nav's shared link classes, so "Services" matches its neighbours. */
+  linkClass: string
+  class?: string
+}
+
+const { linkClass, class: className } = Astro.props
+
+// Only IT has a page so far; the other two land on the homepage's services section.
+const ITEMS = [
+  {
+    href: '/#services',
+    label: 'Marketing & Creative',
+    body: 'Strategy, content, and campaigns.',
+  },
+  {
+    href: servicePath('it-web-solutions'),
+    label: 'IT & Web Solutions',
+    body: 'Websites, platforms, and IT support.',
+  },
+  {
+    href: '/#services',
+    label: 'Finance & Accounting',
+    body: 'Bookkeeping, reporting, and payroll.',
+  },
+]
+---
+
+<li data-services-menu class:list={['group/menu relative', className]}>
+  <a href="/#services" class:list={[linkClass, 'inline-flex items-center gap-1']}>
+    Services
+    <svg
+      viewBox="0 0 12 12"
+      class="size-3 transition-transform duration-200 group-hover/menu:rotate-180 group-has-[:focus-visible]/menu:rotate-180 motion-reduce:transition-none"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M3 4.5l3 3 3-3"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+  </a>
+
+  <!-- Kept focusable while hidden, so Tab walks into it; keyboard focus opens it, a mouse click does not. -->
+  <div
+    class="services-menu pointer-events-none absolute top-full left-1/2 w-[300px] -translate-x-1/2 translate-y-1 pt-4 opacity-0 transition-[opacity,translate] duration-200 ease-out group-hover/menu:pointer-events-auto group-hover/menu:translate-y-0 group-hover/menu:opacity-100 group-has-[:focus-visible]/menu:pointer-events-auto group-has-[:focus-visible]/menu:translate-y-0 group-has-[:focus-visible]/menu:opacity-100 motion-reduce:transition-none max-sm:hidden"
+  >
+    <ul
+      class="rounded-2xl border border-white/10 bg-night/95 p-2 shadow-xl shadow-black/30 supports-[backdrop-filter]:bg-night/80 supports-[backdrop-filter]:backdrop-blur-xl"
+    >
+      {
+        ITEMS.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              class="block rounded-xl px-4 py-3 text-white transition-colors duration-150 hover:bg-white/10 focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none motion-reduce:transition-none"
+            >
+              <span class="block text-sm font-semibold">{item.label}</span>
+              <span class="mt-0.5 block text-xs text-white/70">{item.body}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</li>
+
+<style>
+  /* Escape hides the open menu until the pointer or focus leaves it (WCAG 1.4.13). */
+  [data-services-menu][data-dismissed] .services-menu {
+    pointer-events: none;
+    opacity: 0;
+  }
+</style>
+
+<script>
+  for (const menu of document.querySelectorAll<HTMLElement>('[data-services-menu]')) {
+    const reset = () => delete menu.dataset.dismissed
+    menu.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return
+      menu.dataset.dismissed = ''
+      menu.querySelector<HTMLElement>('a')?.focus()
+    })
+    menu.addEventListener('pointerleave', reset)
+    menu.addEventListener('focusout', (event) => {
+      if (!menu.contains(event.relatedTarget as Node | null)) reset()
+    })
+  }
+</script>

@@ -1,9 +1,7 @@
 ---
+import NavServicesMenu from './NavServicesMenu.astro'
+
 // Rooted at "/" so the links also work from the service pages; every page has its own #contact.
-const LEFT = [
-  { href: '/#about', label: 'About' },
-  { href: '/#services', label: 'Services' },
-]
 const RIGHT = [
   { href: '/#global-reach', label: 'Global Reach' },
   { href: '#contact', label: 'Contact' },
@@ -28,15 +26,10 @@ const link =
     <ul
       class="mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-full border border-transparent transition-[background-color,border-color,box-shadow,backdrop-filter] duration-200 ease-out motion-reduce:transition-none sm:gap-x-12 lg:gap-x-0 group-data-[scrolled=true]:border-white/10 group-data-[scrolled=true]:bg-night/95 group-data-[scrolled=true]:px-6 group-data-[scrolled=true]:py-3 group-data-[scrolled=true]:shadow-lg group-data-[scrolled=true]:shadow-black/25 group-data-[scrolled=true]:supports-[backdrop-filter]:bg-night/65 group-data-[scrolled=true]:supports-[backdrop-filter]:backdrop-blur-xl group-data-[scrolled=true]:supports-[backdrop-filter]:backdrop-saturate-150 sm:group-data-[scrolled=true]:px-8"
     >
-      {
-        LEFT.map((item, index) => (
-          <li class={index === LEFT.length - 1 ? 'lg:mr-[300px]' : 'lg:mr-12'}>
-            <a href={item.href} class={link}>
-              {item.label}
-            </a>
-          </li>
-        ))
-      }
+      <li class="lg:mr-12">
+        <a href="/#about" class={link}>About</a>
+      </li>
+      <NavServicesMenu linkClass={link} class="lg:mr-[300px]" />
       {
         RIGHT.map((item, index) => (
           <li class={index === RIGHT.length - 1 ? '' : 'lg:mr-12'}>
