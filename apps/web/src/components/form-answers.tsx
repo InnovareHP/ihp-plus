@@ -1,6 +1,6 @@
 'use client'
 
-import { Group, Stack, Text } from '@mantine/core'
+import { Anchor, Group, Stack, Text } from '@mantine/core'
 import type { FormField, RequestValues } from '@/features/requests/schema'
 
 const dateOnly = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' })
@@ -11,9 +11,12 @@ const number = new Intl.NumberFormat('en-US')
 export function FormAnswers({
   fields,
   values,
+  fileHref,
 }: {
   fields: readonly FormField[]
   values: RequestValues
+  /** Where a file answer downloads from; without it the file's name shows as plain text. */
+  fileHref?: (fieldId: string) => string
 }) {
   if (fields.length === 0) {
     return (
@@ -31,7 +34,13 @@ export function FormAnswers({
             {field.label}
           </Text>
           <Text component="dd" size="sm" m={0} style={{ whiteSpace: 'pre-wrap' }}>
-            {answerText(field, values[field.id])}
+            {field.type === 'file' && fileHref && values[field.id] ? (
+              <Anchor href={fileHref(field.id)} target="_blank" rel="noopener" size="sm">
+                {String(values[field.id])}
+              </Anchor>
+            ) : (
+              answerText(field, values[field.id])
+            )}
           </Text>
         </Group>
       ))}

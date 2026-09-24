@@ -94,9 +94,36 @@ model RequestSubmission {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  attachments RequestAttachment[]
+
   @@index([organizationId, status])
   @@index([requesterId, status])
   @@index([teamId, status])
   @@map("requestSubmission")
+  @@schema("requests")
+}
+
+// A file answered on a request form. Uploaded before the request exists, so it lands unclaimed
+// and submitting claims it; the bytes live in S3, never in Postgres.
+model RequestAttachment {
+  id             String @id @default(uuid())
+  organizationId String
+  formId         String
+  fieldId        String
+
+  submissionId String?
+  submission   RequestSubmission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  fileKey     String
+  fileName    String
+  contentType String
+  fileSize    Int
+
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  @@index([submissionId, fieldId])
+  @@index([uploadedById, submissionId])
+  @@map("requestAttachment")
   @@schema("requests")
 }

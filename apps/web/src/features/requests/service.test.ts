@@ -19,6 +19,7 @@ const prisma = vi.hoisted(() => ({
     update: vi.fn(),
   },
   requestFormTeam: { deleteMany: vi.fn(), createMany: vi.fn() },
+  requestAttachment: { findMany: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn() },
   attendanceLeave: { createMany: vi.fn(), deleteMany: vi.fn() },
   // The transaction hands back the same mocks, so a write inside one is asserted like any other.
   $transaction: vi.fn(),
@@ -45,6 +46,9 @@ vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./notifications', () => notifications)
 vi.mock('@/lib/activity', () => activity)
 
+const s3 = vi.hoisted(() => ({ objectUrl: vi.fn() }))
+vi.mock('@/lib/s3', () => s3)
+
 const activity = vi.hoisted(() => ({ recordActivity: vi.fn() }))
 // membershipOf is pure, so the real one is kept: how a membership resolves has one definition.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
@@ -60,6 +64,7 @@ const {
   loadMyRequestsPage,
   loadRequest,
   loadRequestsPage,
+  requestFileUrl,
   submitRequest,
   withdrawRequest,
 } = await import('./service')
@@ -747,5 +752,101 @@ describe('cancelling approved leave', () => {
     })
 
     expect(prisma.requestSubmission.create.mock.calls[0]?.[0].data.timeOff).toBe(true)
+  })
+})
+
+describe('file answers', () => {
+  const RECEIPT = {
+    id: 'receipt',
+    type: 'file',
+    label: 'Receipt',
+    help: '',
+    placeholder: '',
+    required: true,
+    options: [],
+  }
+
+  beforeEach(() => {
+    prisma.requestForm.findFirst.mockResolvedValue({
+      id: 'form-1',
+      name: 'Expense reimbursement',
+      fields: [RECEIPT],
+      status: 'published',
+      timeOff: false,
+    })
+    prisma.requestSubmission.create.mockResolvedValue({ ...PENDING, id: 'sub-2' })
+  })
+
+  it('claims the uploaded file for the request and stores its name as the answer', async () => {
+    prisma.requestAttachment.findMany.mockResolvedValue([
+      { id: 'file-1', fieldId: 'receipt', fileName: 'lunch.pdf' },
+    ])
+    prisma.requestAttachment.updateMany.mockResolvedValue({ count: 1 })
+
+    await submitRequest({ formId: 'form-1', values: { receipt: 'file-1' } })
+
+    // Only the caller's own unclaimed upload on this form may be attached.
+    expect(prisma.requestAttachment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: { in: ['file-1'] },
+          formId: 'form-1',
+          uploadedById: 'user-1',
+          submissionId: null,
+        }),
+      }),
+    )
+    expect(prisma.requestSubmission.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ values: { receipt: 'lunch.pdf' } }),
+      }),
+    )
+    expect(prisma.requestAttachment.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['file-1'] }, submissionId: null },
+      data: { submissionId: 'sub-2' },
+    })
+  })
+
+  it("refuses an id that is not the caller's upload, and raises nothing", async () => {
+    prisma.requestAttachment.findMany.mockResolvedValue([])
+
+    expect(await codeOf(() => submitRequest({ formId: 'form-1', values: { receipt: 'x' } }))).toBe(
+      Code.InvalidArgument,
+    )
+    expect(prisma.requestSubmission.create).not.toHaveBeenCalled()
+  })
+
+  it('refuses a required file left empty', async () => {
+    expect(await codeOf(() => submitRequest({ formId: 'form-1', values: { receipt: '' } }))).toBe(
+      Code.InvalidArgument,
+    )
+  })
+
+  it('fails the whole request when the file was claimed by another submit meanwhile', async () => {
+    prisma.requestAttachment.findMany.mockResolvedValue([
+      { id: 'file-1', fieldId: 'receipt', fileName: 'lunch.pdf' },
+    ])
+    prisma.requestAttachment.updateMany.mockResolvedValue({ count: 0 })
+
+    expect(
+      await codeOf(() => submitRequest({ formId: 'form-1', values: { receipt: 'file-1' } })),
+    ).toBe(Code.FailedPrecondition)
+    expect(notifications.notifyApprovers).not.toHaveBeenCalled()
+  })
+
+  it('signs a link for someone who may read the request', async () => {
+    signedIn({ isAdmin: true })
+    prisma.requestAttachment.findFirst.mockResolvedValue({ fileKey: 'requests/org-1/a.pdf' })
+    s3.objectUrl.mockResolvedValue('https://s3.test/a.pdf?sig=1')
+
+    expect(await requestFileUrl('sub-1', 'receipt')).toBe('https://s3.test/a.pdf?sig=1')
+    expect(prisma.requestAttachment.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { submissionId: 'sub-1', fieldId: 'receipt' } }),
+    )
+  })
+
+  it('keeps someone else out of a file on a request that is not theirs', async () => {
+    expect(await codeOf(() => requestFileUrl('sub-1', 'receipt'))).toBe(Code.PermissionDenied)
+    expect(s3.objectUrl).not.toHaveBeenCalled()
   })
 })

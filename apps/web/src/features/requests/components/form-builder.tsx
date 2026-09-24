@@ -292,6 +292,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
                     key={field.id}
                     index={index}
                     firstMovableIndex={lockedCount}
+                    allowFile={formKind === 'request'}
                     total={fields.fields.length}
                     control={control}
                     register={register}

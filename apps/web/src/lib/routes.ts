@@ -149,3 +149,10 @@ export const AUTH_BASE_PATH = withBasePath('/api/auth')
 export function taskAttachmentUrl(attachmentId: string) {
   return withBasePath(`/api/tasks/attachments/${encodeURIComponent(attachmentId)}`)
 }
+
+/** A request's file answer, signed afresh on every open like a task file. */
+export function requestFileHref(submissionId: string, fieldId: string) {
+  return withBasePath(
+    `/api/requests/${encodeURIComponent(submissionId)}/files/${encodeURIComponent(fieldId)}`,
+  )
+}

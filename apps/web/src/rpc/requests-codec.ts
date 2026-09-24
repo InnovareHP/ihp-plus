@@ -33,6 +33,7 @@ const FIELD_TYPE_TO_PROTO: Record<Type, FieldType> = {
   date: FieldType.DATE,
   select: FieldType.SELECT,
   checkbox: FieldType.CHECKBOX,
+  file: FieldType.FILE,
 }
 
 const FIELD_TYPE_FROM_PROTO: Record<FieldType, Type> = {
@@ -43,6 +44,7 @@ const FIELD_TYPE_FROM_PROTO: Record<FieldType, Type> = {
   [FieldType.DATE]: 'date',
   [FieldType.SELECT]: 'select',
   [FieldType.CHECKBOX]: 'checkbox',
+  [FieldType.FILE]: 'file',
 }
 
 const FORM_STATUS_TO_PROTO: Record<Status, FormStatus> = {

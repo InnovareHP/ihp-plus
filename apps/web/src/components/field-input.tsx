@@ -12,6 +12,7 @@ const DEFAULT_PLACEHOLDERS: Record<FieldType, string> = {
   date: 'mm/dd/yyyy',
   select: 'Choose an option',
   checkbox: '',
+  file: 'Choose a file',
 }
 
 export interface FieldInputProps {

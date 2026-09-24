@@ -7,6 +7,7 @@ import { useRequest } from '../hooks/use-requests'
 import { CancelLeavePanel } from './cancel-leave-panel'
 import { DecisionPanel } from './decision-panel'
 import { FormAnswers } from '@/components/form-answers'
+import { requestFileHref } from '@/lib/routes'
 
 const stamp = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -58,7 +59,11 @@ export function RequestDetail({ initial }: { initial: RequestRow }) {
       ) : null}
 
       <PageSection title="Answers" description="Shown against the questions as they were asked.">
-        <FormAnswers fields={row.fields} values={row.values} />
+        <FormAnswers
+          fields={row.fields}
+          values={row.values}
+          fileHref={(fieldId) => requestFileHref(row.id, fieldId)}
+        />
       </PageSection>
 
       {row.canDecide ? <DecisionPanel row={row} /> : null}

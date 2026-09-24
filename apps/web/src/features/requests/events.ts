@@ -10,6 +10,8 @@ export const requestEvents = {
   requestStarted: 'requests.request.started',
   requestSubmitted: 'requests.request.submitted',
   requestSubmitFailed: 'requests.request.submit_failed',
+  fileUploaded: 'requests.file.uploaded',
+  fileUploadFailed: 'requests.file.upload_failed',
   requestWithdrawn: 'requests.request.withdrawn',
   requestWithdrawFailed: 'requests.request.withdraw_failed',
   requestDecided: 'requests.request.decided',

@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake } from '@/lib/pagination'
 import { recordActivity } from '@/lib/activity'
+import { objectUrl } from '@/lib/s3'
 import { bookLeave } from '@/features/attendance/leave'
 import {
   notifyApprovers,
@@ -351,18 +352,34 @@ export async function submitRequest(input: {
     throw new ConnectError(first?.message ?? 'Some answers are not valid.', Code.InvalidArgument)
   }
 
-  const submission = await db.requestSubmission.create({
-    data: {
-      organizationId: caller.organizationId,
-      formId: form.id,
-      formName: form.name,
-      fields,
-      values: pruneAnswers(fields, answers.data as RequestValues),
-      requesterId: caller.userId,
-      teamId: caller.team.id,
-      teamName: caller.team.name,
-      timeOff: form.timeOff,
-    },
+  const files = await claimFiles(fields, answers.data as RequestValues, caller, form.id)
+  const team = caller.team
+
+  const submission = await db.$transaction(async (tx) => {
+    const created = await tx.requestSubmission.create({
+      data: {
+        organizationId: caller.organizationId,
+        formId: form.id,
+        formName: form.name,
+        fields,
+        values: pruneAnswers(fields, files.values),
+        requesterId: caller.userId,
+        teamId: team.id,
+        teamName: team.name,
+        timeOff: form.timeOff,
+      },
+    })
+    if (files.attachmentIds.length === 0) return created
+
+    // Still unclaimed is re-checked here, so a double submit cannot attach one file twice.
+    const claimed = await tx.requestAttachment.updateMany({
+      where: { id: { in: files.attachmentIds }, submissionId: null },
+      data: { submissionId: created.id },
+    })
+    if (claimed.count !== files.attachmentIds.length) {
+      throw new ConnectError(FILE_GONE, Code.FailedPrecondition)
+    }
+    return created
   })
 
   const raised = {
@@ -389,6 +406,45 @@ export async function submitRequest(input: {
   })
 
   return toRequestRow(submission, caller.name, caller)
+}
+
+const FILE_GONE = 'A file you attached is no longer there — upload it again.'
+
+// A file answer arrives as an upload id and is stored as the file's name, which is what every
+// list, email and detail view then shows.
+async function claimFiles(
+  fields: readonly FormField[],
+  answers: RequestValues,
+  caller: Caller,
+  formId: string,
+) {
+  const values: RequestValues = { ...answers }
+  const wanted = fields.filter(
+    (field) => field.type === 'file' && typeof answers[field.id] === 'string' && answers[field.id],
+  )
+  if (wanted.length === 0) return { values, attachmentIds: [] }
+
+  const attachments = await db.requestAttachment.findMany({
+    where: {
+      id: { in: wanted.map((field) => String(answers[field.id])) },
+      organizationId: caller.organizationId,
+      formId,
+      uploadedById: caller.userId,
+      submissionId: null,
+    },
+    select: { id: true, fieldId: true, fileName: true },
+  })
+  const byId = new Map(attachments.map((attachment) => [attachment.id, attachment]))
+
+  for (const field of wanted) {
+    const attachment = byId.get(String(answers[field.id]))
+    if (!attachment || attachment.fieldId !== field.id) {
+      throw new ConnectError(FILE_GONE, Code.InvalidArgument)
+    }
+    values[field.id] = attachment.fileName
+  }
+
+  return { values, attachmentIds: attachments.map((attachment) => attachment.id) }
 }
 
 // An untouched optional field is absent rather than an empty string in the record.
@@ -576,6 +632,35 @@ export async function loadRequestsPage(query: RequestQuery): Promise<RequestsPag
   }
 }
 
+function canRead(submission: SubmissionRecord, caller: Caller) {
+  return (
+    submission.requesterId === caller.userId ||
+    caller.isAdmin ||
+    (submission.teamId !== null && caller.approverTeamIds.includes(submission.teamId))
+  )
+}
+
+/** A short-lived link to a file answer, for whoever may read the request it belongs to. */
+export async function requestFileUrl(submissionId: string, fieldId: string): Promise<string> {
+  const caller = await requireRequester()
+  const submission = await db.requestSubmission.findFirst({
+    where: { id: submissionId, organizationId: caller.organizationId },
+  })
+  if (!submission) throw new ConnectError('That request no longer exists.', Code.NotFound)
+  if (!canRead(submission, caller)) {
+    throw new ConnectError('That file is not yours to open.', Code.PermissionDenied)
+  }
+
+  const attachment = await db.requestAttachment.findFirst({
+    where: { submissionId: submission.id, fieldId },
+    orderBy: { createdAt: 'desc' },
+    select: { fileKey: true },
+  })
+  if (!attachment) throw new ConnectError('That file is no longer there.', Code.NotFound)
+
+  return objectUrl(attachment.fileKey)
+}
+
 export async function loadRequest(submissionId: string): Promise<RequestRow> {
   const caller = await requireRequester()
   const submission = await db.requestSubmission.findFirst({
@@ -583,11 +668,9 @@ export async function loadRequest(submissionId: string): Promise<RequestRow> {
   })
   if (!submission) throw new ConnectError('That request no longer exists.', Code.NotFound)
 
-  const visible =
-    submission.requesterId === caller.userId ||
-    caller.isAdmin ||
-    (submission.teamId !== null && caller.approverTeamIds.includes(submission.teamId))
-  if (!visible) throw new ConnectError('That request is not yours to read.', Code.PermissionDenied)
+  if (!canRead(submission, caller)) {
+    throw new ConnectError('That request is not yours to read.', Code.PermissionDenied)
+  }
 
   const names = await requesterNames([submission])
   return withDecider(

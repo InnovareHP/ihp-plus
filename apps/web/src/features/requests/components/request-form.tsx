@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { useRouter } from 'next/navigation'
-import { useForm, type Control, type FieldValues } from 'react-hook-form'
+import { Controller, useForm, type Control, type FieldValues } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { EmptyState } from '@/components/empty-state'
@@ -12,6 +12,7 @@ import { requestRoute, routes } from '@/lib/routes'
 import { answerSchemaOf, defaultAnswersOf, type FormRow, type RequestValues } from '../schema'
 import { useSubmitRequest } from '../hooks/use-requests'
 import { FieldInput } from '@/components/field-input'
+import { RequestFileInput } from './request-file-input'
 
 export function RequestForm({ form }: { form: FormRow }) {
   const router = useRouter()
@@ -63,14 +64,32 @@ export function RequestForm({ form }: { form: FormRow }) {
           <FormError message={errors.root?.message} title="Could not send that request" />
 
           <Stack gap="md">
-            {form.fields.map((field) => (
-              <FieldInput
-                key={field.id}
-                field={field}
-                control={control as Control<FieldValues>}
-                error={errors[field.id]?.message as string | undefined}
-              />
-            ))}
+            {form.fields.map((field) =>
+              field.type === 'file' ? (
+                <Controller
+                  key={field.id}
+                  control={control}
+                  name={field.id}
+                  render={({ field: bound }) => (
+                    <RequestFileInput
+                      formId={form.id}
+                      field={field}
+                      value={String(bound.value ?? '')}
+                      onChange={bound.onChange}
+                      onBlur={bound.onBlur}
+                      error={errors[field.id]?.message as string | undefined}
+                    />
+                  )}
+                />
+              ) : (
+                <FieldInput
+                  key={field.id}
+                  field={field}
+                  control={control as Control<FieldValues>}
+                  error={errors[field.id]?.message as string | undefined}
+                />
+              ),
+            )}
           </Stack>
 
           <Text size="sm" c="dimmed">

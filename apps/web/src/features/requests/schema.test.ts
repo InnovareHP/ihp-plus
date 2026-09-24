@@ -60,6 +60,26 @@ describe('answerSchemaOf', () => {
   })
 })
 
+describe('file questions', () => {
+  const RECEIPT = field({ id: 'receipt', type: 'file', label: 'Receipt', required: true })
+
+  it('asks for a required file by name', () => {
+    const result = answerSchemaOf([RECEIPT]).safeParse({ receipt: '' })
+
+    expect(result.error?.issues[0]?.message).toBe('Attach receipt.')
+    expect(answerSchemaOf([RECEIPT]).safeParse({ receipt: 'file-1' }).success).toBe(true)
+  })
+
+  it('keeps a file question off an evaluation form', () => {
+    const draft = { name: 'Quarterly review', fields: [RECEIPT], teamIds: [] }
+
+    expect(formDraftSchema.safeParse({ ...draft, kind: 'request' }).success).toBe(true)
+    expect(
+      formDraftSchema.safeParse({ ...draft, kind: 'evaluation' }).error?.issues[0]?.message,
+    ).toBe('An evaluation form cannot ask for a file.')
+  })
+})
+
 describe('publishBlockers', () => {
   it('refuses a form nobody can answer or reach', () => {
     expect(publishBlockers({ kind: 'request', fields: [], teams: [] })).toEqual([

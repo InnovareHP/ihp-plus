@@ -15,6 +15,9 @@ const rpc = vi.hoisted(() => ({
   withdrawRequest: vi.fn(),
 }))
 
+const actions = vi.hoisted(() => ({ uploadRequestFile: vi.fn() }))
+vi.mock('../actions', () => actions)
+
 const nav = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn() }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 
@@ -165,6 +168,102 @@ describe('RequestForm', () => {
 
   it('has no axe violations', async () => {
     const { container } = render(<RequestForm form={FORM} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('RequestForm with a file question', () => {
+  const EXPENSE: FormRow = {
+    ...FORM,
+    name: 'Expense reimbursement',
+    fields: [
+      {
+        id: 'receipt',
+        type: 'file',
+        label: 'Receipt',
+        help: 'A photo or PDF of the receipt.',
+        placeholder: '',
+        required: true,
+        options: [],
+      },
+    ],
+  }
+
+  const receipt = () => new File(['%PDF-1.7'], 'lunch.pdf', { type: 'application/pdf' })
+  const fileInput = (container: HTMLElement) =>
+    container.querySelector<HTMLInputElement>('input[type="file"]') as HTMLInputElement
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    rpc.submitRequest.mockResolvedValue({ ...FORM, id: 'req-9', formName: EXPENSE.name })
+  })
+
+  it('uploads the file when it is picked and sends its id with the request', async () => {
+    actions.uploadRequestFile.mockResolvedValue({
+      ok: true,
+      data: { id: 'file-1', fileName: 'lunch.pdf' },
+    })
+    const person = user()
+    const { container } = render(<RequestForm form={EXPENSE} />)
+
+    await person.upload(fileInput(container), receipt())
+
+    expect(await screen.findByText('Uploaded — it is sent with the request.')).toBeInTheDocument()
+    const sent = actions.uploadRequestFile.mock.calls[0]?.[0] as FormData
+    expect(sent.get('formId')).toBe('form-1')
+    expect(sent.get('fieldId')).toBe('receipt')
+
+    await person.click(screen.getByRole('button', { name: 'Send request' }))
+
+    await waitFor(() =>
+      expect(rpc.submitRequest).toHaveBeenCalledWith(
+        expect.objectContaining({ values: { receipt: 'file-1' } }),
+      ),
+    )
+  })
+
+  it('asks for the file before sending when a required one is missing', async () => {
+    const person = user()
+    render(<RequestForm form={EXPENSE} />)
+
+    await person.click(screen.getByRole('button', { name: 'Send request' }))
+
+    expect(await screen.findByText('Attach receipt.')).toBeInTheDocument()
+    expect(rpc.submitRequest).not.toHaveBeenCalled()
+  })
+
+  it('announces a refused upload and leaves nothing attached', async () => {
+    actions.uploadRequestFile.mockResolvedValue({
+      ok: false,
+      message: 'File storage is not configured yet — tell an admin to set the S3 variables.',
+    })
+    const person = user()
+    const { container } = render(<RequestForm form={EXPENSE} />)
+
+    await person.upload(fileInput(container), receipt())
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('File storage is not configured')
+    await person.click(screen.getByRole('button', { name: 'Send request' }))
+    expect(rpc.submitRequest).not.toHaveBeenCalled()
+  })
+
+  it('refuses a file type it cannot take without uploading it', async () => {
+    const person = userEvent.setup({ applyAccept: false })
+    const { container } = render(<RequestForm form={EXPENSE} />)
+
+    await person.upload(
+      fileInput(container),
+      new File(['x'], 'setup.exe', { type: 'application/x-msdownload' }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Upload a PDF, Office document, text file or image.',
+    )
+    expect(actions.uploadRequestFile).not.toHaveBeenCalled()
+  })
+
+  it('has no axe violations', async () => {
+    const { container } = render(<RequestForm form={EXPENSE} />)
     expect(await axe(container)).toHaveNoViolations()
   })
 })

@@ -6,7 +6,7 @@
 // a uuid would be. The builder generates uuids for questions added later, which is fine — an
 // id only has to be stable, not pretty.
 
-export type SeedFieldType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox'
+export type SeedFieldType = 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox' | 'file'
 
 export interface SeedFormField {
   id: string
@@ -319,9 +319,9 @@ export const REQUEST_FORM_SEED: readonly SeedRequestForm[] = [
       field('costCentre', 'text', 'Cost centre'),
       field('clientRelated', 'checkbox', 'This was for a specific client'),
       field('clientName', 'text', 'Which client'),
-      field('receipt', 'text', 'Receipt reference', {
+      field('receipt', 'file', 'Receipt', {
         required: true,
-        help: 'Email the receipts to finance and put the subject line or invoice number here.',
+        help: 'A photo or PDF of the receipt or invoice, up to 25 MB.',
       }),
       field('policyAccepted', 'checkbox', 'This claim follows the travel and expense policy', {
         required: true,

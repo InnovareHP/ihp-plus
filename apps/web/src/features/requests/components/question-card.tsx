@@ -22,6 +22,7 @@ import {
 } from '../schema'
 
 const TYPE_OPTIONS = FIELD_TYPES.map((type) => ({ value: type, label: FIELD_TYPE_LABELS[type] }))
+const TYPE_OPTIONS_WITHOUT_FILE = TYPE_OPTIONS.filter((option) => option.value !== 'file')
 
 interface QuestionCardProps {
   index: number
@@ -36,6 +37,8 @@ interface QuestionCardProps {
   onRemove: () => void
   /** Questions above this one are locked in place, so it cannot move past them. */
   firstMovableIndex?: number
+  /** Only a request has a requester to upload something; an evaluation form never offers it. */
+  allowFile?: boolean
 }
 
 export function QuestionCard({
@@ -50,6 +53,7 @@ export function QuestionCard({
   onMoveDown,
   onRemove,
   firstMovableIndex = 0,
+  allowFile = true,
 }: QuestionCardProps) {
   return (
     <Card padding="md" component="fieldset" bd="1px solid var(--mantine-color-default-border)">
@@ -106,7 +110,7 @@ export function QuestionCard({
               <Select
                 label="Answer type"
                 placeholder="Choose an answer type"
-                data={TYPE_OPTIONS}
+                data={allowFile ? TYPE_OPTIONS : TYPE_OPTIONS_WITHOUT_FILE}
                 allowDeselect={false}
                 value={field.value}
                 onChange={(value) => value && field.onChange(value)}

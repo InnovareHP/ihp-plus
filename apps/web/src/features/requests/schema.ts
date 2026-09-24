@@ -2,7 +2,15 @@ import { z } from 'zod'
 import { pageQueryFields, type Paginated } from '@/lib/pagination'
 import { timeOffRangeOf } from './time-off'
 
-export const FIELD_TYPES = ['text', 'textarea', 'number', 'date', 'select', 'checkbox'] as const
+export const FIELD_TYPES = [
+  'text',
+  'textarea',
+  'number',
+  'date',
+  'select',
+  'checkbox',
+  'file',
+] as const
 export const FORM_STATUSES = ['draft', 'published', 'archived'] as const
 // A request form runs the approval queue; an evaluation form is assigned to a supervisor.
 export const FORM_KINDS = ['request', 'evaluation'] as const
@@ -30,6 +38,7 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   date: 'Date',
   select: 'Choice',
   checkbox: 'Checkbox',
+  file: 'File upload',
 }
 
 export const FORM_STATUS_LABELS: Record<FormStatus, string> = {
@@ -75,15 +84,21 @@ export const formFieldSchema = z
     path: ['max'],
   })
 
-export const formDraftSchema = z.object({
-  formId: z.string().optional(),
-  kind: z.enum(FORM_KINDS).default('request'),
-  name: z.string().trim().min(2, 'Give the form a name.').max(120),
-  description: z.string().trim().max(400).default(''),
-  fields: z.array(formFieldSchema).max(40, 'A form can hold at most 40 questions.'),
-  teamIds: z.array(z.string().min(1)),
-  timeOff: z.boolean().default(false),
-})
+export const formDraftSchema = z
+  .object({
+    formId: z.string().optional(),
+    kind: z.enum(FORM_KINDS).default('request'),
+    name: z.string().trim().min(2, 'Give the form a name.').max(120),
+    description: z.string().trim().max(400).default(''),
+    fields: z.array(formFieldSchema).max(40, 'A form can hold at most 40 questions.'),
+    teamIds: z.array(z.string().min(1)),
+    timeOff: z.boolean().default(false),
+  })
+  // An evaluation has no requester to upload anything, so a file question would be unanswerable.
+  .refine((form) => form.kind !== 'evaluation' || form.fields.every((f) => f.type !== 'file'), {
+    message: 'An evaluation form cannot ask for a file.',
+    path: ['fields'],
+  })
 
 export const setFormStatusSchema = z.object({
   formId: z.string().min(1),
@@ -133,6 +148,12 @@ export type SetApproverValues = z.infer<typeof setApproverSchema>
 
 export type FieldValue = string | number | boolean
 export type RequestValues = Record<string, FieldValue>
+
+/** A file a requester has uploaded for a question, before the request itself is sent. */
+export interface UploadedFile {
+  id: string
+  fileName: string
+}
 
 export interface TeamRef {
   id: string
@@ -254,6 +275,12 @@ function fieldSchemaOf(field: FormField): z.ZodType {
         message: `Pick one of the options for ${field.label}.`,
       })
       return field.required ? schema : z.union([schema, z.literal('')])
+    }
+
+    case 'file': {
+      // The answer is the id of a file already uploaded; the server checks it is the caller's.
+      const schema = z.string().trim().max(200)
+      return field.required ? schema.min(1, `Attach ${field.label.toLowerCase()}.`) : schema
     }
 
     case 'date':
