@@ -25,7 +25,7 @@ vi.mock('next/navigation', () => ({
 
 const SUMMARY = {
   id: 'org-1',
-  name: 'Innovare Health Partners',
+  name: 'IHP+',
   slug: 'ihp',
   logo: '',
   memberCount: 42,
@@ -57,12 +57,12 @@ describe('OrganizationPanel', () => {
 
     const name = await screen.findByLabelText(/Organization name/)
     await person.clear(name)
-    await person.type(name, 'Innovare Health')
+    await person.type(name, 'IHP+ Global')
     await person.click(screen.getByRole('button', { name: 'Save changes' }))
 
     await waitFor(() =>
       expect(actions.updateOrganizationProfile).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'Innovare Health', slug: 'ihp' }),
+        expect.objectContaining({ name: 'IHP+ Global', slug: 'ihp' }),
       ),
     )
     await waitFor(() => expect(nav.refresh).toHaveBeenCalled())

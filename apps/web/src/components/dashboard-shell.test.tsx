@@ -14,7 +14,7 @@ vi.mock('@/features/auth/hooks/use-impersonation', () => impersonation)
 vi.mock('next/navigation', () => ({ usePathname: () => nav.pathname }))
 
 const USER = { name: 'Dana Reyes', email: 'dana@ihp.example', jobTitle: 'Admissions liaison' }
-const ORGANIZATION = { name: 'Innovare Health Partners', role: 'admin' }
+const ORGANIZATION = { name: 'IHP+', role: 'admin' }
 
 function renderShell(props: Partial<Parameters<typeof DashboardShell>[0]> = {}) {
   return render(

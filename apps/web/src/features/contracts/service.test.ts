@@ -253,7 +253,7 @@ describe('setContractStatus', () => {
       name: 'Atlantic Home Health',
       email: 'billing@atlantic.test',
     })
-    prisma.organization.findUnique.mockResolvedValue({ name: 'Innovare Health Partners' })
+    prisma.organization.findUnique.mockResolvedValue({ name: 'IHP+' })
     email.contractPublishedTemplate.mockReturnValue({ subject: 'Ready', html: '<p/>', text: '' })
   })
 
@@ -274,7 +274,7 @@ describe('setContractStatus', () => {
       expect.objectContaining({ to: 'billing@atlantic.test' }),
     )
     expect(email.contractPublishedTemplate).toHaveBeenCalledWith({
-      organizationName: 'Innovare Health Partners',
+      organizationName: 'IHP+',
       reference: 'IHP-C-0007',
       title: 'Growth retainer',
       url: 'https://portal.ihp.test/app/contract/contract-1/sig',

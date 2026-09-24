@@ -23,7 +23,7 @@ beforeEach(() => {
   email.memberRoleChangedTemplate.mockReturnValue({ subject: 'Role', html: '<p/>', text: '' })
   email.memberAccessChangedTemplate.mockReturnValue({ subject: 'Access', html: '<p/>', text: '' })
   prisma.user.findUnique.mockResolvedValue({ email: 'grace@ihp.test' })
-  prisma.organization.findUnique.mockResolvedValue({ name: 'Innovare Health Partners' })
+  prisma.organization.findUnique.mockResolvedValue({ name: 'IHP+' })
 })
 
 describe('notifyRoleChanged', () => {
@@ -38,7 +38,7 @@ describe('notifyRoleChanged', () => {
 
     expect(email.sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'grace@ihp.test' }))
     expect(email.memberRoleChangedTemplate).toHaveBeenCalledWith({
-      organizationName: 'Innovare Health Partners',
+      organizationName: 'IHP+',
       scope: 'organization',
       roleLabel: 'Admin',
       changedByName: 'Ada Lovelace',
@@ -71,7 +71,7 @@ describe('notifyAccessChanged', () => {
     })
 
     expect(email.memberAccessChangedTemplate).toHaveBeenCalledWith({
-      organizationName: 'Innovare Health Partners',
+      organizationName: 'IHP+',
       suspended: true,
       changedByName: 'Ada Lovelace',
       url: 'https://portal.ihp.test/app/login',

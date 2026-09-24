@@ -61,7 +61,7 @@ export function OrganizationProfileForm({
             <TextInput
               {...register('name')}
               label="Organization name"
-              placeholder="Innovare Health Partners"
+              placeholder="IHP+"
               description="Shown in the portal header."
               required
               aria-required="true"
@@ -72,7 +72,7 @@ export function OrganizationProfileForm({
             <TextInput
               {...register('slug')}
               label="Slug"
-              placeholder="innovare-health"
+              placeholder="ihp-plus"
               description="Lowercase letters, numbers and hyphens."
               required
               aria-required="true"

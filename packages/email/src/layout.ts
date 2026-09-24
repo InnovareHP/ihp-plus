@@ -95,7 +95,7 @@ ${layout.steps.map((step) => `<li style="margin:0 0 8px;">${escapeHtml(step)}</l
           <tr>
             <td style="padding:24px 32px 0;">
               <!-- The alt text stands in for the lockup when a client blocks images. -->
-              <img src="${LOGO_SRC}" width="66" height="40" alt="Innovare Health Partners" style="display:block;border:0;outline:none;text-decoration:none;font-family:${FONT};font-size:17px;font-weight:700;color:${BRAND};">
+              <img src="${LOGO_SRC}" width="66" height="40" alt="IHP+" style="display:block;border:0;outline:none;text-decoration:none;font-family:${FONT};font-size:17px;font-weight:700;color:${BRAND};">
             </td>
           </tr>
           <tr>
@@ -113,7 +113,7 @@ ${layout.steps.map((step) => `<li style="margin:0 0 8px;">${escapeHtml(step)}</l
           </tr>
         </table>
         <p style="margin:16px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:${MUTED};">
-          Sent by Innovare Health Partners
+          Sent by IHP+
         </p>
       </td>
     </tr>
@@ -133,7 +133,7 @@ ${layout.steps.map((step) => `<li style="margin:0 0 8px;">${escapeHtml(step)}</l
     ...(layout.action ? ['', `${layout.action.label}: ${layout.action.url}`] : []),
     ...(layout.footnote ? ['', layout.footnote] : []),
     '',
-    '— Innovare Health Partners',
+    '— IHP+',
   ].join('\n')
 
   return { html, text }

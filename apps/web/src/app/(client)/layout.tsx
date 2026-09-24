@@ -20,7 +20,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
             {children}
           </Box>
           <Text size="xs" c="dimmed" ta="center" data-print-hidden>
-            Sent through IHP Plus · Innovare Health Partners
+            Sent through IHP+
           </Text>
         </Stack>
       </Container>

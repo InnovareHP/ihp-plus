@@ -121,13 +121,13 @@ describe('renderEmail', () => {
 describe('templates', () => {
   it('names the organization and the inviter in the invitation', () => {
     const email = invitationTemplate({
-      organizationName: 'Innovare Health Partners',
+      organizationName: 'IHP+',
       inviterName: 'Ada Lovelace',
       url: 'https://ihp.test/invite/1',
     })
 
-    expect(email.subject).toBe('Join Innovare Health Partners')
-    expect(email.text).toContain('Ada Lovelace invited you to join Innovare Health Partners')
+    expect(email.subject).toBe('Join IHP+')
+    expect(email.text).toContain('Ada Lovelace invited you to join IHP+')
   })
 
   it('tells a password-reset reader that ignoring it is safe', () => {
@@ -151,11 +151,11 @@ describe('templates', () => {
       invitationTemplate({ organizationName: 'Org', inviterName: 'Someone', url: 'x' }),
     ]) {
       expect(email.html).toContain('src="cid:ihp-logo"')
-      expect(email.html).toContain('alt="Innovare Health Partners"')
-      expect(`${email.subject}${email.html}${email.text}`).not.toMatch(/IHP Plus|IHP\+/)
+      expect(email.html).toContain('alt="IHP+"')
+      expect(`${email.subject}${email.html}${email.text}`).not.toMatch(/Innovare/)
       // The brand hex is the sRGB form of the theme's shade 6.
       expect(email.html).toContain('#1346c5')
-      expect(email.text).toContain('Innovare Health Partners')
+      expect(email.text).toContain('IHP+')
     }
   })
 })
@@ -163,7 +163,7 @@ describe('templates', () => {
 describe('client folder shared', () => {
   const shared = (requiresSignIn?: boolean) =>
     clientFolderSharedTemplate({
-      organizationName: 'Innovare Health Partners',
+      organizationName: 'IHP+',
       clientName: 'Acme Clinic',
       email: 'owner@acme.test',
       url: 'https://acme.sharepoint.com/folder',
@@ -258,27 +258,27 @@ describe('evaluation emails', () => {
 describe('member emails', () => {
   it('names the new role and who set it', () => {
     const email = memberRoleChangedTemplate({
-      organizationName: 'Innovare Health Partners',
+      organizationName: 'IHP+',
       scope: 'organization',
       roleLabel: 'Admin',
       changedByName: 'Ada Lovelace',
       url: 'https://ihp.test/app/',
     })
 
-    expect(email.subject).toBe('Your role in Innovare Health Partners changed')
+    expect(email.subject).toBe('Your role in IHP+ changed')
     expect(email.text).toContain('Ada Lovelace')
     expect(email.text).toContain('Admin')
   })
 
   it('offers no sign-in button to somebody who was just suspended', () => {
     const email = memberAccessChangedTemplate({
-      organizationName: 'Innovare Health Partners',
+      organizationName: 'IHP+',
       suspended: true,
       changedByName: 'Ada Lovelace',
       url: 'https://ihp.test/app/login',
     })
 
-    expect(email.subject).toBe('Your Innovare Health Partners access was suspended')
+    expect(email.subject).toBe('Your IHP+ access was suspended')
     expect(email.text).not.toContain('https://ihp.test/app/login')
     expect(email.text).toContain('Nothing you filed has been deleted.')
   })

@@ -21,7 +21,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         canApproveRequests={canReachApprovals(access)}
         impersonating={Boolean(session?.session.impersonatedBy)}
         organization={{
-          name: membership.organization?.name ?? 'Innovare Health Partners',
+          name: membership.organization?.name ?? 'IHP+',
           role: membership.organizationRole,
         }}
         user={{

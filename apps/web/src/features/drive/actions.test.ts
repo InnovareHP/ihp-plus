@@ -32,7 +32,7 @@ const service = vi.hoisted(() => ({
   guestById: vi.fn(),
   saveGuest: vi.fn(),
   markGuestRevoked: vi.fn(),
-  organizationName: vi.fn(async () => 'Innovare Health Partners'),
+  organizationName: vi.fn(async () => 'IHP+'),
   organizationAccess: vi.fn(),
 }))
 

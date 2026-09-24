@@ -71,7 +71,7 @@ beforeEach(() => {
   prisma.contract.findFirst.mockResolvedValue(SENT)
   prisma.contract.updateMany.mockResolvedValue({ count: 1 })
   prisma.client.findFirst.mockResolvedValue({ name: 'Riverside Care Center' })
-  prisma.organization.findUnique.mockResolvedValue({ name: 'Innovare Health Partners' })
+  prisma.organization.findUnique.mockResolvedValue({ name: 'IHP+' })
   prisma.user.findUnique.mockResolvedValue({ email: 'owner@ihp.test' })
   link.verifyContractLink.mockReturnValue(true)
   email.portalUrl.mockImplementation((route: string) => `https://portal.ihp.test/app${route}`)
@@ -91,7 +91,7 @@ describe('loadSharedContract', () => {
       contract: {
         reference: 'IHP-C-0007',
         clientName: 'Riverside Care Center',
-        organizationName: 'Innovare Health Partners',
+        organizationName: 'IHP+',
         terms: 'Net 30.',
         lines: [{ name: 'Social management', unit: 'month' }],
       },

@@ -85,7 +85,7 @@ export async function sendEmail({ to, subject, html, text }: OutboundEmail) {
             // Every layout references the logo by content id, so it travels with every message.
             Attachments: [
               {
-                FileName: 'innovare-logo.png',
+                FileName: 'ihp-logo.png',
                 ContentType: 'image/png',
                 ContentDisposition: 'INLINE',
                 ContentId: LOGO_CONTENT_ID,

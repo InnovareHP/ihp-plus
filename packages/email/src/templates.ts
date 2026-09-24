@@ -20,8 +20,7 @@ export function verifyEmailTemplate(options: { url: string }): PreparedEmail {
         'Confirming your address lets us send you password resets and anything the portal needs you to action.',
       ],
       action: { label: 'Confirm my address', url: options.url },
-      footnote:
-        'If you did not create an account with Innovare Health Partners, you can ignore this email.',
+      footnote: 'If you did not create an account with IHP+, you can ignore this email.',
     }),
   }
 }

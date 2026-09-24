@@ -788,5 +788,5 @@ async function publishRecipient(clientId: string, organizationId: string) {
       Code.FailedPrecondition,
     )
   }
-  return { email: client.email, organizationName: organization?.name ?? 'Innovare Health Partners' }
+  return { email: client.email, organizationName: organization?.name ?? 'IHP+' }
 }

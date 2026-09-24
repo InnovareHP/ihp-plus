@@ -39,9 +39,7 @@ function chartMember(id: string, name: string, jobTitle: string, onboarded = tru
 
 describe('loadOrgChart', () => {
   beforeEach(() => {
-    prisma.organization.findUnique
-      .mockReset()
-      .mockResolvedValue({ name: 'Innovare Health Partners' })
+    prisma.organization.findUnique.mockReset().mockResolvedValue({ name: 'IHP+' })
     prisma.team.findMany.mockReset().mockResolvedValue([
       {
         id: 'team-1',
@@ -63,7 +61,7 @@ describe('loadOrgChart', () => {
     const chart = await loadOrgChart()
 
     expect(chart).toEqual({
-      organizationName: 'Innovare Health Partners',
+      organizationName: 'IHP+',
       unassignedCount: 2,
       departments: [
         {

@@ -15,12 +15,12 @@ describe.skipIf(!process.env.EMAIL_PREVIEW_OUT)('email preview', () => {
       verifyEmailTemplate({ url: 'http://localhost:3000/app/verify?token=abc&next=/app' }),
       resetPasswordTemplate({ url: 'http://localhost:3000/app/reset-password?token=xyz' }),
       invitationTemplate({
-        organizationName: 'Innovare Health Partners',
+        organizationName: 'IHP+',
         inviterName: 'lhanivor V. Glorisoso',
         url: 'http://localhost:3000/app/accept-invitation/inv_123',
       }),
       clientFolderSharedTemplate({
-        organizationName: 'Innovare Health Partners',
+        organizationName: 'IHP+',
         clientName: 'Acme Clinic',
         email: 'owner@acme.test',
         url: 'https://innovare.sharepoint.com/sites/clients/Acme%20Clinic',

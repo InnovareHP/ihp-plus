@@ -24,7 +24,7 @@ const DEPARTMENTS = [
 
 // Only used when the database holds no organization at all; an existing one is adopted, never
 // renamed, so a company that edited its own name on the Organization screen keeps it.
-const DEFAULT_ORG = { name: 'Innovare Health Partners', slug: 'ihp' }
+const DEFAULT_ORG = { name: 'IHP+', slug: 'ihp' }
 
 const ORG_NAME = process.env.ORG_NAME
 const ORG_SLUG = process.env.ORG_SLUG

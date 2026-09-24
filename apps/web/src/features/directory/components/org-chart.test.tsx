@@ -4,7 +4,7 @@ import { render, screen, within } from '@/test/render'
 import { OrgChart } from './org-chart'
 
 const CHART = {
-  organizationName: 'Innovare Health Partners',
+  organizationName: 'IHP+',
   unassignedCount: 1,
   departments: [
     {

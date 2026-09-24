@@ -123,7 +123,7 @@ export async function loadSharedContract(
       signedAt: iso(contract.signedAt),
       acceptedByName: contract.acceptedByName ?? undefined,
       clientName: client?.name ?? 'Client',
-      organizationName: organization?.name ?? 'Innovare Health Partners',
+      organizationName: organization?.name ?? 'IHP+',
       lines: contract.lines.map((line) => ({
         ...line,
         description: line.description ?? undefined,

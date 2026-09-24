@@ -18,7 +18,7 @@ vi.mock('next/navigation', () => ({
 const user = () => userEvent.setup()
 
 function renderForm() {
-  return render(<AcceptInvitationForm invitationId="invite-1" organizationName="Innovare" />)
+  return render(<AcceptInvitationForm invitationId="invite-1" organizationName="IHP+" />)
 }
 
 describe('AcceptInvitationForm', () => {
@@ -32,7 +32,7 @@ describe('AcceptInvitationForm', () => {
     const person = user()
     renderForm()
 
-    await person.click(screen.getByRole('button', { name: 'Join Innovare' }))
+    await person.click(screen.getByRole('button', { name: 'Join IHP+' }))
 
     await waitFor(() =>
       expect(actions.acceptInvitation).toHaveBeenCalledWith({ invitationId: 'invite-1' }),
@@ -48,7 +48,7 @@ describe('AcceptInvitationForm', () => {
     const person = user()
     renderForm()
 
-    await person.click(screen.getByRole('button', { name: 'Join Innovare' }))
+    await person.click(screen.getByRole('button', { name: 'Join IHP+' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'This invitation was sent to another address.',
