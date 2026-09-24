@@ -12,12 +12,13 @@ interface Props {
 }
 
 const SITE_NAME = 'IHP+'
+const SLOGAN = 'Powered by possibilities'
 
 const {
   title,
-  description = 'IHP+ pairs bold marketing with dependable technology and finance support — one team, every service, wherever you operate.',
+  description = 'IHP+, powered by possibilities, pairs bold marketing with dependable technology and finance support — one team, every service, wherever you operate.',
   image = '/og-image.jpg',
-  imageAlt = 'IHP+ — Powered by possibilities',
+  imageAlt = `IHP+ — ${SLOGAN}`,
   noindex = false,
 } = Astro.props
 
@@ -35,6 +36,7 @@ const structuredData = {
       '@id': organizationId,
       name: 'IHP+',
       legalName: 'Ihpplusglobal',
+      slogan: SLOGAN,
       url: site.href,
       logo: new URL('/icon-512.png', site).href,
       description,
