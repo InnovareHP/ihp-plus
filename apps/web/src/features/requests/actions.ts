@@ -76,6 +76,8 @@ export async function uploadRequestFile(formData: FormData): Promise<UploadResul
     await putObject(key, new Uint8Array(await file.arrayBuffer()), file.type)
   } catch (error) {
     if (error instanceof S3NotConfiguredError) return { ok: false, message: NO_STORAGE }
+    // The user gets a plain sentence, so the real cause (storage down, bad keys) goes to the log.
+    console.error('[requests] file upload to object storage failed', error)
     return { ok: false, message: 'Could not store that file — try again.' }
   }
 
