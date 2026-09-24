@@ -1,6 +1,6 @@
 ---
 import type { Service } from '../../data/services'
-import HeroConsole from './HeroConsole.astro'
+import HeroBrowserDemo from './HeroBrowserDemo.astro'
 
 interface Props {
   service: Service
@@ -135,11 +135,7 @@ const [plain, gradient] = service.headline
       </div>
 
       <div class="svc-rise mx-auto w-full max-w-[500px] lg:mx-0" style="--d: 4">
-        <HeroConsole
-          file={service.console.file}
-          lines={service.console.lines}
-          tags={service.tags}
-        />
+        <HeroBrowserDemo launchLog={service.launchLog} />
       </div>
     </div>
   </div>

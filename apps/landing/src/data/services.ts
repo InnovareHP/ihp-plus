@@ -14,9 +14,8 @@ export interface Service {
   headline: [string, string]
   lede: string
   highlights: string[]
-  /** Decorative console lines in the hero, hidden from assistive tech. */
-  console: { file: string; lines: string[] }
-  tags: string[]
+  /** The checks the hero demo's Launch stage ticks off. */
+  launchLog: string[]
   capabilitiesHeading: { before: string; highlight: string; after: string }
   capabilities: Capability[]
 }
@@ -36,16 +35,7 @@ export const SERVICES: Service[] = [
       'Cloud, hosting, and security handled',
       'Support that stays after launch',
     ],
-    console: {
-      file: 'deploy.log',
-      lines: [
-        '$ ihp deploy --env production',
-        '✓ build passed',
-        '✓ checks green · security · performance',
-        '→ live and monitored',
-      ],
-    },
-    tags: ['Web apps', 'Cloud', 'APIs', 'Security', 'DevOps'],
+    launchLog: ['$ deploy --prod', '✓ build passed', '✓ checks green', '✓ live and monitored'],
     capabilitiesHeading: { before: 'Systems your', highlight: 'business', after: 'runs on.' },
     capabilities: [
       {
