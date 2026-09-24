@@ -179,6 +179,12 @@ function whoWeAre() {
       scrollTrigger: { ...scrub, end: 'center center' },
     },
   )
+  gsap.to(one('.who-swirl-right img', section), {
+    yPercent: 40,
+    rotation: 25,
+    ease: 'none',
+    scrollTrigger: scrub,
+  })
 
   const diamond = one('.who-diamond', section)
   gsap
@@ -347,8 +353,10 @@ function globalReach() {
 function industries() {
   const section = one('.industries')
   if (!section) return
-  const runs = all('.marquee > ul', section)
-  const setSkew = gsap.quickSetter(runs, 'skewX', 'deg')
+  const lean = one('.marquee-lean', section)
+  if (!lean) return
+  // The strip leans as one piece; skewing each run apart opens a slanted gap at their seam.
+  const setSkew = gsap.quickSetter(lean, 'skewX', 'deg')
   const clamp = gsap.utils.clamp(-14, 14)
   const proxy = { skew: 0 }
 

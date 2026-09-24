@@ -1,18 +1,22 @@
 ---
 import swirlLeft from '../../assets/home/swirl-left.svg'
+import swirlRight from '../../assets/home/swirl-right.svg'
 import DiamondArrow from './DiamondArrow.astro'
 import Eyebrow from './Eyebrow.astro'
 import SectionHeading from './SectionHeading.astro'
 ---
 
 <section id="about" class="who relative bg-canvas" aria-labelledby="about-heading">
-  <!-- A ribbon from the artwork, rotated as drawn. -->
+  <!-- Ribbons from the artwork, rotated as drawn; the right one peeks up into the hero. -->
   <div class="who-swirl who-swirl-left" aria-hidden="true">
     <img src={swirlLeft.src} width="361" height="198" alt="" />
   </div>
+  <div class="who-swirl who-swirl-right" aria-hidden="true">
+    <img src={swirlRight.src} width="361" height="198" alt="" />
+  </div>
 
   <div
-    class="relative mx-auto grid max-w-[1280px] min-h-[30vh] justify-center gap-4 px-4 pt-12 pb-28 sm:px-8 lg:grid-cols-[244px_1fr] lg:gap-0 lg:px-[118px] lg:pt-[48px] lg:pb-[117px]"
+    class="relative mx-auto grid max-w-[1280px] gap-4 px-4 pt-12 pb-28 sm:px-8 lg:grid-cols-[244px_1fr] lg:gap-0 lg:px-[118px] lg:pt-[48px] lg:pb-[117px]"
   >
     <div class="lg:pt-[19px]">
       <Eyebrow label="Who we are" />
@@ -42,6 +46,7 @@ import SectionHeading from './SectionHeading.astro'
 
 <style>
   .who {
+    /* Clip sideways only, so the right ribbon can still rise into the hero. */
     overflow-x: clip;
   }
   .who-swirl {
@@ -63,13 +68,24 @@ import SectionHeading from './SectionHeading.astro'
   }
   /* Offsets are the design's, measured from this section's top edge at the hero's foot. */
   .who-swirl-left {
-    /* Hug the viewport edge up to 1280px, then stay beside the content on wider screens. */
-    left: max(-168px, calc(50% - 808px));
+    /* Pinned to the viewport edge at every width, so a wider screen carries it outward. */
+    left: -168px;
     top: 37px;
     width: 411px;
     height: 361px;
   }
   .who-swirl-left img {
     rotate: -32.31deg;
+  }
+  .who-swirl-right {
+    right: -281.5px;
+    top: -206px;
+    width: 397px;
+    height: 393px;
+    /* Above the hero's z-10; this section sets no z-index, so the two compare directly. */
+    z-index: 20;
+  }
+  .who-swirl-right img {
+    rotate: -43.6deg;
   }
 </style>
