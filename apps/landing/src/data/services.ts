@@ -14,6 +14,8 @@ export interface Service {
   headline: [string, string]
   lede: string
   highlights: string[]
+  /** A Lottie under public/ that plays behind the hero. */
+  backdrop: string
   /** The checks the hero demo's Launch stage ticks off. */
   launchLog: string[]
   capabilitiesHeading: { before: string; highlight: string; after: string }
@@ -35,6 +37,7 @@ export const SERVICES: Service[] = [
       'Cloud, hosting, and security handled',
       'Support that stays after launch',
     ],
+    backdrop: '/lottie/it-hero.json',
     launchLog: ['$ deploy --prod', '✓ build passed', '✓ checks green', '✓ live and monitored'],
     capabilitiesHeading: { before: 'Systems your', highlight: 'business', after: 'runs on.' },
     capabilities: [

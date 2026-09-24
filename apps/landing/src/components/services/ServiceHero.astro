@@ -1,6 +1,7 @@
 ---
 import type { Service } from '../../data/services'
 import HeroBrowserDemo from './HeroBrowserDemo.astro'
+import HeroLottie from './HeroLottie.astro'
 
 interface Props {
   service: Service
@@ -11,10 +12,8 @@ const [plain, gradient] = service.headline
 ---
 
 <section class="svc-hero relative isolate overflow-hidden rounded-b-[50px] bg-night text-white">
-  <div class="svc-grid absolute inset-0 -z-10" aria-hidden="true"></div>
-  <div class="svc-orb svc-orb-blue absolute -z-10" aria-hidden="true"></div>
-  <div class="svc-orb svc-orb-mint absolute -z-10" aria-hidden="true"></div>
-  <div class="svc-scan absolute inset-0 -z-10" aria-hidden="true"></div>
+  <div class="svc-glow absolute inset-0 -z-20" aria-hidden="true"></div>
+  <HeroLottie src={service.backdrop} />
 
   <div class="mx-auto max-w-[1280px] px-4 pb-24 sm:px-8 lg:px-[104px] lg:pb-32">
     <!-- Holds the place the sticky nav sits over. -->
@@ -31,36 +30,6 @@ const [plain, gradient] = service.headline
       class="mt-12 grid items-center gap-16 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:gap-20"
     >
       <div>
-        <nav aria-label="Breadcrumb" class="svc-rise" style="--d: 1">
-          <ol class="flex flex-wrap items-center gap-2 font-mono text-xs text-white/70">
-            <li>
-              <a
-                href="/"
-                class="rounded-sm hover:text-white focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none"
-                >Home</a
-              >
-            </li>
-            <li aria-hidden="true">/</li>
-            <li>
-              <a
-                href="/#services"
-                class="rounded-sm hover:text-white focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none"
-                >Services</a
-              >
-            </li>
-            <li aria-hidden="true">/</li>
-            <li aria-current="page" class="text-mint-300">{service.name}</li>
-          </ol>
-        </nav>
-
-        <p
-          class="svc-rise mt-6 inline-flex items-center gap-2.5 rounded-full border border-mint-300/30 bg-mint-300/10 px-4 py-1.5 font-mono text-xs tracking-[0.08em] text-mint-300 uppercase"
-          style="--d: 2"
-        >
-          <span class="svc-dot size-1.5 rounded-full bg-mint-300" aria-hidden="true"></span>
-          Service {service.index} · {service.name}
-        </p>
-
         <h1 id="service-heading" class="mt-6 uppercase">
           <span
             class="svc-rise block font-display text-[3rem] leading-[1] font-medium sm:text-[72px] lg:text-[84px]"
@@ -142,62 +111,17 @@ const [plain, gradient] = service.headline
 </section>
 
 <style>
-  /* A blueprint grid that fades out toward the edges, so it reads as depth rather than a pattern. */
-  .svc-grid {
-    background-image:
-      linear-gradient(to right, rgb(255 255 255 / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.06) 1px, transparent 1px);
-    background-size: 56px 56px;
-    mask-image: radial-gradient(ellipse 80% 70% at 60% 40%, #000 30%, transparent 75%);
-  }
-  .svc-orb {
-    border-radius: 9999px;
-    filter: blur(90px);
-    opacity: 0.45;
-  }
-  .svc-orb-blue {
-    top: -120px;
-    right: -80px;
-    width: 560px;
-    height: 560px;
-    background: var(--color-brand-600);
-  }
-  .svc-orb-mint {
-    bottom: -220px;
-    left: -160px;
-    width: 480px;
-    height: 480px;
-    background: var(--color-mint-300);
-    opacity: 0.18;
-  }
-  /* The layer moves, not the line, so the sweep animates transform alone. */
-  .svc-scan {
-    opacity: 0;
-  }
-  .svc-scan::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto;
-    height: 1px;
-    background: linear-gradient(to right, transparent, var(--color-mint-300), transparent);
+  /* Static light behind the Lottie, so the first paint is already the right mood. */
+  .svc-glow {
+    background:
+      radial-gradient(60% 55% at 85% 10%, rgb(19 70 197 / 0.45), transparent 70%),
+      radial-gradient(45% 50% at 5% 100%, rgb(149 229 220 / 0.14), transparent 70%);
   }
 
   @media (prefers-reduced-motion: no-preference) {
     .svc-rise {
       animation: svc-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
       animation-delay: calc(var(--d, 0) * 0.08s);
-    }
-    .svc-grid {
-      animation: svc-pan 24s linear infinite;
-    }
-    .svc-orb-blue {
-      animation: svc-drift 14s ease-in-out infinite;
-    }
-    .svc-orb-mint {
-      animation: svc-drift 18s ease-in-out infinite reverse;
-    }
-    .svc-scan {
-      animation: svc-scan 7s ease-in-out 1.5s infinite;
     }
     .svc-dot {
       animation: svc-blink 1.6s ease-in-out infinite;
@@ -209,33 +133,6 @@ const [plain, gradient] = service.headline
       opacity: 0;
       translate: 0 28px;
       filter: blur(8px);
-    }
-  }
-  @keyframes svc-pan {
-    to {
-      background-position:
-        56px 56px,
-        56px 56px;
-    }
-  }
-  @keyframes svc-drift {
-    50% {
-      translate: -60px 40px;
-      scale: 1.1;
-    }
-  }
-  @keyframes svc-scan {
-    0% {
-      translate: 0 0;
-      opacity: 0;
-    }
-    15%,
-    85% {
-      opacity: 0.5;
-    }
-    100% {
-      translate: 0 100%;
-      opacity: 0;
     }
   }
   @keyframes svc-blink {

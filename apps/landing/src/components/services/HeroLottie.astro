@@ -1,0 +1,82 @@
+---
+interface Props {
+  /** A Lottie JSON under public/. */
+  src: string
+}
+
+const { src } = Astro.props
+---
+
+<div class="hero-lottie-mask pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
+  <div data-hero-lottie data-src={src} class="hero-lottie absolute -inset-6"></div>
+</div>
+
+<style>
+  /* Dimmed under the copy on the left, full strength where the page is open. */
+  .hero-lottie-mask {
+    mask-image: linear-gradient(to right, rgb(0 0 0 / 0.35) 0%, rgb(0 0 0 / 0.45) 45%, #000 80%);
+  }
+  @media (max-width: 1023px) {
+    .hero-lottie-mask {
+      mask-image: linear-gradient(rgb(0 0 0 / 0.45), rgb(0 0 0 / 0.45));
+    }
+  }
+  .hero-lottie {
+    opacity: 0;
+    transition:
+      opacity 1.2s ease-out,
+      translate 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hero-lottie[data-ready] {
+    opacity: 1;
+  }
+  .hero-lottie :global(svg) {
+    display: block;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-lottie {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  const start = async (container: HTMLElement, src: string) => {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+    // Loaded after the page settles, so the player never competes with the hero's first paint.
+    const { default: lottie } = await import('lottie-web/build/player/lottie_light')
+    const animation = lottie.loadAnimation({
+      container,
+      renderer: 'svg',
+      loop: true,
+      autoplay: false,
+      path: src,
+      rendererSettings: { preserveAspectRatio: 'xMidYMid slice', progressiveLoad: true },
+    })
+
+    animation.addEventListener('DOMLoaded', () => {
+      container.dataset.ready = ''
+      // Reduced motion gets one composed frame: every window mid-build, the cursor on a button.
+      if (reduce) return animation.goToAndStop(270, true)
+      new IntersectionObserver(([entry]) =>
+        entry?.isIntersecting ? animation.play() : animation.pause(),
+      ).observe(container)
+    })
+
+    // The scene leans toward the visitor's pointer, a few pixels of depth behind the copy.
+    const hero = container.closest('section')
+    if (hero && !reduce && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      hero.addEventListener('pointermove', (event) => {
+        const box = hero.getBoundingClientRect()
+        const dx = ((event.clientX - box.left) / box.width - 0.5) * -24
+        const dy = ((event.clientY - box.top) / box.height - 0.5) * -16
+        container.style.translate = `${dx}px ${dy}px`
+      })
+      hero.addEventListener('pointerleave', () => (container.style.translate = ''))
+    }
+  }
+
+  const container = document.querySelector<HTMLElement>('[data-hero-lottie]')
+  const src = container?.dataset.src
+  if (container && src) void start(container, src)
+</script>
