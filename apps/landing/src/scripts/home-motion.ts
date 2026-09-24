@@ -49,7 +49,12 @@ function hero() {
   gsap
     .timeline({ defaults: { ease: 'expo.out', duration: 1.2 } })
     .from(all('.hero-photo', section), { scale: 1.22, duration: 2.4, ease: 'power3.out' }, 0)
-    .from(all('[data-site-nav] > ul > li'), { y: -24, autoAlpha: 0, stagger: 0.07 }, 0.2)
+    // A leftover transform would make each item the containing block for the phone Services menu.
+    .from(
+      all('[data-site-nav] > ul > li'),
+      { y: -24, autoAlpha: 0, stagger: 0.07, clearProps: 'transform' },
+      0.2,
+    )
     .from(
       '[data-hero="logo"]',
       { scale: 0.3, rotation: -24, autoAlpha: 0, ease: 'back.out(2.2)' },
