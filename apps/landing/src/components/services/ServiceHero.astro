@@ -16,18 +16,17 @@ const [plain, gradient] = service.headline
   <HeroLottie src={service.backdrop} />
 
   <!-- Pinned under the sticky nav, so the headline alone decides the vertical centre. -->
-  <div class="absolute inset-x-0 top-[84px] flex justify-center sm:top-[87px] lg:top-[92px]">
-    <a
-      href="/"
-      class="svc-rise block rounded-sm focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:ring-offset-4 focus-visible:ring-offset-night focus-visible:outline-none"
-    >
-      <img src="/brand/logo-on-dark.svg" width="72" height="44" alt="IHP+ home" class="h-11 w-18" />
-    </a>
-  </div>
+
 
   <div
-    class="mx-auto flex min-h-svh max-w-[1280px] flex-col items-center justify-center px-4 pt-40 pb-28 text-center sm:px-8 lg:px-[104px]"
+    class="mx-auto flex space-y-4 min-h-svh max-w-[1280px] flex-col items-center justify-center px-4 pt-40 pb-28 text-center sm:px-8 lg:px-[104px]"
   >
+  <a
+  href="/"
+  class="svc-rise block rounded-sm focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:ring-offset-4 focus-visible:ring-offset-night focus-visible:outline-none"
+>
+  <img src="/brand/logo-on-dark.svg" width="72" height="44" alt="IHP+ home" class="h-11 w-18" />
+</a>
     <div>
       <div>
         <h1 id="service-heading" class="uppercase">
