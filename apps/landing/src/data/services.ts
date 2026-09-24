@@ -31,7 +31,7 @@ export const SERVICES: Service[] = [
     seoDescription:
       'IHP+ IT & Web Solutions: websites, custom platforms, cloud hosting, integrations, security and IT support — built, shipped, and maintained by one team.',
     headline: ["Build what's", 'next.'],
-    lede: 'Websites, platforms, and the infrastructure under them — designed, shipped, and kept running by one accountable team.',
+    lede: 'Your website should bring in customers, not headaches. We build it, host it, and keep it running — so you can get back to running your business.',
     highlights: [
       'Websites and web apps built to last',
       'Cloud, hosting, and security handled',

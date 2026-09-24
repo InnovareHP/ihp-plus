@@ -12,9 +12,9 @@ const { src } = Astro.props
 </div>
 
 <style>
-  /* Dimmed under the copy on the left, full strength where the page is open. */
+  /* Dimmed under the centred copy, full strength toward the edges. */
   .hero-lottie-mask {
-    mask-image: linear-gradient(to right, rgb(0 0 0 / 0.35) 0%, rgb(0 0 0 / 0.45) 45%, #000 80%);
+    mask-image: radial-gradient(ellipse 45% 40% at 50% 50%, rgb(0 0 0 / 0.3), #000 100%);
   }
   @media (max-width: 1023px) {
     .hero-lottie-mask {
