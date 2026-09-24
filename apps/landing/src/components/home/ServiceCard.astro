@@ -18,12 +18,22 @@ interface Props {
   body: string
   photo: ImageMetadata
   photoAlt: string
-  href: string
+  /** A service page once one exists; until then the card leads to the contact form. */
+  href?: string
   /** Where the photo's focal point sits, as the design crops it. */
   photoPosition?: string
 }
 
-const { layout, title, body, photo, photoAlt, href, photoPosition = 'center' } = Astro.props
+const {
+  layout,
+  title,
+  body,
+  photo,
+  photoAlt,
+  href = '#contact',
+  photoPosition = 'center',
+} = Astro.props
+const label = href === '#contact' ? `Talk to us about ${title}` : `Explore ${title}`
 
 const shape = { marketing: cardMarketing, it: cardIt, finance: cardFinance }[layout]
 const onBlue = layout === 'it'
@@ -44,7 +54,7 @@ const onBlue = layout === 'it'
     />
   </div>
 
-  <a href={href} class="service-card__arrow" aria-label={`Explore ${title}`}>
+  <a href={href} class="service-card__arrow" aria-label={label}>
     <img src={(onBlue ? circleMint : circleBlue).src} alt="" width="61" height="61" />
     <img
       src={(onBlue ? arrowOnMint : arrowOnBlue).src}

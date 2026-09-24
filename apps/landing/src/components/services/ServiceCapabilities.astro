@@ -31,24 +31,27 @@ const others = SERVICES.filter((other) => other.slug !== service.slug)
       }
     </ul>
 
-    <div class="mt-20 rounded-[30px] bg-brand-800 p-6 sm:p-10 lg:mt-24">
-      <h2 class="font-display text-[32px] leading-[1.1] font-medium text-white sm:text-[40px]">
-        One team, <span class="font-extrabold text-mint-300">every service.</span>
-      </h2>
-      <p class="mt-3 max-w-[560px] text-base text-white/80">
-        Pair {service.name.toLowerCase()} with the rest of IHP+ and it all runs through one workflow.
-      </p>
-      <div class="mt-8 grid gap-4 md:grid-cols-2">
-        {
-          others.map((other) => (
-            <RelatedServiceLink
-              href={servicePath(other.slug)}
-              index={other.index}
-              name={other.name}
-            />
-          ))
-        }
-      </div>
-    </div>
+    {
+      others.length > 0 && (
+        <div class="mt-20 rounded-[30px] bg-brand-800 p-6 sm:p-10 lg:mt-24">
+          <h2 class="font-display text-[32px] leading-[1.1] font-medium text-white sm:text-[40px]">
+            One team, <span class="font-extrabold text-mint-300">every service.</span>
+          </h2>
+          <p class="mt-3 max-w-[560px] text-base text-white/80">
+            Pair {service.name.toLowerCase()} with the rest of IHP+ and it all runs through one
+            workflow.
+          </p>
+          <div class="mt-8 grid gap-4 md:grid-cols-2">
+            {others.map((other) => (
+              <RelatedServiceLink
+                href={servicePath(other.slug)}
+                index={other.index}
+                name={other.name}
+              />
+            ))}
+          </div>
+        </div>
+      )
+    }
   </div>
 </section>
