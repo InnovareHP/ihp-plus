@@ -8,6 +8,8 @@ import {
   deleteHoliday,
   deleteShift,
   endBreak,
+  grantDayOff,
+  revokeDayOff,
   importHolidays,
   listHolidayCountries,
   loadAttendance,
@@ -191,6 +193,16 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
 
   deleteAttendanceDay: async (request) => {
     await deleteAttendanceDay(request.dayId)
+    return {}
+  },
+
+  grantDayOff: async (request) => {
+    await grantDayOff({ userId: request.userId, workDate: request.workDate })
+    return {}
+  },
+
+  revokeDayOff: async (request) => {
+    await revokeDayOff({ userId: request.userId, workDate: request.workDate })
     return {}
   },
 

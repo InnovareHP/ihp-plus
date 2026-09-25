@@ -32,6 +32,8 @@ export const ACTIVITY_LABELS = {
   'attendance.correction.approved': 'Correction approved',
   'attendance.correction.rejected': 'Correction turned down',
   'attendance.day.deleted': 'Attendance removed',
+  'attendance.day_off.granted': 'Day off granted',
+  'attendance.day_off.revoked': 'Day off taken back',
 } as const
 
 export type ActivityAction = keyof typeof ACTIVITY_LABELS

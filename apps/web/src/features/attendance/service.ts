@@ -10,6 +10,8 @@ import {
   attendanceDaySchema,
   correctionDecisionSchema,
   correctionSchema,
+  dayOffSchema,
+  GRANTED_DAY_OFF,
   attendanceSettingsSchema,
   clockActionSchema,
   holidaySchema,
@@ -32,6 +34,7 @@ import {
   type CorrectionDecisionValues,
   type CorrectionStatus,
   type CorrectionValues,
+  type DayOffValues,
   type AttendanceHolidayRow,
   type AttendanceLog,
   type AttendanceScheduleRow,
@@ -720,7 +723,7 @@ async function absencesFor(
     }),
     db.attendanceLeave.findMany({
       where: { organizationId: caller.organizationId, userId: { in: userIds }, date: window },
-      select: { userId: true, date: true, name: true },
+      select: { userId: true, date: true, name: true, submissionId: true },
     }),
   ])
 
@@ -736,7 +739,12 @@ async function absencesFor(
     to: range.to,
     today: range.today,
     holidays: holidays.map((one) => ({ ...one, date: dateKeyOf(one.date) })),
-    leave: new Map(leave.map((one) => [personDateKey(one.userId, dateKeyOf(one.date)), one.name])),
+    leave: new Map(
+      leave.map((one) => [
+        personDateKey(one.userId, dateKeyOf(one.date)),
+        { name: one.name, granted: one.submissionId === null },
+      ]),
+    ),
     worked: new Set(days.map((day) => personDateKey(day.userId, dateKeyOf(day.workDate)))),
   })
 }
@@ -1285,6 +1293,77 @@ export async function deleteHoliday(holidayId: string): Promise<void> {
     where: { id: holidayId, organizationId: caller.organizationId },
   })
   if (count === 0) throw new ConnectError('That holiday is no longer there.', Code.NotFound)
+}
+
+/** Excuses one person's scheduled day, so the timesheet reads it as leave rather than absent. */
+export async function grantDayOff(values: DayOffValues): Promise<void> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin grants a day off.')
+
+  const { userId, workDate } = dayOffSchema.parse(values)
+  const member = await db.member.findFirst({
+    where: { organizationId: caller.organizationId, userId },
+    select: { userId: true },
+  })
+  if (!member) throw new ConnectError('That person is not in this organization.', Code.NotFound)
+
+  const existing = await db.attendanceLeave.findUnique({
+    where: { userId_date: { userId, date: dateOf(workDate) } },
+    select: { name: true },
+  })
+  if (existing) {
+    throw new ConnectError(`${workDate} is already ${existing.name}.`, Code.AlreadyExists)
+  }
+
+  const leave = await db.attendanceLeave.create({
+    data: {
+      organizationId: caller.organizationId,
+      userId,
+      date: dateOf(workDate),
+      name: GRANTED_DAY_OFF,
+    },
+    select: { id: true },
+  })
+
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'attendance',
+    subjectId: leave.id,
+    action: 'attendance.day_off.granted',
+    actorId: caller.userId,
+    actorName: caller.name,
+    detail: workDate,
+  })
+}
+
+/** Takes back a day an admin granted; leave from an approved request is undone through requests. */
+export async function revokeDayOff(values: DayOffValues): Promise<void> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin takes back a day off.')
+
+  const { userId, workDate } = dayOffSchema.parse(values)
+  const leave = await db.attendanceLeave.findFirst({
+    where: {
+      organizationId: caller.organizationId,
+      userId,
+      date: dateOf(workDate),
+      submissionId: null,
+    },
+    select: { id: true },
+  })
+  if (!leave) throw new ConnectError('That day off is no longer there.', Code.NotFound)
+
+  await db.attendanceLeave.delete({ where: { id: leave.id } })
+
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'attendance',
+    subjectId: leave.id,
+    action: 'attendance.day_off.revoked',
+    actorId: caller.userId,
+    actorName: caller.name,
+    detail: workDate,
+  })
 }
 
 export async function listHolidayCountries(): Promise<HolidayCountryOption[]> {

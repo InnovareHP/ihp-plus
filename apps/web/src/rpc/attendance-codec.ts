@@ -128,6 +128,7 @@ export function absenceToProto(absence: AttendanceAbsenceRow): AttendanceAbsence
     workDate: absence.workDate,
     kind: absence.kind,
     leaveName: absence.leaveName,
+    granted: absence.granted,
   }
 }
 
@@ -138,6 +139,7 @@ export function absenceFromProto(absence: AttendanceAbsenceMessage): AttendanceA
     workDate: absence.workDate,
     kind: absence.kind === 'leave' ? 'leave' : 'absent',
     leaveName: absence.leaveName,
+    granted: absence.granted,
   }
 }
 

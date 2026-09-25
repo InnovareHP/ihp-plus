@@ -1,6 +1,7 @@
 'use client'
 
 import { Badge, Stack, Text, Title } from '@mantine/core'
+import type { ReactNode } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import type { AttendanceAbsenceRow } from '../schema'
@@ -12,6 +13,7 @@ export interface AbsencesTableProps {
   isFetching: boolean
   onRetry: () => void
   showPerson?: boolean
+  actions?: (absence: AttendanceAbsenceRow) => ReactNode
 }
 
 // UTC because the key is a calendar date, and any other zone could print the day before.
@@ -31,6 +33,7 @@ export function AbsencesTable({
   isFetching,
   onRetry,
   showPerson = false,
+  actions,
 }: AbsencesTableProps) {
   const absent = absences?.filter((row) => row.kind === 'absent').length ?? 0
   const leave = (absences?.length ?? 0) - absent
@@ -69,6 +72,16 @@ export function AbsencesTable({
           </Badge>
         ),
     },
+    ...(actions
+      ? [
+          {
+            key: 'actions',
+            header: 'Actions',
+            align: 'right' as const,
+            render: (row: AttendanceAbsenceRow) => actions(row),
+          },
+        ]
+      : []),
   ]
 
   return (
@@ -93,7 +106,7 @@ export function AbsencesTable({
         isFetching={isFetching}
         onRetry={onRetry}
         errorTitle="Could not load absences"
-        minWidth={420}
+        minWidth={actions ? 560 : 420}
         empty={
           <EmptyState
             title="No missed days"

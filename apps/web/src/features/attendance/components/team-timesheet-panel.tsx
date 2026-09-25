@@ -6,6 +6,7 @@ import { useSchedules } from '../hooks/use-attendance-admin'
 import { useAttendanceRange } from '../hooks/use-attendance-range'
 import { useAttendanceLog } from '../hooks/use-time-clock'
 import type { AttendanceDayRow } from '../schema'
+import { AbsenceActions } from './absence-actions'
 import { AttendanceDayActions } from './attendance-day-actions'
 import { AttendanceDayModal } from './attendance-day-modal'
 import { AbsencesTable } from './absences-table'
@@ -96,6 +97,7 @@ export function TeamTimesheetPanel({ timeZone }: TeamTimesheetPanelProps) {
             isFetching={log.isFetching}
             onRetry={() => void log.refetch()}
             showPerson={!range.userId}
+            actions={(absence) => <AbsenceActions absence={absence} />}
           />
 
           {correcting ? (

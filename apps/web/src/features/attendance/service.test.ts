@@ -27,7 +27,13 @@ const prisma = vi.hoisted(() => ({
     delete: vi.fn(),
   },
   attendanceBreak: { create: vi.fn(), update: vi.fn() },
-  attendanceLeave: { findUnique: vi.fn(), findMany: vi.fn() },
+  attendanceLeave: {
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    delete: vi.fn(),
+  },
   attendanceCorrection: {
     findFirst: vi.fn(),
     findMany: vi.fn(),
@@ -97,6 +103,8 @@ const {
   saveAttendanceSettings,
   saveShift,
   startBreak,
+  grantDayOff,
+  revokeDayOff,
 } = await import('./service')
 
 const RULES = { timeZone: 'UTC', defaultShiftId: null }
@@ -671,7 +679,12 @@ describe('days nobody clocked', () => {
       { date: new Date('2026-09-22T00:00:00.000Z'), name: 'Company day', country: '' },
     ])
     prisma.attendanceLeave.findMany.mockResolvedValue([
-      { userId: 'user-2', date: new Date('2026-09-23T00:00:00.000Z'), name: 'Vacation leave' },
+      {
+        userId: 'user-2',
+        date: new Date('2026-09-23T00:00:00.000Z'),
+        name: 'Vacation leave',
+        submissionId: 'sub-1',
+      },
     ])
 
     const log = await loadAttendance({ from: '2026-09-19', to: '2026-09-24', everyone: true })
@@ -683,6 +696,7 @@ describe('days nobody clocked', () => {
         workDate: '2026-09-23',
         kind: 'leave',
         leaveName: 'Vacation leave',
+        granted: false,
       },
       {
         userId: 'user-2',
@@ -690,6 +704,7 @@ describe('days nobody clocked', () => {
         workDate: '2026-09-21',
         kind: 'absent',
         leaveName: undefined,
+        granted: false,
       },
     ])
     vi.useRealTimers()
@@ -1283,5 +1298,67 @@ describe('correction requests', () => {
     )
     expect(await codeOf(() => withdrawCorrection('corr-1'))).toBe(Code.FailedPrecondition)
     vi.useRealTimers()
+  })
+})
+
+describe('a day off an admin grants', () => {
+  const DAY_OFF = { userId: 'user-2', workDate: '2026-09-21' }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    signedInAs('admin')
+    prisma.member.findFirst.mockResolvedValue({ userId: 'user-2' })
+    prisma.attendanceLeave.findUnique.mockResolvedValue(null)
+    prisma.attendanceLeave.create.mockResolvedValue({ id: 'leave-1' })
+  })
+
+  it('books the day as leave for that person and records who gave it', async () => {
+    await grantDayOff(DAY_OFF)
+
+    expect(prisma.attendanceLeave.create).toHaveBeenCalledWith({
+      data: {
+        organizationId: 'org-1',
+        userId: 'user-2',
+        date: new Date('2026-09-21T00:00:00.000Z'),
+        name: 'Day off',
+      },
+      select: { id: true },
+    })
+    expect(activity.recordActivity).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'attendance.day_off.granted', detail: '2026-09-21' }),
+    )
+  })
+
+  it('refuses a member, somebody outside the organization, and a day already off', async () => {
+    signedInAs('member')
+    await expect(grantDayOff(DAY_OFF)).rejects.toMatchObject({ code: Code.PermissionDenied })
+
+    signedInAs('admin')
+    prisma.member.findFirst.mockResolvedValueOnce(null)
+    await expect(grantDayOff(DAY_OFF)).rejects.toMatchObject({ code: Code.NotFound })
+
+    prisma.attendanceLeave.findUnique.mockResolvedValueOnce({ name: 'Vacation leave' })
+    await expect(grantDayOff(DAY_OFF)).rejects.toMatchObject({ code: Code.AlreadyExists })
+
+    expect(prisma.attendanceLeave.create).not.toHaveBeenCalled()
+  })
+
+  it('takes back only a day an admin granted, never leave from an approved request', async () => {
+    prisma.attendanceLeave.findFirst.mockResolvedValueOnce({ id: 'leave-1' })
+    await revokeDayOff(DAY_OFF)
+
+    expect(prisma.attendanceLeave.findFirst).toHaveBeenCalledWith({
+      where: {
+        organizationId: 'org-1',
+        userId: 'user-2',
+        date: new Date('2026-09-21T00:00:00.000Z'),
+        submissionId: null,
+      },
+      select: { id: true },
+    })
+    expect(prisma.attendanceLeave.delete).toHaveBeenCalledWith({ where: { id: 'leave-1' } })
+
+    prisma.attendanceLeave.findFirst.mockResolvedValueOnce(null)
+    await expect(revokeDayOff(DAY_OFF)).rejects.toMatchObject({ code: Code.NotFound })
   })
 })

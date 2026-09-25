@@ -15,7 +15,7 @@ const base = {
   to: '2026-09-27',
   today: '2026-09-25',
   holidays: [] as { date: string; name: string; country: string }[],
-  leave: new Map<string, string>(),
+  leave: new Map<string, { name: string; granted: boolean }>(),
   worked: new Set<string>(),
 }
 
@@ -34,12 +34,31 @@ describe('absencesOf', () => {
       ...base,
       worked: new Set([personDateKey('u-1', '2026-09-21')]),
       holidays: [{ date: '2026-09-22', name: 'Company day', country: '' }],
-      leave: new Map([[personDateKey('u-1', '2026-09-23'), 'Vacation leave']]),
+      leave: new Map([
+        [personDateKey('u-1', '2026-09-23'), { name: 'Vacation leave', granted: false }],
+      ]),
     })
 
     expect(rows.map((row) => [row.workDate, row.kind, row.leaveName])).toEqual([
       ['2026-09-24', 'absent', undefined],
       ['2026-09-23', 'leave', 'Vacation leave'],
+    ])
+  })
+
+  it('says which leave an admin granted, so only that kind can be taken back', () => {
+    const rows = absencesOf({
+      ...base,
+      leave: new Map([
+        [personDateKey('u-1', '2026-09-24'), { name: 'Day off', granted: true }],
+        [personDateKey('u-1', '2026-09-23'), { name: 'Vacation leave', granted: false }],
+      ]),
+    })
+
+    expect(rows.map((row) => [row.workDate, row.kind, row.granted])).toEqual([
+      ['2026-09-24', 'leave', true],
+      ['2026-09-23', 'leave', false],
+      ['2026-09-22', 'absent', false],
+      ['2026-09-21', 'absent', false],
     ])
   })
 

@@ -2,7 +2,12 @@
 
 import type { QueryClient, QueryKey } from '@tanstack/react-query'
 import { attendanceKeys } from '../query-keys'
-import type { AttendanceDayRow, AttendanceLog, TimeClockView } from '../schema'
+import type {
+  AttendanceAbsenceRow,
+  AttendanceDayRow,
+  AttendanceLog,
+  TimeClockView,
+} from '../schema'
 
 export type LogSnapshot = [QueryKey, AttendanceLog | undefined][]
 export type ClockSnapshot = TimeClockView | undefined
@@ -31,6 +36,21 @@ export async function editLogs(
     if (!log) continue
     const days = edit(log.days)
     queryClient.setQueryData<AttendanceLog>(key, { ...log, days, ...totalsOf(days) })
+  }
+
+  return previous
+}
+
+/** The same for the days nobody clocked, which ride on the same timesheet queries. */
+export async function editAbsences(
+  queryClient: QueryClient,
+  edit: (absences: readonly AttendanceAbsenceRow[]) => AttendanceAbsenceRow[],
+): Promise<LogSnapshot> {
+  await queryClient.cancelQueries({ queryKey: attendanceKeys.logs() })
+  const previous = queryClient.getQueriesData<AttendanceLog>({ queryKey: attendanceKeys.logs() })
+
+  for (const [key, log] of previous) {
+    if (log) queryClient.setQueryData<AttendanceLog>(key, { ...log, absences: edit(log.absences) })
   }
 
   return previous

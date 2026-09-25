@@ -43,6 +43,7 @@ describe('timesheetCsv', () => {
         workDate: '2026-09-23',
         kind: 'leave',
         leaveName: 'Vacation leave',
+        granted: false,
       },
       {
         userId: 'user-1',
@@ -50,6 +51,7 @@ describe('timesheetCsv', () => {
         workDate: '2026-09-21',
         kind: 'absent',
         leaveName: undefined,
+        granted: false,
       },
     ]).split('\n')
 

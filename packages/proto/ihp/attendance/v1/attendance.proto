@@ -51,6 +51,9 @@ message AttendanceAbsence {
   // absent or leave.
   string kind = 4;
   optional string leave_name = 5;
+  // Leave an admin gave straight from the timesheet rather than an approved request; only this
+  // kind can be taken back there.
+  bool granted = 6;
 }
 
 // How the organization runs its clock. Every member reads it; only an admin writes it.
@@ -485,6 +488,21 @@ message WithdrawCorrectionResponse {
   AttendanceCorrection correction = 1;
 }
 
+// An admin excusing one person's scheduled day, so it reads as leave instead of absent.
+message GrantDayOffRequest {
+  string user_id = 1;
+  string work_date = 2;
+}
+
+message GrantDayOffResponse {}
+
+message RevokeDayOffRequest {
+  string user_id = 1;
+  string work_date = 2;
+}
+
+message RevokeDayOffResponse {}
+
 service AttendanceService {
   rpc RequestCorrection(RequestCorrectionRequest) returns (RequestCorrectionResponse);
   rpc ListCorrections(ListCorrectionsRequest) returns (ListCorrectionsResponse);
@@ -513,4 +531,6 @@ service AttendanceService {
   rpc DeleteHoliday(DeleteHolidayRequest) returns (DeleteHolidayResponse);
   rpc ListHolidayCountries(ListHolidayCountriesRequest) returns (ListHolidayCountriesResponse);
   rpc ImportHolidays(ImportHolidaysRequest) returns (ImportHolidaysResponse);
+  rpc GrantDayOff(GrantDayOffRequest) returns (GrantDayOffResponse);
+  rpc RevokeDayOff(RevokeDayOffRequest) returns (RevokeDayOffResponse);
 }

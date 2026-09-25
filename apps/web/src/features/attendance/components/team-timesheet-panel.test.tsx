@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { axe } from 'vitest-axe'
 import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import type { AttendanceDayRow } from '../schema'
 import { TeamTimesheetPanel } from './team-timesheet-panel'
@@ -21,6 +22,8 @@ const rpc = vi.hoisted(() => ({
   saveShift: vi.fn(),
   deleteShift: vi.fn(),
   assignShift: vi.fn(),
+  grantDayOff: vi.fn(),
+  revokeDayOff: vi.fn(),
 }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn(), hide: vi.fn() }))
@@ -89,6 +92,7 @@ describe('TeamTimesheetPanel', () => {
           workDate: '2026-09-21',
           kind: 'absent',
           leaveName: undefined,
+          granted: false,
         },
         {
           userId: 'user-2',
@@ -96,6 +100,7 @@ describe('TeamTimesheetPanel', () => {
           workDate: '2026-09-18',
           kind: 'leave',
           leaveName: 'Vacation leave',
+          granted: false,
         },
       ],
     })
@@ -165,5 +170,87 @@ describe('TeamTimesheetPanel', () => {
 
     expect(await screen.findByText('Recorded')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Approve/ })).not.toBeInTheDocument()
+  })
+  describe('granting a day off', () => {
+    const ABSENT = {
+      userId: 'user-2',
+      userName: 'Ada Lovelace',
+      workDate: '2026-09-21',
+      kind: 'absent' as const,
+      leaveName: undefined,
+      granted: false,
+    }
+
+    function withAbsences(absences: unknown[]) {
+      rpc.listAttendance.mockResolvedValue({
+        days: [],
+        totalWorkedSeconds: 0,
+        totalBreakSeconds: 0,
+        totalLateSeconds: 0,
+        absences,
+      })
+    }
+
+    it('turns the absent row into leave before the server answers', async () => {
+      withAbsences([ABSENT])
+      rpc.grantDayOff.mockReturnValue(new Promise(() => {}))
+      const user = userEvent.setup()
+      const { container } = render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
+
+      const table = await screen.findByRole('table', { name: 'Days not clocked' })
+      await user.click(
+        within(table).getByRole('button', {
+          name: 'Grant day off to Ada Lovelace on 2026-09-21',
+        }),
+      )
+
+      expect(await within(table).findByText('On leave: Day off')).toBeInTheDocument()
+      expect(within(table).queryByText('Absent')).not.toBeInTheDocument()
+      expect(rpc.grantDayOff).toHaveBeenCalledWith({ userId: 'user-2', workDate: '2026-09-21' })
+      expect(await axe(container)).toHaveNoViolations()
+    })
+
+    it('puts the row back to absent and says why when the grant fails', async () => {
+      withAbsences([ABSENT])
+      rpc.grantDayOff.mockRejectedValue(new Error('2026-09-21 is already Vacation leave.'))
+      const user = userEvent.setup()
+      render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
+
+      const table = await screen.findByRole('table', { name: 'Days not clocked' })
+      await user.click(within(table).getByRole('button', { name: /^Grant day off/ }))
+
+      await waitFor(() =>
+        expect(toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ message: '2026-09-21 is already Vacation leave.' }),
+        ),
+      )
+      expect(await within(table).findByText('Absent')).toBeInTheDocument()
+    })
+
+    it('takes back a granted day behind an undo, and only then tells the server', async () => {
+      withAbsences([{ ...ABSENT, kind: 'leave', leaveName: 'Day off', granted: true }])
+      rpc.revokeDayOff.mockResolvedValue(undefined)
+      const user = userEvent.setup()
+      render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
+
+      const table = await screen.findByRole('table', { name: 'Days not clocked' })
+      await user.click(within(table).getByRole('button', { name: /^Take back the day off/ }))
+
+      expect(await within(table).findByText('Absent')).toBeInTheDocument()
+      expect(rpc.revokeDayOff).not.toHaveBeenCalled()
+
+      undo.offerUndo.mock.calls[0]?.[0]?.onCommit()
+      await waitFor(() =>
+        expect(rpc.revokeDayOff).toHaveBeenCalledWith({ userId: 'user-2', workDate: '2026-09-21' }),
+      )
+    })
+
+    it('offers nothing on leave that came from an approved request', async () => {
+      withAbsences([{ ...ABSENT, kind: 'leave', leaveName: 'Vacation leave', granted: false }])
+      render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
+
+      const table = await screen.findByRole('table', { name: 'Days not clocked' })
+      expect(within(table).queryByRole('button')).not.toBeInTheDocument()
+    })
   })
 })

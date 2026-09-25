@@ -20,8 +20,8 @@ export interface AbsenceInput {
   /** Dates before this are settled; today is still running, so it is never counted. */
   today: string
   holidays: readonly HolidayEntry[]
-  /** Keyed `${userId}|${date}`, valued with the leave's name. */
-  leave: ReadonlyMap<string, string>
+  /** Keyed `${userId}|${date}`: the leave's name, and whether an admin granted it directly. */
+  leave: ReadonlyMap<string, { name: string; granted: boolean }>
   /** Keyed `${userId}|${date}` for every day with a clock-in. */
   worked: ReadonlySet<string>
 }
@@ -49,13 +49,14 @@ export function absencesOf(input: AbsenceInput): AttendanceAbsenceRow[] {
       const key = personDateKey(person.userId, date)
       if (input.worked.has(key)) continue
 
-      const leaveName = input.leave.get(key)
+      const leave = input.leave.get(key)
       rows.push({
         userId: person.userId,
         userName: person.userName,
         workDate: date,
-        kind: leaveName ? 'leave' : 'absent',
-        leaveName,
+        kind: leave ? 'leave' : 'absent',
+        leaveName: leave?.name,
+        granted: leave?.granted ?? false,
       })
     }
   }

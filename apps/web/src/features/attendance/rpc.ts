@@ -29,6 +29,7 @@ import type {
   CalendarMonth,
   CorrectionDecisionValues,
   CorrectionValues,
+  DayOffValues,
   TeamCalendarMonth,
   AssignShiftValues,
   ClockActionValues,
@@ -170,6 +171,14 @@ export async function saveAttendanceDay(values: AttendanceDayValues): Promise<At
 
 export async function deleteAttendanceDay(dayId: string): Promise<void> {
   await call(() => browserClients.attendance.deleteAttendanceDay({ dayId }))
+}
+
+export async function grantDayOff(values: DayOffValues): Promise<void> {
+  await call(() => browserClients.attendance.grantDayOff(values))
+}
+
+export async function revokeDayOff(values: DayOffValues): Promise<void> {
+  await call(() => browserClients.attendance.revokeDayOff(values))
 }
 
 export interface ScheduleBookView {

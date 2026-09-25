@@ -51,6 +51,8 @@ export interface AttendanceAbsenceRow {
   workDate: string
   kind: 'absent' | 'leave'
   leaveName: string | undefined
+  /** Given by an admin from the timesheet rather than a request, so it can be taken back there. */
+  granted: boolean
 }
 
 export interface AttendanceShiftRow {
@@ -285,6 +287,16 @@ export const holidaySchema = z.object({
 })
 
 export type HolidayValues = z.infer<typeof holidaySchema>
+
+/** What a day an admin grants is called on the timesheet, since no request form named it. */
+export const GRANTED_DAY_OFF = 'Day off'
+
+export const dayOffSchema = z.object({
+  userId: z.string().min(1, 'Pick the person.'),
+  workDate: dateKey,
+})
+
+export type DayOffValues = z.infer<typeof dayOffSchema>
 
 export const importHolidaysSchema = z.object({
   year: z.number().int().min(2000).max(2100),
