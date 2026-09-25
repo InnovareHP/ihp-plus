@@ -29,8 +29,13 @@ export async function listPosts(limit: number): Promise<BulletinFeed> {
   }
 }
 
-export async function createPost(body: string): Promise<BulletinPostRow> {
-  const response = await call(() => browserClients.bulletin.createPost({ body }))
+export async function createPost(
+  body: string,
+  imageIds: readonly string[] = [],
+): Promise<BulletinPostRow> {
+  const response = await call(() =>
+    browserClients.bulletin.createPost({ body, imageIds: [...imageIds] }),
+  )
   return requiredPost(response.post)
 }
 

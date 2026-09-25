@@ -26,7 +26,9 @@ export const bulletin: ServiceImpl<typeof BulletinService> = {
     }
   },
 
-  createPost: async (request) => ({ post: postToProto(await createPost(request.body)) }),
+  createPost: async (request) => ({
+    post: postToProto(await createPost(request.body, request.imageIds)),
+  }),
 
   updatePost: async (request) => ({
     post: postToProto(await updatePost(request.postId, request.body)),

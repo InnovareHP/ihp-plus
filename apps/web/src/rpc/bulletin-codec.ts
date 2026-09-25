@@ -19,6 +19,11 @@ export function postToProto(post: BulletinPostRow): BulletinPostMessage {
       $typeName: 'ihp.bulletin.v1.ReactionSummary' as const,
       ...reaction,
     })),
+    images: post.images.map((image) => ({
+      $typeName: 'ihp.bulletin.v1.BulletinImage' as const,
+      id: image.id,
+      url: image.url,
+    })),
   }
 }
 
@@ -37,6 +42,7 @@ export function postFromProto(post: BulletinPostMessage): BulletinPostRow {
       count: reaction.count,
       reactedByMe: reaction.reactedByMe,
     })),
+    images: post.images.map((image) => ({ id: image.id, url: image.url })),
   }
 }
 

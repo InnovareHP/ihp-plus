@@ -4,12 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Group, Stack, Textarea } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
-import { postFormSchema, type PostFormValues } from '../schema'
+import { postEditSchema, type PostEditValues } from '../schema'
 
 export interface PostEditFormProps {
   body: string
   onCancel: () => void
-  onSave: (values: PostFormValues) => Promise<void>
+  onSave: (values: PostEditValues) => Promise<void>
 }
 
 export function PostEditForm({ body, onCancel, onSave }: PostEditFormProps) {
@@ -18,14 +18,14 @@ export function PostEditForm({ body, onCancel, onSave }: PostEditFormProps) {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<PostFormValues>({
-    resolver: zodResolver(postFormSchema),
+  } = useForm<PostEditValues>({
+    resolver: zodResolver(postEditSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
     defaultValues: { body },
   })
 
-  async function submit(values: PostFormValues) {
+  async function submit(values: PostEditValues) {
     try {
       await onSave(values)
     } catch (error) {

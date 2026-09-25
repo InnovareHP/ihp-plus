@@ -15,7 +15,7 @@ export default async function BulletinPage() {
     <PageShell>
       <PageHeader
         title="Bulletin board"
-        description="Company news and conversation: post an update, react, and reply. Admins pin what everyone needs to see."
+        description="Company news from the admins. React and reply to join the conversation."
       />
       {/* How many posts are shown lives in the URL, which needs a boundary. */}
       <Suspense fallback={<BulletinFeedSkeleton />}>

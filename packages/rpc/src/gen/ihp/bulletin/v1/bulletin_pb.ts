@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ihp/bulletin/v1/bulletin.proto.
  */
 export const file_ihp_bulletin_v1_bulletin: GenFile = /*@__PURE__*/
-  fileDesc("Ch5paHAvYnVsbGV0aW4vdjEvYnVsbGV0aW4ucHJvdG8SD2locC5idWxsZXRpbi52MSJGCg9SZWFjdGlvblN1bW1hcnkSDQoFZW1vamkYASABKAkSDQoFY291bnQYAiABKAUSFQoNcmVhY3RlZF9ieV9tZRgDIAEoCCL8AQoMQnVsbGV0aW5Qb3N0EgoKAmlkGAEgASgJEhEKCWF1dGhvcl9pZBgCIAEoCRITCgthdXRob3JfbmFtZRgDIAEoCRIMCgRib2R5GAQgASgJEhYKCXBpbm5lZF9hdBgFIAEoCUgAiAEBEhYKCWVkaXRlZF9hdBgGIAEoCUgBiAEBEhIKCmNyZWF0ZWRfYXQYByABKAkSFQoNY29tbWVudF9jb3VudBgIIAEoBRIzCglyZWFjdGlvbnMYCSADKAsyIC5paHAuYnVsbGV0aW4udjEuUmVhY3Rpb25TdW1tYXJ5QgwKCl9waW5uZWRfYXRCDAoKX2VkaXRlZF9hdCKeAQoPQnVsbGV0aW5Db21tZW50EgoKAmlkGAEgASgJEg8KB3Bvc3RfaWQYAiABKAkSEQoJYXV0aG9yX2lkGAMgASgJEhMKC2F1dGhvcl9uYW1lGAQgASgJEgwKBGJvZHkYBSABKAkSFgoJZWRpdGVkX2F0GAYgASgJSACIAQESEgoKY3JlYXRlZF9hdBgHIAEoCUIMCgpfZWRpdGVkX2F0IiEKEExpc3RQb3N0c1JlcXVlc3QSDQoFbGltaXQYASABKAUifAoRTGlzdFBvc3RzUmVzcG9uc2USLAoFcG9zdHMYASADKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0EhAKCGhhc19tb3JlGAIgASgIEhEKCXZpZXdlcl9pZBgDIAEoCRIUCgxjYW5fbW9kZXJhdGUYBCABKAgiIQoRQ3JlYXRlUG9zdFJlcXVlc3QSDAoEYm9keRgBIAEoCSJBChJDcmVhdGVQb3N0UmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiMgoRVXBkYXRlUG9zdFJlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCRIMCgRib2R5GAIgASgJIkEKElVwZGF0ZVBvc3RSZXNwb25zZRIrCgRwb3N0GAEgASgLMh0uaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluUG9zdCIkChFEZWxldGVQb3N0UmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJIhQKEkRlbGV0ZVBvc3RSZXNwb25zZSI3ChRTZXRQb3N0UGlubmVkUmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJEg4KBnBpbm5lZBgCIAEoCCJEChVTZXRQb3N0UGlubmVkUmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiNwoVVG9nZ2xlUmVhY3Rpb25SZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkSDQoFZW1vamkYAiABKAkiRQoWVG9nZ2xlUmVhY3Rpb25SZXNwb25zZRIrCgRwb3N0GAEgASgLMh0uaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluUG9zdCImChNMaXN0Q29tbWVudHNSZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkiSgoUTGlzdENvbW1lbnRzUmVzcG9uc2USMgoIY29tbWVudHMYASADKAsyIC5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Db21tZW50IjUKFENyZWF0ZUNvbW1lbnRSZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkSDAoEYm9keRgCIAEoCSJKChVDcmVhdGVDb21tZW50UmVzcG9uc2USMQoHY29tbWVudBgBIAEoCzIgLmlocC5idWxsZXRpbi52MS5CdWxsZXRpbkNvbW1lbnQiKgoURGVsZXRlQ29tbWVudFJlcXVlc3QSEgoKY29tbWVudF9pZBgBIAEoCSIXChVEZWxldGVDb21tZW50UmVzcG9uc2UyygYKD0J1bGxldGluU2VydmljZRJSCglMaXN0UG9zdHMSIS5paHAuYnVsbGV0aW4udjEuTGlzdFBvc3RzUmVxdWVzdBoiLmlocC5idWxsZXRpbi52MS5MaXN0UG9zdHNSZXNwb25zZRJVCgpDcmVhdGVQb3N0EiIuaWhwLmJ1bGxldGluLnYxLkNyZWF0ZVBvc3RSZXF1ZXN0GiMuaWhwLmJ1bGxldGluLnYxLkNyZWF0ZVBvc3RSZXNwb25zZRJVCgpVcGRhdGVQb3N0EiIuaWhwLmJ1bGxldGluLnYxLlVwZGF0ZVBvc3RSZXF1ZXN0GiMuaWhwLmJ1bGxldGluLnYxLlVwZGF0ZVBvc3RSZXNwb25zZRJVCgpEZWxldGVQb3N0EiIuaWhwLmJ1bGxldGluLnYxLkRlbGV0ZVBvc3RSZXF1ZXN0GiMuaWhwLmJ1bGxldGluLnYxLkRlbGV0ZVBvc3RSZXNwb25zZRJeCg1TZXRQb3N0UGlubmVkEiUuaWhwLmJ1bGxldGluLnYxLlNldFBvc3RQaW5uZWRSZXF1ZXN0GiYuaWhwLmJ1bGxldGluLnYxLlNldFBvc3RQaW5uZWRSZXNwb25zZRJhCg5Ub2dnbGVSZWFjdGlvbhImLmlocC5idWxsZXRpbi52MS5Ub2dnbGVSZWFjdGlvblJlcXVlc3QaJy5paHAuYnVsbGV0aW4udjEuVG9nZ2xlUmVhY3Rpb25SZXNwb25zZRJbCgxMaXN0Q29tbWVudHMSJC5paHAuYnVsbGV0aW4udjEuTGlzdENvbW1lbnRzUmVxdWVzdBolLmlocC5idWxsZXRpbi52MS5MaXN0Q29tbWVudHNSZXNwb25zZRJeCg1DcmVhdGVDb21tZW50EiUuaWhwLmJ1bGxldGluLnYxLkNyZWF0ZUNvbW1lbnRSZXF1ZXN0GiYuaWhwLmJ1bGxldGluLnYxLkNyZWF0ZUNvbW1lbnRSZXNwb25zZRJeCg1EZWxldGVDb21tZW50EiUuaWhwLmJ1bGxldGluLnYxLkRlbGV0ZUNvbW1lbnRSZXF1ZXN0GiYuaWhwLmJ1bGxldGluLnYxLkRlbGV0ZUNvbW1lbnRSZXNwb25zZWIGcHJvdG8z");
+  fileDesc("Ch5paHAvYnVsbGV0aW4vdjEvYnVsbGV0aW4ucHJvdG8SD2locC5idWxsZXRpbi52MSJGCg9SZWFjdGlvblN1bW1hcnkSDQoFZW1vamkYASABKAkSDQoFY291bnQYAiABKAUSFQoNcmVhY3RlZF9ieV9tZRgDIAEoCCIoCg1CdWxsZXRpbkltYWdlEgoKAmlkGAEgASgJEgsKA3VybBgCIAEoCSKsAgoMQnVsbGV0aW5Qb3N0EgoKAmlkGAEgASgJEhEKCWF1dGhvcl9pZBgCIAEoCRITCgthdXRob3JfbmFtZRgDIAEoCRIMCgRib2R5GAQgASgJEhYKCXBpbm5lZF9hdBgFIAEoCUgAiAEBEhYKCWVkaXRlZF9hdBgGIAEoCUgBiAEBEhIKCmNyZWF0ZWRfYXQYByABKAkSFQoNY29tbWVudF9jb3VudBgIIAEoBRIzCglyZWFjdGlvbnMYCSADKAsyIC5paHAuYnVsbGV0aW4udjEuUmVhY3Rpb25TdW1tYXJ5Ei4KBmltYWdlcxgKIAMoCzIeLmlocC5idWxsZXRpbi52MS5CdWxsZXRpbkltYWdlQgwKCl9waW5uZWRfYXRCDAoKX2VkaXRlZF9hdCKeAQoPQnVsbGV0aW5Db21tZW50EgoKAmlkGAEgASgJEg8KB3Bvc3RfaWQYAiABKAkSEQoJYXV0aG9yX2lkGAMgASgJEhMKC2F1dGhvcl9uYW1lGAQgASgJEgwKBGJvZHkYBSABKAkSFgoJZWRpdGVkX2F0GAYgASgJSACIAQESEgoKY3JlYXRlZF9hdBgHIAEoCUIMCgpfZWRpdGVkX2F0IiEKEExpc3RQb3N0c1JlcXVlc3QSDQoFbGltaXQYASABKAUifAoRTGlzdFBvc3RzUmVzcG9uc2USLAoFcG9zdHMYASADKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0EhAKCGhhc19tb3JlGAIgASgIEhEKCXZpZXdlcl9pZBgDIAEoCRIUCgxjYW5fbW9kZXJhdGUYBCABKAgiNAoRQ3JlYXRlUG9zdFJlcXVlc3QSDAoEYm9keRgBIAEoCRIRCglpbWFnZV9pZHMYAiADKAkiQQoSQ3JlYXRlUG9zdFJlc3BvbnNlEisKBHBvc3QYASABKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0IjIKEVVwZGF0ZVBvc3RSZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkSDAoEYm9keRgCIAEoCSJBChJVcGRhdGVQb3N0UmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiJAoRRGVsZXRlUG9zdFJlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCSIUChJEZWxldGVQb3N0UmVzcG9uc2UiNwoUU2V0UG9zdFBpbm5lZFJlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCRIOCgZwaW5uZWQYAiABKAgiRAoVU2V0UG9zdFBpbm5lZFJlc3BvbnNlEisKBHBvc3QYASABKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0IjcKFVRvZ2dsZVJlYWN0aW9uUmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJEg0KBWVtb2ppGAIgASgJIkUKFlRvZ2dsZVJlYWN0aW9uUmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiJgoTTGlzdENvbW1lbnRzUmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJIkoKFExpc3RDb21tZW50c1Jlc3BvbnNlEjIKCGNvbW1lbnRzGAEgAygLMiAuaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluQ29tbWVudCI1ChRDcmVhdGVDb21tZW50UmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJEgwKBGJvZHkYAiABKAkiSgoVQ3JlYXRlQ29tbWVudFJlc3BvbnNlEjEKB2NvbW1lbnQYASABKAsyIC5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Db21tZW50IioKFERlbGV0ZUNvbW1lbnRSZXF1ZXN0EhIKCmNvbW1lbnRfaWQYASABKAkiFwoVRGVsZXRlQ29tbWVudFJlc3BvbnNlMsoGCg9CdWxsZXRpblNlcnZpY2USUgoJTGlzdFBvc3RzEiEuaWhwLmJ1bGxldGluLnYxLkxpc3RQb3N0c1JlcXVlc3QaIi5paHAuYnVsbGV0aW4udjEuTGlzdFBvc3RzUmVzcG9uc2USVQoKQ3JlYXRlUG9zdBIiLmlocC5idWxsZXRpbi52MS5DcmVhdGVQb3N0UmVxdWVzdBojLmlocC5idWxsZXRpbi52MS5DcmVhdGVQb3N0UmVzcG9uc2USVQoKVXBkYXRlUG9zdBIiLmlocC5idWxsZXRpbi52MS5VcGRhdGVQb3N0UmVxdWVzdBojLmlocC5idWxsZXRpbi52MS5VcGRhdGVQb3N0UmVzcG9uc2USVQoKRGVsZXRlUG9zdBIiLmlocC5idWxsZXRpbi52MS5EZWxldGVQb3N0UmVxdWVzdBojLmlocC5idWxsZXRpbi52MS5EZWxldGVQb3N0UmVzcG9uc2USXgoNU2V0UG9zdFBpbm5lZBIlLmlocC5idWxsZXRpbi52MS5TZXRQb3N0UGlubmVkUmVxdWVzdBomLmlocC5idWxsZXRpbi52MS5TZXRQb3N0UGlubmVkUmVzcG9uc2USYQoOVG9nZ2xlUmVhY3Rpb24SJi5paHAuYnVsbGV0aW4udjEuVG9nZ2xlUmVhY3Rpb25SZXF1ZXN0GicuaWhwLmJ1bGxldGluLnYxLlRvZ2dsZVJlYWN0aW9uUmVzcG9uc2USWwoMTGlzdENvbW1lbnRzEiQuaWhwLmJ1bGxldGluLnYxLkxpc3RDb21tZW50c1JlcXVlc3QaJS5paHAuYnVsbGV0aW4udjEuTGlzdENvbW1lbnRzUmVzcG9uc2USXgoNQ3JlYXRlQ29tbWVudBIlLmlocC5idWxsZXRpbi52MS5DcmVhdGVDb21tZW50UmVxdWVzdBomLmlocC5idWxsZXRpbi52MS5DcmVhdGVDb21tZW50UmVzcG9uc2USXgoNRGVsZXRlQ29tbWVudBIlLmlocC5idWxsZXRpbi52MS5EZWxldGVDb21tZW50UmVxdWVzdBomLmlocC5idWxsZXRpbi52MS5EZWxldGVDb21tZW50UmVzcG9uc2ViBnByb3RvMw");
 
 /**
  * One emoji on one post, already counted: the feed never ships who reacted, only how many.
@@ -40,6 +40,30 @@ export type ReactionSummary = Message<"ihp.bulletin.v1.ReactionSummary"> & {
  */
 export const ReactionSummarySchema: GenMessage<ReactionSummary> = /*@__PURE__*/
   messageDesc(file_ihp_bulletin_v1_bulletin, 0);
+
+/**
+ * A photo on a post; the url is our own route, so it never expires the way a signed link does.
+ *
+ * @generated from message ihp.bulletin.v1.BulletinImage
+ */
+export type BulletinImage = Message<"ihp.bulletin.v1.BulletinImage"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string url = 2;
+   */
+  url: string;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.BulletinImage.
+ * Use `create(BulletinImageSchema)` to create a new message.
+ */
+export const BulletinImageSchema: GenMessage<BulletinImage> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 1);
 
 /**
  * @generated from message ihp.bulletin.v1.BulletinPost
@@ -89,6 +113,11 @@ export type BulletinPost = Message<"ihp.bulletin.v1.BulletinPost"> & {
    * @generated from field: repeated ihp.bulletin.v1.ReactionSummary reactions = 9;
    */
   reactions: ReactionSummary[];
+
+  /**
+   * @generated from field: repeated ihp.bulletin.v1.BulletinImage images = 10;
+   */
+  images: BulletinImage[];
 };
 
 /**
@@ -96,7 +125,7 @@ export type BulletinPost = Message<"ihp.bulletin.v1.BulletinPost"> & {
  * Use `create(BulletinPostSchema)` to create a new message.
  */
 export const BulletinPostSchema: GenMessage<BulletinPost> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 1);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 2);
 
 /**
  * @generated from message ihp.bulletin.v1.BulletinComment
@@ -143,7 +172,7 @@ export type BulletinComment = Message<"ihp.bulletin.v1.BulletinComment"> & {
  * Use `create(BulletinCommentSchema)` to create a new message.
  */
 export const BulletinCommentSchema: GenMessage<BulletinComment> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 2);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 3);
 
 /**
  * @generated from message ihp.bulletin.v1.ListPostsRequest
@@ -162,7 +191,7 @@ export type ListPostsRequest = Message<"ihp.bulletin.v1.ListPostsRequest"> & {
  * Use `create(ListPostsRequestSchema)` to create a new message.
  */
 export const ListPostsRequestSchema: GenMessage<ListPostsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 3);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 4);
 
 /**
  * @generated from message ihp.bulletin.v1.ListPostsResponse
@@ -196,7 +225,7 @@ export type ListPostsResponse = Message<"ihp.bulletin.v1.ListPostsResponse"> & {
  * Use `create(ListPostsResponseSchema)` to create a new message.
  */
 export const ListPostsResponseSchema: GenMessage<ListPostsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 4);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 5);
 
 /**
  * @generated from message ihp.bulletin.v1.CreatePostRequest
@@ -206,6 +235,13 @@ export type CreatePostRequest = Message<"ihp.bulletin.v1.CreatePostRequest"> & {
    * @generated from field: string body = 1;
    */
   body: string;
+
+  /**
+   * Photos uploaded beforehand by the same person, in the order the grid shows them.
+   *
+   * @generated from field: repeated string image_ids = 2;
+   */
+  imageIds: string[];
 };
 
 /**
@@ -213,7 +249,7 @@ export type CreatePostRequest = Message<"ihp.bulletin.v1.CreatePostRequest"> & {
  * Use `create(CreatePostRequestSchema)` to create a new message.
  */
 export const CreatePostRequestSchema: GenMessage<CreatePostRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 5);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 6);
 
 /**
  * @generated from message ihp.bulletin.v1.CreatePostResponse
@@ -230,7 +266,7 @@ export type CreatePostResponse = Message<"ihp.bulletin.v1.CreatePostResponse"> &
  * Use `create(CreatePostResponseSchema)` to create a new message.
  */
 export const CreatePostResponseSchema: GenMessage<CreatePostResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 6);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 7);
 
 /**
  * @generated from message ihp.bulletin.v1.UpdatePostRequest
@@ -252,7 +288,7 @@ export type UpdatePostRequest = Message<"ihp.bulletin.v1.UpdatePostRequest"> & {
  * Use `create(UpdatePostRequestSchema)` to create a new message.
  */
 export const UpdatePostRequestSchema: GenMessage<UpdatePostRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 7);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 8);
 
 /**
  * @generated from message ihp.bulletin.v1.UpdatePostResponse
@@ -269,7 +305,7 @@ export type UpdatePostResponse = Message<"ihp.bulletin.v1.UpdatePostResponse"> &
  * Use `create(UpdatePostResponseSchema)` to create a new message.
  */
 export const UpdatePostResponseSchema: GenMessage<UpdatePostResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 8);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 9);
 
 /**
  * @generated from message ihp.bulletin.v1.DeletePostRequest
@@ -286,7 +322,7 @@ export type DeletePostRequest = Message<"ihp.bulletin.v1.DeletePostRequest"> & {
  * Use `create(DeletePostRequestSchema)` to create a new message.
  */
 export const DeletePostRequestSchema: GenMessage<DeletePostRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 9);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 10);
 
 /**
  * @generated from message ihp.bulletin.v1.DeletePostResponse
@@ -299,7 +335,7 @@ export type DeletePostResponse = Message<"ihp.bulletin.v1.DeletePostResponse"> &
  * Use `create(DeletePostResponseSchema)` to create a new message.
  */
 export const DeletePostResponseSchema: GenMessage<DeletePostResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 10);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 11);
 
 /**
  * @generated from message ihp.bulletin.v1.SetPostPinnedRequest
@@ -321,7 +357,7 @@ export type SetPostPinnedRequest = Message<"ihp.bulletin.v1.SetPostPinnedRequest
  * Use `create(SetPostPinnedRequestSchema)` to create a new message.
  */
 export const SetPostPinnedRequestSchema: GenMessage<SetPostPinnedRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 11);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 12);
 
 /**
  * @generated from message ihp.bulletin.v1.SetPostPinnedResponse
@@ -338,7 +374,7 @@ export type SetPostPinnedResponse = Message<"ihp.bulletin.v1.SetPostPinnedRespon
  * Use `create(SetPostPinnedResponseSchema)` to create a new message.
  */
 export const SetPostPinnedResponseSchema: GenMessage<SetPostPinnedResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 12);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 13);
 
 /**
  * @generated from message ihp.bulletin.v1.ToggleReactionRequest
@@ -360,7 +396,7 @@ export type ToggleReactionRequest = Message<"ihp.bulletin.v1.ToggleReactionReque
  * Use `create(ToggleReactionRequestSchema)` to create a new message.
  */
 export const ToggleReactionRequestSchema: GenMessage<ToggleReactionRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 13);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 14);
 
 /**
  * @generated from message ihp.bulletin.v1.ToggleReactionResponse
@@ -377,7 +413,7 @@ export type ToggleReactionResponse = Message<"ihp.bulletin.v1.ToggleReactionResp
  * Use `create(ToggleReactionResponseSchema)` to create a new message.
  */
 export const ToggleReactionResponseSchema: GenMessage<ToggleReactionResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 14);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 15);
 
 /**
  * @generated from message ihp.bulletin.v1.ListCommentsRequest
@@ -394,7 +430,7 @@ export type ListCommentsRequest = Message<"ihp.bulletin.v1.ListCommentsRequest">
  * Use `create(ListCommentsRequestSchema)` to create a new message.
  */
 export const ListCommentsRequestSchema: GenMessage<ListCommentsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 15);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 16);
 
 /**
  * @generated from message ihp.bulletin.v1.ListCommentsResponse
@@ -411,7 +447,7 @@ export type ListCommentsResponse = Message<"ihp.bulletin.v1.ListCommentsResponse
  * Use `create(ListCommentsResponseSchema)` to create a new message.
  */
 export const ListCommentsResponseSchema: GenMessage<ListCommentsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 16);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 17);
 
 /**
  * @generated from message ihp.bulletin.v1.CreateCommentRequest
@@ -433,7 +469,7 @@ export type CreateCommentRequest = Message<"ihp.bulletin.v1.CreateCommentRequest
  * Use `create(CreateCommentRequestSchema)` to create a new message.
  */
 export const CreateCommentRequestSchema: GenMessage<CreateCommentRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 17);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 18);
 
 /**
  * @generated from message ihp.bulletin.v1.CreateCommentResponse
@@ -450,7 +486,7 @@ export type CreateCommentResponse = Message<"ihp.bulletin.v1.CreateCommentRespon
  * Use `create(CreateCommentResponseSchema)` to create a new message.
  */
 export const CreateCommentResponseSchema: GenMessage<CreateCommentResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 18);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 19);
 
 /**
  * @generated from message ihp.bulletin.v1.DeleteCommentRequest
@@ -467,7 +503,7 @@ export type DeleteCommentRequest = Message<"ihp.bulletin.v1.DeleteCommentRequest
  * Use `create(DeleteCommentRequestSchema)` to create a new message.
  */
 export const DeleteCommentRequestSchema: GenMessage<DeleteCommentRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 19);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 20);
 
 /**
  * @generated from message ihp.bulletin.v1.DeleteCommentResponse
@@ -480,7 +516,7 @@ export type DeleteCommentResponse = Message<"ihp.bulletin.v1.DeleteCommentRespon
  * Use `create(DeleteCommentResponseSchema)` to create a new message.
  */
 export const DeleteCommentResponseSchema: GenMessage<DeleteCommentResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_bulletin_v1_bulletin, 20);
+  messageDesc(file_ihp_bulletin_v1_bulletin, 21);
 
 /**
  * @generated from service ihp.bulletin.v1.BulletinService

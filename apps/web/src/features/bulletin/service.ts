@@ -3,12 +3,15 @@ import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import type { z } from 'zod'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
+import { deleteObject } from '@/lib/s3'
+import { bulletinImageUrl } from './image-url'
 import {
   BULLETIN_MAX_POSTS,
   BULLETIN_PAGE_SIZE,
   BULLETIN_REACTIONS,
   commentFormSchema,
   isBulletinReaction,
+  postEditSchema,
   postFormSchema,
   type BulletinCommentRow,
   type BulletinFeed,
@@ -47,6 +50,7 @@ const postSelect = {
   createdAt: true,
   _count: { select: { comments: true } },
   reactions: { select: { userId: true, emoji: true } },
+  images: { select: { id: true }, orderBy: { position: 'asc' } },
 } satisfies Prisma.BulletinPostSelect
 
 const commentSelect = {
@@ -107,6 +111,7 @@ function toPostRow(
     createdAt: post.createdAt.toISOString(),
     commentCount: post._count.comments,
     reactions: summarizeReactions(post.reactions, viewerId),
+    images: post.images.map((image) => ({ id: image.id, url: bulletinImageUrl(image.id) })),
   }
 }
 
@@ -173,22 +178,65 @@ export async function loadFeed(limit: number): Promise<BulletinFeed> {
   }
 }
 
-export async function createPost(body: string): Promise<BulletinPostRow> {
+// Only admins post for now: the board is company news, and members answer it in the replies.
+export async function createPost(
+  body: string,
+  imageIds: readonly string[] = [],
+): Promise<BulletinPostRow> {
   const caller = await requireMember()
-  const values = parseBody(postFormSchema.safeParse({ body }))
+  if (!caller.canModerate) {
+    throw new ConnectError('Only an admin can post to the board.', Code.PermissionDenied)
+  }
+  const values = parseBody(postFormSchema.safeParse({ body, imageIds: [...new Set(imageIds)] }))
 
-  const post = await db.bulletinPost.create({
-    data: { organizationId: caller.organizationId, authorId: caller.userId, body: values.body },
+  // Only the caller's own photos that no post has claimed yet can go on this one.
+  const images = await db.bulletinImage.findMany({
+    where: {
+      id: { in: values.imageIds },
+      organizationId: caller.organizationId,
+      uploadedById: caller.userId,
+      postId: null,
+    },
     select: { id: true },
+  })
+  if (images.length !== values.imageIds.length) {
+    throw new ConnectError('A photo did not finish uploading — add it again.', Code.InvalidArgument)
+  }
+
+  const post = await db.$transaction(async (tx) => {
+    const created = await tx.bulletinPost.create({
+      data: { organizationId: caller.organizationId, authorId: caller.userId, body: values.body },
+      select: { id: true },
+    })
+    for (const [position, imageId] of values.imageIds.entries()) {
+      await tx.bulletinImage.update({
+        where: { id: imageId },
+        data: { postId: created.id, position },
+      })
+    }
+    return created
   })
 
   return readPost(caller, post.id)
 }
 
+/** The storage key behind a photo, for anyone in its organization; an unclaimed one is its uploader's. */
+export async function bulletinImageKey(imageId: string): Promise<string> {
+  const caller = await requireMember()
+  const image = await db.bulletinImage.findFirst({
+    where: { id: imageId, organizationId: caller.organizationId },
+    select: { fileKey: true, postId: true, uploadedById: true },
+  })
+  if (!image || (image.postId === null && image.uploadedById !== caller.userId)) {
+    throw new ConnectError('That photo is no longer on the board.', Code.NotFound)
+  }
+  return image.fileKey
+}
+
 // Editing stays with the author: an admin rewriting someone's words would put them in their mouth.
 export async function updatePost(postId: string, body: string): Promise<BulletinPostRow> {
   const caller = await requireMember()
-  const values = parseBody(postFormSchema.safeParse({ body }))
+  const values = parseBody(postEditSchema.safeParse({ body }))
   const post = await postOrThrow(caller, postId)
 
   if (post.authorId !== caller.userId) {
@@ -211,7 +259,13 @@ export async function deletePost(postId: string): Promise<void> {
     throw new ConnectError('Only the author or an admin can remove a post.', Code.PermissionDenied)
   }
 
+  const images = await db.bulletinImage.findMany({
+    where: { postId: post.id },
+    select: { fileKey: true },
+  })
   await db.bulletinPost.delete({ where: { id: post.id } })
+  // The rows went with the post; a photo left in the bucket would be a file nobody can reach.
+  await Promise.allSettled(images.map((image) => deleteObject(image.fileKey)))
 }
 
 export async function setPostPinned(postId: string, pinned: boolean): Promise<BulletinPostRow> {

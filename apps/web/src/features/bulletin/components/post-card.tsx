@@ -5,10 +5,10 @@ import {
   Avatar,
   Badge,
   Button,
+  Card,
   Divider,
   Group,
   Menu,
-  Paper,
   Stack,
   Text,
 } from '@mantine/core'
@@ -22,8 +22,10 @@ import {
 } from '@tabler/icons-react'
 import { useId, useState, type ReactNode } from 'react'
 import { describeMoment } from '@/lib/relative-time'
-import type { BulletinPostRow, PostFormValues } from '../schema'
+import type { BulletinPostRow, PostEditValues } from '../schema'
+import { ImageLightbox } from './image-lightbox'
 import { PostEditForm } from './post-edit-form'
+import { PostImageGrid } from './post-image-grid'
 import { ReactionBar } from './reaction-bar'
 
 export interface PostCardProps {
@@ -31,7 +33,7 @@ export interface PostCardProps {
   viewerId: string
   canModerate: boolean
   onReact: (post: BulletinPostRow, emoji: string) => void
-  onEdit: (post: BulletinPostRow, values: PostFormValues) => Promise<void>
+  onEdit: (post: BulletinPostRow, values: PostEditValues) => Promise<void>
   onPin: (post: BulletinPostRow, pinned: boolean) => void
   onDelete: (post: BulletinPostRow) => void
   /** Mounted only while the replies are open, so a closed thread fetches nothing. */
@@ -55,6 +57,7 @@ export function PostCard({
 }: PostCardProps) {
   const [editing, setEditing] = useState(false)
   const [repliesOpen, setRepliesOpen] = useState(false)
+  const [photo, setPhoto] = useState<number | undefined>(undefined)
   const threadId = useId()
 
   const own = post.authorId === viewerId
@@ -67,32 +70,40 @@ export function PostCard({
   const pinned = Boolean(post.pinnedAt)
 
   return (
-    <Paper
+    <Card
       component="li"
       withBorder
-      radius="md"
-      p="md"
+      radius="lg"
+      shadow="xs"
+      padding="lg"
       opacity={post.isSending ? 0.6 : 1}
-      // Tinted as well as badged, so the colour never carries "pinned" alone.
+      // A brand edge as well as the label, so the colour never carries "pinned" alone.
       style={{
-        borderColor: pinned ? 'var(--mantine-color-brand-light-hover)' : undefined,
-        backgroundColor: pinned ? 'var(--mantine-color-brand-light)' : undefined,
+        borderColor: pinned ? 'var(--mantine-primary-color-light-hover)' : undefined,
+        borderTop: pinned ? '3px solid var(--mantine-primary-color-filled)' : undefined,
       }}
     >
-      <Stack gap="sm">
+      <Stack gap="md">
         <Group justify="space-between" wrap="nowrap" align="flex-start">
           <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-            <Avatar radius="xl" color={own ? 'brand' : 'gray'} name={name} />
-            <Stack gap={0} style={{ minWidth: 0 }}>
+            <Avatar size={44} radius="xl" color="initials" name={post.authorName || name} />
+            <Stack gap={2} style={{ minWidth: 0 }}>
               <Group gap="xs" wrap="wrap">
-                <Text fw={600}>{name}</Text>
+                <Text fw={600} lh={1.2}>
+                  {name}
+                </Text>
                 {pinned ? (
-                  <Badge size="sm" variant="filled" leftSection={<IconPin size={12} aria-hidden />}>
+                  <Badge
+                    size="sm"
+                    variant="light"
+                    radius="sm"
+                    leftSection={<IconPin size={12} aria-hidden />}
+                  >
                     Pinned
                   </Badge>
                 ) : null}
                 {post.isSending ? (
-                  <Badge size="sm" variant="light" color="gray">
+                  <Badge size="sm" variant="light" color="gray" radius="sm">
                     Posting…
                   </Badge>
                 ) : null}
@@ -110,9 +121,11 @@ export function PostCard({
                 <ActionIcon
                   variant="subtle"
                   color="gray"
+                  size="lg"
+                  radius="xl"
                   aria-label={own ? 'Actions for your post' : `Actions for the post by ${name}`}
                 >
-                  <IconDotsVertical size={16} aria-hidden />
+                  <IconDotsVertical size={18} aria-hidden />
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown>
@@ -161,9 +174,25 @@ export function PostCard({
               setEditing(false)
             }}
           />
-        ) : (
-          <Text style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{post.body}</Text>
-        )}
+        ) : post.body ? (
+          <Text lh={1.65} style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+            {post.body}
+          </Text>
+        ) : null}
+
+        {post.images.length > 0 ? (
+          <>
+            <PostImageGrid images={post.images} authorName={name} onOpen={setPhoto} />
+            <ImageLightbox
+              images={post.images}
+              index={photo}
+              onIndexChange={setPhoto}
+              onClose={() => setPhoto(undefined)}
+            />
+          </>
+        ) : null}
+
+        <Divider />
 
         <Group justify="space-between" gap="xs" wrap="wrap">
           <ReactionBar
@@ -173,8 +202,9 @@ export function PostCard({
           />
           <Button
             variant="subtle"
-            size="compact-sm"
-            leftSection={<IconMessageCircle size={16} aria-hidden />}
+            color="gray"
+            radius="xl"
+            leftSection={<IconMessageCircle size={18} aria-hidden />}
             aria-expanded={repliesOpen}
             aria-controls={threadId}
             disabled={!settled}
@@ -184,15 +214,8 @@ export function PostCard({
           </Button>
         </Group>
 
-        <div id={threadId}>
-          {repliesOpen ? (
-            <Stack gap="sm">
-              <Divider />
-              {thread}
-            </Stack>
-          ) : null}
-        </div>
+        <div id={threadId}>{repliesOpen ? thread : null}</div>
       </Stack>
-    </Paper>
+    </Card>
   )
 }

@@ -76,23 +76,30 @@ export function BulletinBoard() {
   }
 
   return (
-    <Stack gap="xl" maw="48rem" w="100%">
-      <PostComposer
-        onPost={async (values) => {
-          await create.mutateAsync(values)
-        }}
-      />
+    <Stack gap="xl" maw="44rem" w="100%" mx="auto">
+      {/* Only admins post for now; everyone else joins in through reactions and replies. */}
+      {canModerate ? (
+        <PostComposer
+          onPost={async (values) => {
+            await create.mutateAsync(values)
+          }}
+        />
+      ) : null}
 
       {posts.length === 0 ? (
         <EmptyState
           title="Nothing on the board yet"
-          description="Post the first update — news, a question or a thank-you — and everyone in the company will see it."
+          description={
+            canModerate
+              ? 'Post the first update — news, a welcome or a thank-you — and everyone in the company will see it.'
+              : 'Company news from your admins shows up here, ready for you to react and reply.'
+          }
         />
       ) : null}
 
       {pinned.length > 0 ? (
         <Stack component="section" gap="sm" aria-labelledby="bulletin-pinned">
-          <Title order={2} size="h4" id="bulletin-pinned">
+          <Title order={2} size="h5" tt="uppercase" fz="sm" lts={0.6} id="bulletin-pinned">
             Pinned
           </Title>
           <Stack component="ul" gap="md" p={0} m={0} style={{ listStyle: 'none' }}>
@@ -103,7 +110,7 @@ export function BulletinBoard() {
 
       {latest.length > 0 ? (
         <Stack component="section" gap="sm" aria-labelledby="bulletin-latest">
-          <Title order={2} size="h4" id="bulletin-latest">
+          <Title order={2} size="h5" tt="uppercase" fz="sm" lts={0.6} id="bulletin-latest">
             Latest
           </Title>
           <Stack
@@ -122,7 +129,12 @@ export function BulletinBoard() {
 
       {hasMore && limit < BULLETIN_MAX_POSTS ? (
         <Group justify="center">
-          <Button variant="default" onClick={showOlder} loading={feed.isPlaceholderData}>
+          <Button
+            variant="default"
+            radius="xl"
+            onClick={showOlder}
+            loading={feed.isPlaceholderData}
+          >
             Show older posts
           </Button>
         </Group>

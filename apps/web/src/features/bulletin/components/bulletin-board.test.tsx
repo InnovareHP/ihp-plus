@@ -19,7 +19,10 @@ const rpc = vi.hoisted(() => ({
 const toast = vi.hoisted(() => ({ show: vi.fn(), hide: vi.fn() }))
 const nav = vi.hoisted(() => ({ search: '', replace: vi.fn() }))
 
+const actions = vi.hoisted(() => ({ uploadBulletinImage: vi.fn() }))
+
 vi.mock('../rpc', () => rpc)
+vi.mock('../actions', () => actions)
 vi.mock('@mantine/notifications', () => ({ notifications: toast }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: nav.replace }),
@@ -37,6 +40,7 @@ const PINNED: BulletinPostRow = {
   createdAt: '2026-09-19T09:00:00.000Z',
   commentCount: 0,
   reactions: [],
+  images: [],
 }
 
 const LATEST: BulletinPostRow = {
@@ -49,6 +53,7 @@ const LATEST: BulletinPostRow = {
   createdAt: '2026-09-24T09:00:00.000Z',
   commentCount: 2,
   reactions: [{ emoji: '🎉', count: 1, reactedByMe: false }],
+  images: [],
 }
 
 function feed(overrides: Partial<BulletinFeed> = {}): BulletinFeed {
@@ -109,14 +114,25 @@ describe('BulletinBoard', () => {
     expect(await screen.findByText(LATEST.body)).toBeInTheDocument()
   })
 
+  it('gives a member no composer, only the posts to react and reply to', async () => {
+    render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    expect(screen.queryByLabelText(/Share an update/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Post' })).not.toBeInTheDocument()
+  })
+
   it('says what is missing before posting an empty update', async () => {
     const user = userEvent.setup()
+    rpc.listPosts.mockResolvedValue(feed({ canModerate: true }))
     render(<BulletinBoard />)
     await screen.findByText(LATEST.body)
 
     await user.click(screen.getByRole('button', { name: 'Post' }))
 
-    expect(await screen.findByText('Write something before posting.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Write something or add a photo before posting.'),
+    ).toBeInTheDocument()
     expect(rpc.createPost).not.toHaveBeenCalled()
   })
 
@@ -124,14 +140,15 @@ describe('BulletinBoard', () => {
     const user = userEvent.setup()
     const pending = deferred<BulletinPostRow>()
     rpc.createPost.mockReturnValue(pending.promise)
+    rpc.listPosts.mockResolvedValue(feed({ canModerate: true }))
     render(<BulletinBoard />)
     await screen.findByText(LATEST.body)
 
-    await user.type(screen.getByLabelText(/Post to the board/), 'Welcome, Ada!')
+    await user.type(screen.getByLabelText(/Share an update/), 'Welcome, Ada!')
     await user.click(screen.getByRole('button', { name: 'Post' }))
 
     expect(await within(section('Latest')).findByText('Welcome, Ada!')).toBeInTheDocument()
-    expect(rpc.createPost).toHaveBeenCalledWith('Welcome, Ada!')
+    expect(rpc.createPost).toHaveBeenCalledWith('Welcome, Ada!', [])
 
     pending.resolve({ ...LATEST, id: 'post-new', body: 'Welcome, Ada!' })
   })
@@ -139,10 +156,11 @@ describe('BulletinBoard', () => {
   it('takes a failed post back off the board, says why, and keeps the words', async () => {
     const user = userEvent.setup()
     rpc.createPost.mockRejectedValue(new Error('The board is read-only right now.'))
+    rpc.listPosts.mockResolvedValue(feed({ canModerate: true }))
     render(<BulletinBoard />)
     await screen.findByText(LATEST.body)
 
-    await user.type(screen.getByLabelText(/Post to the board/), 'Welcome, Ada!')
+    await user.type(screen.getByLabelText(/Share an update/), 'Welcome, Ada!')
     await user.click(screen.getByRole('button', { name: 'Post' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('The board is read-only right now.')
@@ -150,7 +168,7 @@ describe('BulletinBoard', () => {
       expect.objectContaining({ color: 'red', message: 'The board is read-only right now.' }),
     )
     expect(within(section('Latest')).queryByText('Welcome, Ada!')).not.toBeInTheDocument()
-    expect(screen.getByLabelText(/Post to the board/)).toHaveValue('Welcome, Ada!')
+    expect(screen.getByLabelText(/Share an update/)).toHaveValue('Welcome, Ada!')
   })
 
   it('counts a reaction at once and restores the count when it fails', async () => {
@@ -231,7 +249,76 @@ describe('BulletinBoard', () => {
     await waitFor(() => expect(rpc.createComment).toHaveBeenCalledWith(LATEST.id, 'On my way.'))
   })
 
+  it('uploads a photo, previews it, and posts it with the words', async () => {
+    const user = userEvent.setup()
+    rpc.listPosts.mockResolvedValue(feed({ canModerate: true }))
+    rpc.createPost.mockReturnValue(new Promise(() => {}))
+    actions.uploadBulletinImage.mockResolvedValue({
+      ok: true,
+      data: { id: 'img-1', url: '/app/api/bulletin/images/img-1' },
+    })
+    const { container } = render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')
+    if (!input) throw new Error('The composer has no file input.')
+    await user.upload(input, new File(['x'], 'team.png', { type: 'image/png' }))
+
+    expect(await screen.findByRole('img', { name: 'Photo 1' })).toBeInTheDocument()
+    expect(screen.getByText('1 of 4')).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(/Share an update/), 'Team day!')
+    await user.click(screen.getByRole('button', { name: 'Post' }))
+
+    await waitFor(() => expect(rpc.createPost).toHaveBeenCalledWith('Team day!', ['img-1']))
+    expect(
+      await screen.findByRole('img', { name: "Photo 1 of 1 from You's post" }),
+    ).toBeInTheDocument()
+  })
+
+  it('says why a photo was refused and adds nothing', async () => {
+    const user = userEvent.setup({ applyAccept: false })
+    rpc.listPosts.mockResolvedValue(feed({ canModerate: true }))
+    const { container } = render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')
+    if (!input) throw new Error('The composer has no file input.')
+    await user.upload(input, new File(['x'], 'notes.pdf', { type: 'application/pdf' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'notes.pdf: Add a JPEG, PNG or WebP photo.',
+    )
+    expect(actions.uploadBulletinImage).not.toHaveBeenCalled()
+  })
+
+  it('opens a post’s photo larger and steps to the next one', async () => {
+    const user = userEvent.setup()
+    rpc.listPosts.mockResolvedValue(
+      feed({
+        posts: [
+          {
+            ...LATEST,
+            images: [
+              { id: 'img-1', url: '/app/api/bulletin/images/img-1' },
+              { id: 'img-2', url: '/app/api/bulletin/images/img-2' },
+            ],
+          },
+        ],
+      }),
+    )
+    render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    await user.click(screen.getByRole('button', { name: "Photo 1 of 2 from Grace Hopper's post" }))
+    const viewer = await screen.findByRole('dialog', { name: 'Photo 1 of 2' })
+    await user.click(within(viewer).getByRole('button', { name: 'Next photo' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Photo 2 of 2' })).toBeInTheDocument()
+  })
+
   it('has no axe violations', async () => {
+    rpc.listPosts.mockResolvedValue(feed({ canModerate: true }))
     const { container } = render(<BulletinBoard />)
     await screen.findByText(LATEST.body)
 

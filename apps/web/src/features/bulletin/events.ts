@@ -3,6 +3,8 @@ import type { EventName } from '@/lib/analytics'
 export const bulletinEvents = {
   postCreated: 'bulletin.post.created',
   postCreateFailed: 'bulletin.post.create_failed',
+  imageUploaded: 'bulletin.image.uploaded',
+  imageUploadFailed: 'bulletin.image.upload_failed',
   postEdited: 'bulletin.post.edited',
   postEditFailed: 'bulletin.post.edit_failed',
   postDeleted: 'bulletin.post.deleted',

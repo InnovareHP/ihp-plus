@@ -13,6 +13,7 @@ import {
   toggleReaction,
   updatePost,
 } from '../rpc'
+import { bulletinImageUrl } from '../image-url'
 import type { BulletinFeed, BulletinPostRow } from '../schema'
 import { useUndoableDelete } from './use-undoable-delete'
 
@@ -30,12 +31,12 @@ export function useBulletinFeed(limit: number) {
 }
 
 export function useCreatePost() {
-  return useOptimisticPagesMutation<BulletinFeed, { body: string }>({
+  return useOptimisticPagesMutation<BulletinFeed, { body: string; imageIds: string[] }>({
     queryKey: bulletinKeys.feeds(),
-    mutationFn: async ({ body }) => {
-      await createPost(body)
+    mutationFn: async ({ body, imageIds }) => {
+      await createPost(body, imageIds)
     },
-    apply: (feed, { body }) => {
+    apply: (feed, { body, imageIds }) => {
       // Replaced by the server row on settle; an index would collide the moment two land.
       const optimistic: BulletinPostRow = {
         id: crypto.randomUUID(),
@@ -47,6 +48,7 @@ export function useCreatePost() {
         createdAt: new Date().toISOString(),
         commentCount: 0,
         reactions: [],
+        images: imageIds.map((id) => ({ id, url: bulletinImageUrl(id) })),
         isSending: true,
       }
       return { ...feed, posts: sortFeed([optimistic, ...feed.posts]) }

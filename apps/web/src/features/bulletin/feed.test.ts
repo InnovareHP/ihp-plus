@@ -13,6 +13,7 @@ function post(id: string, createdAt: string, pinnedAt?: string): BulletinPostRow
     createdAt,
     commentCount: 0,
     reactions: [],
+    images: [],
   }
 }
 

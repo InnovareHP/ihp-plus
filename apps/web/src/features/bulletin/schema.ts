@@ -25,13 +25,43 @@ export const BULLETIN_PAGE_SIZE = 20
 /** A ceiling on ?show= so a hand-typed URL cannot ask for the whole table. */
 export const BULLETIN_MAX_POSTS = 200
 
-export const postFormSchema = z.object({
-  body: z
-    .string()
-    .trim()
-    .min(1, 'Write something before posting.')
-    .max(4000, 'A post can run to 4000 characters.'),
+/** A grid of four still reads at a glance; more belongs in a shared folder. */
+export const MAX_BULLETIN_IMAGES = 4
+
+export const MAX_BULLETIN_IMAGE_BYTES = 10 * 1024 * 1024
+
+// The types our image route will serve back, so nothing is stored that could not be shown.
+export const BULLETIN_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
+
+export function bulletinImageProblem(file: { size: number; type: string }) {
+  if (file.size === 0) return 'That photo is empty.'
+  if (!(BULLETIN_IMAGE_TYPES as readonly string[]).includes(file.type)) {
+    return 'Add a JPEG, PNG or WebP photo.'
+  }
+  if (file.size > MAX_BULLETIN_IMAGE_BYTES) return 'Photos have to be 10 MB or smaller.'
+  return undefined
+}
+
+const postBody = z.string().trim().max(4000, 'A post can run to 4000 characters.')
+
+/** What an edit changes: the words only, since the photos are part of what was announced. */
+export const postEditSchema = z.object({
+  body: postBody.min(1, 'Write something before saving.'),
 })
+
+export type PostEditValues = z.infer<typeof postEditSchema>
+
+export const postFormSchema = z
+  .object({
+    body: postBody,
+    imageIds: z
+      .array(z.string().min(1))
+      .max(MAX_BULLETIN_IMAGES, `A post can carry up to ${MAX_BULLETIN_IMAGES} photos.`),
+  })
+  .refine((values) => values.body.length > 0 || values.imageIds.length > 0, {
+    message: 'Write something or add a photo before posting.',
+    path: ['body'],
+  })
 
 export type PostFormValues = z.infer<typeof postFormSchema>
 
@@ -51,6 +81,11 @@ export interface ReactionSummaryRow {
   reactedByMe: boolean
 }
 
+export interface BulletinImageRow {
+  id: string
+  url: string
+}
+
 export interface BulletinPostRow {
   id: string
   authorId: string
@@ -61,6 +96,7 @@ export interface BulletinPostRow {
   createdAt: string
   commentCount: number
   reactions: ReactionSummaryRow[]
+  images: BulletinImageRow[]
   /** Set only on an optimistic row the server has not acknowledged yet. */
   isSending?: boolean
 }

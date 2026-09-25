@@ -11,12 +11,18 @@ const prisma = vi.hoisted(() => ({
   },
   bulletinComment: { findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn(), delete: vi.fn() },
   bulletinReaction: { deleteMany: vi.fn(), upsert: vi.fn() },
+  bulletinImage: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn() },
   user: { findMany: vi.fn() },
+  // The transaction hands the same mocks back, so a write inside it is asserted like any other.
+  $transaction: vi.fn(),
 }))
+
+const storage = vi.hoisted(() => ({ deleteObject: vi.fn() }))
 
 const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
+vi.mock('@/lib/s3', () => storage)
 // membershipOf is pure, so the real one is kept: how a membership resolves has one definition.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/auth-guard')>()),
@@ -24,6 +30,7 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 }))
 
 const {
+  bulletinImageKey,
   createComment,
   createPost,
   deleteComment,
@@ -43,6 +50,7 @@ const POST_RECORD = {
   editedAt: null,
   createdAt: new Date('2026-09-20T09:00:00.000Z'),
   _count: { comments: 3 },
+  images: [],
   reactions: [
     { userId: 'user-1', emoji: '🎉' },
     { userId: 'user-2', emoji: '👍' },
@@ -67,6 +75,8 @@ beforeEach(() => {
     { id: 'user-2', name: 'Grace Hopper', preferredName: 'Grace' },
   ])
   prisma.bulletinPost.findFirst.mockResolvedValue(POST_RECORD)
+  prisma.bulletinImage.findMany.mockResolvedValue([])
+  prisma.$transaction.mockImplementation((work: (tx: typeof prisma) => unknown) => work(prisma))
 })
 
 describe('summarizeReactions', () => {
@@ -105,7 +115,16 @@ describe('loadFeed', () => {
 })
 
 describe('createPost', () => {
-  it('rejects an empty post', async () => {
+  beforeEach(() => signInAs('admin'))
+
+  it('keeps posting to admins', async () => {
+    signInAs('member')
+
+    await expect(createPost('Hello')).rejects.toMatchObject({ code: Code.PermissionDenied })
+    expect(prisma.bulletinPost.create).not.toHaveBeenCalled()
+  })
+
+  it('rejects a post with neither words nor photos', async () => {
     await expect(createPost('   ')).rejects.toMatchObject({ code: Code.InvalidArgument })
     expect(prisma.bulletinPost.create).not.toHaveBeenCalled()
   })
@@ -120,6 +139,71 @@ describe('createPost', () => {
         data: { organizationId: 'org-1', authorId: 'user-1', body: 'Welcome, Ada!' },
       }),
     )
+  })
+
+  it('claims the caller’s own unclaimed photos, in the order they were picked', async () => {
+    prisma.bulletinPost.create.mockResolvedValue({ id: 'post-1' })
+    prisma.bulletinImage.findMany.mockResolvedValue([{ id: 'img-2' }, { id: 'img-1' }])
+
+    await createPost('', ['img-2', 'img-1'])
+
+    expect(prisma.bulletinImage.findMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: ['img-2', 'img-1'] },
+        organizationId: 'org-1',
+        uploadedById: 'user-1',
+        postId: null,
+      },
+      select: { id: true },
+    })
+    expect(prisma.bulletinImage.update).toHaveBeenNthCalledWith(1, {
+      where: { id: 'img-2' },
+      data: { postId: 'post-1', position: 0 },
+    })
+    expect(prisma.bulletinImage.update).toHaveBeenNthCalledWith(2, {
+      where: { id: 'img-1' },
+      data: { postId: 'post-1', position: 1 },
+    })
+  })
+
+  it('refuses a photo that is somebody else’s or already on a post', async () => {
+    prisma.bulletinImage.findMany.mockResolvedValue([])
+
+    await expect(createPost('Look', ['img-9'])).rejects.toMatchObject({
+      code: Code.InvalidArgument,
+    })
+    expect(prisma.bulletinPost.create).not.toHaveBeenCalled()
+  })
+
+  it('refuses more than four photos', async () => {
+    await expect(createPost('Look', ['a', 'b', 'c', 'd', 'e'])).rejects.toMatchObject({
+      code: Code.InvalidArgument,
+    })
+  })
+})
+
+describe('bulletinImageKey', () => {
+  it('serves a posted photo to anyone in the organization', async () => {
+    prisma.bulletinImage.findFirst.mockResolvedValue({
+      fileKey: 'bulletin/org-1/a.jpg',
+      postId: 'post-1',
+      uploadedById: 'user-2',
+    })
+
+    await expect(bulletinImageKey('img-1')).resolves.toBe('bulletin/org-1/a.jpg')
+    expect(prisma.bulletinImage.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'img-1', organizationId: 'org-1' } }),
+    )
+  })
+
+  it('keeps an unposted photo to the person who uploaded it', async () => {
+    prisma.bulletinImage.findFirst.mockResolvedValue({
+      fileKey: 'bulletin/org-1/a.jpg',
+      postId: null,
+      uploadedById: 'user-2',
+    })
+
+    await expect(bulletinImageKey('img-1')).rejects.toMatchObject({ code: Code.NotFound })
   })
 })
 
@@ -140,12 +224,14 @@ describe('deletePost', () => {
     expect(prisma.bulletinPost.delete).not.toHaveBeenCalled()
   })
 
-  it('lets an admin take any post down', async () => {
+  it('lets an admin take any post down, photos and all', async () => {
     signInAs('admin')
+    prisma.bulletinImage.findMany.mockResolvedValue([{ fileKey: 'bulletin/org-1/a.jpg' }])
 
     await deletePost('post-1')
 
     expect(prisma.bulletinPost.delete).toHaveBeenCalledWith({ where: { id: 'post-1' } })
+    expect(storage.deleteObject).toHaveBeenCalledWith('bulletin/org-1/a.jpg')
   })
 
   it('says so when the post is in another organization', async () => {

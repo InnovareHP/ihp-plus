@@ -21,6 +21,7 @@ model BulletinPost {
 
   comments  BulletinComment[]
   reactions BulletinReaction[]
+  images    BulletinImage[]
 
   @@index([organizationId, pinnedAt, createdAt])
   @@map("bulletinPost")
@@ -59,5 +60,27 @@ model BulletinReaction {
   @@unique([postId, userId, emoji])
   @@index([postId])
   @@map("bulletinReaction")
+  @@schema("bulletin")
+}
+
+// A photo on a post. Uploaded before the post exists, so it waits unclaimed until posting claims it.
+model BulletinImage {
+  id             String        @id @default(uuid())
+  organizationId String
+  postId         String?
+  post           BulletinPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  fileKey      String
+  contentType  String
+  fileSize     Int
+  uploadedById String
+  // Order in the post's grid, as the author picked them.
+  position     Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([postId, position])
+  @@index([organizationId, uploadedById])
+  @@map("bulletinImage")
   @@schema("bulletin")
 }

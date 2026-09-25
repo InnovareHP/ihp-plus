@@ -9,6 +9,12 @@ message ReactionSummary {
   bool reacted_by_me = 3;
 }
 
+// A photo on a post; the url is our own route, so it never expires the way a signed link does.
+message BulletinImage {
+  string id = 1;
+  string url = 2;
+}
+
 message BulletinPost {
   string id = 1;
   string author_id = 2;
@@ -19,6 +25,7 @@ message BulletinPost {
   string created_at = 7;
   int32 comment_count = 8;
   repeated ReactionSummary reactions = 9;
+  repeated BulletinImage images = 10;
 }
 
 message BulletinComment {
@@ -46,6 +53,8 @@ message ListPostsResponse {
 
 message CreatePostRequest {
   string body = 1;
+  // Photos uploaded beforehand by the same person, in the order the grid shows them.
+  repeated string image_ids = 2;
 }
 
 message CreatePostResponse {
