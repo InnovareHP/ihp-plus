@@ -95,6 +95,7 @@ export const postFormSchema = z
       .array(z.string().min(1))
       .max(MAX_BULLETIN_IMAGES, `A post can carry up to ${MAX_BULLETIN_IMAGES} photos.`),
     mentionUserIds: mentionIds,
+    requiresAck: z.boolean(),
   })
   .refine((values) => values.body.length > 0 || values.imageIds.length > 0, {
     message: 'Write something or add a photo before posting.',
@@ -138,6 +139,11 @@ export interface BulletinPostRow {
   commentCount: number
   reactions: ReactionSummaryRow[]
   images: BulletinImageRow[]
+  requiresAck: boolean
+  acknowledgedByMe: boolean
+  ackCount: number
+  /** How many people the confirmation is asked of. */
+  ackAudience: number
   /** Set only on an optimistic row the server has not acknowledged yet. */
   isSending?: boolean
 }
@@ -158,4 +164,15 @@ export interface BulletinFeed {
   hasMore: boolean
   viewerId: string
   canModerate: boolean
+}
+
+export interface AcknowledgementPersonRow {
+  userId: string
+  name: string
+  acknowledgedAt: string | undefined
+}
+
+export interface AcknowledgementList {
+  confirmed: AcknowledgementPersonRow[]
+  waiting: AcknowledgementPersonRow[]
 }

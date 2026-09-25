@@ -6,10 +6,12 @@ import { bulletinEvents } from '../events'
 import { patchPost, sortFeed, toggleReactionIn } from '../utils/feed'
 import { bulletinKeys } from '../query-keys'
 import {
+  acknowledgePost,
   createPost,
   deletePost,
   listPosts,
   setPostPinned,
+  setPostRequiresAck,
   toggleReaction,
   updatePost,
 } from '../rpc'
@@ -33,10 +35,10 @@ export function useBulletinFeed(limit: number) {
 export function useCreatePost() {
   return useOptimisticPagesMutation<BulletinFeed, PostFormValues>({
     queryKey: bulletinKeys.feeds(),
-    mutationFn: async ({ body, imageIds, mentionUserIds }) => {
-      await createPost(body, imageIds, mentionUserIds)
+    mutationFn: async ({ body, imageIds, mentionUserIds, requiresAck }) => {
+      await createPost(body, imageIds, mentionUserIds, requiresAck)
     },
-    apply: (feed, { body, imageIds }) => {
+    apply: (feed, { body, imageIds, requiresAck }) => {
       // Replaced by the server row on settle; an index would collide the moment two land.
       const optimistic: BulletinPostRow = {
         id: crypto.randomUUID(),
@@ -50,6 +52,10 @@ export function useCreatePost() {
         commentCount: 0,
         reactions: [],
         images: imageIds.map((id) => ({ id, url: bulletinImageUrl(id) })),
+        requiresAck,
+        acknowledgedByMe: false,
+        ackCount: 0,
+        ackAudience: 0,
         isSending: true,
       }
       return { ...feed, posts: sortFeed([optimistic, ...feed.posts]) }
@@ -114,5 +120,35 @@ export function useDeletePost() {
     message: 'Post removed.',
     successEvent: bulletinEvents.postDeleted,
     failureEvent: bulletinEvents.postDeleteFailed,
+  })
+}
+
+export function useAcknowledgePost() {
+  return useOptimisticPagesMutation<BulletinFeed, { postId: string }>({
+    queryKey: bulletinKeys.feeds(),
+    mutationFn: async ({ postId }) => {
+      await acknowledgePost(postId)
+    },
+    apply: (feed, { postId }) =>
+      patchPost(feed, postId, (post) =>
+        post.acknowledgedByMe
+          ? post
+          : { ...post, acknowledgedByMe: true, ackCount: post.ackCount + 1 },
+      ),
+    successEvent: bulletinEvents.acknowledged,
+    failureEvent: bulletinEvents.acknowledgeFailed,
+  })
+}
+
+export function useRequireAck() {
+  return useOptimisticPagesMutation<BulletinFeed, { postId: string; required: boolean }>({
+    queryKey: bulletinKeys.feeds(),
+    mutationFn: async ({ postId, required }) => {
+      await setPostRequiresAck(postId, required)
+    },
+    apply: (feed, { postId, required }) =>
+      patchPost(feed, postId, (post) => ({ ...post, requiresAck: required })),
+    successEvent: bulletinEvents.ackRequested,
+    failureEvent: bulletinEvents.ackRequestFailed,
   })
 }

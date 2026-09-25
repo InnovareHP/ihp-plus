@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ihp/bulletin/v1/bulletin.proto.
  */
 export const file_ihp_bulletin_v1_bulletin: GenFile = /*@__PURE__*/
-  fileDesc("Ch5paHAvYnVsbGV0aW4vdjEvYnVsbGV0aW4ucHJvdG8SD2locC5idWxsZXRpbi52MSJGCg9SZWFjdGlvblN1bW1hcnkSDQoFZW1vamkYASABKAkSDQoFY291bnQYAiABKAUSFQoNcmVhY3RlZF9ieV9tZRgDIAEoCCIoCg1CdWxsZXRpbkltYWdlEgoKAmlkGAEgASgJEgsKA3VybBgCIAEoCSK6AgoMQnVsbGV0aW5Qb3N0EgoKAmlkGAEgASgJEhEKCWF1dGhvcl9pZBgCIAEoCRITCgthdXRob3JfbmFtZRgDIAEoCRIMCgRib2R5GAQgASgJEhYKCXBpbm5lZF9hdBgFIAEoCUgAiAEBEhYKCWVkaXRlZF9hdBgGIAEoCUgBiAEBEhIKCmNyZWF0ZWRfYXQYByABKAkSFQoNY29tbWVudF9jb3VudBgIIAEoBRIzCglyZWFjdGlvbnMYCSADKAsyIC5paHAuYnVsbGV0aW4udjEuUmVhY3Rpb25TdW1tYXJ5Ei4KBmltYWdlcxgKIAMoCzIeLmlocC5idWxsZXRpbi52MS5CdWxsZXRpbkltYWdlEgwKBGtpbmQYCyABKAlCDAoKX3Bpbm5lZF9hdEIMCgpfZWRpdGVkX2F0Ip4BCg9CdWxsZXRpbkNvbW1lbnQSCgoCaWQYASABKAkSDwoHcG9zdF9pZBgCIAEoCRIRCglhdXRob3JfaWQYAyABKAkSEwoLYXV0aG9yX25hbWUYBCABKAkSDAoEYm9keRgFIAEoCRIWCgllZGl0ZWRfYXQYBiABKAlIAIgBARISCgpjcmVhdGVkX2F0GAcgASgJQgwKCl9lZGl0ZWRfYXQiIQoQTGlzdFBvc3RzUmVxdWVzdBINCgVsaW1pdBgBIAEoBSJ8ChFMaXN0UG9zdHNSZXNwb25zZRIsCgVwb3N0cxgBIAMoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QSEAoIaGFzX21vcmUYAiABKAgSEQoJdmlld2VyX2lkGAMgASgJEhQKDGNhbl9tb2RlcmF0ZRgEIAEoCCJOChFDcmVhdGVQb3N0UmVxdWVzdBIMCgRib2R5GAEgASgJEhEKCWltYWdlX2lkcxgCIAMoCRIYChBtZW50aW9uX3VzZXJfaWRzGAMgAygJIkEKEkNyZWF0ZVBvc3RSZXNwb25zZRIrCgRwb3N0GAEgASgLMh0uaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluUG9zdCIyChFVcGRhdGVQb3N0UmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJEgwKBGJvZHkYAiABKAkiQQoSVXBkYXRlUG9zdFJlc3BvbnNlEisKBHBvc3QYASABKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0IiQKEURlbGV0ZVBvc3RSZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkiFAoSRGVsZXRlUG9zdFJlc3BvbnNlIjcKFFNldFBvc3RQaW5uZWRSZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkSDgoGcGlubmVkGAIgASgIIkQKFVNldFBvc3RQaW5uZWRSZXNwb25zZRIrCgRwb3N0GAEgASgLMh0uaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluUG9zdCI3ChVUb2dnbGVSZWFjdGlvblJlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCRINCgVlbW9qaRgCIAEoCSJFChZUb2dnbGVSZWFjdGlvblJlc3BvbnNlEisKBHBvc3QYASABKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0IiYKE0xpc3RDb21tZW50c1JlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCSJKChRMaXN0Q29tbWVudHNSZXNwb25zZRIyCghjb21tZW50cxgBIAMoCzIgLmlocC5idWxsZXRpbi52MS5CdWxsZXRpbkNvbW1lbnQiTwoUQ3JlYXRlQ29tbWVudFJlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCRIMCgRib2R5GAIgASgJEhgKEG1lbnRpb25fdXNlcl9pZHMYAyADKAkiSgoVQ3JlYXRlQ29tbWVudFJlc3BvbnNlEjEKB2NvbW1lbnQYASABKAsyIC5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Db21tZW50IioKFERlbGV0ZUNvbW1lbnRSZXF1ZXN0EhIKCmNvbW1lbnRfaWQYASABKAkiFwoVRGVsZXRlQ29tbWVudFJlc3BvbnNlImsKEEJ1bGxldGluU2V0dGluZ3MSGwoTY2VsZWJyYXRlX2JpcnRoZGF5cxgBIAEoCBIfChdjZWxlYnJhdGVfYW5uaXZlcnNhcmllcxgCIAEoCBIZChF3ZWxjb21lX25ld19oaXJlcxgDIAEoCCIUChJHZXRTZXR0aW5nc1JlcXVlc3QiSgoTR2V0U2V0dGluZ3NSZXNwb25zZRIzCghzZXR0aW5ncxgBIAEoCzIhLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblNldHRpbmdzIkwKFVVwZGF0ZVNldHRpbmdzUmVxdWVzdBIzCghzZXR0aW5ncxgBIAEoCzIhLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblNldHRpbmdzIk0KFlVwZGF0ZVNldHRpbmdzUmVzcG9uc2USMwoIc2V0dGluZ3MYASABKAsyIS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5TZXR0aW5ncyIyChFNZW50aW9uYWJsZVBlcnNvbhIPCgd1c2VyX2lkGAEgASgJEgwKBG5hbWUYAiABKAkiEwoRTGlzdFBlb3BsZVJlcXVlc3QiSAoSTGlzdFBlb3BsZVJlc3BvbnNlEjIKBnBlb3BsZRgBIAMoCzIiLmlocC5idWxsZXRpbi52MS5NZW50aW9uYWJsZVBlcnNvbjLeCAoPQnVsbGV0aW5TZXJ2aWNlElIKCUxpc3RQb3N0cxIhLmlocC5idWxsZXRpbi52MS5MaXN0UG9zdHNSZXF1ZXN0GiIuaWhwLmJ1bGxldGluLnYxLkxpc3RQb3N0c1Jlc3BvbnNlElUKCkNyZWF0ZVBvc3QSIi5paHAuYnVsbGV0aW4udjEuQ3JlYXRlUG9zdFJlcXVlc3QaIy5paHAuYnVsbGV0aW4udjEuQ3JlYXRlUG9zdFJlc3BvbnNlElUKClVwZGF0ZVBvc3QSIi5paHAuYnVsbGV0aW4udjEuVXBkYXRlUG9zdFJlcXVlc3QaIy5paHAuYnVsbGV0aW4udjEuVXBkYXRlUG9zdFJlc3BvbnNlElUKCkRlbGV0ZVBvc3QSIi5paHAuYnVsbGV0aW4udjEuRGVsZXRlUG9zdFJlcXVlc3QaIy5paHAuYnVsbGV0aW4udjEuRGVsZXRlUG9zdFJlc3BvbnNlEl4KDVNldFBvc3RQaW5uZWQSJS5paHAuYnVsbGV0aW4udjEuU2V0UG9zdFBpbm5lZFJlcXVlc3QaJi5paHAuYnVsbGV0aW4udjEuU2V0UG9zdFBpbm5lZFJlc3BvbnNlEmEKDlRvZ2dsZVJlYWN0aW9uEiYuaWhwLmJ1bGxldGluLnYxLlRvZ2dsZVJlYWN0aW9uUmVxdWVzdBonLmlocC5idWxsZXRpbi52MS5Ub2dnbGVSZWFjdGlvblJlc3BvbnNlElsKDExpc3RDb21tZW50cxIkLmlocC5idWxsZXRpbi52MS5MaXN0Q29tbWVudHNSZXF1ZXN0GiUuaWhwLmJ1bGxldGluLnYxLkxpc3RDb21tZW50c1Jlc3BvbnNlEl4KDUNyZWF0ZUNvbW1lbnQSJS5paHAuYnVsbGV0aW4udjEuQ3JlYXRlQ29tbWVudFJlcXVlc3QaJi5paHAuYnVsbGV0aW4udjEuQ3JlYXRlQ29tbWVudFJlc3BvbnNlEl4KDURlbGV0ZUNvbW1lbnQSJS5paHAuYnVsbGV0aW4udjEuRGVsZXRlQ29tbWVudFJlcXVlc3QaJi5paHAuYnVsbGV0aW4udjEuRGVsZXRlQ29tbWVudFJlc3BvbnNlElUKCkxpc3RQZW9wbGUSIi5paHAuYnVsbGV0aW4udjEuTGlzdFBlb3BsZVJlcXVlc3QaIy5paHAuYnVsbGV0aW4udjEuTGlzdFBlb3BsZVJlc3BvbnNlElgKC0dldFNldHRpbmdzEiMuaWhwLmJ1bGxldGluLnYxLkdldFNldHRpbmdzUmVxdWVzdBokLmlocC5idWxsZXRpbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlEmEKDlVwZGF0ZVNldHRpbmdzEiYuaWhwLmJ1bGxldGluLnYxLlVwZGF0ZVNldHRpbmdzUmVxdWVzdBonLmlocC5idWxsZXRpbi52MS5VcGRhdGVTZXR0aW5nc1Jlc3BvbnNlYgZwcm90bzM");
+  fileDesc("Ch5paHAvYnVsbGV0aW4vdjEvYnVsbGV0aW4ucHJvdG8SD2locC5idWxsZXRpbi52MSJGCg9SZWFjdGlvblN1bW1hcnkSDQoFZW1vamkYASABKAkSDQoFY291bnQYAiABKAUSFQoNcmVhY3RlZF9ieV9tZRgDIAEoCCIoCg1CdWxsZXRpbkltYWdlEgoKAmlkGAEgASgJEgsKA3VybBgCIAEoCSKVAwoMQnVsbGV0aW5Qb3N0EgoKAmlkGAEgASgJEhEKCWF1dGhvcl9pZBgCIAEoCRITCgthdXRob3JfbmFtZRgDIAEoCRIMCgRib2R5GAQgASgJEhYKCXBpbm5lZF9hdBgFIAEoCUgAiAEBEhYKCWVkaXRlZF9hdBgGIAEoCUgBiAEBEhIKCmNyZWF0ZWRfYXQYByABKAkSFQoNY29tbWVudF9jb3VudBgIIAEoBRIzCglyZWFjdGlvbnMYCSADKAsyIC5paHAuYnVsbGV0aW4udjEuUmVhY3Rpb25TdW1tYXJ5Ei4KBmltYWdlcxgKIAMoCzIeLmlocC5idWxsZXRpbi52MS5CdWxsZXRpbkltYWdlEgwKBGtpbmQYCyABKAkSFAoMcmVxdWlyZXNfYWNrGAwgASgIEhoKEmFja25vd2xlZGdlZF9ieV9tZRgNIAEoCBIRCglhY2tfY291bnQYDiABKAUSFAoMYWNrX2F1ZGllbmNlGA8gASgFQgwKCl9waW5uZWRfYXRCDAoKX2VkaXRlZF9hdCKeAQoPQnVsbGV0aW5Db21tZW50EgoKAmlkGAEgASgJEg8KB3Bvc3RfaWQYAiABKAkSEQoJYXV0aG9yX2lkGAMgASgJEhMKC2F1dGhvcl9uYW1lGAQgASgJEgwKBGJvZHkYBSABKAkSFgoJZWRpdGVkX2F0GAYgASgJSACIAQESEgoKY3JlYXRlZF9hdBgHIAEoCUIMCgpfZWRpdGVkX2F0IiEKEExpc3RQb3N0c1JlcXVlc3QSDQoFbGltaXQYASABKAUifAoRTGlzdFBvc3RzUmVzcG9uc2USLAoFcG9zdHMYASADKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0EhAKCGhhc19tb3JlGAIgASgIEhEKCXZpZXdlcl9pZBgDIAEoCRIUCgxjYW5fbW9kZXJhdGUYBCABKAgiZAoRQ3JlYXRlUG9zdFJlcXVlc3QSDAoEYm9keRgBIAEoCRIRCglpbWFnZV9pZHMYAiADKAkSGAoQbWVudGlvbl91c2VyX2lkcxgDIAMoCRIUCgxyZXF1aXJlc19hY2sYBCABKAgiQQoSQ3JlYXRlUG9zdFJlc3BvbnNlEisKBHBvc3QYASABKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0IjIKEVVwZGF0ZVBvc3RSZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkSDAoEYm9keRgCIAEoCSJBChJVcGRhdGVQb3N0UmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiJAoRRGVsZXRlUG9zdFJlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCSIUChJEZWxldGVQb3N0UmVzcG9uc2UiNwoUU2V0UG9zdFBpbm5lZFJlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCRIOCgZwaW5uZWQYAiABKAgiRAoVU2V0UG9zdFBpbm5lZFJlc3BvbnNlEisKBHBvc3QYASABKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0IjcKFVRvZ2dsZVJlYWN0aW9uUmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJEg0KBWVtb2ppGAIgASgJIkUKFlRvZ2dsZVJlYWN0aW9uUmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiJgoTTGlzdENvbW1lbnRzUmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJIkoKFExpc3RDb21tZW50c1Jlc3BvbnNlEjIKCGNvbW1lbnRzGAEgAygLMiAuaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluQ29tbWVudCJPChRDcmVhdGVDb21tZW50UmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJEgwKBGJvZHkYAiABKAkSGAoQbWVudGlvbl91c2VyX2lkcxgDIAMoCSJKChVDcmVhdGVDb21tZW50UmVzcG9uc2USMQoHY29tbWVudBgBIAEoCzIgLmlocC5idWxsZXRpbi52MS5CdWxsZXRpbkNvbW1lbnQiKgoURGVsZXRlQ29tbWVudFJlcXVlc3QSEgoKY29tbWVudF9pZBgBIAEoCSIXChVEZWxldGVDb21tZW50UmVzcG9uc2UiawoQQnVsbGV0aW5TZXR0aW5ncxIbChNjZWxlYnJhdGVfYmlydGhkYXlzGAEgASgIEh8KF2NlbGVicmF0ZV9hbm5pdmVyc2FyaWVzGAIgASgIEhkKEXdlbGNvbWVfbmV3X2hpcmVzGAMgASgIIhQKEkdldFNldHRpbmdzUmVxdWVzdCJKChNHZXRTZXR0aW5nc1Jlc3BvbnNlEjMKCHNldHRpbmdzGAEgASgLMiEuaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluU2V0dGluZ3MiTAoVVXBkYXRlU2V0dGluZ3NSZXF1ZXN0EjMKCHNldHRpbmdzGAEgASgLMiEuaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluU2V0dGluZ3MiTQoWVXBkYXRlU2V0dGluZ3NSZXNwb25zZRIzCghzZXR0aW5ncxgBIAEoCzIhLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblNldHRpbmdzIjIKEU1lbnRpb25hYmxlUGVyc29uEg8KB3VzZXJfaWQYASABKAkSDAoEbmFtZRgCIAEoCSITChFMaXN0UGVvcGxlUmVxdWVzdCJIChJMaXN0UGVvcGxlUmVzcG9uc2USMgoGcGVvcGxlGAEgAygLMiIuaWhwLmJ1bGxldGluLnYxLk1lbnRpb25hYmxlUGVyc29uIj4KGVNldFBvc3RSZXF1aXJlc0Fja1JlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCRIQCghyZXF1aXJlZBgCIAEoCCJJChpTZXRQb3N0UmVxdWlyZXNBY2tSZXNwb25zZRIrCgRwb3N0GAEgASgLMh0uaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluUG9zdCIpChZBY2tub3dsZWRnZVBvc3RSZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkiRgoXQWNrbm93bGVkZ2VQb3N0UmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiaAoVQWNrbm93bGVkZ2VtZW50UGVyc29uEg8KB3VzZXJfaWQYASABKAkSDAoEbmFtZRgCIAEoCRIcCg9hY2tub3dsZWRnZWRfYXQYAyABKAlIAIgBAUISChBfYWNrbm93bGVkZ2VkX2F0Ii4KG0xpc3RBY2tub3dsZWRnZW1lbnRzUmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJIpIBChxMaXN0QWNrbm93bGVkZ2VtZW50c1Jlc3BvbnNlEjkKCWNvbmZpcm1lZBgBIAMoCzImLmlocC5idWxsZXRpbi52MS5BY2tub3dsZWRnZW1lbnRQZXJzb24SNwoHd2FpdGluZxgCIAMoCzImLmlocC5idWxsZXRpbi52MS5BY2tub3dsZWRnZW1lbnRQZXJzb24yqAsKD0J1bGxldGluU2VydmljZRJSCglMaXN0UG9zdHMSIS5paHAuYnVsbGV0aW4udjEuTGlzdFBvc3RzUmVxdWVzdBoiLmlocC5idWxsZXRpbi52MS5MaXN0UG9zdHNSZXNwb25zZRJVCgpDcmVhdGVQb3N0EiIuaWhwLmJ1bGxldGluLnYxLkNyZWF0ZVBvc3RSZXF1ZXN0GiMuaWhwLmJ1bGxldGluLnYxLkNyZWF0ZVBvc3RSZXNwb25zZRJVCgpVcGRhdGVQb3N0EiIuaWhwLmJ1bGxldGluLnYxLlVwZGF0ZVBvc3RSZXF1ZXN0GiMuaWhwLmJ1bGxldGluLnYxLlVwZGF0ZVBvc3RSZXNwb25zZRJVCgpEZWxldGVQb3N0EiIuaWhwLmJ1bGxldGluLnYxLkRlbGV0ZVBvc3RSZXF1ZXN0GiMuaWhwLmJ1bGxldGluLnYxLkRlbGV0ZVBvc3RSZXNwb25zZRJeCg1TZXRQb3N0UGlubmVkEiUuaWhwLmJ1bGxldGluLnYxLlNldFBvc3RQaW5uZWRSZXF1ZXN0GiYuaWhwLmJ1bGxldGluLnYxLlNldFBvc3RQaW5uZWRSZXNwb25zZRJhCg5Ub2dnbGVSZWFjdGlvbhImLmlocC5idWxsZXRpbi52MS5Ub2dnbGVSZWFjdGlvblJlcXVlc3QaJy5paHAuYnVsbGV0aW4udjEuVG9nZ2xlUmVhY3Rpb25SZXNwb25zZRJbCgxMaXN0Q29tbWVudHMSJC5paHAuYnVsbGV0aW4udjEuTGlzdENvbW1lbnRzUmVxdWVzdBolLmlocC5idWxsZXRpbi52MS5MaXN0Q29tbWVudHNSZXNwb25zZRJeCg1DcmVhdGVDb21tZW50EiUuaWhwLmJ1bGxldGluLnYxLkNyZWF0ZUNvbW1lbnRSZXF1ZXN0GiYuaWhwLmJ1bGxldGluLnYxLkNyZWF0ZUNvbW1lbnRSZXNwb25zZRJeCg1EZWxldGVDb21tZW50EiUuaWhwLmJ1bGxldGluLnYxLkRlbGV0ZUNvbW1lbnRSZXF1ZXN0GiYuaWhwLmJ1bGxldGluLnYxLkRlbGV0ZUNvbW1lbnRSZXNwb25zZRJtChJTZXRQb3N0UmVxdWlyZXNBY2sSKi5paHAuYnVsbGV0aW4udjEuU2V0UG9zdFJlcXVpcmVzQWNrUmVxdWVzdBorLmlocC5idWxsZXRpbi52MS5TZXRQb3N0UmVxdWlyZXNBY2tSZXNwb25zZRJkCg9BY2tub3dsZWRnZVBvc3QSJy5paHAuYnVsbGV0aW4udjEuQWNrbm93bGVkZ2VQb3N0UmVxdWVzdBooLmlocC5idWxsZXRpbi52MS5BY2tub3dsZWRnZVBvc3RSZXNwb25zZRJzChRMaXN0QWNrbm93bGVkZ2VtZW50cxIsLmlocC5idWxsZXRpbi52MS5MaXN0QWNrbm93bGVkZ2VtZW50c1JlcXVlc3QaLS5paHAuYnVsbGV0aW4udjEuTGlzdEFja25vd2xlZGdlbWVudHNSZXNwb25zZRJVCgpMaXN0UGVvcGxlEiIuaWhwLmJ1bGxldGluLnYxLkxpc3RQZW9wbGVSZXF1ZXN0GiMuaWhwLmJ1bGxldGluLnYxLkxpc3RQZW9wbGVSZXNwb25zZRJYCgtHZXRTZXR0aW5ncxIjLmlocC5idWxsZXRpbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaJC5paHAuYnVsbGV0aW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJhCg5VcGRhdGVTZXR0aW5ncxImLmlocC5idWxsZXRpbi52MS5VcGRhdGVTZXR0aW5nc1JlcXVlc3QaJy5paHAuYnVsbGV0aW4udjEuVXBkYXRlU2V0dGluZ3NSZXNwb25zZWIGcHJvdG8z");
 
 /**
  * One emoji on one post, already counted: the feed never ships who reacted, only how many.
@@ -125,6 +125,30 @@ export type BulletinPost = Message<"ihp.bulletin.v1.BulletinPost"> & {
    * @generated from field: string kind = 11;
    */
   kind: string;
+
+  /**
+   * Set when an admin asked everyone to confirm reading it.
+   *
+   * @generated from field: bool requires_ack = 12;
+   */
+  requiresAck: boolean;
+
+  /**
+   * @generated from field: bool acknowledged_by_me = 13;
+   */
+  acknowledgedByMe: boolean;
+
+  /**
+   * @generated from field: int32 ack_count = 14;
+   */
+  ackCount: number;
+
+  /**
+   * Everyone the confirmation is asked of: the organization, less whoever wrote the post.
+   *
+   * @generated from field: int32 ack_audience = 15;
+   */
+  ackAudience: number;
 };
 
 /**
@@ -256,6 +280,11 @@ export type CreatePostRequest = Message<"ihp.bulletin.v1.CreatePostRequest"> & {
    * @generated from field: repeated string mention_user_ids = 3;
    */
   mentionUserIds: string[];
+
+  /**
+   * @generated from field: bool requires_ack = 4;
+   */
+  requiresAck: boolean;
 };
 
 /**
@@ -685,6 +714,147 @@ export const ListPeopleResponseSchema: GenMessage<ListPeopleResponse> = /*@__PUR
   messageDesc(file_ihp_bulletin_v1_bulletin, 29);
 
 /**
+ * @generated from message ihp.bulletin.v1.SetPostRequiresAckRequest
+ */
+export type SetPostRequiresAckRequest = Message<"ihp.bulletin.v1.SetPostRequiresAckRequest"> & {
+  /**
+   * @generated from field: string post_id = 1;
+   */
+  postId: string;
+
+  /**
+   * @generated from field: bool required = 2;
+   */
+  required: boolean;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.SetPostRequiresAckRequest.
+ * Use `create(SetPostRequiresAckRequestSchema)` to create a new message.
+ */
+export const SetPostRequiresAckRequestSchema: GenMessage<SetPostRequiresAckRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 30);
+
+/**
+ * @generated from message ihp.bulletin.v1.SetPostRequiresAckResponse
+ */
+export type SetPostRequiresAckResponse = Message<"ihp.bulletin.v1.SetPostRequiresAckResponse"> & {
+  /**
+   * @generated from field: ihp.bulletin.v1.BulletinPost post = 1;
+   */
+  post?: BulletinPost | undefined;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.SetPostRequiresAckResponse.
+ * Use `create(SetPostRequiresAckResponseSchema)` to create a new message.
+ */
+export const SetPostRequiresAckResponseSchema: GenMessage<SetPostRequiresAckResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 31);
+
+/**
+ * @generated from message ihp.bulletin.v1.AcknowledgePostRequest
+ */
+export type AcknowledgePostRequest = Message<"ihp.bulletin.v1.AcknowledgePostRequest"> & {
+  /**
+   * @generated from field: string post_id = 1;
+   */
+  postId: string;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.AcknowledgePostRequest.
+ * Use `create(AcknowledgePostRequestSchema)` to create a new message.
+ */
+export const AcknowledgePostRequestSchema: GenMessage<AcknowledgePostRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 32);
+
+/**
+ * @generated from message ihp.bulletin.v1.AcknowledgePostResponse
+ */
+export type AcknowledgePostResponse = Message<"ihp.bulletin.v1.AcknowledgePostResponse"> & {
+  /**
+   * @generated from field: ihp.bulletin.v1.BulletinPost post = 1;
+   */
+  post?: BulletinPost | undefined;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.AcknowledgePostResponse.
+ * Use `create(AcknowledgePostResponseSchema)` to create a new message.
+ */
+export const AcknowledgePostResponseSchema: GenMessage<AcknowledgePostResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 33);
+
+/**
+ * @generated from message ihp.bulletin.v1.AcknowledgementPerson
+ */
+export type AcknowledgementPerson = Message<"ihp.bulletin.v1.AcknowledgementPerson"> & {
+  /**
+   * @generated from field: string user_id = 1;
+   */
+  userId: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * Empty for someone who has not confirmed yet.
+   *
+   * @generated from field: optional string acknowledged_at = 3;
+   */
+  acknowledgedAt?: string | undefined;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.AcknowledgementPerson.
+ * Use `create(AcknowledgementPersonSchema)` to create a new message.
+ */
+export const AcknowledgementPersonSchema: GenMessage<AcknowledgementPerson> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 34);
+
+/**
+ * @generated from message ihp.bulletin.v1.ListAcknowledgementsRequest
+ */
+export type ListAcknowledgementsRequest = Message<"ihp.bulletin.v1.ListAcknowledgementsRequest"> & {
+  /**
+   * @generated from field: string post_id = 1;
+   */
+  postId: string;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.ListAcknowledgementsRequest.
+ * Use `create(ListAcknowledgementsRequestSchema)` to create a new message.
+ */
+export const ListAcknowledgementsRequestSchema: GenMessage<ListAcknowledgementsRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 35);
+
+/**
+ * @generated from message ihp.bulletin.v1.ListAcknowledgementsResponse
+ */
+export type ListAcknowledgementsResponse = Message<"ihp.bulletin.v1.ListAcknowledgementsResponse"> & {
+  /**
+   * @generated from field: repeated ihp.bulletin.v1.AcknowledgementPerson confirmed = 1;
+   */
+  confirmed: AcknowledgementPerson[];
+
+  /**
+   * @generated from field: repeated ihp.bulletin.v1.AcknowledgementPerson waiting = 2;
+   */
+  waiting: AcknowledgementPerson[];
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.ListAcknowledgementsResponse.
+ * Use `create(ListAcknowledgementsResponseSchema)` to create a new message.
+ */
+export const ListAcknowledgementsResponseSchema: GenMessage<ListAcknowledgementsResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 36);
+
+/**
  * @generated from service ihp.bulletin.v1.BulletinService
  */
 export const BulletinService: GenService<{
@@ -759,6 +929,30 @@ export const BulletinService: GenService<{
     methodKind: "unary";
     input: typeof DeleteCommentRequestSchema;
     output: typeof DeleteCommentResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.bulletin.v1.BulletinService.SetPostRequiresAck
+   */
+  setPostRequiresAck: {
+    methodKind: "unary";
+    input: typeof SetPostRequiresAckRequestSchema;
+    output: typeof SetPostRequiresAckResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.bulletin.v1.BulletinService.AcknowledgePost
+   */
+  acknowledgePost: {
+    methodKind: "unary";
+    input: typeof AcknowledgePostRequestSchema;
+    output: typeof AcknowledgePostResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.bulletin.v1.BulletinService.ListAcknowledgements
+   */
+  listAcknowledgements: {
+    methodKind: "unary";
+    input: typeof ListAcknowledgementsRequestSchema;
+    output: typeof ListAcknowledgementsResponseSchema;
   },
   /**
    * @generated from rpc ihp.bulletin.v1.BulletinService.ListPeople

@@ -1,20 +1,29 @@
 import type { ServiceImpl } from '@ihp/rpc'
 import { BulletinService } from '@ihp/rpc/bulletin'
 import {
+  acknowledgePost,
   createComment,
   createPost,
   deleteComment,
   deletePost,
   loadComments,
+  loadAcknowledgements,
   loadFeed,
   loadPeople,
   loadSettings,
   saveSettings,
   setPostPinned,
+  setPostRequiresAck,
   toggleReaction,
   updatePost,
 } from '@/features/bulletin/service'
-import { commentToProto, postToProto, settingsFromProto, settingsToProto } from './bulletin-codec'
+import {
+  acknowledgementsToProto,
+  commentToProto,
+  postToProto,
+  settingsFromProto,
+  settingsToProto,
+} from './bulletin-codec'
 
 // Thin by design: every implementation converts at the wire boundary and delegates to the
 // feature's service, so the business rules stay testable without a transport.
@@ -30,7 +39,9 @@ export const bulletin: ServiceImpl<typeof BulletinService> = {
   },
 
   createPost: async (request) => ({
-    post: postToProto(await createPost(request.body, request.imageIds, request.mentionUserIds)),
+    post: postToProto(
+      await createPost(request.body, request.imageIds, request.mentionUserIds, request.requiresAck),
+    ),
   }),
 
   updatePost: async (request) => ({
@@ -64,6 +75,17 @@ export const bulletin: ServiceImpl<typeof BulletinService> = {
     await deleteComment(request.commentId)
     return {}
   },
+
+  setPostRequiresAck: async (request) => ({
+    post: postToProto(await setPostRequiresAck(request.postId, request.required)),
+  }),
+
+  acknowledgePost: async (request) => ({
+    post: postToProto(await acknowledgePost(request.postId)),
+  }),
+
+  listAcknowledgements: async (request) =>
+    acknowledgementsToProto(await loadAcknowledgements(request.postId)),
 
   listPeople: async () => ({
     people: (await loadPeople()).map((person) => ({

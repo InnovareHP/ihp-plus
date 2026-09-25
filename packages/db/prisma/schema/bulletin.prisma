@@ -2,7 +2,7 @@
 // to, with admins pinning what must stay on top.
 
 model BulletinPost {
-  id             String @id @default(uuid())
+  id             String  @id @default(uuid())
   // Plain columns, not relations: a relation field would have to be added to the generated
   // User and Organization models in auth.prisma.
   organizationId String
@@ -24,13 +24,17 @@ model BulletinPost {
   pinnedAt   DateTime?
   pinnedById String?
 
+  // An admin asked everyone to confirm they have read it, as with a policy change.
+  requiresAck Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  comments  BulletinComment[]
-  reactions BulletinReaction[]
-  images    BulletinImage[]
-  mentions  BulletinMention[]
+  comments         BulletinComment[]
+  reactions        BulletinReaction[]
+  images           BulletinImage[]
+  mentions         BulletinMention[]
+  acknowledgements BulletinAcknowledgement[]
 
   @@unique([organizationId, occasionKey])
   @@index([organizationId, pinnedAt, createdAt])
@@ -129,5 +133,19 @@ model BulletinMention {
   @@index([postId])
   @@index([commentId])
   @@map("bulletinMention")
+  @@schema("bulletin")
+}
+
+/// One person confirming they read one post; unique per pair, so confirming twice is a no-op.
+model BulletinAcknowledgement {
+  id             String       @id @default(uuid())
+  postId         String
+  post           BulletinPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId         String
+  acknowledgedAt DateTime     @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@map("bulletinAcknowledgement")
   @@schema("bulletin")
 }

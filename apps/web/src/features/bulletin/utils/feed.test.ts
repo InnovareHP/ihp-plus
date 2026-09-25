@@ -6,6 +6,10 @@ function post(id: string, createdAt: string, pinnedAt?: string): BulletinPostRow
   return {
     id,
     kind: 'post',
+    requiresAck: false,
+    acknowledgedByMe: false,
+    ackCount: 0,
+    ackAudience: 0,
     authorId: 'user-1',
     authorName: 'Dana',
     body: id,

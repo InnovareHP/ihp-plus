@@ -28,6 +28,12 @@ message BulletinPost {
   repeated BulletinImage images = 10;
   // post | birthday | anniversary | welcome — an open string, so a new occasion is not a contract change.
   string kind = 11;
+  // Set when an admin asked everyone to confirm reading it.
+  bool requires_ack = 12;
+  bool acknowledged_by_me = 13;
+  int32 ack_count = 14;
+  // Everyone the confirmation is asked of: the organization, less whoever wrote the post.
+  int32 ack_audience = 15;
 }
 
 message BulletinComment {
@@ -59,6 +65,7 @@ message CreatePostRequest {
   repeated string image_ids = 2;
   // Ids the composer resolved from the @names it offered; the server checks each is a colleague.
   repeated string mention_user_ids = 3;
+  bool requires_ack = 4;
 }
 
 message CreatePostResponse {
@@ -155,6 +162,39 @@ message ListPeopleResponse {
   repeated MentionablePerson people = 1;
 }
 
+message SetPostRequiresAckRequest {
+  string post_id = 1;
+  bool required = 2;
+}
+
+message SetPostRequiresAckResponse {
+  BulletinPost post = 1;
+}
+
+message AcknowledgePostRequest {
+  string post_id = 1;
+}
+
+message AcknowledgePostResponse {
+  BulletinPost post = 1;
+}
+
+message AcknowledgementPerson {
+  string user_id = 1;
+  string name = 2;
+  // Empty for someone who has not confirmed yet.
+  optional string acknowledged_at = 3;
+}
+
+message ListAcknowledgementsRequest {
+  string post_id = 1;
+}
+
+message ListAcknowledgementsResponse {
+  repeated AcknowledgementPerson confirmed = 1;
+  repeated AcknowledgementPerson waiting = 2;
+}
+
 service BulletinService {
   rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
   rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
@@ -165,6 +205,9 @@ service BulletinService {
   rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
   rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse);
   rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse);
+  rpc SetPostRequiresAck(SetPostRequiresAckRequest) returns (SetPostRequiresAckResponse);
+  rpc AcknowledgePost(AcknowledgePostRequest) returns (AcknowledgePostResponse);
+  rpc ListAcknowledgements(ListAcknowledgementsRequest) returns (ListAcknowledgementsResponse);
   rpc ListPeople(ListPeopleRequest) returns (ListPeopleResponse);
   rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
   rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);

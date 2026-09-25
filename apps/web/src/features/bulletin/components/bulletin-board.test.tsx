@@ -16,6 +16,9 @@ const rpc = vi.hoisted(() => ({
   deleteComment: vi.fn(),
   getSettings: vi.fn(),
   listPeople: vi.fn(),
+  acknowledgePost: vi.fn(),
+  setPostRequiresAck: vi.fn(),
+  listAcknowledgements: vi.fn(),
   updateSettings: vi.fn(),
 }))
 
@@ -36,6 +39,10 @@ vi.mock('next/navigation', () => ({
 const PINNED: BulletinPostRow = {
   id: 'post-pinned',
   kind: 'post',
+  requiresAck: false,
+  acknowledgedByMe: false,
+  ackCount: 0,
+  ackAudience: 0,
   authorId: 'user-2',
   authorName: 'Grace Hopper',
   body: 'Open enrolment closes Friday.',
@@ -50,6 +57,10 @@ const PINNED: BulletinPostRow = {
 const LATEST: BulletinPostRow = {
   id: 'post-latest',
   kind: 'post',
+  requiresAck: false,
+  acknowledgedByMe: false,
+  ackCount: 0,
+  ackAudience: 0,
   authorId: 'user-2',
   authorName: 'Grace Hopper',
   body: 'Cake in the kitchen.',
@@ -154,7 +165,7 @@ describe('BulletinBoard', () => {
     await user.click(screen.getByRole('button', { name: 'Post' }))
 
     expect(await within(section('Latest')).findByText('Welcome, Ada!')).toBeInTheDocument()
-    expect(rpc.createPost).toHaveBeenCalledWith('Welcome, Ada!', [], [])
+    expect(rpc.createPost).toHaveBeenCalledWith('Welcome, Ada!', [], [], false)
 
     pending.resolve({ ...LATEST, id: 'post-new', body: 'Welcome, Ada!' })
   })
@@ -276,7 +287,9 @@ describe('BulletinBoard', () => {
     await user.type(screen.getByLabelText(/Share an update/), 'Team day!')
     await user.click(screen.getByRole('button', { name: 'Post' }))
 
-    await waitFor(() => expect(rpc.createPost).toHaveBeenCalledWith('Team day!', ['img-1'], []))
+    await waitFor(() =>
+      expect(rpc.createPost).toHaveBeenCalledWith('Team day!', ['img-1'], [], false),
+    )
     expect(
       await screen.findByRole('img', { name: "Photo 1 of 1 from You's post" }),
     ).toBeInTheDocument()
@@ -358,6 +371,71 @@ describe('BulletinBoard', () => {
     )
     expect(scroll).toHaveBeenCalled()
     await waitFor(() => expect(rpc.listComments).toHaveBeenCalledWith(LATEST.id))
+  })
+
+  it('confirms reading at once and takes it back if the server refuses', async () => {
+    const user = userEvent.setup()
+    const pending = deferred<BulletinPostRow>()
+    rpc.acknowledgePost.mockReturnValue(pending.promise)
+    rpc.listPosts.mockResolvedValue(
+      feed({ posts: [{ ...LATEST, requiresAck: true, ackCount: 2, ackAudience: 9 }] }),
+    )
+    render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    await user.click(screen.getByRole('button', { name: 'I have read this' }))
+
+    expect(await screen.findByText('You confirmed you read this.')).toBeInTheDocument()
+    expect(rpc.acknowledgePost).toHaveBeenCalledWith(LATEST.id)
+
+    pending.reject(new Error('That post no longer asks for a confirmation.'))
+
+    expect(await screen.findByRole('button', { name: 'I have read this' })).toBeInTheDocument()
+    expect(toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        color: 'red',
+        message: 'That post no longer asks for a confirmation.',
+      }),
+    )
+  })
+
+  it('shows an admin who is still to confirm', async () => {
+    const user = userEvent.setup()
+    rpc.listPosts.mockResolvedValue(
+      feed({
+        canModerate: true,
+        posts: [{ ...LATEST, requiresAck: true, ackCount: 1, ackAudience: 2 }],
+      }),
+    )
+    rpc.listAcknowledgements.mockResolvedValue({
+      confirmed: [
+        { userId: 'user-3', name: 'Zoe Park', acknowledgedAt: '2026-09-26T08:00:00.000Z' },
+      ],
+      waiting: [{ userId: 'user-4', name: 'Ada Lovelace', acknowledgedAt: undefined }],
+    })
+    render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    await user.click(screen.getByRole('button', { name: '1 of 2 confirmed' }))
+
+    expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument()
+    expect(rpc.listAcknowledgements).toHaveBeenCalledWith(LATEST.id)
+  })
+
+  it('lets an admin ask for confirmation when posting', async () => {
+    const user = userEvent.setup()
+    rpc.listPosts.mockResolvedValue(feed({ canModerate: true }))
+    rpc.createPost.mockReturnValue(new Promise(() => {}))
+    render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    await user.type(screen.getByLabelText(/Share an update/), 'New leave policy.')
+    await user.click(screen.getByRole('checkbox', { name: /Ask everyone to confirm/ }))
+    await user.click(screen.getByRole('button', { name: 'Post' }))
+
+    await waitFor(() =>
+      expect(rpc.createPost).toHaveBeenCalledWith('New leave policy.', [], [], true),
+    )
   })
 
   it('marks a birthday the portal posted', async () => {

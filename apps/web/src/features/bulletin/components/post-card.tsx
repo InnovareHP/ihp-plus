@@ -1,7 +1,9 @@
 'use client'
 
 import { ActionIcon, Badge, Button, Card, Divider, Group, Menu, Stack, Text } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import {
+  IconChecklist,
   IconDotsVertical,
   IconMessageCircle,
   IconPencil,
@@ -13,6 +15,8 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { describeMoment } from '@/lib/relative-time'
 import { CELEBRATION_LABELS, type BulletinPostRow, type PostEditValues } from '../schema'
 import { ImageLightbox } from './image-lightbox'
+import { AckBar } from './ack-bar'
+import { AckStatusModal } from './ack-status-modal'
 import { PostAuthorAvatar } from './post-author-avatar'
 import { PostEditForm } from './post-edit-form'
 import { PostImageGrid } from './post-image-grid'
@@ -26,6 +30,8 @@ export interface PostCardProps {
   onEdit: (post: BulletinPostRow, values: PostEditValues) => Promise<void>
   onPin: (post: BulletinPostRow, pinned: boolean) => void
   onDelete: (post: BulletinPostRow) => void
+  onAcknowledge: (post: BulletinPostRow) => void
+  onRequireAck: (post: BulletinPostRow, required: boolean) => void
   /** Mounted only while the replies are open, so a closed thread fetches nothing. */
   thread: ReactNode
   /** The post a link pointed at: it opens its replies and scrolls into view. */
@@ -45,12 +51,15 @@ export function PostCard({
   onEdit,
   onPin,
   onDelete,
+  onAcknowledge,
+  onRequireAck,
   thread,
   focused = false,
 }: PostCardProps) {
   const [editing, setEditing] = useState(false)
   const [repliesOpen, setRepliesOpen] = useState(focused)
   const cardRef = useRef<HTMLLIElement>(null)
+  const [statusOpen, status] = useDisclosure(false)
   const [photo, setPhoto] = useState<number | undefined>(undefined)
   const threadId = useId()
 
@@ -109,6 +118,17 @@ export function PostCard({
                     Pinned
                   </Badge>
                 ) : null}
+                {post.requiresAck ? (
+                  <Badge
+                    size="sm"
+                    variant="light"
+                    color="orange"
+                    radius="sm"
+                    leftSection={<IconChecklist size={12} aria-hidden />}
+                  >
+                    Please confirm
+                  </Badge>
+                ) : null}
                 {post.isSending ? (
                   <Badge size="sm" variant="light" color="gray" radius="sm">
                     Posting…
@@ -148,6 +168,14 @@ export function PostCard({
                     onClick={() => onPin(post, !pinned)}
                   >
                     {pinned ? 'Unpin from the top' : 'Pin to the top'}
+                  </Menu.Item>
+                ) : null}
+                {canPin ? (
+                  <Menu.Item
+                    leftSection={<IconChecklist size={16} aria-hidden />}
+                    onClick={() => onRequireAck(post, !post.requiresAck)}
+                  >
+                    {post.requiresAck ? 'Stop asking for confirmation' : 'Ask everyone to confirm'}
                   </Menu.Item>
                 ) : null}
                 {canEdit ? (
@@ -196,6 +224,24 @@ export function PostCard({
               onIndexChange={setPhoto}
               onClose={() => setPhoto(undefined)}
             />
+          </>
+        ) : null}
+
+        {post.requiresAck ? (
+          <>
+            <AckBar
+              acknowledgedByMe={post.acknowledgedByMe}
+              ackCount={post.ackCount}
+              ackAudience={post.ackAudience}
+              isAuthor={own}
+              canModerate={canModerate}
+              disabled={!settled}
+              onAcknowledge={() => onAcknowledge(post)}
+              onShowStatus={status.open}
+            />
+            {canModerate ? (
+              <AckStatusModal postId={post.id} opened={statusOpen} onClose={status.close} />
+            ) : null}
           </>
         ) : null}
 

@@ -14,7 +14,8 @@ const prisma = vi.hoisted(() => ({
   bulletinImage: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn() },
   bulletinSettings: { findUnique: vi.fn(), upsert: vi.fn() },
   bulletinMention: { createMany: vi.fn() },
-  member: { findMany: vi.fn() },
+  bulletinAcknowledgement: { upsert: vi.fn(), findMany: vi.fn() },
+  member: { findMany: vi.fn(), count: vi.fn() },
   user: { findMany: vi.fn() },
   // The transaction hands the same mocks back, so a write inside it is asserted like any other.
   $transaction: vi.fn(),
@@ -35,16 +36,19 @@ vi.mock('@/lib/auth-guard', async (importOriginal) => ({
 }))
 
 const {
+  acknowledgePost,
   bulletinImageKey,
   createComment,
   createPost,
   deleteComment,
   deletePost,
+  loadAcknowledgements,
   loadFeed,
   loadPeople,
   loadSettings,
   saveSettings,
   setPostPinned,
+  setPostRequiresAck,
   summarizeReactions,
   toggleReaction,
   updatePost,
@@ -58,7 +62,9 @@ const POST_RECORD = {
   pinnedAt: null,
   editedAt: null,
   createdAt: new Date('2026-09-20T09:00:00.000Z'),
-  _count: { comments: 3 },
+  requiresAck: false,
+  _count: { comments: 3, acknowledgements: 0 },
+  acknowledgements: [] as { userId: string }[],
   images: [],
   reactions: [
     { userId: 'user-1', emoji: '🎉' },
@@ -84,6 +90,7 @@ beforeEach(() => {
     { id: 'user-2', name: 'Grace Hopper', preferredName: 'Grace' },
   ])
   prisma.bulletinPost.findFirst.mockResolvedValue(POST_RECORD)
+  prisma.member.count.mockResolvedValue(10)
   prisma.bulletinImage.findMany.mockResolvedValue([])
   prisma.$transaction.mockImplementation((work: (tx: typeof prisma) => unknown) => work(prisma))
 })
@@ -145,7 +152,12 @@ describe('createPost', () => {
 
     expect(prisma.bulletinPost.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: { organizationId: 'org-1', authorId: 'user-1', body: 'Welcome, Ada!' },
+        data: {
+          organizationId: 'org-1',
+          authorId: 'user-1',
+          body: 'Welcome, Ada!',
+          requiresAck: false,
+        },
       }),
     )
   })
@@ -480,5 +492,90 @@ describe('mentions', () => {
     expect(prisma.member.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { organizationId: 'org-1', userId: { not: 'user-1' } } }),
     )
+  })
+})
+
+describe('read confirmations', () => {
+  it('counts who confirmed out of everyone but the author', async () => {
+    prisma.bulletinPost.findMany.mockResolvedValue([
+      {
+        ...POST_RECORD,
+        requiresAck: true,
+        _count: { comments: 0, acknowledgements: 4 },
+        acknowledgements: [{ userId: 'user-1' }],
+      },
+    ])
+
+    const feed = await loadFeed(20)
+
+    expect(feed.posts[0]).toMatchObject({
+      requiresAck: true,
+      acknowledgedByMe: true,
+      ackCount: 4,
+      ackAudience: 9,
+    })
+  })
+
+  it('records a confirmation once, however often it is sent', async () => {
+    prisma.bulletinPost.findFirst.mockResolvedValue({ ...POST_RECORD, requiresAck: true })
+
+    await acknowledgePost('post-1')
+
+    expect(prisma.bulletinAcknowledgement.upsert).toHaveBeenCalledWith({
+      where: { postId_userId: { postId: 'post-1', userId: 'user-1' } },
+      create: { postId: 'post-1', userId: 'user-1' },
+      update: {},
+    })
+  })
+
+  it('refuses a confirmation nobody asked for, or from the author', async () => {
+    prisma.bulletinPost.findFirst.mockResolvedValue({ ...POST_RECORD, requiresAck: false })
+    await expect(acknowledgePost('post-1')).rejects.toMatchObject({
+      code: Code.FailedPrecondition,
+    })
+
+    prisma.bulletinPost.findFirst.mockResolvedValue({
+      ...POST_RECORD,
+      requiresAck: true,
+      authorId: 'user-1',
+    })
+    await expect(acknowledgePost('post-1')).rejects.toMatchObject({
+      code: Code.FailedPrecondition,
+    })
+    expect(prisma.bulletinAcknowledgement.upsert).not.toHaveBeenCalled()
+  })
+
+  it('lets only an admin ask for confirmation or see who gave it', async () => {
+    await expect(setPostRequiresAck('post-1', true)).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+    await expect(loadAcknowledgements('post-1')).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+  })
+
+  it('splits the company into confirmed and waiting, leaving the author out', async () => {
+    signInAs('admin')
+    prisma.member.findMany.mockResolvedValue([
+      { user: { id: 'user-3', name: 'Zoe Park', preferredName: null } },
+      { user: { id: 'user-4', name: 'Ada Lovelace', preferredName: 'Ada' } },
+    ])
+    prisma.bulletinAcknowledgement.findMany.mockResolvedValue([
+      { userId: 'user-3', acknowledgedAt: new Date('2026-09-26T08:00:00.000Z') },
+    ])
+
+    const list = await loadAcknowledgements('post-1')
+
+    expect(prisma.member.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { organizationId: 'org-1', userId: { not: 'user-2' } },
+      }),
+    )
+    expect(list).toEqual({
+      confirmed: [
+        { userId: 'user-3', name: 'Zoe Park', acknowledgedAt: '2026-09-26T08:00:00.000Z' },
+      ],
+      waiting: [{ userId: 'user-4', name: 'Ada', acknowledgedAt: undefined }],
+    })
   })
 })

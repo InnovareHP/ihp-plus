@@ -17,6 +17,10 @@ export const bulletinEvents = {
   commentCreateFailed: 'bulletin.comment.create_failed',
   commentDeleted: 'bulletin.comment.deleted',
   commentDeleteFailed: 'bulletin.comment.delete_failed',
+  acknowledged: 'bulletin.post.acknowledged',
+  acknowledgeFailed: 'bulletin.post.acknowledge_failed',
+  ackRequested: 'bulletin.post.ack_requested',
+  ackRequestFailed: 'bulletin.post.ack_request_failed',
   settingsSaved: 'bulletin.settings.saved',
   settingsSaveFailed: 'bulletin.settings.save_failed',
 } as const satisfies Record<string, EventName>

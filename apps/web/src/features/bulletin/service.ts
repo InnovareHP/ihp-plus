@@ -19,6 +19,7 @@ import {
   postFormSchema,
   postKindOf,
   SYSTEM_AUTHOR_NAME,
+  type AcknowledgementList,
   type BulletinCommentRow,
   type BulletinSettingsRow,
   type BulletinFeed,
@@ -49,18 +50,23 @@ async function requireMember() {
 
 type Caller = Awaited<ReturnType<typeof requireMember>>
 
-const postSelect = {
-  id: true,
-  kind: true,
-  authorId: true,
-  body: true,
-  pinnedAt: true,
-  editedAt: true,
-  createdAt: true,
-  _count: { select: { comments: true } },
-  reactions: { select: { userId: true, emoji: true } },
-  images: { select: { id: true }, orderBy: { position: 'asc' } },
-} satisfies Prisma.BulletinPostSelect
+// Per viewer, because whether they have confirmed a post is part of reading it.
+function postSelectFor(viewerId: string) {
+  return {
+    id: true,
+    kind: true,
+    authorId: true,
+    body: true,
+    pinnedAt: true,
+    editedAt: true,
+    createdAt: true,
+    requiresAck: true,
+    _count: { select: { comments: true, acknowledgements: true } },
+    acknowledgements: { where: { userId: viewerId }, select: { userId: true } },
+    reactions: { select: { userId: true, emoji: true } },
+    images: { select: { id: true }, orderBy: { position: 'asc' } },
+  } satisfies Prisma.BulletinPostSelect
+}
 
 const commentSelect = {
   id: true,
@@ -71,7 +77,7 @@ const commentSelect = {
   createdAt: true,
 } satisfies Prisma.BulletinCommentSelect
 
-type PostRecord = Prisma.BulletinPostGetPayload<{ select: typeof postSelect }>
+type PostRecord = Prisma.BulletinPostGetPayload<{ select: ReturnType<typeof postSelectFor> }>
 type CommentRecord = Prisma.BulletinCommentGetPayload<{ select: typeof commentSelect }>
 
 // One lookup for a whole feed: the same few people write most of it.
@@ -109,6 +115,7 @@ function toPostRow(
   post: PostRecord,
   names: ReadonlyMap<string, string>,
   viewerId: string,
+  memberCount: number,
 ): BulletinPostRow {
   return {
     id: post.id,
@@ -124,7 +131,16 @@ function toPostRow(
     commentCount: post._count.comments,
     reactions: summarizeReactions(post.reactions, viewerId),
     images: post.images.map((image) => ({ id: image.id, url: bulletinImageUrl(image.id) })),
+    requiresAck: post.requiresAck,
+    acknowledgedByMe: post.acknowledgements.length > 0,
+    ackCount: post._count.acknowledgements,
+    // Whoever wrote it is not asked to confirm their own words.
+    ackAudience: Math.max(memberCount - (post.authorId ? 1 : 0), 0),
   }
+}
+
+function memberCount(caller: Caller) {
+  return db.member.count({ where: { organizationId: caller.organizationId } })
 }
 
 function toCommentRow(comment: CommentRecord, names: ReadonlyMap<string, string>) {
@@ -142,10 +158,14 @@ function toCommentRow(comment: CommentRecord, names: ReadonlyMap<string, string>
 async function readPost(caller: Caller, postId: string): Promise<BulletinPostRow> {
   const post = await db.bulletinPost.findFirst({
     where: { id: postId, organizationId: caller.organizationId },
-    select: postSelect,
+    select: postSelectFor(caller.userId),
   })
   if (!post) throw new ConnectError('That post is no longer on the board.', Code.NotFound)
-  return toPostRow(post, await peopleNames([post.authorId ?? '']), caller.userId)
+  const [names, members] = await Promise.all([
+    peopleNames([post.authorId ?? '']),
+    memberCount(caller),
+  ])
+  return toPostRow(post, names, caller.userId, members)
 }
 
 async function postOrThrow(caller: Caller, postId: string) {
@@ -215,17 +235,20 @@ export async function loadFeed(limit: number): Promise<BulletinFeed> {
 
   const posts = await db.bulletinPost.findMany({
     where: { organizationId: caller.organizationId },
-    select: postSelect,
+    select: postSelectFor(caller.userId),
     orderBy: [{ pinnedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
     // One past the page tells the client whether there is anything older without a count query.
     take: take + 1,
   })
 
   const page = posts.slice(0, take)
-  const names = await peopleNames(page.map((post) => post.authorId ?? ''))
+  const [names, members] = await Promise.all([
+    peopleNames(page.map((post) => post.authorId ?? '')),
+    memberCount(caller),
+  ])
 
   return {
-    posts: page.map((post) => toPostRow(post, names, caller.userId)),
+    posts: page.map((post) => toPostRow(post, names, caller.userId, members)),
     hasMore: posts.length > take,
     viewerId: caller.userId,
     canModerate: caller.canModerate,
@@ -237,6 +260,7 @@ export async function createPost(
   body: string,
   imageIds: readonly string[] = [],
   mentionUserIds: readonly string[] = [],
+  requiresAck = false,
 ): Promise<BulletinPostRow> {
   const caller = await requireMember()
   if (!caller.canModerate) {
@@ -247,6 +271,7 @@ export async function createPost(
       body,
       imageIds: [...new Set(imageIds)],
       mentionUserIds: [...mentionUserIds],
+      requiresAck,
     }),
   )
 
@@ -266,7 +291,12 @@ export async function createPost(
 
   const post = await db.$transaction(async (tx) => {
     const created = await tx.bulletinPost.create({
-      data: { organizationId: caller.organizationId, authorId: caller.userId, body: values.body },
+      data: {
+        organizationId: caller.organizationId,
+        authorId: caller.userId,
+        body: values.body,
+        requiresAck: values.requiresAck,
+      },
       select: { id: true },
     })
     for (const [position, imageId] of values.imageIds.entries()) {
@@ -492,4 +522,81 @@ export async function saveSettings(values: BulletinSettingsRow): Promise<Bulleti
     update: settings,
     select: settingsSelect,
   })
+}
+
+export async function setPostRequiresAck(
+  postId: string,
+  required: boolean,
+): Promise<BulletinPostRow> {
+  const caller = await requireMember()
+  requireModerator(caller, 'Only an admin can ask everyone to confirm a post.')
+
+  const post = await postOrThrow(caller, postId)
+  // Turning it off keeps who already confirmed, so turning it back on loses nobody's answer.
+  await db.bulletinPost.update({ where: { id: post.id }, data: { requiresAck: required } })
+
+  return readPost(caller, post.id)
+}
+
+export async function acknowledgePost(postId: string): Promise<BulletinPostRow> {
+  const caller = await requireMember()
+  const post = await db.bulletinPost.findFirst({
+    where: { id: postId, organizationId: caller.organizationId },
+    select: { id: true, authorId: true, requiresAck: true },
+  })
+  if (!post) throw new ConnectError('That post is no longer on the board.', Code.NotFound)
+  if (!post.requiresAck) {
+    throw new ConnectError('That post no longer asks for a confirmation.', Code.FailedPrecondition)
+  }
+  if (post.authorId === caller.userId) {
+    throw new ConnectError(
+      'You wrote this post, so there is nothing to confirm.',
+      Code.FailedPrecondition,
+    )
+  }
+
+  await db.bulletinAcknowledgement.upsert({
+    where: { postId_userId: { postId: post.id, userId: caller.userId } },
+    create: { postId: post.id, userId: caller.userId },
+    update: {},
+  })
+
+  return readPost(caller, post.id)
+}
+
+/** Who has confirmed a post and who is still to, for the admin chasing it up. */
+export async function loadAcknowledgements(postId: string): Promise<AcknowledgementList> {
+  const caller = await requireMember()
+  requireModerator(caller, 'Only an admin can see who has confirmed a post.')
+  const post = await postOrThrow(caller, postId)
+
+  const [members, acknowledgements] = await Promise.all([
+    db.member.findMany({
+      where: {
+        organizationId: caller.organizationId,
+        ...(post.authorId ? { userId: { not: post.authorId } } : {}),
+      },
+      select: { user: { select: { id: true, name: true, preferredName: true } } },
+    }),
+    db.bulletinAcknowledgement.findMany({
+      where: { postId: post.id },
+      select: { userId: true, acknowledgedAt: true },
+    }),
+  ])
+
+  const confirmedAt = new Map(
+    acknowledgements.map((row) => [row.userId, row.acknowledgedAt.toISOString()]),
+  )
+  const people = members
+    .map((member) => ({
+      userId: member.user.id,
+      name: member.user.preferredName ?? member.user.name,
+      acknowledgedAt: confirmedAt.get(member.user.id),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  return {
+    confirmed: people.filter((person) => person.acknowledgedAt),
+    waiting: people.filter((person) => !person.acknowledgedAt),
+  }
 }

@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Button,
+  Checkbox,
   Divider,
   FileButton,
   Group,
@@ -52,7 +53,7 @@ export function PostComposer({ people, onPost }: PostComposerProps) {
     resolver: zodResolver(postFormSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: { body: '', imageIds: [], mentionUserIds: [] },
+    defaultValues: { body: '', imageIds: [], mentionUserIds: [], requiresAck: false },
   })
 
   const imageIds = watch('imageIds')
@@ -162,6 +163,20 @@ export function PostComposer({ people, onPost }: PostComposerProps) {
                 ))}
               </SimpleGrid>
             ) : null}
+
+            <Controller
+              control={control}
+              name="requiresAck"
+              render={({ field }) => (
+                <Checkbox
+                  label="Ask everyone to confirm they have read it"
+                  description="For policy changes and anything people must not miss."
+                  checked={field.value}
+                  onChange={(event) => field.onChange(event.currentTarget.checked)}
+                  onBlur={field.onBlur}
+                />
+              )}
+            />
 
             {errors.imageIds?.message ? (
               <Text size="sm" c="red" role="alert">

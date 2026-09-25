@@ -7,11 +7,13 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { EmptyState } from '@/components/empty-state'
 import { feedLimitFromParam } from '../utils/feed'
 import {
+  useAcknowledgePost,
   useBulletinFeed,
   useCreatePost,
   useDeletePost,
   useEditPost,
   usePinPost,
+  useRequireAck,
   useToggleReaction,
 } from '../hooks/use-bulletin-feed'
 import { BULLETIN_MAX_POSTS, BULLETIN_PAGE_SIZE, type BulletinPostRow } from '../schema'
@@ -35,6 +37,8 @@ export function BulletinBoard() {
   const pin = usePinPost()
   const react = useToggleReaction()
   const removal = useDeletePost()
+  const acknowledge = useAcknowledgePost()
+  const requireAck = useRequireAck()
   const [settingsOpen, settings] = useDisclosure(false)
   const people = useBulletinPeople()
 
@@ -70,6 +74,8 @@ export function BulletinBoard() {
         }}
         onPin={(one, next) => pin.mutate({ postId: one.id, pinned: next })}
         onDelete={(one) => void removal.remove(one.id)}
+        onAcknowledge={(one) => acknowledge.mutate({ postId: one.id })}
+        onRequireAck={(one, required) => requireAck.mutate({ postId: one.id, required })}
         focused={post.id === focusedPostId}
         thread={<PostThread postId={post.id} viewerId={viewerId} canModerate={canModerate} />}
       />

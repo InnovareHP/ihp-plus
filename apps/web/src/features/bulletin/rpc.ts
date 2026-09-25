@@ -4,12 +4,14 @@ import { ConnectError } from '@ihp/rpc'
 import type { MentionPerson } from '@/lib/mentions'
 import { browserClients } from '@/rpc/browser'
 import {
+  acknowledgementsFromProto,
   commentFromProto,
   postFromProto,
   settingsFromProto,
   settingsToProto,
 } from '@/rpc/bulletin-codec'
 import type {
+  AcknowledgementList,
   BulletinCommentRow,
   BulletinFeed,
   BulletinPostRow,
@@ -44,12 +46,14 @@ export async function createPost(
   body: string,
   imageIds: readonly string[] = [],
   mentionUserIds: readonly string[] = [],
+  requiresAck = false,
 ): Promise<BulletinPostRow> {
   const response = await call(() =>
     browserClients.bulletin.createPost({
       body,
       imageIds: [...imageIds],
       mentionUserIds: [...mentionUserIds],
+      requiresAck,
     }),
   )
   return requiredPost(response.post)
@@ -114,4 +118,24 @@ export async function updateSettings(settings: BulletinSettingsRow): Promise<Bul
 export async function listPeople(): Promise<MentionPerson[]> {
   const response = await call(() => browserClients.bulletin.listPeople({}))
   return response.people.map((person) => ({ userId: person.userId, name: person.name }))
+}
+
+export async function setPostRequiresAck(
+  postId: string,
+  required: boolean,
+): Promise<BulletinPostRow> {
+  const response = await call(() =>
+    browserClients.bulletin.setPostRequiresAck({ postId, required }),
+  )
+  return requiredPost(response.post)
+}
+
+export async function acknowledgePost(postId: string): Promise<BulletinPostRow> {
+  const response = await call(() => browserClients.bulletin.acknowledgePost({ postId }))
+  return requiredPost(response.post)
+}
+
+export async function listAcknowledgements(postId: string): Promise<AcknowledgementList> {
+  const response = await call(() => browserClients.bulletin.listAcknowledgements({ postId }))
+  return acknowledgementsFromProto(response)
 }
