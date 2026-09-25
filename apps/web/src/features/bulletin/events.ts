@@ -17,4 +17,6 @@ export const bulletinEvents = {
   commentCreateFailed: 'bulletin.comment.create_failed',
   commentDeleted: 'bulletin.comment.deleted',
   commentDeleteFailed: 'bulletin.comment.delete_failed',
+  settingsSaved: 'bulletin.settings.saved',
+  settingsSaveFailed: 'bulletin.settings.save_failed',
 } as const satisfies Record<string, EventName>

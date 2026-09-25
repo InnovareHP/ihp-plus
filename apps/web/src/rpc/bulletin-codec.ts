@@ -1,13 +1,21 @@
 import type {
   BulletinComment as BulletinCommentMessage,
   BulletinPost as BulletinPostMessage,
+  BulletinSettings as BulletinSettingsMessage,
 } from '@ihp/rpc/bulletin'
-import type { BulletinCommentRow, BulletinPostRow } from '@/features/bulletin/schema'
+import {
+  DEFAULT_BULLETIN_SETTINGS,
+  postKindOf,
+  type BulletinCommentRow,
+  type BulletinPostRow,
+  type BulletinSettingsRow,
+} from '@/features/bulletin/schema'
 
 export function postToProto(post: BulletinPostRow): BulletinPostMessage {
   return {
     $typeName: 'ihp.bulletin.v1.BulletinPost',
     id: post.id,
+    kind: post.kind,
     authorId: post.authorId,
     authorName: post.authorName,
     body: post.body,
@@ -30,6 +38,7 @@ export function postToProto(post: BulletinPostRow): BulletinPostMessage {
 export function postFromProto(post: BulletinPostMessage): BulletinPostRow {
   return {
     id: post.id,
+    kind: postKindOf(post.kind),
     authorId: post.authorId,
     authorName: post.authorName,
     body: post.body,
@@ -68,5 +77,20 @@ export function commentFromProto(comment: BulletinCommentMessage): BulletinComme
     body: comment.body,
     editedAt: comment.editedAt,
     createdAt: comment.createdAt,
+  }
+}
+
+export function settingsToProto(settings: BulletinSettingsRow): BulletinSettingsMessage {
+  return { $typeName: 'ihp.bulletin.v1.BulletinSettings', ...settings }
+}
+
+export function settingsFromProto(
+  settings: BulletinSettingsMessage | undefined,
+): BulletinSettingsRow {
+  if (!settings) return DEFAULT_BULLETIN_SETTINGS
+  return {
+    celebrateBirthdays: settings.celebrateBirthdays,
+    celebrateAnniversaries: settings.celebrateAnniversaries,
+    welcomeNewHires: settings.welcomeNewHires,
   }
 }

@@ -14,6 +14,8 @@ const rpc = vi.hoisted(() => ({
   listComments: vi.fn(),
   createComment: vi.fn(),
   deleteComment: vi.fn(),
+  getSettings: vi.fn(),
+  updateSettings: vi.fn(),
 }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn(), hide: vi.fn() }))
@@ -32,6 +34,7 @@ vi.mock('next/navigation', () => ({
 
 const PINNED: BulletinPostRow = {
   id: 'post-pinned',
+  kind: 'post',
   authorId: 'user-2',
   authorName: 'Grace Hopper',
   body: 'Open enrolment closes Friday.',
@@ -45,6 +48,7 @@ const PINNED: BulletinPostRow = {
 
 const LATEST: BulletinPostRow = {
   id: 'post-latest',
+  kind: 'post',
   authorId: 'user-2',
   authorName: 'Grace Hopper',
   body: 'Cake in the kitchen.',
@@ -315,6 +319,60 @@ describe('BulletinBoard', () => {
     await user.click(within(viewer).getByRole('button', { name: 'Next photo' }))
 
     expect(await screen.findByRole('dialog', { name: 'Photo 2 of 2' })).toBeInTheDocument()
+  })
+
+  it('marks a birthday the portal posted', async () => {
+    rpc.listPosts.mockResolvedValue(
+      feed({
+        posts: [
+          {
+            ...LATEST,
+            id: 'post-birthday',
+            kind: 'birthday',
+            authorId: '',
+            authorName: 'IHP+',
+            body: 'Happy birthday, Ada! 🎂',
+          },
+        ],
+      }),
+    )
+    render(<BulletinBoard />)
+
+    expect(await screen.findByText('Happy birthday, Ada! 🎂')).toBeInTheDocument()
+    expect(screen.getByText('Birthday')).toBeInTheDocument()
+    expect(screen.getByText('IHP+')).toBeInTheDocument()
+  })
+
+  it('lets an admin switch automatic posts off', async () => {
+    const user = userEvent.setup()
+    rpc.listPosts.mockResolvedValue(feed({ canModerate: true }))
+    rpc.getSettings.mockResolvedValue({
+      celebrateBirthdays: true,
+      celebrateAnniversaries: true,
+      welcomeNewHires: true,
+    })
+    rpc.updateSettings.mockImplementation(async (next) => next)
+    render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    await user.click(screen.getByRole('button', { name: 'Automatic posts' }))
+    await user.click(await screen.findByRole('switch', { name: /Birthdays/ }))
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    await waitFor(() =>
+      expect(rpc.updateSettings).toHaveBeenCalledWith({
+        celebrateBirthdays: false,
+        celebrateAnniversaries: true,
+        welcomeNewHires: true,
+      }),
+    )
+  })
+
+  it('offers automatic posts to admins only', async () => {
+    render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    expect(screen.queryByRole('button', { name: 'Automatic posts' })).not.toBeInTheDocument()
   })
 
   it('has no axe violations', async () => {

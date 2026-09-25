@@ -3,7 +3,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOptimisticPagesMutation } from '@/lib/optimistic'
 import { bulletinEvents } from '../events'
-import { patchPost, sortFeed, toggleReactionIn } from '../feed'
+import { patchPost, sortFeed, toggleReactionIn } from '../utils/feed'
 import { bulletinKeys } from '../query-keys'
 import {
   createPost,
@@ -40,6 +40,7 @@ export function useCreatePost() {
       // Replaced by the server row on settle; an index would collide the moment two land.
       const optimistic: BulletinPostRow = {
         id: crypto.randomUUID(),
+        kind: 'post',
         authorId: feed.viewerId,
         authorName: '',
         body,

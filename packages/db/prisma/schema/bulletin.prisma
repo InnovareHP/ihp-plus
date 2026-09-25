@@ -6,7 +6,15 @@ model BulletinPost {
   // Plain columns, not relations: a relation field would have to be added to the generated
   // User and Organization models in auth.prisma.
   organizationId String
-  authorId       String
+  // Null on a post the portal wrote itself, such as a birthday.
+  authorId       String?
+
+  // post | birthday | anniversary | welcome; anything but "post" was written by the daily job.
+  kind          String  @default("post")
+  // Who a celebration is about, so the card can name and picture them.
+  subjectUserId String?
+  // e.g. "birthday:<userId>:2026" — unique per organization, so a rerun of the job never doubles up.
+  occasionKey   String?
 
   body     String
   // Set on the first edit, so the UI can say "edited" without comparing timestamps.
@@ -23,6 +31,7 @@ model BulletinPost {
   reactions BulletinReaction[]
   images    BulletinImage[]
 
+  @@unique([organizationId, occasionKey])
   @@index([organizationId, pinnedAt, createdAt])
   @@map("bulletinPost")
   @@schema("bulletin")
@@ -82,5 +91,20 @@ model BulletinImage {
   @@index([postId, position])
   @@index([organizationId, uploadedById])
   @@map("bulletinImage")
+  @@schema("bulletin")
+}
+
+// Which automatic posts an organization wants; one row per organization, created on first read.
+model BulletinSettings {
+  organizationId String @id
+
+  celebrateBirthdays     Boolean @default(true)
+  celebrateAnniversaries Boolean @default(true)
+  welcomeNewHires        Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("bulletinSettings")
   @@schema("bulletin")
 }

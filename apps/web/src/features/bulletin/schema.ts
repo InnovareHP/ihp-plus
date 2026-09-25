@@ -19,6 +19,40 @@ export function isBulletinReaction(value: string): value is BulletinReaction {
   return (BULLETIN_REACTIONS as readonly string[]).includes(value)
 }
 
+// "post" is written by a person; the rest are written by the daily celebrations job.
+export const POST_KINDS = ['post', 'birthday', 'anniversary', 'welcome'] as const
+
+export type PostKind = (typeof POST_KINDS)[number]
+
+export type CelebrationKind = Exclude<PostKind, 'post'>
+
+export const CELEBRATION_LABELS: Record<CelebrationKind, string> = {
+  birthday: 'Birthday',
+  anniversary: 'Work anniversary',
+  welcome: 'New hire',
+}
+
+export function postKindOf(value: string): PostKind {
+  return (POST_KINDS as readonly string[]).includes(value) ? (value as PostKind) : 'post'
+}
+
+/** The name a portal-written post goes out under. */
+export const SYSTEM_AUTHOR_NAME = 'IHP+'
+
+export const bulletinSettingsSchema = z.object({
+  celebrateBirthdays: z.boolean(),
+  celebrateAnniversaries: z.boolean(),
+  welcomeNewHires: z.boolean(),
+})
+
+export type BulletinSettingsRow = z.infer<typeof bulletinSettingsSchema>
+
+export const DEFAULT_BULLETIN_SETTINGS: BulletinSettingsRow = {
+  celebrateBirthdays: true,
+  celebrateAnniversaries: true,
+  welcomeNewHires: true,
+}
+
 /** How many posts the feed loads per step of "Show older posts". */
 export const BULLETIN_PAGE_SIZE = 20
 
@@ -88,6 +122,8 @@ export interface BulletinImageRow {
 
 export interface BulletinPostRow {
   id: string
+  kind: PostKind
+  /** Empty on a post the portal wrote itself. */
   authorId: string
   authorName: string
   body: string

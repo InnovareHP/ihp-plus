@@ -26,6 +26,8 @@ message BulletinPost {
   int32 comment_count = 8;
   repeated ReactionSummary reactions = 9;
   repeated BulletinImage images = 10;
+  // post | birthday | anniversary | welcome — an open string, so a new occasion is not a contract change.
+  string kind = 11;
 }
 
 message BulletinComment {
@@ -117,6 +119,27 @@ message DeleteCommentRequest {
 
 message DeleteCommentResponse {}
 
+// Which automatic posts the organization wants.
+message BulletinSettings {
+  bool celebrate_birthdays = 1;
+  bool celebrate_anniversaries = 2;
+  bool welcome_new_hires = 3;
+}
+
+message GetSettingsRequest {}
+
+message GetSettingsResponse {
+  BulletinSettings settings = 1;
+}
+
+message UpdateSettingsRequest {
+  BulletinSettings settings = 1;
+}
+
+message UpdateSettingsResponse {
+  BulletinSettings settings = 1;
+}
+
 service BulletinService {
   rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
   rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
@@ -127,4 +150,6 @@ service BulletinService {
   rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
   rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse);
   rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse);
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
+  rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);
 }

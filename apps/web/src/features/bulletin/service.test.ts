@@ -12,6 +12,7 @@ const prisma = vi.hoisted(() => ({
   bulletinComment: { findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn(), delete: vi.fn() },
   bulletinReaction: { deleteMany: vi.fn(), upsert: vi.fn() },
   bulletinImage: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn() },
+  bulletinSettings: { findUnique: vi.fn(), upsert: vi.fn() },
   user: { findMany: vi.fn() },
   // The transaction hands the same mocks back, so a write inside it is asserted like any other.
   $transaction: vi.fn(),
@@ -36,6 +37,8 @@ const {
   deleteComment,
   deletePost,
   loadFeed,
+  loadSettings,
+  saveSettings,
   setPostPinned,
   summarizeReactions,
   toggleReaction,
@@ -44,7 +47,8 @@ const {
 
 const POST_RECORD = {
   id: 'post-1',
-  authorId: 'user-2',
+  kind: 'post',
+  authorId: 'user-2' as string | null,
   body: 'Office closed Friday.',
   pinnedAt: null,
   editedAt: null,
@@ -319,5 +323,63 @@ describe('comments', () => {
     await deleteComment('comment-1')
 
     expect(prisma.bulletinComment.delete).toHaveBeenCalledWith({ where: { id: 'comment-1' } })
+  })
+})
+
+describe('portal-written posts', () => {
+  it('go out under the portal’s name, and nobody can edit them', async () => {
+    prisma.bulletinPost.findMany.mockResolvedValue([
+      { ...POST_RECORD, kind: 'birthday', authorId: null },
+    ])
+
+    const feed = await loadFeed(20)
+
+    expect(feed.posts[0]).toMatchObject({ kind: 'birthday', authorId: '', authorName: 'IHP+' })
+
+    prisma.bulletinPost.findFirst.mockResolvedValue({ ...POST_RECORD, authorId: null })
+    signInAs('admin')
+    await expect(updatePost('post-1', 'Rewritten')).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+  })
+})
+
+describe('automatic post settings', () => {
+  it('are for admins only', async () => {
+    await expect(loadSettings()).rejects.toMatchObject({ code: Code.PermissionDenied })
+    await expect(
+      saveSettings({
+        celebrateBirthdays: false,
+        celebrateAnniversaries: true,
+        welcomeNewHires: true,
+      }),
+    ).rejects.toMatchObject({ code: Code.PermissionDenied })
+  })
+
+  it('default to everything on before an admin has chosen', async () => {
+    signInAs('admin')
+    prisma.bulletinSettings.findUnique.mockResolvedValue(null)
+
+    expect(await loadSettings()).toEqual({
+      celebrateBirthdays: true,
+      celebrateAnniversaries: true,
+      welcomeNewHires: true,
+    })
+  })
+
+  it('save per organization', async () => {
+    signInAs('admin')
+    const next = { celebrateBirthdays: false, celebrateAnniversaries: true, welcomeNewHires: true }
+    prisma.bulletinSettings.upsert.mockResolvedValue(next)
+
+    await saveSettings(next)
+
+    expect(prisma.bulletinSettings.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { organizationId: 'org-1' },
+        create: { organizationId: 'org-1', ...next },
+        update: next,
+      }),
+    )
   })
 })

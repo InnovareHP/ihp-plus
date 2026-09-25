@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { feedLimitFromParam, sortFeed, toggleReactionIn } from './feed'
-import type { BulletinPostRow } from './schema'
+import type { BulletinPostRow } from '../schema'
 
 function post(id: string, createdAt: string, pinnedAt?: string): BulletinPostRow {
   return {
     id,
+    kind: 'post',
     authorId: 'user-1',
     authorName: 'Dana',
     body: id,

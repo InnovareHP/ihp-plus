@@ -1,5 +1,5 @@
-import type { BulletinFeed, BulletinPostRow, ReactionSummaryRow } from './schema'
-import { BULLETIN_MAX_POSTS, BULLETIN_PAGE_SIZE, BULLETIN_REACTIONS } from './schema'
+import type { BulletinFeed, BulletinPostRow, ReactionSummaryRow } from '../schema'
+import { BULLETIN_MAX_POSTS, BULLETIN_PAGE_SIZE, BULLETIN_REACTIONS } from '../schema'
 
 // The server's order, repeated on the client so an optimistic pin lands where the refetch will.
 export function sortFeed(posts: readonly BulletinPostRow[]): BulletinPostRow[] {

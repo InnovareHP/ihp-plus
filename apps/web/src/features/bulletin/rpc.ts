@@ -2,8 +2,18 @@
 
 import { ConnectError } from '@ihp/rpc'
 import { browserClients } from '@/rpc/browser'
-import { commentFromProto, postFromProto } from '@/rpc/bulletin-codec'
-import type { BulletinCommentRow, BulletinFeed, BulletinPostRow } from './schema'
+import {
+  commentFromProto,
+  postFromProto,
+  settingsFromProto,
+  settingsToProto,
+} from '@/rpc/bulletin-codec'
+import type {
+  BulletinCommentRow,
+  BulletinFeed,
+  BulletinPostRow,
+  BulletinSettingsRow,
+} from './schema'
 
 // ConnectError stringifies as "[code] message"; the UI shows only the sentence.
 async function call<T>(operation: () => Promise<T>): Promise<T> {
@@ -71,4 +81,16 @@ export async function createComment(postId: string, body: string): Promise<Bulle
 
 export async function deleteComment(commentId: string): Promise<void> {
   await call(() => browserClients.bulletin.deleteComment({ commentId }))
+}
+
+export async function getSettings(): Promise<BulletinSettingsRow> {
+  const response = await call(() => browserClients.bulletin.getSettings({}))
+  return settingsFromProto(response.settings)
+}
+
+export async function updateSettings(settings: BulletinSettingsRow): Promise<BulletinSettingsRow> {
+  const response = await call(() =>
+    browserClients.bulletin.updateSettings({ settings: settingsToProto(settings) }),
+  )
+  return settingsFromProto(response.settings)
 }

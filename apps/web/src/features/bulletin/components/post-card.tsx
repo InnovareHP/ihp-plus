@@ -1,17 +1,6 @@
 'use client'
 
-import {
-  ActionIcon,
-  Avatar,
-  Badge,
-  Button,
-  Card,
-  Divider,
-  Group,
-  Menu,
-  Stack,
-  Text,
-} from '@mantine/core'
+import { ActionIcon, Badge, Button, Card, Divider, Group, Menu, Stack, Text } from '@mantine/core'
 import {
   IconDotsVertical,
   IconMessageCircle,
@@ -22,8 +11,9 @@ import {
 } from '@tabler/icons-react'
 import { useId, useState, type ReactNode } from 'react'
 import { describeMoment } from '@/lib/relative-time'
-import type { BulletinPostRow, PostEditValues } from '../schema'
+import { CELEBRATION_LABELS, type BulletinPostRow, type PostEditValues } from '../schema'
 import { ImageLightbox } from './image-lightbox'
+import { PostAuthorAvatar } from './post-author-avatar'
 import { PostEditForm } from './post-edit-form'
 import { PostImageGrid } from './post-image-grid'
 import { ReactionBar } from './reaction-bar'
@@ -86,12 +76,17 @@ export function PostCard({
       <Stack gap="md">
         <Group justify="space-between" wrap="nowrap" align="flex-start">
           <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-            <Avatar size={44} radius="xl" color="initials" name={post.authorName || name} />
+            <PostAuthorAvatar kind={post.kind} name={post.authorName || name} />
             <Stack gap={2} style={{ minWidth: 0 }}>
               <Group gap="xs" wrap="wrap">
                 <Text fw={600} lh={1.2}>
                   {name}
                 </Text>
+                {post.kind !== 'post' ? (
+                  <Badge size="sm" variant="light" color="teal" radius="sm">
+                    {CELEBRATION_LABELS[post.kind]}
+                  </Badge>
+                ) : null}
                 {pinned ? (
                   <Badge
                     size="sm"

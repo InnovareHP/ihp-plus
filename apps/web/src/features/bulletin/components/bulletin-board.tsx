@@ -1,9 +1,11 @@
 'use client'
 
 import { Alert, Button, Group, Stack, Text, Title } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
+import { IconSparkles } from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { EmptyState } from '@/components/empty-state'
-import { feedLimitFromParam } from '../feed'
+import { feedLimitFromParam } from '../utils/feed'
 import {
   useBulletinFeed,
   useCreatePost,
@@ -14,6 +16,7 @@ import {
 } from '../hooks/use-bulletin-feed'
 import { BULLETIN_MAX_POSTS, BULLETIN_PAGE_SIZE, type BulletinPostRow } from '../schema'
 import { BulletinFeedSkeleton } from './bulletin-feed-skeleton'
+import { CelebrationSettingsModal } from './celebration-settings-modal'
 import { PostCard } from './post-card'
 import { PostComposer } from './post-composer'
 import { PostThread } from './post-thread'
@@ -30,6 +33,7 @@ export function BulletinBoard() {
   const pin = usePinPost()
   const react = useToggleReaction()
   const removal = useDeletePost()
+  const [settingsOpen, settings] = useDisclosure(false)
 
   if (feed.isPending) return <BulletinFeedSkeleton />
 
@@ -77,6 +81,19 @@ export function BulletinBoard() {
 
   return (
     <Stack gap="xl" maw="44rem" w="100%" mx="auto">
+      {canModerate ? (
+        <Group justify="flex-end">
+          <Button
+            variant="subtle"
+            leftSection={<IconSparkles size={18} aria-hidden />}
+            onClick={settings.open}
+          >
+            Automatic posts
+          </Button>
+          <CelebrationSettingsModal opened={settingsOpen} onClose={settings.close} />
+        </Group>
+      ) : null}
+
       {/* Only admins post for now; everyone else joins in through reactions and replies. */}
       {canModerate ? (
         <PostComposer

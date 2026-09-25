@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ihp/bulletin/v1/bulletin.proto.
  */
 export const file_ihp_bulletin_v1_bulletin: GenFile = /*@__PURE__*/
-  fileDesc("Ch5paHAvYnVsbGV0aW4vdjEvYnVsbGV0aW4ucHJvdG8SD2locC5idWxsZXRpbi52MSJGCg9SZWFjdGlvblN1bW1hcnkSDQoFZW1vamkYASABKAkSDQoFY291bnQYAiABKAUSFQoNcmVhY3RlZF9ieV9tZRgDIAEoCCIoCg1CdWxsZXRpbkltYWdlEgoKAmlkGAEgASgJEgsKA3VybBgCIAEoCSKsAgoMQnVsbGV0aW5Qb3N0EgoKAmlkGAEgASgJEhEKCWF1dGhvcl9pZBgCIAEoCRITCgthdXRob3JfbmFtZRgDIAEoCRIMCgRib2R5GAQgASgJEhYKCXBpbm5lZF9hdBgFIAEoCUgAiAEBEhYKCWVkaXRlZF9hdBgGIAEoCUgBiAEBEhIKCmNyZWF0ZWRfYXQYByABKAkSFQoNY29tbWVudF9jb3VudBgIIAEoBRIzCglyZWFjdGlvbnMYCSADKAsyIC5paHAuYnVsbGV0aW4udjEuUmVhY3Rpb25TdW1tYXJ5Ei4KBmltYWdlcxgKIAMoCzIeLmlocC5idWxsZXRpbi52MS5CdWxsZXRpbkltYWdlQgwKCl9waW5uZWRfYXRCDAoKX2VkaXRlZF9hdCKeAQoPQnVsbGV0aW5Db21tZW50EgoKAmlkGAEgASgJEg8KB3Bvc3RfaWQYAiABKAkSEQoJYXV0aG9yX2lkGAMgASgJEhMKC2F1dGhvcl9uYW1lGAQgASgJEgwKBGJvZHkYBSABKAkSFgoJZWRpdGVkX2F0GAYgASgJSACIAQESEgoKY3JlYXRlZF9hdBgHIAEoCUIMCgpfZWRpdGVkX2F0IiEKEExpc3RQb3N0c1JlcXVlc3QSDQoFbGltaXQYASABKAUifAoRTGlzdFBvc3RzUmVzcG9uc2USLAoFcG9zdHMYASADKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0EhAKCGhhc19tb3JlGAIgASgIEhEKCXZpZXdlcl9pZBgDIAEoCRIUCgxjYW5fbW9kZXJhdGUYBCABKAgiNAoRQ3JlYXRlUG9zdFJlcXVlc3QSDAoEYm9keRgBIAEoCRIRCglpbWFnZV9pZHMYAiADKAkiQQoSQ3JlYXRlUG9zdFJlc3BvbnNlEisKBHBvc3QYASABKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0IjIKEVVwZGF0ZVBvc3RSZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkSDAoEYm9keRgCIAEoCSJBChJVcGRhdGVQb3N0UmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiJAoRRGVsZXRlUG9zdFJlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCSIUChJEZWxldGVQb3N0UmVzcG9uc2UiNwoUU2V0UG9zdFBpbm5lZFJlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCRIOCgZwaW5uZWQYAiABKAgiRAoVU2V0UG9zdFBpbm5lZFJlc3BvbnNlEisKBHBvc3QYASABKAsyHS5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Qb3N0IjcKFVRvZ2dsZVJlYWN0aW9uUmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJEg0KBWVtb2ppGAIgASgJIkUKFlRvZ2dsZVJlYWN0aW9uUmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiJgoTTGlzdENvbW1lbnRzUmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJIkoKFExpc3RDb21tZW50c1Jlc3BvbnNlEjIKCGNvbW1lbnRzGAEgAygLMiAuaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluQ29tbWVudCI1ChRDcmVhdGVDb21tZW50UmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJEgwKBGJvZHkYAiABKAkiSgoVQ3JlYXRlQ29tbWVudFJlc3BvbnNlEjEKB2NvbW1lbnQYASABKAsyIC5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Db21tZW50IioKFERlbGV0ZUNvbW1lbnRSZXF1ZXN0EhIKCmNvbW1lbnRfaWQYASABKAkiFwoVRGVsZXRlQ29tbWVudFJlc3BvbnNlMsoGCg9CdWxsZXRpblNlcnZpY2USUgoJTGlzdFBvc3RzEiEuaWhwLmJ1bGxldGluLnYxLkxpc3RQb3N0c1JlcXVlc3QaIi5paHAuYnVsbGV0aW4udjEuTGlzdFBvc3RzUmVzcG9uc2USVQoKQ3JlYXRlUG9zdBIiLmlocC5idWxsZXRpbi52MS5DcmVhdGVQb3N0UmVxdWVzdBojLmlocC5idWxsZXRpbi52MS5DcmVhdGVQb3N0UmVzcG9uc2USVQoKVXBkYXRlUG9zdBIiLmlocC5idWxsZXRpbi52MS5VcGRhdGVQb3N0UmVxdWVzdBojLmlocC5idWxsZXRpbi52MS5VcGRhdGVQb3N0UmVzcG9uc2USVQoKRGVsZXRlUG9zdBIiLmlocC5idWxsZXRpbi52MS5EZWxldGVQb3N0UmVxdWVzdBojLmlocC5idWxsZXRpbi52MS5EZWxldGVQb3N0UmVzcG9uc2USXgoNU2V0UG9zdFBpbm5lZBIlLmlocC5idWxsZXRpbi52MS5TZXRQb3N0UGlubmVkUmVxdWVzdBomLmlocC5idWxsZXRpbi52MS5TZXRQb3N0UGlubmVkUmVzcG9uc2USYQoOVG9nZ2xlUmVhY3Rpb24SJi5paHAuYnVsbGV0aW4udjEuVG9nZ2xlUmVhY3Rpb25SZXF1ZXN0GicuaWhwLmJ1bGxldGluLnYxLlRvZ2dsZVJlYWN0aW9uUmVzcG9uc2USWwoMTGlzdENvbW1lbnRzEiQuaWhwLmJ1bGxldGluLnYxLkxpc3RDb21tZW50c1JlcXVlc3QaJS5paHAuYnVsbGV0aW4udjEuTGlzdENvbW1lbnRzUmVzcG9uc2USXgoNQ3JlYXRlQ29tbWVudBIlLmlocC5idWxsZXRpbi52MS5DcmVhdGVDb21tZW50UmVxdWVzdBomLmlocC5idWxsZXRpbi52MS5DcmVhdGVDb21tZW50UmVzcG9uc2USXgoNRGVsZXRlQ29tbWVudBIlLmlocC5idWxsZXRpbi52MS5EZWxldGVDb21tZW50UmVxdWVzdBomLmlocC5idWxsZXRpbi52MS5EZWxldGVDb21tZW50UmVzcG9uc2ViBnByb3RvMw");
+  fileDesc("Ch5paHAvYnVsbGV0aW4vdjEvYnVsbGV0aW4ucHJvdG8SD2locC5idWxsZXRpbi52MSJGCg9SZWFjdGlvblN1bW1hcnkSDQoFZW1vamkYASABKAkSDQoFY291bnQYAiABKAUSFQoNcmVhY3RlZF9ieV9tZRgDIAEoCCIoCg1CdWxsZXRpbkltYWdlEgoKAmlkGAEgASgJEgsKA3VybBgCIAEoCSK6AgoMQnVsbGV0aW5Qb3N0EgoKAmlkGAEgASgJEhEKCWF1dGhvcl9pZBgCIAEoCRITCgthdXRob3JfbmFtZRgDIAEoCRIMCgRib2R5GAQgASgJEhYKCXBpbm5lZF9hdBgFIAEoCUgAiAEBEhYKCWVkaXRlZF9hdBgGIAEoCUgBiAEBEhIKCmNyZWF0ZWRfYXQYByABKAkSFQoNY29tbWVudF9jb3VudBgIIAEoBRIzCglyZWFjdGlvbnMYCSADKAsyIC5paHAuYnVsbGV0aW4udjEuUmVhY3Rpb25TdW1tYXJ5Ei4KBmltYWdlcxgKIAMoCzIeLmlocC5idWxsZXRpbi52MS5CdWxsZXRpbkltYWdlEgwKBGtpbmQYCyABKAlCDAoKX3Bpbm5lZF9hdEIMCgpfZWRpdGVkX2F0Ip4BCg9CdWxsZXRpbkNvbW1lbnQSCgoCaWQYASABKAkSDwoHcG9zdF9pZBgCIAEoCRIRCglhdXRob3JfaWQYAyABKAkSEwoLYXV0aG9yX25hbWUYBCABKAkSDAoEYm9keRgFIAEoCRIWCgllZGl0ZWRfYXQYBiABKAlIAIgBARISCgpjcmVhdGVkX2F0GAcgASgJQgwKCl9lZGl0ZWRfYXQiIQoQTGlzdFBvc3RzUmVxdWVzdBINCgVsaW1pdBgBIAEoBSJ8ChFMaXN0UG9zdHNSZXNwb25zZRIsCgVwb3N0cxgBIAMoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QSEAoIaGFzX21vcmUYAiABKAgSEQoJdmlld2VyX2lkGAMgASgJEhQKDGNhbl9tb2RlcmF0ZRgEIAEoCCI0ChFDcmVhdGVQb3N0UmVxdWVzdBIMCgRib2R5GAEgASgJEhEKCWltYWdlX2lkcxgCIAMoCSJBChJDcmVhdGVQb3N0UmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiMgoRVXBkYXRlUG9zdFJlcXVlc3QSDwoHcG9zdF9pZBgBIAEoCRIMCgRib2R5GAIgASgJIkEKElVwZGF0ZVBvc3RSZXNwb25zZRIrCgRwb3N0GAEgASgLMh0uaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluUG9zdCIkChFEZWxldGVQb3N0UmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJIhQKEkRlbGV0ZVBvc3RSZXNwb25zZSI3ChRTZXRQb3N0UGlubmVkUmVxdWVzdBIPCgdwb3N0X2lkGAEgASgJEg4KBnBpbm5lZBgCIAEoCCJEChVTZXRQb3N0UGlubmVkUmVzcG9uc2USKwoEcG9zdBgBIAEoCzIdLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblBvc3QiNwoVVG9nZ2xlUmVhY3Rpb25SZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkSDQoFZW1vamkYAiABKAkiRQoWVG9nZ2xlUmVhY3Rpb25SZXNwb25zZRIrCgRwb3N0GAEgASgLMh0uaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluUG9zdCImChNMaXN0Q29tbWVudHNSZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkiSgoUTGlzdENvbW1lbnRzUmVzcG9uc2USMgoIY29tbWVudHMYASADKAsyIC5paHAuYnVsbGV0aW4udjEuQnVsbGV0aW5Db21tZW50IjUKFENyZWF0ZUNvbW1lbnRSZXF1ZXN0Eg8KB3Bvc3RfaWQYASABKAkSDAoEYm9keRgCIAEoCSJKChVDcmVhdGVDb21tZW50UmVzcG9uc2USMQoHY29tbWVudBgBIAEoCzIgLmlocC5idWxsZXRpbi52MS5CdWxsZXRpbkNvbW1lbnQiKgoURGVsZXRlQ29tbWVudFJlcXVlc3QSEgoKY29tbWVudF9pZBgBIAEoCSIXChVEZWxldGVDb21tZW50UmVzcG9uc2UiawoQQnVsbGV0aW5TZXR0aW5ncxIbChNjZWxlYnJhdGVfYmlydGhkYXlzGAEgASgIEh8KF2NlbGVicmF0ZV9hbm5pdmVyc2FyaWVzGAIgASgIEhkKEXdlbGNvbWVfbmV3X2hpcmVzGAMgASgIIhQKEkdldFNldHRpbmdzUmVxdWVzdCJKChNHZXRTZXR0aW5nc1Jlc3BvbnNlEjMKCHNldHRpbmdzGAEgASgLMiEuaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluU2V0dGluZ3MiTAoVVXBkYXRlU2V0dGluZ3NSZXF1ZXN0EjMKCHNldHRpbmdzGAEgASgLMiEuaWhwLmJ1bGxldGluLnYxLkJ1bGxldGluU2V0dGluZ3MiTQoWVXBkYXRlU2V0dGluZ3NSZXNwb25zZRIzCghzZXR0aW5ncxgBIAEoCzIhLmlocC5idWxsZXRpbi52MS5CdWxsZXRpblNldHRpbmdzMocICg9CdWxsZXRpblNlcnZpY2USUgoJTGlzdFBvc3RzEiEuaWhwLmJ1bGxldGluLnYxLkxpc3RQb3N0c1JlcXVlc3QaIi5paHAuYnVsbGV0aW4udjEuTGlzdFBvc3RzUmVzcG9uc2USVQoKQ3JlYXRlUG9zdBIiLmlocC5idWxsZXRpbi52MS5DcmVhdGVQb3N0UmVxdWVzdBojLmlocC5idWxsZXRpbi52MS5DcmVhdGVQb3N0UmVzcG9uc2USVQoKVXBkYXRlUG9zdBIiLmlocC5idWxsZXRpbi52MS5VcGRhdGVQb3N0UmVxdWVzdBojLmlocC5idWxsZXRpbi52MS5VcGRhdGVQb3N0UmVzcG9uc2USVQoKRGVsZXRlUG9zdBIiLmlocC5idWxsZXRpbi52MS5EZWxldGVQb3N0UmVxdWVzdBojLmlocC5idWxsZXRpbi52MS5EZWxldGVQb3N0UmVzcG9uc2USXgoNU2V0UG9zdFBpbm5lZBIlLmlocC5idWxsZXRpbi52MS5TZXRQb3N0UGlubmVkUmVxdWVzdBomLmlocC5idWxsZXRpbi52MS5TZXRQb3N0UGlubmVkUmVzcG9uc2USYQoOVG9nZ2xlUmVhY3Rpb24SJi5paHAuYnVsbGV0aW4udjEuVG9nZ2xlUmVhY3Rpb25SZXF1ZXN0GicuaWhwLmJ1bGxldGluLnYxLlRvZ2dsZVJlYWN0aW9uUmVzcG9uc2USWwoMTGlzdENvbW1lbnRzEiQuaWhwLmJ1bGxldGluLnYxLkxpc3RDb21tZW50c1JlcXVlc3QaJS5paHAuYnVsbGV0aW4udjEuTGlzdENvbW1lbnRzUmVzcG9uc2USXgoNQ3JlYXRlQ29tbWVudBIlLmlocC5idWxsZXRpbi52MS5DcmVhdGVDb21tZW50UmVxdWVzdBomLmlocC5idWxsZXRpbi52MS5DcmVhdGVDb21tZW50UmVzcG9uc2USXgoNRGVsZXRlQ29tbWVudBIlLmlocC5idWxsZXRpbi52MS5EZWxldGVDb21tZW50UmVxdWVzdBomLmlocC5idWxsZXRpbi52MS5EZWxldGVDb21tZW50UmVzcG9uc2USWAoLR2V0U2V0dGluZ3MSIy5paHAuYnVsbGV0aW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0GiQuaWhwLmJ1bGxldGluLnYxLkdldFNldHRpbmdzUmVzcG9uc2USYQoOVXBkYXRlU2V0dGluZ3MSJi5paHAuYnVsbGV0aW4udjEuVXBkYXRlU2V0dGluZ3NSZXF1ZXN0GicuaWhwLmJ1bGxldGluLnYxLlVwZGF0ZVNldHRpbmdzUmVzcG9uc2ViBnByb3RvMw");
 
 /**
  * One emoji on one post, already counted: the feed never ships who reacted, only how many.
@@ -118,6 +118,13 @@ export type BulletinPost = Message<"ihp.bulletin.v1.BulletinPost"> & {
    * @generated from field: repeated ihp.bulletin.v1.BulletinImage images = 10;
    */
   images: BulletinImage[];
+
+  /**
+   * post | birthday | anniversary | welcome — an open string, so a new occasion is not a contract change.
+   *
+   * @generated from field: string kind = 11;
+   */
+  kind: string;
 };
 
 /**
@@ -519,6 +526,99 @@ export const DeleteCommentResponseSchema: GenMessage<DeleteCommentResponse> = /*
   messageDesc(file_ihp_bulletin_v1_bulletin, 21);
 
 /**
+ * Which automatic posts the organization wants.
+ *
+ * @generated from message ihp.bulletin.v1.BulletinSettings
+ */
+export type BulletinSettings = Message<"ihp.bulletin.v1.BulletinSettings"> & {
+  /**
+   * @generated from field: bool celebrate_birthdays = 1;
+   */
+  celebrateBirthdays: boolean;
+
+  /**
+   * @generated from field: bool celebrate_anniversaries = 2;
+   */
+  celebrateAnniversaries: boolean;
+
+  /**
+   * @generated from field: bool welcome_new_hires = 3;
+   */
+  welcomeNewHires: boolean;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.BulletinSettings.
+ * Use `create(BulletinSettingsSchema)` to create a new message.
+ */
+export const BulletinSettingsSchema: GenMessage<BulletinSettings> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 22);
+
+/**
+ * @generated from message ihp.bulletin.v1.GetSettingsRequest
+ */
+export type GetSettingsRequest = Message<"ihp.bulletin.v1.GetSettingsRequest"> & {
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.GetSettingsRequest.
+ * Use `create(GetSettingsRequestSchema)` to create a new message.
+ */
+export const GetSettingsRequestSchema: GenMessage<GetSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 23);
+
+/**
+ * @generated from message ihp.bulletin.v1.GetSettingsResponse
+ */
+export type GetSettingsResponse = Message<"ihp.bulletin.v1.GetSettingsResponse"> & {
+  /**
+   * @generated from field: ihp.bulletin.v1.BulletinSettings settings = 1;
+   */
+  settings?: BulletinSettings | undefined;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.GetSettingsResponse.
+ * Use `create(GetSettingsResponseSchema)` to create a new message.
+ */
+export const GetSettingsResponseSchema: GenMessage<GetSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 24);
+
+/**
+ * @generated from message ihp.bulletin.v1.UpdateSettingsRequest
+ */
+export type UpdateSettingsRequest = Message<"ihp.bulletin.v1.UpdateSettingsRequest"> & {
+  /**
+   * @generated from field: ihp.bulletin.v1.BulletinSettings settings = 1;
+   */
+  settings?: BulletinSettings | undefined;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.UpdateSettingsRequest.
+ * Use `create(UpdateSettingsRequestSchema)` to create a new message.
+ */
+export const UpdateSettingsRequestSchema: GenMessage<UpdateSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 25);
+
+/**
+ * @generated from message ihp.bulletin.v1.UpdateSettingsResponse
+ */
+export type UpdateSettingsResponse = Message<"ihp.bulletin.v1.UpdateSettingsResponse"> & {
+  /**
+   * @generated from field: ihp.bulletin.v1.BulletinSettings settings = 1;
+   */
+  settings?: BulletinSettings | undefined;
+};
+
+/**
+ * Describes the message ihp.bulletin.v1.UpdateSettingsResponse.
+ * Use `create(UpdateSettingsResponseSchema)` to create a new message.
+ */
+export const UpdateSettingsResponseSchema: GenMessage<UpdateSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_bulletin_v1_bulletin, 26);
+
+/**
  * @generated from service ihp.bulletin.v1.BulletinService
  */
 export const BulletinService: GenService<{
@@ -593,6 +693,22 @@ export const BulletinService: GenService<{
     methodKind: "unary";
     input: typeof DeleteCommentRequestSchema;
     output: typeof DeleteCommentResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.bulletin.v1.BulletinService.GetSettings
+   */
+  getSettings: {
+    methodKind: "unary";
+    input: typeof GetSettingsRequestSchema;
+    output: typeof GetSettingsResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.bulletin.v1.BulletinService.UpdateSettings
+   */
+  updateSettings: {
+    methodKind: "unary";
+    input: typeof UpdateSettingsRequestSchema;
+    output: typeof UpdateSettingsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_ihp_bulletin_v1_bulletin, 0);

@@ -9,11 +9,16 @@ import {
   BULLETIN_MAX_POSTS,
   BULLETIN_PAGE_SIZE,
   BULLETIN_REACTIONS,
+  bulletinSettingsSchema,
   commentFormSchema,
+  DEFAULT_BULLETIN_SETTINGS,
   isBulletinReaction,
   postEditSchema,
   postFormSchema,
+  postKindOf,
+  SYSTEM_AUTHOR_NAME,
   type BulletinCommentRow,
+  type BulletinSettingsRow,
   type BulletinFeed,
   type BulletinPostRow,
   type ReactionSummaryRow,
@@ -43,6 +48,7 @@ type Caller = Awaited<ReturnType<typeof requireMember>>
 
 const postSelect = {
   id: true,
+  kind: true,
   authorId: true,
   body: true,
   pinnedAt: true,
@@ -103,8 +109,11 @@ function toPostRow(
 ): BulletinPostRow {
   return {
     id: post.id,
-    authorId: post.authorId,
-    authorName: names.get(post.authorId) ?? 'Removed teammate',
+    kind: postKindOf(post.kind),
+    authorId: post.authorId ?? '',
+    authorName: post.authorId
+      ? (names.get(post.authorId) ?? 'Removed teammate')
+      : SYSTEM_AUTHOR_NAME,
     body: post.body,
     pinnedAt: post.pinnedAt?.toISOString(),
     editedAt: post.editedAt?.toISOString(),
@@ -133,7 +142,7 @@ async function readPost(caller: Caller, postId: string): Promise<BulletinPostRow
     select: postSelect,
   })
   if (!post) throw new ConnectError('That post is no longer on the board.', Code.NotFound)
-  return toPostRow(post, await peopleNames([post.authorId]), caller.userId)
+  return toPostRow(post, await peopleNames([post.authorId ?? '']), caller.userId)
 }
 
 async function postOrThrow(caller: Caller, postId: string) {
@@ -168,7 +177,7 @@ export async function loadFeed(limit: number): Promise<BulletinFeed> {
   })
 
   const page = posts.slice(0, take)
-  const names = await peopleNames(page.map((post) => post.authorId))
+  const names = await peopleNames(page.map((post) => post.authorId ?? ''))
 
   return {
     posts: page.map((post) => toPostRow(post, names, caller.userId)),
@@ -352,4 +361,38 @@ export async function deleteComment(commentId: string): Promise<void> {
   }
 
   await db.bulletinComment.delete({ where: { id: comment.id } })
+}
+
+const settingsSelect = {
+  celebrateBirthdays: true,
+  celebrateAnniversaries: true,
+  welcomeNewHires: true,
+} satisfies Prisma.BulletinSettingsSelect
+
+function requireModerator(caller: Caller, message: string) {
+  if (!caller.canModerate) throw new ConnectError(message, Code.PermissionDenied)
+}
+
+export async function loadSettings(): Promise<BulletinSettingsRow> {
+  const caller = await requireMember()
+  requireModerator(caller, 'Only an admin sets up automatic posts.')
+
+  const settings = await db.bulletinSettings.findUnique({
+    where: { organizationId: caller.organizationId },
+    select: settingsSelect,
+  })
+  return settings ?? DEFAULT_BULLETIN_SETTINGS
+}
+
+export async function saveSettings(values: BulletinSettingsRow): Promise<BulletinSettingsRow> {
+  const caller = await requireMember()
+  requireModerator(caller, 'Only an admin sets up automatic posts.')
+  const settings = parseBody(bulletinSettingsSchema.safeParse(values))
+
+  return db.bulletinSettings.upsert({
+    where: { organizationId: caller.organizationId },
+    create: { organizationId: caller.organizationId, ...settings },
+    update: settings,
+    select: settingsSelect,
+  })
 }
