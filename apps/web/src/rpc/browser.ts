@@ -1,5 +1,6 @@
 import { browserTransport, createClient } from '@ihp/rpc'
 import { AttendanceService } from '@ihp/rpc/attendance'
+import { BulletinService } from '@ihp/rpc/bulletin'
 import { ContractsService } from '@ihp/rpc/contracts'
 import { DirectoryService } from '@ihp/rpc/directory'
 import { EvaluationsService } from '@ihp/rpc/evaluations'
@@ -12,6 +13,7 @@ import { TasksService } from '@ihp/rpc/tasks'
 // into the client bundle.
 export const browserClients = {
   attendance: createClient(AttendanceService, browserTransport),
+  bulletin: createClient(BulletinService, browserTransport),
   contracts: createClient(ContractsService, browserTransport),
   directory: createClient(DirectoryService, browserTransport),
   evaluations: createClient(EvaluationsService, browserTransport),

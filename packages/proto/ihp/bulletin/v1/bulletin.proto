@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package ihp.bulletin.v1;
+
+// One emoji on one post, already counted: the feed never ships who reacted, only how many.
+message ReactionSummary {
+  string emoji = 1;
+  int32 count = 2;
+  bool reacted_by_me = 3;
+}
+
+message BulletinPost {
+  string id = 1;
+  string author_id = 2;
+  string author_name = 3;
+  string body = 4;
+  optional string pinned_at = 5;
+  optional string edited_at = 6;
+  string created_at = 7;
+  int32 comment_count = 8;
+  repeated ReactionSummary reactions = 9;
+}
+
+message BulletinComment {
+  string id = 1;
+  string post_id = 2;
+  string author_id = 3;
+  string author_name = 4;
+  string body = 5;
+  optional string edited_at = 6;
+  string created_at = 7;
+}
+
+message ListPostsRequest {
+  // Pinned posts count toward the limit; they always sort first.
+  int32 limit = 1;
+}
+
+message ListPostsResponse {
+  repeated BulletinPost posts = 1;
+  bool has_more = 2;
+  // Who is reading, so the client decides what to offer without a second session call.
+  string viewer_id = 3;
+  bool can_moderate = 4;
+}
+
+message CreatePostRequest {
+  string body = 1;
+}
+
+message CreatePostResponse {
+  BulletinPost post = 1;
+}
+
+message UpdatePostRequest {
+  string post_id = 1;
+  string body = 2;
+}
+
+message UpdatePostResponse {
+  BulletinPost post = 1;
+}
+
+message DeletePostRequest {
+  string post_id = 1;
+}
+
+message DeletePostResponse {}
+
+message SetPostPinnedRequest {
+  string post_id = 1;
+  bool pinned = 2;
+}
+
+message SetPostPinnedResponse {
+  BulletinPost post = 1;
+}
+
+message ToggleReactionRequest {
+  string post_id = 1;
+  string emoji = 2;
+}
+
+message ToggleReactionResponse {
+  BulletinPost post = 1;
+}
+
+message ListCommentsRequest {
+  string post_id = 1;
+}
+
+message ListCommentsResponse {
+  repeated BulletinComment comments = 1;
+}
+
+message CreateCommentRequest {
+  string post_id = 1;
+  string body = 2;
+}
+
+message CreateCommentResponse {
+  BulletinComment comment = 1;
+}
+
+message DeleteCommentRequest {
+  string comment_id = 1;
+}
+
+message DeleteCommentResponse {}
+
+service BulletinService {
+  rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
+  rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
+  rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResponse);
+  rpc DeletePost(DeletePostRequest) returns (DeletePostResponse);
+  rpc SetPostPinned(SetPostPinnedRequest) returns (SetPostPinnedResponse);
+  rpc ToggleReaction(ToggleReactionRequest) returns (ToggleReactionResponse);
+  rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
+  rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse);
+  rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse);
+}

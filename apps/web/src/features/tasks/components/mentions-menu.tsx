@@ -11,7 +11,7 @@ import {
   useMentions,
 } from '../hooks/use-mentions'
 import type { TaskMentionRow } from '../schema'
-import { describeMoment } from '../utils/relative-time'
+import { describeMoment } from '@/lib/relative-time'
 
 function taskHref(mention: TaskMentionRow) {
   return `${routes.tasks}?project=${mention.projectId}&task=${mention.taskId}`

@@ -10,7 +10,7 @@ import type {
   TaskAttachmentRow,
   TaskCommentRow,
 } from '../schema'
-import { describeMoment } from '../utils/relative-time'
+import { describeMoment } from '@/lib/relative-time'
 import { CommentEditForm } from './comment-edit-form'
 
 export interface CommentItemProps {

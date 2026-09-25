@@ -10,6 +10,7 @@ import {
   IconFolders,
   IconLayoutDashboard,
   IconListCheck,
+  IconSpeakerphone,
   type Icon,
 } from '@tabler/icons-react'
 import { routes } from './routes'
@@ -57,6 +58,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Dashboard',
         description: 'Your day at a glance',
         icon: IconLayoutDashboard,
+      },
+      {
+        href: routes.bulletin,
+        label: 'Bulletin board',
+        description: 'Company news, reactions and replies',
+        icon: IconSpeakerphone,
       },
       {
         href: routes.directory,

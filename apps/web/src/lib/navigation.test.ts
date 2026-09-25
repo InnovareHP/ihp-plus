@@ -39,6 +39,7 @@ describe('navigation', () => {
   it('keeps the everyday pages one click away', () => {
     expect(hrefsIn(NOBODY, 'workspace')).toEqual([
       routes.dashboard,
+      routes.bulletin,
       routes.directory,
       routes.clients,
       routes.tasks,

@@ -13,7 +13,8 @@
     "./directory": "./src/gen/ihp/directory/v1/directory_pb.ts",
     "./evaluations": "./src/gen/ihp/evaluations/v1/evaluations_pb.ts",
     "./tasks": "./src/gen/ihp/tasks/v1/tasks_pb.ts",
-    "./attendance": "./src/gen/ihp/attendance/v1/attendance_pb.ts"
+    "./attendance": "./src/gen/ihp/attendance/v1/attendance_pb.ts",
+    "./bulletin": "./src/gen/ihp/bulletin/v1/bulletin_pb.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
