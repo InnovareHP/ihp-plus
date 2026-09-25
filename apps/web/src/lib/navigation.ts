@@ -24,6 +24,8 @@ export interface NavLink {
   manageOnly?: boolean
   /** Only rendered for a department approver, or an admin, who has a queue to read. */
   approverOnly?: boolean
+  /** A live count beside the label; the shell decides what renders it. */
+  badge?: 'bulletinUnread'
 }
 
 export interface NavItem extends NavLink {
@@ -64,6 +66,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Bulletin board',
         description: 'Company news, reactions and replies',
         icon: IconSpeakerphone,
+        badge: 'bulletinUnread',
       },
       {
         href: routes.directory,

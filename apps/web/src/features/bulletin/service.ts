@@ -600,3 +600,65 @@ export async function loadAcknowledgements(postId: string): Promise<Acknowledgem
     waiting: people.filter((person) => !person.acknowledgedAt),
   }
 }
+
+// Someone who has never opened the board counts from the day they joined, not from the first post.
+async function lastSeen(caller: Caller) {
+  const [state, member] = await Promise.all([
+    db.bulletinReadState.findUnique({
+      where: {
+        organizationId_userId: { organizationId: caller.organizationId, userId: caller.userId },
+      },
+      select: { lastSeenAt: true },
+    }),
+    db.member.findFirst({
+      where: { organizationId: caller.organizationId, userId: caller.userId },
+      select: { createdAt: true },
+    }),
+  ])
+  return state?.lastSeenAt ?? member?.createdAt ?? new Date(0)
+}
+
+/** What the sidebar badge counts: new posts by others, and replies that named the caller. */
+export async function loadUnreadCount(): Promise<number> {
+  const caller = await requireMember()
+  const since = await lastSeen(caller)
+
+  const [posts, mentions] = await Promise.all([
+    db.bulletinPost.count({
+      where: {
+        organizationId: caller.organizationId,
+        createdAt: { gt: since },
+        // A null author is the portal itself, which SQL would drop from a plain "not me".
+        OR: [{ authorId: null }, { authorId: { not: caller.userId } }],
+      },
+    }),
+    db.bulletinMention.count({
+      where: {
+        organizationId: caller.organizationId,
+        userId: caller.userId,
+        commentId: { not: null },
+        createdAt: { gt: since },
+      },
+    }),
+  ])
+
+  return posts + mentions
+}
+
+/** Records a visit and hands back the one before it, which is where "new" starts on screen. */
+export async function markSeen(): Promise<string | undefined> {
+  const caller = await requireMember()
+  const key = { organizationId: caller.organizationId, userId: caller.userId }
+
+  const previous = await db.bulletinReadState.findUnique({
+    where: { organizationId_userId: key },
+    select: { lastSeenAt: true },
+  })
+  await db.bulletinReadState.upsert({
+    where: { organizationId_userId: key },
+    create: { ...key, lastSeenAt: new Date() },
+    update: { lastSeenAt: new Date() },
+  })
+
+  return previous?.lastSeenAt.toISOString()
+}

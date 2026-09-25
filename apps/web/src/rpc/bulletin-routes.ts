@@ -9,6 +9,8 @@ import {
   loadComments,
   loadAcknowledgements,
   loadFeed,
+  loadUnreadCount,
+  markSeen,
   loadPeople,
   loadSettings,
   saveSettings,
@@ -86,6 +88,10 @@ export const bulletin: ServiceImpl<typeof BulletinService> = {
 
   listAcknowledgements: async (request) =>
     acknowledgementsToProto(await loadAcknowledgements(request.postId)),
+
+  getUnreadCount: async () => ({ count: await loadUnreadCount() }),
+
+  markSeen: async () => ({ previousSeenAt: await markSeen() }),
 
   listPeople: async () => ({
     people: (await loadPeople()).map((person) => ({

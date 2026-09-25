@@ -1,11 +1,12 @@
 'use client'
 
-import { Alert, Button, Group, Stack, Text, Title } from '@mantine/core'
+import { Alert, Button, Divider, Group, Stack, Text, Title } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconSparkles } from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Fragment } from 'react'
 import { EmptyState } from '@/components/empty-state'
-import { feedLimitFromParam } from '../utils/feed'
+import { feedLimitFromParam, newSinceIndex } from '../utils/feed'
 import {
   useAcknowledgePost,
   useBulletinFeed,
@@ -18,6 +19,7 @@ import {
 } from '../hooks/use-bulletin-feed'
 import { BULLETIN_MAX_POSTS, BULLETIN_PAGE_SIZE, type BulletinPostRow } from '../schema'
 import { useBulletinPeople } from '../hooks/use-bulletin-people'
+import { useBoardVisit } from '../hooks/use-bulletin-unread'
 import { BulletinFeedSkeleton } from './bulletin-feed-skeleton'
 import { CelebrationSettingsModal } from './celebration-settings-modal'
 import { PostCard } from './post-card'
@@ -41,6 +43,7 @@ export function BulletinBoard() {
   const requireAck = useRequireAck()
   const [settingsOpen, settings] = useDisclosure(false)
   const people = useBulletinPeople()
+  const visit = useBoardVisit()
 
   if (feed.isPending) return <BulletinFeedSkeleton />
 
@@ -60,6 +63,7 @@ export function BulletinBoard() {
   const { posts, hasMore, viewerId, canModerate } = feed.data
   const pinned = posts.filter((post) => post.pinnedAt)
   const latest = posts.filter((post) => !post.pinnedAt)
+  const dividerAt = newSinceIndex(latest, visit.data || undefined)
 
   function renderPost(post: BulletinPostRow) {
     return (
@@ -150,7 +154,16 @@ export function BulletinBoard() {
             // A background refetch dims rather than blanks, per the frontend rules.
             opacity={feed.isFetching && feed.isPlaceholderData ? 0.7 : 1}
           >
-            {latest.map(renderPost)}
+            {latest.map((post, index) => (
+              <Fragment key={post.id}>
+                {index === dividerAt ? (
+                  <li>
+                    <Divider label="Earlier posts you have seen" labelPosition="center" />
+                  </li>
+                ) : null}
+                {renderPost(post)}
+              </Fragment>
+            ))}
           </Stack>
         </Stack>
       ) : null}

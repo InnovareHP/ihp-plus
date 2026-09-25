@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const prisma = vi.hoisted(() => ({
   bulletinPost: {
+    count: vi.fn(),
     findFirst: vi.fn(),
     findMany: vi.fn(),
     create: vi.fn(),
@@ -13,9 +14,10 @@ const prisma = vi.hoisted(() => ({
   bulletinReaction: { deleteMany: vi.fn(), upsert: vi.fn() },
   bulletinImage: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn() },
   bulletinSettings: { findUnique: vi.fn(), upsert: vi.fn() },
-  bulletinMention: { createMany: vi.fn() },
+  bulletinMention: { createMany: vi.fn(), count: vi.fn() },
   bulletinAcknowledgement: { upsert: vi.fn(), findMany: vi.fn() },
-  member: { findMany: vi.fn(), count: vi.fn() },
+  member: { findMany: vi.fn(), findFirst: vi.fn(), count: vi.fn() },
+  bulletinReadState: { findUnique: vi.fn(), upsert: vi.fn() },
   user: { findMany: vi.fn() },
   // The transaction hands the same mocks back, so a write inside it is asserted like any other.
   $transaction: vi.fn(),
@@ -46,6 +48,8 @@ const {
   loadFeed,
   loadPeople,
   loadSettings,
+  loadUnreadCount,
+  markSeen,
   saveSettings,
   setPostPinned,
   setPostRequiresAck,
@@ -577,5 +581,59 @@ describe('read confirmations', () => {
       ],
       waiting: [{ userId: 'user-4', name: 'Ada', acknowledgedAt: undefined }],
     })
+  })
+})
+
+describe('unread count', () => {
+  it('counts posts by others and replies that named the caller since the last visit', async () => {
+    const seen = new Date('2026-09-25T09:00:00.000Z')
+    prisma.bulletinReadState.findUnique.mockResolvedValue({ lastSeenAt: seen })
+    prisma.member.findFirst.mockResolvedValue({ createdAt: new Date('2026-01-01T00:00:00.000Z') })
+    prisma.bulletinPost.count.mockResolvedValue(3)
+    prisma.bulletinMention.count.mockResolvedValue(2)
+
+    expect(await loadUnreadCount()).toBe(5)
+    expect(prisma.bulletinPost.count).toHaveBeenCalledWith({
+      where: {
+        organizationId: 'org-1',
+        createdAt: { gt: seen },
+        OR: [{ authorId: null }, { authorId: { not: 'user-1' } }],
+      },
+    })
+    expect(prisma.bulletinMention.count).toHaveBeenCalledWith({
+      where: {
+        organizationId: 'org-1',
+        userId: 'user-1',
+        commentId: { not: null },
+        createdAt: { gt: seen },
+      },
+    })
+  })
+
+  it('counts from the day someone joined when they have never opened the board', async () => {
+    const joined = new Date('2026-09-20T00:00:00.000Z')
+    prisma.bulletinReadState.findUnique.mockResolvedValue(null)
+    prisma.member.findFirst.mockResolvedValue({ createdAt: joined })
+    prisma.bulletinPost.count.mockResolvedValue(0)
+    prisma.bulletinMention.count.mockResolvedValue(0)
+
+    await loadUnreadCount()
+
+    expect(prisma.bulletinPost.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({ createdAt: { gt: joined } }),
+    })
+  })
+
+  it('records a visit and returns the one before it', async () => {
+    prisma.bulletinReadState.findUnique.mockResolvedValue({
+      lastSeenAt: new Date('2026-09-25T09:00:00.000Z'),
+    })
+
+    expect(await markSeen()).toBe('2026-09-25T09:00:00.000Z')
+    expect(prisma.bulletinReadState.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { organizationId_userId: { organizationId: 'org-1', userId: 'user-1' } },
+      }),
+    )
   })
 })

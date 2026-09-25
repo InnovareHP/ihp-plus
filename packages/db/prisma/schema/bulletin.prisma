@@ -149,3 +149,14 @@ model BulletinAcknowledgement {
   @@map("bulletinAcknowledgement")
   @@schema("bulletin")
 }
+
+// When each person last opened the board, so the sidebar can count what arrived since.
+model BulletinReadState {
+  organizationId String
+  userId         String
+  lastSeenAt     DateTime
+
+  @@id([organizationId, userId])
+  @@map("bulletinReadState")
+  @@schema("bulletin")
+}

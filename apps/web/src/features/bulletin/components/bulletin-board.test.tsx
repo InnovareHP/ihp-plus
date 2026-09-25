@@ -16,6 +16,8 @@ const rpc = vi.hoisted(() => ({
   deleteComment: vi.fn(),
   getSettings: vi.fn(),
   listPeople: vi.fn(),
+  markSeen: vi.fn(),
+  getUnreadCount: vi.fn(),
   acknowledgePost: vi.fn(),
   setPostRequiresAck: vi.fn(),
   listAcknowledgements: vi.fn(),
@@ -101,6 +103,7 @@ beforeEach(() => {
   nav.search = ''
   rpc.listPosts.mockResolvedValue(feed())
   rpc.listComments.mockResolvedValue([])
+  rpc.markSeen.mockResolvedValue(undefined)
   rpc.listPeople.mockResolvedValue([{ userId: 'user-2', name: 'Grace Hopper' }])
 })
 
@@ -435,6 +438,32 @@ describe('BulletinBoard', () => {
 
     await waitFor(() =>
       expect(rpc.createPost).toHaveBeenCalledWith('New leave policy.', [], [], true),
+    )
+  })
+
+  it('records the visit and marks where the posts already seen begin', async () => {
+    rpc.markSeen.mockResolvedValue('2026-09-23T00:00:00.000Z')
+    rpc.listPosts.mockResolvedValue(
+      feed({
+        posts: [
+          LATEST,
+          {
+            ...LATEST,
+            id: 'post-old',
+            body: 'Last week’s news.',
+            createdAt: '2026-09-20T09:00:00.000Z',
+          },
+        ],
+      }),
+    )
+    render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    expect(rpc.markSeen).toHaveBeenCalledTimes(1)
+    const items = within(section('Latest')).getAllByRole('listitem')
+    const line = await within(section('Latest')).findByText('Earlier posts you have seen')
+    expect(items.findIndex((item) => item.contains(line))).toBeGreaterThan(
+      items.findIndex((item) => item.textContent?.includes(LATEST.body)),
     )
   })
 

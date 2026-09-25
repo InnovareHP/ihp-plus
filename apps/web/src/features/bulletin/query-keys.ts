@@ -4,6 +4,8 @@ export const bulletinKeys = {
   feed: (limit: number) => [...bulletinKeys.feeds(), limit] as const,
   comments: (postId: string) => [...bulletinKeys.all, 'comments', postId] as const,
   acknowledgements: (postId: string) => [...bulletinKeys.all, 'acknowledgements', postId] as const,
+  unread: () => [...bulletinKeys.all, 'unread'] as const,
+  visit: () => [...bulletinKeys.all, 'visit'] as const,
   people: () => [...bulletinKeys.all, 'people'] as const,
   settings: () => [...bulletinKeys.all, 'settings'] as const,
 }

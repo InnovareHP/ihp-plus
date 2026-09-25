@@ -195,6 +195,20 @@ message ListAcknowledgementsResponse {
   repeated AcknowledgementPerson waiting = 2;
 }
 
+message GetUnreadCountRequest {}
+
+message GetUnreadCountResponse {
+  // Posts since the last visit plus replies that mentioned the caller since then.
+  int32 count = 1;
+}
+
+message MarkSeenRequest {}
+
+message MarkSeenResponse {
+  // When the caller last opened the board before now; unset on a first visit.
+  optional string previous_seen_at = 1;
+}
+
 service BulletinService {
   rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
   rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
@@ -208,6 +222,8 @@ service BulletinService {
   rpc SetPostRequiresAck(SetPostRequiresAckRequest) returns (SetPostRequiresAckResponse);
   rpc AcknowledgePost(AcknowledgePostRequest) returns (AcknowledgePostResponse);
   rpc ListAcknowledgements(ListAcknowledgementsRequest) returns (ListAcknowledgementsResponse);
+  rpc GetUnreadCount(GetUnreadCountRequest) returns (GetUnreadCountResponse);
+  rpc MarkSeen(MarkSeenRequest) returns (MarkSeenResponse);
   rpc ListPeople(ListPeopleRequest) returns (ListPeopleResponse);
   rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
   rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);

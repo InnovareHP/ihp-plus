@@ -40,6 +40,19 @@ export function toggleReactionIn(
   return merged.sort((a, b) => order.indexOf(a.emoji) - order.indexOf(b.emoji))
 }
 
+/**
+ * Where "new since your last visit" goes in a newest-first list: before the first post the
+ * viewer could already have seen. Undefined when every post is new or none is.
+ */
+export function newSinceIndex(
+  posts: readonly { createdAt: string }[],
+  seenBefore: string | undefined,
+): number | undefined {
+  if (!seenBefore) return undefined
+  const index = posts.findIndex((post) => post.createdAt <= seenBefore)
+  return index > 0 ? index : undefined
+}
+
 // ?show= is hand-editable, so anything odd falls back to one page and nothing exceeds the cap.
 export function feedLimitFromParam(value: string | null): number {
   const parsed = Number.parseInt(value ?? '', 10)

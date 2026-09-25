@@ -139,3 +139,13 @@ export async function listAcknowledgements(postId: string): Promise<Acknowledgem
   const response = await call(() => browserClients.bulletin.listAcknowledgements({ postId }))
   return acknowledgementsFromProto(response)
 }
+
+export async function getUnreadCount(): Promise<number> {
+  const response = await call(() => browserClients.bulletin.getUnreadCount({}))
+  return response.count
+}
+
+export async function markSeen(): Promise<string | undefined> {
+  const response = await call(() => browserClients.bulletin.markSeen({}))
+  return response.previousSeenAt
+}

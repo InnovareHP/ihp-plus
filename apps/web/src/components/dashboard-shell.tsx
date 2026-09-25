@@ -21,6 +21,7 @@ import type { ReactNode } from 'react'
 import { RunningClockChip } from '@/features/attendance/components/running-clock-chip'
 import { useStopImpersonating } from '@/features/auth/hooks/use-impersonation'
 import { useSignOut } from '@/features/auth/hooks/use-sign-out'
+import { BulletinUnreadBadge } from '@/features/bulletin/components/bulletin-unread-badge'
 import { MentionsMenu } from '@/features/tasks/components/mentions-menu'
 import {
   RunningTimerButton,
@@ -177,6 +178,7 @@ export function DashboardShell({
                       label={item.label}
                       description={item.description}
                       icon={item.icon}
+                      badge={item.badge === 'bulletinUnread' ? <BulletinUnreadBadge /> : undefined}
                       active={isNavItemActive(pathname, item.href)}
                       onNavigate={closeNav}
                     />

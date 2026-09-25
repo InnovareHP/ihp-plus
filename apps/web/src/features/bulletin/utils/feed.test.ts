@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { feedLimitFromParam, sortFeed, toggleReactionIn } from './feed'
+import { feedLimitFromParam, newSinceIndex, sortFeed, toggleReactionIn } from './feed'
 import type { BulletinPostRow } from '../schema'
 
 function post(id: string, createdAt: string, pinnedAt?: string): BulletinPostRow {
@@ -61,5 +61,23 @@ describe('feedLimitFromParam', () => {
     expect(feedLimitFromParam('5')).toBe(20)
     expect(feedLimitFromParam('40')).toBe(40)
     expect(feedLimitFromParam('99999')).toBe(200)
+  })
+})
+
+describe('newSinceIndex', () => {
+  const posts = [
+    { createdAt: '2026-09-26T10:00:00Z' },
+    { createdAt: '2026-09-26T08:00:00Z' },
+    { createdAt: '2026-09-24T08:00:00Z' },
+  ]
+
+  it('draws the line before the first post already seen', () => {
+    expect(newSinceIndex(posts, '2026-09-25T00:00:00Z')).toBe(2)
+  })
+
+  it('draws nothing on a first visit, when all is new, or when nothing is', () => {
+    expect(newSinceIndex(posts, undefined)).toBeUndefined()
+    expect(newSinceIndex(posts, '2026-01-01T00:00:00Z')).toBeUndefined()
+    expect(newSinceIndex(posts, '2026-09-27T00:00:00Z')).toBeUndefined()
   })
 })
