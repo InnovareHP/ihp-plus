@@ -73,6 +73,11 @@ export function safeNextRoute(value: string | null, fallback: string = routes.da
 
 // Static segments rather than a bare /requests/[id]: the queue and the builder sit under the
 // same prefix, and a literal segment keeps them from ever colliding with an id.
+/** One post on the board, with its replies open: what a mention email links to. */
+export function bulletinPostRoute(postId: string) {
+  return `${routes.bulletin}?post=${encodeURIComponent(postId)}`
+}
+
 export function newRequestRoute(formId: string) {
   return `${routes.requests}/new/${formId}`
 }

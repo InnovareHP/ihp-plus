@@ -3,8 +3,10 @@ import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import type { z } from 'zod'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
+import { MENTION_EVERYONE, mentionsEveryone, type MentionPerson } from '@/lib/mentions'
 import { deleteObject } from '@/lib/s3'
 import { bulletinImageUrl } from './image-url'
+import { notifyMentions } from './notifications'
 import {
   BULLETIN_MAX_POSTS,
   BULLETIN_PAGE_SIZE,
@@ -38,6 +40,7 @@ async function requireMember() {
 
   return {
     userId: session.user.id,
+    name: profile.preferredName ?? session.user.name,
     organizationId: membership.organizationId,
     // Admins pin, and take down what should not be on the board.
     canModerate: canManageOrganization(membership),
@@ -164,6 +167,48 @@ function parseBody<T>(result: z.ZodSafeParseResult<T>) {
   return result.data
 }
 
+// The composer's ids are checked against the organization rather than trusted: a mention emails
+// someone. "@everyone" is expanded here, and only where the caller may address the whole company.
+async function mentionableIds(
+  caller: Caller,
+  userIds: readonly string[],
+  body: string,
+  allowEveryone: boolean,
+) {
+  const everyone = allowEveryone && mentionsEveryone(body, userIds)
+  const wanted = [...new Set(userIds)].filter(
+    (id) => id !== caller.userId && id !== MENTION_EVERYONE,
+  )
+  if (!everyone && wanted.length === 0) return []
+
+  const members = await db.member.findMany({
+    where: {
+      organizationId: caller.organizationId,
+      ...(everyone ? {} : { userId: { in: wanted } }),
+    },
+    select: { userId: true },
+  })
+
+  return members.map((member) => member.userId).filter((userId) => userId !== caller.userId)
+}
+
+/** Everyone a composer can offer after "@": names only, since every member sees this list. */
+export async function loadPeople(): Promise<MentionPerson[]> {
+  const caller = await requireMember()
+
+  const members = await db.member.findMany({
+    where: { organizationId: caller.organizationId, userId: { not: caller.userId } },
+    select: { user: { select: { id: true, name: true, preferredName: true } } },
+  })
+
+  return members
+    .map((member) => ({
+      userId: member.user.id,
+      name: member.user.preferredName ?? member.user.name,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
 export async function loadFeed(limit: number): Promise<BulletinFeed> {
   const caller = await requireMember()
   const take = Math.min(Math.max(limit || BULLETIN_PAGE_SIZE, 1), BULLETIN_MAX_POSTS)
@@ -191,12 +236,19 @@ export async function loadFeed(limit: number): Promise<BulletinFeed> {
 export async function createPost(
   body: string,
   imageIds: readonly string[] = [],
+  mentionUserIds: readonly string[] = [],
 ): Promise<BulletinPostRow> {
   const caller = await requireMember()
   if (!caller.canModerate) {
     throw new ConnectError('Only an admin can post to the board.', Code.PermissionDenied)
   }
-  const values = parseBody(postFormSchema.safeParse({ body, imageIds: [...new Set(imageIds)] }))
+  const values = parseBody(
+    postFormSchema.safeParse({
+      body,
+      imageIds: [...new Set(imageIds)],
+      mentionUserIds: [...mentionUserIds],
+    }),
+  )
 
   // Only the caller's own photos that no post has claimed yet can go on this one.
   const images = await db.bulletinImage.findMany({
@@ -226,7 +278,35 @@ export async function createPost(
     return created
   })
 
+  // Posting is admin-only, so a post is allowed to reach everyone at once.
+  const mentioned = await mentionableIds(caller, values.mentionUserIds, values.body, true)
+  await recordMentions(caller, post.id, undefined, mentioned)
+  await notifyMentions({
+    postId: post.id,
+    authorName: caller.name,
+    inReply: false,
+    body: values.body,
+    userIds: mentioned,
+  })
+
   return readPost(caller, post.id)
+}
+
+async function recordMentions(
+  caller: Caller,
+  postId: string,
+  commentId: string | undefined,
+  userIds: readonly string[],
+) {
+  if (userIds.length === 0) return
+  await db.bulletinMention.createMany({
+    data: userIds.map((userId) => ({
+      organizationId: caller.organizationId,
+      postId,
+      commentId: commentId ?? null,
+      userId,
+    })),
+  })
 }
 
 /** The storage key behind a photo, for anyone in its organization; an unclaimed one is its uploader's. */
@@ -330,9 +410,15 @@ export async function loadComments(postId: string): Promise<BulletinCommentRow[]
   return comments.map((comment) => toCommentRow(comment, names))
 }
 
-export async function createComment(postId: string, body: string): Promise<BulletinCommentRow> {
+export async function createComment(
+  postId: string,
+  body: string,
+  mentionUserIds: readonly string[] = [],
+): Promise<BulletinCommentRow> {
   const caller = await requireMember()
-  const values = parseBody(commentFormSchema.safeParse({ body }))
+  const values = parseBody(
+    commentFormSchema.safeParse({ body, mentionUserIds: [...mentionUserIds] }),
+  )
   const post = await postOrThrow(caller, postId)
 
   const comment = await db.bulletinComment.create({
@@ -343,6 +429,17 @@ export async function createComment(postId: string, body: string): Promise<Bulle
       body: values.body,
     },
     select: commentSelect,
+  })
+
+  // Any member replies, so a reply names people one by one and never the whole company.
+  const mentioned = await mentionableIds(caller, values.mentionUserIds, values.body, false)
+  await recordMentions(caller, post.id, comment.id, mentioned)
+  await notifyMentions({
+    postId: post.id,
+    authorName: caller.name,
+    inReply: true,
+    body: values.body,
+    userIds: mentioned,
   })
 
   return toCommentRow(comment, await peopleNames([comment.authorId]))

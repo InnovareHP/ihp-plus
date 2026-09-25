@@ -15,6 +15,7 @@ const rpc = vi.hoisted(() => ({
   createComment: vi.fn(),
   deleteComment: vi.fn(),
   getSettings: vi.fn(),
+  listPeople: vi.fn(),
   updateSettings: vi.fn(),
 }))
 
@@ -89,6 +90,7 @@ beforeEach(() => {
   nav.search = ''
   rpc.listPosts.mockResolvedValue(feed())
   rpc.listComments.mockResolvedValue([])
+  rpc.listPeople.mockResolvedValue([{ userId: 'user-2', name: 'Grace Hopper' }])
 })
 
 describe('BulletinBoard', () => {
@@ -152,7 +154,7 @@ describe('BulletinBoard', () => {
     await user.click(screen.getByRole('button', { name: 'Post' }))
 
     expect(await within(section('Latest')).findByText('Welcome, Ada!')).toBeInTheDocument()
-    expect(rpc.createPost).toHaveBeenCalledWith('Welcome, Ada!', [])
+    expect(rpc.createPost).toHaveBeenCalledWith('Welcome, Ada!', [], [])
 
     pending.resolve({ ...LATEST, id: 'post-new', body: 'Welcome, Ada!' })
   })
@@ -249,8 +251,8 @@ describe('BulletinBoard', () => {
     await user.type(screen.getByLabelText('Write a reply'), 'On my way.')
     await user.click(screen.getByRole('button', { name: 'Send reply' }))
 
-    expect(await screen.findByText('On my way.')).toBeInTheDocument()
-    await waitFor(() => expect(rpc.createComment).toHaveBeenCalledWith(LATEST.id, 'On my way.'))
+    expect(await screen.findByText('On my way.', { selector: 'p' })).toBeInTheDocument()
+    await waitFor(() => expect(rpc.createComment).toHaveBeenCalledWith(LATEST.id, 'On my way.', []))
   })
 
   it('uploads a photo, previews it, and posts it with the words', async () => {
@@ -274,7 +276,7 @@ describe('BulletinBoard', () => {
     await user.type(screen.getByLabelText(/Share an update/), 'Team day!')
     await user.click(screen.getByRole('button', { name: 'Post' }))
 
-    await waitFor(() => expect(rpc.createPost).toHaveBeenCalledWith('Team day!', ['img-1']))
+    await waitFor(() => expect(rpc.createPost).toHaveBeenCalledWith('Team day!', ['img-1'], []))
     expect(
       await screen.findByRole('img', { name: "Photo 1 of 1 from You's post" }),
     ).toBeInTheDocument()
@@ -319,6 +321,43 @@ describe('BulletinBoard', () => {
     await user.click(within(viewer).getByRole('button', { name: 'Next photo' }))
 
     expect(await screen.findByRole('dialog', { name: 'Photo 2 of 2' })).toBeInTheDocument()
+  })
+
+  it('sends a reply that mentions someone picked from the list', async () => {
+    const user = userEvent.setup()
+    rpc.createComment.mockReturnValue(new Promise(() => {}))
+    render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    await user.click(within(section('Latest')).getByRole('button', { name: '2 replies' }))
+    const box = await screen.findByLabelText('Write a reply')
+    await user.type(box, 'Thanks @Gra')
+    await user.click(await screen.findByRole('option', { name: 'Grace Hopper' }))
+    await user.click(screen.getByRole('button', { name: 'Send reply' }))
+
+    await waitFor(() =>
+      expect(rpc.createComment).toHaveBeenCalledWith(
+        LATEST.id,
+        expect.stringContaining('@Grace Hopper'),
+        ['user-2'],
+      ),
+    )
+  })
+
+  it('opens the post a mention email linked to', async () => {
+    // jsdom lays nothing out, so it has no scrollIntoView to call.
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+    nav.search = `post=${LATEST.id}`
+    render(<BulletinBoard />)
+    await screen.findByText(LATEST.body)
+
+    expect(within(section('Latest')).getByRole('button', { name: 'Hide replies' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    expect(scroll).toHaveBeenCalled()
+    await waitFor(() => expect(rpc.listComments).toHaveBeenCalledWith(LATEST.id))
   })
 
   it('marks a birthday the portal posted', async () => {

@@ -6,7 +6,7 @@ import { loadActivity, recordActivity } from '@/lib/activity'
 import { deleteObject, isObjectStorageConfigured, objectUrl } from '@/lib/s3'
 import { taskAttachmentUrl } from '@/lib/routes'
 import { notifyComment } from './notifications'
-import { mentionsEveryone } from './utils/mentions'
+import { mentionsEveryone } from '@/lib/mentions'
 import {
   commentFormSchema,
   DEFAULT_TASK_LIST_NAME,

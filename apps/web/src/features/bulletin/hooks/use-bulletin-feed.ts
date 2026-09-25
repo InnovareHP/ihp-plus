@@ -14,7 +14,7 @@ import {
   updatePost,
 } from '../rpc'
 import { bulletinImageUrl } from '../image-url'
-import type { BulletinFeed, BulletinPostRow } from '../schema'
+import type { BulletinFeed, BulletinPostRow, PostFormValues } from '../schema'
 import { useUndoableDelete } from './use-undoable-delete'
 
 // People talk on the board, so new posts arrive without a reload, just not every second.
@@ -31,10 +31,10 @@ export function useBulletinFeed(limit: number) {
 }
 
 export function useCreatePost() {
-  return useOptimisticPagesMutation<BulletinFeed, { body: string; imageIds: string[] }>({
+  return useOptimisticPagesMutation<BulletinFeed, PostFormValues>({
     queryKey: bulletinKeys.feeds(),
-    mutationFn: async ({ body, imageIds }) => {
-      await createPost(body, imageIds)
+    mutationFn: async ({ body, imageIds, mentionUserIds }) => {
+      await createPost(body, imageIds, mentionUserIds)
     },
     apply: (feed, { body, imageIds }) => {
       // Replaced by the server row on settle; an index would collide the moment two land.

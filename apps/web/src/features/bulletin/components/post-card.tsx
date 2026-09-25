@@ -9,7 +9,7 @@ import {
   IconPinnedOff,
   IconTrash,
 } from '@tabler/icons-react'
-import { useId, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { describeMoment } from '@/lib/relative-time'
 import { CELEBRATION_LABELS, type BulletinPostRow, type PostEditValues } from '../schema'
 import { ImageLightbox } from './image-lightbox'
@@ -28,6 +28,8 @@ export interface PostCardProps {
   onDelete: (post: BulletinPostRow) => void
   /** Mounted only while the replies are open, so a closed thread fetches nothing. */
   thread: ReactNode
+  /** The post a link pointed at: it opens its replies and scrolls into view. */
+  focused?: boolean
 }
 
 function repliesLabel(count: number) {
@@ -44,9 +46,11 @@ export function PostCard({
   onPin,
   onDelete,
   thread,
+  focused = false,
 }: PostCardProps) {
   const [editing, setEditing] = useState(false)
-  const [repliesOpen, setRepliesOpen] = useState(false)
+  const [repliesOpen, setRepliesOpen] = useState(focused)
+  const cardRef = useRef<HTMLLIElement>(null)
   const [photo, setPhoto] = useState<number | undefined>(undefined)
   const threadId = useId()
 
@@ -59,8 +63,14 @@ export function PostCard({
   const canPin = canModerate && settled
   const pinned = Boolean(post.pinnedAt)
 
+  // Scrolling is an imperative browser API, and the card exists only once React has committed it.
+  useEffect(() => {
+    if (focused) cardRef.current?.scrollIntoView({ block: 'start' })
+  }, [focused])
+
   return (
     <Card
+      ref={cardRef}
       component="li"
       withBorder
       radius="lg"
@@ -71,6 +81,8 @@ export function PostCard({
       style={{
         borderColor: pinned ? 'var(--mantine-primary-color-light-hover)' : undefined,
         borderTop: pinned ? '3px solid var(--mantine-primary-color-filled)' : undefined,
+        outline: focused ? '2px solid var(--mantine-primary-color-filled)' : undefined,
+        outlineOffset: 2,
       }}
     >
       <Stack gap="md">

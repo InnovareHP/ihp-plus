@@ -30,6 +30,7 @@ model BulletinPost {
   comments  BulletinComment[]
   reactions BulletinReaction[]
   images    BulletinImage[]
+  mentions  BulletinMention[]
 
   @@unique([organizationId, occasionKey])
   @@index([organizationId, pinnedAt, createdAt])
@@ -50,6 +51,8 @@ model BulletinComment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  mentions BulletinMention[]
 
   @@index([postId, createdAt])
   @@map("bulletinComment")
@@ -106,5 +109,25 @@ model BulletinSettings {
   updatedAt DateTime @updatedAt
 
   @@map("bulletinSettings")
+  @@schema("bulletin")
+}
+
+// Who a post or reply called on by name. Its own table because the unread badge is a query by
+// person; commentId is null when the mention is in the post itself.
+model BulletinMention {
+  id             String           @id @default(uuid())
+  organizationId String
+  postId         String
+  post           BulletinPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId      String?
+  comment        BulletinComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId         String
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([postId])
+  @@index([commentId])
+  @@map("bulletinMention")
   @@schema("bulletin")
 }

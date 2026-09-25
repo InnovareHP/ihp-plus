@@ -250,6 +250,26 @@ export function taskMentionTemplate(options: {
   }
 }
 
+export function bulletinMentionTemplate(options: {
+  authorName: string
+  /** True when the mention sits in a reply rather than in the post itself. */
+  inReply: boolean
+  excerpt: string
+  url: string
+}): PreparedEmail {
+  const where = options.inReply ? 'a reply on the bulletin board' : 'a bulletin board post'
+
+  return {
+    subject: `${options.authorName} mentioned you on the bulletin board`,
+    ...renderEmail({
+      preheader: `${options.authorName} mentioned you in ${where}.`,
+      heading: `${options.authorName} mentioned you`,
+      body: [`In ${where}:`, options.excerpt],
+      action: { label: 'Open the post', url: options.url },
+    }),
+  }
+}
+
 export function taskCommentTemplate(options: {
   authorName: string
   taskNumber: number

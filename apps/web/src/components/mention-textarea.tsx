@@ -2,13 +2,13 @@
 
 import { Combobox, ScrollArea, Text, Textarea, useCombobox } from '@mantine/core'
 import { useRef, useState, type KeyboardEvent } from 'react'
-import { MENTION_EVERYONE, MENTION_EVERYONE_LABEL, type TaskAssigneeRef } from '../schema'
+import { MENTION_EVERYONE, MENTION_EVERYONE_LABEL, type MentionPerson } from '@/lib/mentions'
 import {
   insertMention,
   matchesMention,
   mentionQueryAt,
   type MentionQuery,
-} from '../utils/mention-query'
+} from '@/lib/mention-query'
 
 export interface MentionTextareaProps {
   value: string
@@ -16,7 +16,9 @@ export interface MentionTextareaProps {
   onBlur?: () => void
   /** Called with the id behind the name that was picked, so the post carries who it meant. */
   onMention: (userId: string) => void
-  colleagues: readonly TaskAssigneeRef[]
+  colleagues: readonly MentionPerson[]
+  /** Off where one reply must not be able to email the whole company. */
+  allowEveryone?: boolean
   label: string
   description?: string
   placeholder?: string
@@ -42,13 +44,16 @@ export function MentionTextarea({
   minRows = 3,
   maxRows = 10,
   onKeyDown,
+  allowEveryone = true,
 }: MentionTextareaProps) {
   const ref = useRef<HTMLTextAreaElement | null>(null)
   const [query, setQuery] = useState<MentionQuery | undefined>(undefined)
   const combobox = useCombobox({ onDropdownClose: () => combobox.resetSelectedOption() })
 
   const people = [
-    { userId: MENTION_EVERYONE, name: MENTION_EVERYONE_LABEL, mentionAs: 'everyone' },
+    ...(allowEveryone
+      ? [{ userId: MENTION_EVERYONE, name: MENTION_EVERYONE_LABEL, mentionAs: 'everyone' }]
+      : []),
     ...colleagues.map((one) => ({ userId: one.userId, name: one.name, mentionAs: one.name })),
   ]
 

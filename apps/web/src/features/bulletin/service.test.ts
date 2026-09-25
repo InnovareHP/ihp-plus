@@ -13,6 +13,8 @@ const prisma = vi.hoisted(() => ({
   bulletinReaction: { deleteMany: vi.fn(), upsert: vi.fn() },
   bulletinImage: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn() },
   bulletinSettings: { findUnique: vi.fn(), upsert: vi.fn() },
+  bulletinMention: { createMany: vi.fn() },
+  member: { findMany: vi.fn() },
   user: { findMany: vi.fn() },
   // The transaction hands the same mocks back, so a write inside it is asserted like any other.
   $transaction: vi.fn(),
@@ -21,9 +23,11 @@ const prisma = vi.hoisted(() => ({
 const storage = vi.hoisted(() => ({ deleteObject: vi.fn() }))
 
 const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
+const notices = vi.hoisted(() => ({ notifyMentions: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/s3', () => storage)
+vi.mock('./notifications', () => notices)
 // membershipOf is pure, so the real one is kept: how a membership resolves has one definition.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/auth-guard')>()),
@@ -37,6 +41,7 @@ const {
   deleteComment,
   deletePost,
   loadFeed,
+  loadPeople,
   loadSettings,
   saveSettings,
   setPostPinned,
@@ -380,6 +385,100 @@ describe('automatic post settings', () => {
         create: { organizationId: 'org-1', ...next },
         update: next,
       }),
+    )
+  })
+})
+
+describe('mentions', () => {
+  it('records and emails only colleagues from the caller’s own organization', async () => {
+    signInAs('admin')
+    prisma.bulletinPost.create.mockResolvedValue({ id: 'post-1' })
+    prisma.member.findMany.mockResolvedValue([{ userId: 'user-2' }])
+
+    await createPost('Thanks @Grace', [], ['user-2', 'user-from-elsewhere', 'user-1'])
+
+    expect(prisma.member.findMany).toHaveBeenCalledWith({
+      where: { organizationId: 'org-1', userId: { in: ['user-2', 'user-from-elsewhere'] } },
+      select: { userId: true },
+    })
+    expect(prisma.bulletinMention.createMany).toHaveBeenCalledWith({
+      data: [{ organizationId: 'org-1', postId: 'post-1', commentId: null, userId: 'user-2' }],
+    })
+    expect(notices.notifyMentions).toHaveBeenCalledWith(
+      expect.objectContaining({ postId: 'post-1', inReply: false, userIds: ['user-2'] }),
+    )
+  })
+
+  it('lets an admin post reach @everyone, minus themselves', async () => {
+    signInAs('admin')
+    prisma.bulletinPost.create.mockResolvedValue({ id: 'post-1' })
+    prisma.member.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }])
+
+    await createPost('Heads up @everyone', [], ['everyone'])
+
+    expect(prisma.member.findMany).toHaveBeenCalledWith({
+      where: { organizationId: 'org-1' },
+      select: { userId: true },
+    })
+    expect(notices.notifyMentions).toHaveBeenCalledWith(
+      expect.objectContaining({ userIds: ['user-2'] }),
+    )
+  })
+
+  it('never lets a reply email the whole company', async () => {
+    prisma.bulletinComment.create.mockResolvedValue({
+      id: 'comment-1',
+      postId: 'post-1',
+      authorId: 'user-1',
+      body: 'Hi @everyone',
+      editedAt: null,
+      createdAt: new Date('2026-09-26T00:00:00.000Z'),
+    })
+
+    await createComment('post-1', 'Hi @everyone', ['everyone'])
+
+    expect(prisma.member.findMany).not.toHaveBeenCalled()
+    expect(prisma.bulletinMention.createMany).not.toHaveBeenCalled()
+    expect(notices.notifyMentions).not.toHaveBeenCalledWith(
+      expect.objectContaining({ userIds: expect.arrayContaining(['user-2']) }),
+    )
+  })
+
+  it('records a mention in a reply against that reply', async () => {
+    prisma.member.findMany.mockResolvedValue([{ userId: 'user-2' }])
+    prisma.bulletinComment.create.mockResolvedValue({
+      id: 'comment-1',
+      postId: 'post-1',
+      authorId: 'user-1',
+      body: '@Grace can you bring it?',
+      editedAt: null,
+      createdAt: new Date('2026-09-26T00:00:00.000Z'),
+    })
+
+    await createComment('post-1', '@Grace can you bring it?', ['user-2'])
+
+    expect(prisma.bulletinMention.createMany).toHaveBeenCalledWith({
+      data: [
+        { organizationId: 'org-1', postId: 'post-1', commentId: 'comment-1', userId: 'user-2' },
+      ],
+    })
+    expect(notices.notifyMentions).toHaveBeenCalledWith(
+      expect.objectContaining({ inReply: true, userIds: ['user-2'] }),
+    )
+  })
+
+  it('offers everyone else in the organization by name, alphabetically', async () => {
+    prisma.member.findMany.mockResolvedValue([
+      { user: { id: 'user-3', name: 'Zoe Park', preferredName: null } },
+      { user: { id: 'user-2', name: 'Grace Hopper', preferredName: 'Grace' } },
+    ])
+
+    expect(await loadPeople()).toEqual([
+      { userId: 'user-2', name: 'Grace' },
+      { userId: 'user-3', name: 'Zoe Park' },
+    ])
+    expect(prisma.member.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { organizationId: 'org-1', userId: { not: 'user-1' } } }),
     )
   })
 })

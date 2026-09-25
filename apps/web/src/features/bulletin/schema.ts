@@ -85,12 +85,16 @@ export const postEditSchema = z.object({
 
 export type PostEditValues = z.infer<typeof postEditSchema>
 
+// Ids behind the @names picked in a composer; the server re-checks every one before emailing.
+const mentionIds = z.array(z.string().min(1)).max(50, 'Mention up to 50 people at a time.')
+
 export const postFormSchema = z
   .object({
     body: postBody,
     imageIds: z
       .array(z.string().min(1))
       .max(MAX_BULLETIN_IMAGES, `A post can carry up to ${MAX_BULLETIN_IMAGES} photos.`),
+    mentionUserIds: mentionIds,
   })
   .refine((values) => values.body.length > 0 || values.imageIds.length > 0, {
     message: 'Write something or add a photo before posting.',
@@ -105,6 +109,7 @@ export const commentFormSchema = z.object({
     .trim()
     .min(1, 'Write a reply before sending.')
     .max(2000, 'A reply can run to 2000 characters.'),
+  mentionUserIds: mentionIds,
 })
 
 export type CommentFormValues = z.infer<typeof commentFormSchema>

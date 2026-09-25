@@ -15,6 +15,7 @@ import {
   useToggleReaction,
 } from '../hooks/use-bulletin-feed'
 import { BULLETIN_MAX_POSTS, BULLETIN_PAGE_SIZE, type BulletinPostRow } from '../schema'
+import { useBulletinPeople } from '../hooks/use-bulletin-people'
 import { BulletinFeedSkeleton } from './bulletin-feed-skeleton'
 import { CelebrationSettingsModal } from './celebration-settings-modal'
 import { PostCard } from './post-card'
@@ -26,6 +27,7 @@ export function BulletinBoard() {
   const pathname = usePathname()
   const router = useRouter()
   const limit = feedLimitFromParam(searchParams.get('show'))
+  const focusedPostId = searchParams.get('post')
 
   const feed = useBulletinFeed(limit)
   const create = useCreatePost()
@@ -34,6 +36,7 @@ export function BulletinBoard() {
   const react = useToggleReaction()
   const removal = useDeletePost()
   const [settingsOpen, settings] = useDisclosure(false)
+  const people = useBulletinPeople()
 
   if (feed.isPending) return <BulletinFeedSkeleton />
 
@@ -67,6 +70,7 @@ export function BulletinBoard() {
         }}
         onPin={(one, next) => pin.mutate({ postId: one.id, pinned: next })}
         onDelete={(one) => void removal.remove(one.id)}
+        focused={post.id === focusedPostId}
         thread={<PostThread postId={post.id} viewerId={viewerId} canModerate={canModerate} />}
       />
     )
@@ -97,6 +101,7 @@ export function BulletinBoard() {
       {/* Only admins post for now; everyone else joins in through reactions and replies. */}
       {canModerate ? (
         <PostComposer
+          people={people.data ?? []}
           onPost={async (values) => {
             await create.mutateAsync(values)
           }}

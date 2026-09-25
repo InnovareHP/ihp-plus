@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { MentionPerson } from '@/lib/mentions'
 import { ALLOWED_UPLOAD_TYPES } from '@/features/bluebook/schema'
 
 export const TASK_PRIORITIES = ['urgent', 'high', 'normal', 'low'] as const
@@ -174,10 +175,7 @@ export interface TaskStatusRow {
   sortOrder: number
 }
 
-export interface TaskAssigneeRef {
-  userId: string
-  name: string
-}
+export type TaskAssigneeRef = MentionPerson
 
 /** A checklist line under a task: the whole subtask is one query away if it is ever needed. */
 export interface TaskSubtaskRow {
@@ -431,10 +429,7 @@ export interface TaskConversation {
  * the body is left as typed — re-parsing a display name out of prose is how you mention the
  * wrong Grace.
  */
-/** The one mention that names nobody in particular: it stands for the whole organization. */
-export const MENTION_EVERYONE = 'everyone'
-
-export const MENTION_EVERYONE_LABEL = 'Everyone in this organization'
+export { MENTION_EVERYONE, MENTION_EVERYONE_LABEL } from '@/lib/mentions'
 
 export const MENTION_PATTERN = /@([\p{L}][\p{L}\p{N}'’.-]*(?: [\p{L}][\p{L}\p{N}'’.-]*)?)/gu
 

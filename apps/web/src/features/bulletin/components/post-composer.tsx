@@ -10,12 +10,13 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  Textarea,
   ThemeIcon,
 } from '@mantine/core'
 import { IconPhotoPlus, IconSend, IconSpeakerphone } from '@tabler/icons-react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
+import { MentionTextarea } from '@/components/mention-textarea'
+import type { MentionPerson } from '@/lib/mentions'
 import { useUploadBulletinImage, useUploadingImageCount } from '../hooks/use-bulletin-images'
 import { bulletinImageUrl } from '../image-url'
 import {
@@ -25,18 +26,20 @@ import {
   postFormSchema,
   type PostFormValues,
 } from '../schema'
+import { keepMentionedIds } from '../utils/mentions'
 import { ComposerImageTile } from './composer-image-tile'
 import { ImageTileSkeleton } from './image-tile-skeleton'
 
 export interface PostComposerProps {
+  people: readonly MentionPerson[]
   onPost: (values: PostFormValues) => Promise<void>
 }
 
-export function PostComposer({ onPost }: PostComposerProps) {
+export function PostComposer({ people, onPost }: PostComposerProps) {
   const upload = useUploadBulletinImage()
   const uploading = useUploadingImageCount()
   const {
-    register,
+    control,
     handleSubmit,
     reset,
     setError,
@@ -49,7 +52,7 @@ export function PostComposer({ onPost }: PostComposerProps) {
     resolver: zodResolver(postFormSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: { body: '', imageIds: [] },
+    defaultValues: { body: '', imageIds: [], mentionUserIds: [] },
   })
 
   const imageIds = watch('imageIds')
@@ -93,7 +96,10 @@ export function PostComposer({ onPost }: PostComposerProps) {
 
   async function submit(values: PostFormValues) {
     try {
-      await onPost(values)
+      await onPost({
+        ...values,
+        mentionUserIds: keepMentionedIds(values.body, values.mentionUserIds, people),
+      })
       reset()
     } catch (error) {
       setError('root', {
@@ -113,22 +119,32 @@ export function PostComposer({ onPost }: PostComposerProps) {
           </ThemeIcon>
           <Stack gap="sm" style={{ flex: 1, minWidth: 0 }}>
             <FormError message={errors.root?.message} title="Could not post to the board" />
-            <Textarea
-              {...register('body')}
-              label="Share an update"
-              description="Everyone in the company sees it, and can react or reply."
-              placeholder="Company news, a welcome, or a thank-you."
-              variant="filled"
-              radius="md"
-              autosize
-              minRows={3}
-              maxRows={12}
-              error={errors.body?.message}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-                  void handleSubmit(submit)()
-                }
-              }}
+            <Controller
+              control={control}
+              name="body"
+              render={({ field }) => (
+                <MentionTextarea
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  onMention={(userId) => {
+                    const picked = getValues('mentionUserIds')
+                    if (!picked.includes(userId)) setValue('mentionUserIds', [...picked, userId])
+                  }}
+                  colleagues={people}
+                  label="Share an update"
+                  description="Everyone in the company sees it. Type @ to notify someone by email."
+                  placeholder="Company news, a welcome, or a thank-you."
+                  minRows={3}
+                  maxRows={12}
+                  error={errors.body?.message}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                      void handleSubmit(submit)()
+                    }
+                  }}
+                />
+              )}
             />
 
             {imageIds.length + uploading > 0 ? (

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
 import {
+  bulletinMentionTemplate,
   clientFolderSharedTemplate,
   correctionDecidedTemplate,
   leaveCancelledTemplate,
@@ -405,5 +406,21 @@ describe('correction requests', () => {
     expect(email.subject).toBe('Your correction for Tuesday, September 22 was turned down')
     expect(email.text).toContain('The door log shows 17:10.')
     expect(email.text).toContain('send a new request')
+  })
+})
+
+describe('bulletin emails', () => {
+  it('says whether the mention was in the post or a reply, and links to it', () => {
+    const email = bulletinMentionTemplate({
+      authorName: 'Grace Hopper',
+      inReply: true,
+      excerpt: 'Can you bring the projector?',
+      url: 'https://ihp.test/app/bulletin?post=post-1',
+    })
+
+    expect(email.subject).toBe('Grace Hopper mentioned you on the bulletin board')
+    expect(email.text).toContain('a reply on the bulletin board')
+    expect(email.text).toContain('Can you bring the projector?')
+    expect(email.text).toContain('https://ihp.test/app/bulletin?post=post-1')
   })
 })

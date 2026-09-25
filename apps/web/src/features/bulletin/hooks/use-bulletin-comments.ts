@@ -5,7 +5,7 @@ import { useOptimisticListMutation } from '@/lib/optimistic'
 import { bulletinEvents } from '../events'
 import { bulletinKeys } from '../query-keys'
 import { createComment, deleteComment, listComments } from '../rpc'
-import type { BulletinCommentRow } from '../schema'
+import type { BulletinCommentRow, CommentFormValues } from '../schema'
 import { useUndoableDelete } from './use-undoable-delete'
 
 // An open thread is one someone may be answering on right now.
@@ -23,10 +23,10 @@ export function useComments(postId: string, enabled: boolean) {
 }
 
 export function useCreateComment(postId: string, viewerId: string) {
-  return useOptimisticListMutation<BulletinCommentRow, { body: string }>({
+  return useOptimisticListMutation<BulletinCommentRow, CommentFormValues>({
     queryKey: bulletinKeys.comments(postId),
-    mutationFn: async ({ body }) => {
-      await createComment(postId, body)
+    mutationFn: async ({ body, mentionUserIds }) => {
+      await createComment(postId, body, mentionUserIds)
     },
     apply: (comments, { body }) => [
       ...comments,

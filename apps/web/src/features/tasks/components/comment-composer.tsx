@@ -14,7 +14,7 @@ import {
   type TaskAssigneeRef,
 } from '../schema'
 import { isSubmitShortcut } from '../utils/submit-shortcut'
-import { MentionTextarea } from './mention-textarea'
+import { MentionTextarea } from '@/components/mention-textarea'
 import { NotifySelect } from './notify-select'
 import { StagedFileChip } from './staged-file-chip'
 

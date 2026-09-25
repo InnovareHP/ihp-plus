@@ -2,6 +2,7 @@
 
 import { Button, Paper, Skeleton, Stack, Text } from '@mantine/core'
 import { useComments, useCreateComment, useDeleteComment } from '../hooks/use-bulletin-comments'
+import { useBulletinPeople } from '../hooks/use-bulletin-people'
 import { BulletinComment } from './bulletin-comment'
 import { ReplyComposer } from './reply-composer'
 
@@ -15,6 +16,7 @@ export function PostThread({ postId, viewerId, canModerate }: PostThreadProps) {
   const comments = useComments(postId, true)
   const reply = useCreateComment(postId, viewerId)
   const removal = useDeleteComment(postId)
+  const people = useBulletinPeople()
 
   return (
     // A tinted well sets the conversation apart from the announcement it answers.
@@ -50,7 +52,10 @@ export function PostThread({ postId, viewerId, canModerate }: PostThreadProps) {
           </Stack>
         )}
 
-        <ReplyComposer onReply={async (values) => void (await reply.mutateAsync(values))} />
+        <ReplyComposer
+          people={people.data ?? []}
+          onReply={async (values) => void (await reply.mutateAsync(values))}
+        />
       </Stack>
     </Paper>
   )

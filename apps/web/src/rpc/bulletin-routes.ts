@@ -7,6 +7,7 @@ import {
   deletePost,
   loadComments,
   loadFeed,
+  loadPeople,
   loadSettings,
   saveSettings,
   setPostPinned,
@@ -29,7 +30,7 @@ export const bulletin: ServiceImpl<typeof BulletinService> = {
   },
 
   createPost: async (request) => ({
-    post: postToProto(await createPost(request.body, request.imageIds)),
+    post: postToProto(await createPost(request.body, request.imageIds, request.mentionUserIds)),
   }),
 
   updatePost: async (request) => ({
@@ -54,13 +55,22 @@ export const bulletin: ServiceImpl<typeof BulletinService> = {
   }),
 
   createComment: async (request) => ({
-    comment: commentToProto(await createComment(request.postId, request.body)),
+    comment: commentToProto(
+      await createComment(request.postId, request.body, request.mentionUserIds),
+    ),
   }),
 
   deleteComment: async (request) => {
     await deleteComment(request.commentId)
     return {}
   },
+
+  listPeople: async () => ({
+    people: (await loadPeople()).map((person) => ({
+      $typeName: 'ihp.bulletin.v1.MentionablePerson' as const,
+      ...person,
+    })),
+  }),
 
   getSettings: async () => ({ settings: settingsToProto(await loadSettings()) }),
 

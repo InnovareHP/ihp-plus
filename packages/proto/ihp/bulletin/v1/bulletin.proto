@@ -57,6 +57,8 @@ message CreatePostRequest {
   string body = 1;
   // Photos uploaded beforehand by the same person, in the order the grid shows them.
   repeated string image_ids = 2;
+  // Ids the composer resolved from the @names it offered; the server checks each is a colleague.
+  repeated string mention_user_ids = 3;
 }
 
 message CreatePostResponse {
@@ -107,6 +109,7 @@ message ListCommentsResponse {
 message CreateCommentRequest {
   string post_id = 1;
   string body = 2;
+  repeated string mention_user_ids = 3;
 }
 
 message CreateCommentResponse {
@@ -140,6 +143,18 @@ message UpdateSettingsResponse {
   BulletinSettings settings = 1;
 }
 
+// Someone who can be @mentioned: a name and nothing more, since every member sees this list.
+message MentionablePerson {
+  string user_id = 1;
+  string name = 2;
+}
+
+message ListPeopleRequest {}
+
+message ListPeopleResponse {
+  repeated MentionablePerson people = 1;
+}
+
 service BulletinService {
   rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
   rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
@@ -150,6 +165,7 @@ service BulletinService {
   rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
   rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse);
   rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse);
+  rpc ListPeople(ListPeopleRequest) returns (ListPeopleResponse);
   rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
   rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);
 }

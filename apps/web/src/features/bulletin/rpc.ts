@@ -1,6 +1,7 @@
 'use client'
 
 import { ConnectError } from '@ihp/rpc'
+import type { MentionPerson } from '@/lib/mentions'
 import { browserClients } from '@/rpc/browser'
 import {
   commentFromProto,
@@ -42,9 +43,14 @@ export async function listPosts(limit: number): Promise<BulletinFeed> {
 export async function createPost(
   body: string,
   imageIds: readonly string[] = [],
+  mentionUserIds: readonly string[] = [],
 ): Promise<BulletinPostRow> {
   const response = await call(() =>
-    browserClients.bulletin.createPost({ body, imageIds: [...imageIds] }),
+    browserClients.bulletin.createPost({
+      body,
+      imageIds: [...imageIds],
+      mentionUserIds: [...mentionUserIds],
+    }),
   )
   return requiredPost(response.post)
 }
@@ -73,8 +79,18 @@ export async function listComments(postId: string): Promise<BulletinCommentRow[]
   return response.comments.map(commentFromProto)
 }
 
-export async function createComment(postId: string, body: string): Promise<BulletinCommentRow> {
-  const response = await call(() => browserClients.bulletin.createComment({ postId, body }))
+export async function createComment(
+  postId: string,
+  body: string,
+  mentionUserIds: readonly string[] = [],
+): Promise<BulletinCommentRow> {
+  const response = await call(() =>
+    browserClients.bulletin.createComment({
+      postId,
+      body,
+      mentionUserIds: [...mentionUserIds],
+    }),
+  )
   if (!response.comment) throw new Error('The server did not return the reply.')
   return commentFromProto(response.comment)
 }
@@ -93,4 +109,9 @@ export async function updateSettings(settings: BulletinSettingsRow): Promise<Bul
     browserClients.bulletin.updateSettings({ settings: settingsToProto(settings) }),
   )
   return settingsFromProto(response.settings)
+}
+
+export async function listPeople(): Promise<MentionPerson[]> {
+  const response = await call(() => browserClients.bulletin.listPeople({}))
+  return response.people.map((person) => ({ userId: person.userId, name: person.name }))
 }

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MENTION_EVERYONE } from '../schema'
-import { mentionsEveryone } from './mentions'
+import { MENTION_EVERYONE, mentionsEveryone } from './mentions'
 
 describe('mentionsEveryone', () => {
   it('is the picked option', () => {
