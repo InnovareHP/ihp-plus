@@ -28,7 +28,7 @@ import {
   type DocumentRow,
   type DocumentsPage,
 } from './schema'
-import { applyLetterhead, LetterheadError } from './utils/letterhead'
+import { applyLetterhead, LetterheadError } from '@/features/letterhead/utils/letterhead'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
 export type DocumentsResult = ({ ok: true } & DocumentsPage) | { ok: false; message: string }

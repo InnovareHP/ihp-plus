@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { LookupKind } from '@/features/lookups/schema'
 import { paginationSchema, sortDirectionSchema, type PageInfo } from '@/lib/pagination'
-import { LETTERHEAD_TEMPLATES } from './utils/letterhead-templates'
+import { LETTERHEAD_TEMPLATES } from '@/features/letterhead/utils/letterhead-templates'
 
 /** The one curated list this screen owns; categories are what a shelf is sorted by. */
 export const BLUEBOOK_LOOKUP_KINDS = ['bluebookCategory'] as const satisfies readonly LookupKind[]

@@ -26,7 +26,10 @@ import {
   type DocumentDraftInput,
   type DocumentDraftValues,
 } from '../schema'
-import { LETTERHEAD_OPTIONS, supportsLetterhead } from '../utils/letterhead-templates'
+import {
+  LETTERHEAD_OPTIONS,
+  supportsLetterhead,
+} from '@/features/letterhead/utils/letterhead-templates'
 import type { UploadDocumentModalProps } from './upload-document-modal'
 
 /** Whichever of "all departments" or a department list was chosen most recently. */

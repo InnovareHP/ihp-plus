@@ -6,6 +6,7 @@ import {
   IconBuilding,
   IconClipboardList,
   IconClockHour4,
+  IconFileCertificate,
   IconFolderOpen,
   IconFolders,
   IconLayoutDashboard,
@@ -115,6 +116,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Bluebook',
         description: 'Policies and forms',
         icon: IconBook2,
+      },
+      {
+        href: routes.letterhead,
+        label: 'Letterhead',
+        description: 'Put the letterhead on a PDF or Word file',
+        icon: IconFileCertificate,
       },
       {
         href: routes.library,
