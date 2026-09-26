@@ -28,6 +28,7 @@ import {
   type DocumentRow,
   type DocumentsPage,
 } from './schema'
+import { applyLetterhead, LetterheadError } from './utils/letterhead'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
 export type DocumentsResult = ({ ok: true } & DocumentsPage) | { ok: false; message: string }
@@ -288,6 +289,14 @@ export async function listBluebookOptions(): Promise<Result<BluebookOptions>> {
   }
 }
 
+async function organizationNameOf(organizationId: string) {
+  const organization = await db.organization.findUnique({
+    where: { id: organizationId },
+    select: { name: true },
+  })
+  return organization?.name ?? ''
+}
+
 /** A safe object key: the original name is kept for the download, not for storage. */
 function keyFor(organizationId: string, shelf: string, fileName: string) {
   const safe = fileName
@@ -307,6 +316,7 @@ export async function uploadDocument(formData: FormData): Promise<Result<Documen
     category: formData.get('category') ?? '',
     // Repeated fields rather than one joined string, so a department name can hold anything.
     shelves: formData.getAll('shelves'),
+    letterhead: formData.get('letterhead') ?? undefined,
   })
   if (!parsed.success) return { ok: false, message: 'Check the highlighted fields and try again.' }
   if (!parsed.data.shelves.every((shelf) => canFileOn(who, shelf))) {
@@ -323,7 +333,20 @@ export async function uploadDocument(formData: FormData): Promise<Result<Documen
   if (!teams) return { ok: false, message: 'One of those departments no longer exists.' }
 
   const shelf = parsed.data.shelves[0] ?? COMPANY_SHELF
-  const bytes = new Uint8Array(await file.arrayBuffer())
+  let bytes: Uint8Array
+  try {
+    bytes = await applyLetterhead({
+      bytes: new Uint8Array(await file.arrayBuffer()),
+      contentType: file.type,
+      template: parsed.data.letterhead,
+      organizationName:
+        parsed.data.letterhead === 'none' ? '' : await organizationNameOf(who.organizationId),
+    })
+  } catch (error) {
+    if (error instanceof LetterheadError) return { ok: false, message: error.message }
+    throw error
+  }
+
   let stored: { fileKey: string | null; driveItemId: string | null }
 
   try {
@@ -358,7 +381,8 @@ export async function uploadDocument(formData: FormData): Promise<Result<Documen
       ...stored,
       fileName: file.name,
       contentType: file.type,
-      byteSize: file.size,
+      // The stamped file, not the one picked, is what a download returns.
+      byteSize: bytes.byteLength,
       uploadedById: who.userId,
       uploadedByName: who.userName,
       teams: {

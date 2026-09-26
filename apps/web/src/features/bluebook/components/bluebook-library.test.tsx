@@ -182,6 +182,41 @@ describe('BluebookLibrary', () => {
     expect(sent.get('title')).toBe('Time-off policy')
     expect(sent.getAll('shelves')).toEqual(['company'])
     expect((sent.get('file') as File).name).toBe('policy.pdf')
+    expect(sent.get('letterhead')).toBe('none')
+  })
+
+  it('sends the letterhead picked for a PDF', async () => {
+    const person = user()
+    render(<BluebookLibrary />)
+    await screen.findByText('Claim scrubbing checklist')
+
+    await person.click(screen.getByRole('button', { name: 'Upload file' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Upload to the bluebook' }))
+    await person.upload(
+      hiddenFileInput(),
+      new File(['policy'], 'policy.pdf', { type: 'application/pdf' }),
+    )
+    await person.type(dialog.getByRole('textbox', { name: /Title/ }), 'Time-off policy')
+    await person.click(dialog.getByRole('combobox', { name: 'Letterhead' }))
+    await person.click(await screen.findByRole('option', { name: /Classic/ }))
+    await person.click(dialog.getByRole('button', { name: 'Add to bluebook' }))
+
+    await waitFor(() => expect(actions.uploadDocument).toHaveBeenCalled())
+    const sent = actions.uploadDocument.mock.calls[0]?.[0] as FormData
+    expect(sent.get('letterhead')).toBe('classic')
+  })
+
+  it('offers no letterhead for a file type it cannot go on', async () => {
+    const person = user()
+    render(<BluebookLibrary />)
+    await screen.findByText('Claim scrubbing checklist')
+
+    await person.click(screen.getByRole('button', { name: 'Upload file' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Upload to the bluebook' }))
+    await person.upload(hiddenFileInput(), new File(['a,b'], 'rota.csv', { type: 'text/csv' }))
+
+    expect(dialog.getByRole('combobox', { name: 'Letterhead' })).toBeDisabled()
+    expect(dialog.getByText(/filed as it is/)).toBeInTheDocument()
   })
 
   // The accept attribute keeps a .exe out of the picker, and the type rule itself is covered in

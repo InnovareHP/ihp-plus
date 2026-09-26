@@ -416,6 +416,7 @@ export function BluebookLibrary() {
           formData.set('category', values.category)
           // Repeated rather than joined: a department name may contain any character.
           for (const shelf of values.shelves) formData.append('shelves', shelf)
+          formData.set('letterhead', values.letterhead)
           formData.set('file', file)
           await upload.mutateAsync(formData)
         }}

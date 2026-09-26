@@ -26,6 +26,7 @@ import {
   type DocumentDraftInput,
   type DocumentDraftValues,
 } from '../schema'
+import { LETTERHEAD_OPTIONS, supportsLetterhead } from '../utils/letterhead-templates'
 import type { UploadDocumentModalProps } from './upload-document-modal'
 
 /** Whichever of "all departments" or a department list was chosen most recently. */
@@ -70,6 +71,8 @@ export function DocumentForm({
   // memoize, and both values feed controls that re-render on every keystroke.
   const watchedShelves = useWatch({ control, name: 'shelves' })
   const category = useWatch({ control, name: 'category' }) ?? ''
+  const letterhead = useWatch({ control, name: 'letterhead' }) ?? 'none'
+  const stampable = !file || supportsLetterhead(file.type)
   const picked = (watchedShelves ?? []).filter((value): value is string => Boolean(value))
 
   const problem = file
@@ -122,6 +125,28 @@ export function DocumentForm({
             aria-required="true"
             error={problem}
             clearable
+          />
+        ) : null}
+
+        {onUpload ? (
+          <Select
+            label="Letterhead"
+            description={
+              stampable
+                ? 'Added to the top of every page of a PDF or Word (.docx) file.'
+                : 'This file type is filed as it is — letterheads go on PDF and Word (.docx) files.'
+            }
+            data={LETTERHEAD_OPTIONS}
+            value={stampable ? letterhead : 'none'}
+            allowDeselect={false}
+            disabled={!stampable}
+            onChange={(value) =>
+              setValue(
+                'letterhead',
+                LETTERHEAD_OPTIONS.find((option) => option.value === value)?.value ?? 'none',
+                { shouldDirty: true },
+              )
+            }
           />
         ) : null}
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { Modal } from '@mantine/core'
-import type { DocumentDraftValues, ShelfOption } from '../schema'
+import type { DocumentDraftInput, DocumentDraftValues, ShelfOption } from '../schema'
 import { DocumentForm } from './document-form'
 
 export interface UploadDocumentModalProps {
@@ -12,7 +12,7 @@ export interface UploadDocumentModalProps {
   categories: string[]
   canManageCategories: boolean
   onManageCategories: () => void
-  defaults?: DocumentDraftValues
+  defaults?: DocumentDraftInput
   /** Absent for an edit: metadata changes never replace the stored file. */
   onUpload?: (values: DocumentDraftValues, file: File) => Promise<void>
   onSave?: (values: DocumentDraftValues) => Promise<void>

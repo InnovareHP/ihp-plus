@@ -1,3 +1,4 @@
+import { PDFDocument } from 'pdf-lib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const prisma = vi.hoisted(() => ({
@@ -19,6 +20,7 @@ const prisma = vi.hoisted(() => ({
   },
   member: { count: vi.fn(async (): Promise<number> => 0) },
   team: { findMany: vi.fn(), findFirst: vi.fn() },
+  organization: { findUnique: vi.fn(async () => ({ name: 'Integrated Health Partners' })) },
   // The update replaces a document's shelves and rewrites it in one transaction.
   $transaction: vi.fn(async (run: (tx: unknown) => unknown) => run(prisma)),
 }))
@@ -393,6 +395,39 @@ describe('uploadDocument', () => {
       message: 'Upload a PDF, Office document, text file or image.',
     })
     expect(storage.putObject).not.toHaveBeenCalled()
+  })
+
+  it('stamps the chosen letterhead into the file it stores', async () => {
+    signedIn({ isAdmin: true })
+    const source = await PDFDocument.create()
+    source.addPage()
+    const original = await source.save()
+    const form = formDataFor(
+      ['company'],
+      new File([new Uint8Array(original)], 'policy.pdf', { type: 'application/pdf' }),
+    )
+    form.set('letterhead', 'classic')
+
+    expect(await uploadDocument(form)).toMatchObject({ ok: true })
+    const body = storage.putObject.mock.calls[0]?.[1] as Uint8Array
+    expect(body.byteLength).toBeGreaterThan(original.byteLength)
+    expect(prisma.bluebookDocument.create.mock.calls[0]?.[0].data.byteSize).toBe(body.byteLength)
+    expect(prisma.organization.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'org-1' } }),
+    )
+  })
+
+  it('stores nothing when the letterhead cannot go on the file', async () => {
+    signedIn({ isAdmin: true })
+    const form = formDataFor()
+    form.set('letterhead', 'banner')
+
+    expect(await uploadDocument(form)).toEqual({
+      ok: false,
+      message: expect.stringContaining('Could not add the letterhead'),
+    })
+    expect(storage.putObject).not.toHaveBeenCalled()
+    expect(prisma.bluebookDocument.create).not.toHaveBeenCalled()
   })
 
   it('writes no row when storage rejects the file', async () => {

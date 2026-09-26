@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { LookupKind } from '@/features/lookups/schema'
 import { paginationSchema, sortDirectionSchema, type PageInfo } from '@/lib/pagination'
+import { LETTERHEAD_TEMPLATES } from './utils/letterhead-templates'
 
 /** The one curated list this screen owns; categories are what a shelf is sorted by. */
 export const BLUEBOOK_LOOKUP_KINDS = ['bluebookCategory'] as const satisfies readonly LookupKind[]
@@ -85,9 +86,14 @@ export const documentDraftSchema = z.object({
       const unique = [...new Set(values)]
       return unique.includes(COMPANY_SHELF) ? [COMPANY_SHELF] : unique
     }),
+  /** Stamped into a PDF or Word file on upload; other types are filed untouched. */
+  letterhead: z.enum(LETTERHEAD_TEMPLATES).catch('none').default('none'),
 })
 
-export const updateDocumentSchema = documentDraftSchema.extend({ id: z.string().min(1) })
+// An edit never touches the stored file, so the letterhead is an upload-only choice.
+export const updateDocumentSchema = documentDraftSchema
+  .omit({ letterhead: true })
+  .extend({ id: z.string().min(1) })
 export const documentIdSchema = z.object({ id: z.string().min(1) })
 
 export type BluebookView = (typeof BLUEBOOK_VIEWS)[number]
@@ -106,6 +112,7 @@ export const EMPTY_DOCUMENT_DRAFT: DocumentDraftInput = {
   description: '',
   category: '',
   shelves: [COMPANY_SHELF],
+  letterhead: 'none',
 }
 
 export function isFilteredBluebookQuery(query: BluebookQuery) {
