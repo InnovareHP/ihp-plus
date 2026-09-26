@@ -33,6 +33,9 @@ import {
   saveBillingStatement,
   loadBillingStatements,
   deleteBillingStatement,
+  loadPayTerms,
+  setPayTerms,
+  loadStatementDefaults,
 } from '@/features/attendance/service'
 import {
   absenceToProto,
@@ -230,6 +233,22 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
     await deleteBillingStatement(request.statementId)
     return {}
   },
+
+  listPayTerms: async () => ({
+    payTerms: (await loadPayTerms()).map((terms) => ({
+      $typeName: 'ihp.attendance.v1.PayTerms' as const,
+      ...terms,
+    })),
+  }),
+
+  setPayTerms: async (request) => ({
+    payTerms: {
+      $typeName: 'ihp.attendance.v1.PayTerms' as const,
+      ...(await setPayTerms({ userId: request.userId, fixedPay: request.fixedPay })),
+    },
+  }),
+
+  getStatementDefaults: async () => loadStatementDefaults(),
 
   listSchedules: async () => {
     const book = await loadSchedules()

@@ -419,6 +419,7 @@ export function statementToProto(
     daysWorked: row.daysWorked,
     hoursWorked: row.hoursWorked,
     dailyRateCents: row.dailyRateCents,
+    fixedPay: row.fixedPay,
     bonusCents: row.bonusCents,
     expenses: row.expenses.map((expense) => ({
       $typeName: 'ihp.attendance.v1.BillingExpense',
@@ -444,6 +445,7 @@ export function statementFromProto(message: BillingStatementMessage): BillingSta
     daysWorked: message.daysWorked,
     hoursWorked: message.hoursWorked,
     dailyRateCents: message.dailyRateCents,
+    fixedPay: message.fixedPay,
     bonusCents: message.bonusCents,
     expenses: message.expenses.map((expense) => ({
       description: expense.description,

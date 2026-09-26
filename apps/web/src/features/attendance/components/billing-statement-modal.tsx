@@ -21,6 +21,7 @@ import { track } from '@/lib/analytics'
 import { announceSuccess } from '@/lib/announce'
 import { attendanceEvents } from '../events'
 import { useSaveStatement } from '../hooks/use-statements'
+import { StatementIdentity } from './statement-identity'
 import { billingStatementSchema, type BillingStatementValues } from '../schema'
 import {
   billingStatementHtml,
@@ -73,6 +74,7 @@ export function BillingStatementModal({
   // Watched so the total moves as amounts are typed.
   const watched = useWatch({ control })
   const totals = statementTotals({
+    fixedPay: initial.fixedPay,
     daysWorked: watched.daysWorked ?? 0,
     dailyRateCents: watched.dailyRateCents ?? 0,
     bonusCents: watched.bonusCents ?? 0,
@@ -133,26 +135,11 @@ export function BillingStatementModal({
 
           <Fieldset legend="Contractor">
             <Stack gap="sm">
-              <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                <TextInput
-                  label="Full name"
-                  required
-                  aria-required="true"
-                  autoComplete="name"
-                  error={errors.contractorName?.message}
-                  errorProps={{ role: 'alert' }}
-                  {...register('contractorName')}
-                />
-                <TextInput
-                  label="Position / role"
-                  required
-                  aria-required="true"
-                  autoComplete="organization-title"
-                  error={errors.position?.message}
-                  errorProps={{ role: 'alert' }}
-                  {...register('position')}
-                />
-              </SimpleGrid>
+              <StatementIdentity
+                name={initial.contractorName}
+                position={initial.position}
+                fixedPay={initial.fixedPay}
+              />
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <TextInput
                   label="Invoice number"
@@ -179,6 +166,12 @@ export function BillingStatementModal({
             {paidDaysOff > 0 ? (
               <Text size="sm" c="dimmed" mb="sm">
                 Days worked includes {paidDaysOff} paid {paidDaysOff === 1 ? 'day' : 'days'} off.
+              </Text>
+            ) : null}
+            {initial.fixedPay ? (
+              <Text size="sm" c="dimmed" mb="sm">
+                You are on fixed pay, so days and hours are shown for reference and do not change
+                the total.
               </Text>
             ) : null}
             <SimpleGrid cols={{ base: 1, sm: 3 }}>
@@ -221,7 +214,7 @@ export function BillingStatementModal({
                 render={({ field }) => (
                   <NumberInput
                     {...MONEY}
-                    label="Daily rate"
+                    label={initial.fixedPay ? 'Fixed amount' : 'Daily rate'}
                     required
                     aria-required="true"
                     inputMode="decimal"

@@ -3,6 +3,7 @@
 import { Badge, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { useImpersonate } from '@/features/auth/hooks/use-impersonation'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { MemberPaySelect } from '@/features/attendance/components/member-pay-select'
 import { MemberShiftSelect } from '@/features/attendance/components/member-shift-select'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { useMemberFilterOptions } from '../hooks/use-members'
@@ -125,6 +126,11 @@ export function MembersTable({ canImpersonate = false }: { canImpersonate?: bool
       key: 'shift',
       header: 'Shift',
       render: (row) => <MemberShiftSelect userId={row.userId} userName={row.name} />,
+    },
+    {
+      key: 'pay',
+      header: 'Pay',
+      render: (row) => <MemberPaySelect userId={row.userId} userName={row.name} />,
     },
     {
       key: 'employmentStatus',

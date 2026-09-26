@@ -17,7 +17,8 @@ vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }
 
 const INITIAL: BillingStatementValues = {
   contractorName: 'Dana Reyes',
-  position: '',
+  position: 'Virtual assistant',
+  fixedPay: false,
   invoiceNumber: 'INV-20260930',
   invoiceDate: '2026-09-30',
   daysWorked: 20,
@@ -30,7 +31,6 @@ const INITIAL: BillingStatementValues = {
 
 const FILLED: BillingStatementValues = {
   ...INITIAL,
-  position: 'Designer',
   dailyRateCents: 6_000,
   wiseLink: 'https://wise.com/x',
 }
@@ -56,10 +56,18 @@ describe('BillingStatementModal', () => {
     rpc.saveBillingStatement.mockResolvedValue({ id: 'st-1' })
   })
 
+  it('shows who is billing from the profile, with nothing to type', () => {
+    open()
+
+    expect(screen.getByText('Dana Reyes')).toBeInTheDocument()
+    expect(screen.getByText('Virtual assistant')).toBeInTheDocument()
+    expect(screen.getByText('Daily rate', { selector: 'dd' })).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: /Full name|Position/ })).not.toBeInTheDocument()
+  })
+
   it('starts from the timesheet', () => {
     open()
 
-    expect(screen.getByLabelText(/Full name/)).toHaveValue('Dana Reyes')
     expect(screen.getByLabelText(/Days worked/)).toHaveValue('20')
     expect(screen.getByLabelText(/Hours worked/)).toHaveValue('160')
   })
@@ -70,14 +78,13 @@ describe('BillingStatementModal', () => {
     expect(screen.getByText('Days worked includes 2 paid days off.')).toBeInTheDocument()
   })
 
-  it('asks for the position, rate and Wise link before saving', async () => {
+  it('asks for the rate and Wise link before saving', async () => {
     const user = userEvent.setup()
     open()
 
     await user.click(screen.getByRole('button', { name: 'Save and print' }))
 
-    expect(await screen.findByText('Enter your position or role.')).toBeInTheDocument()
-    expect(screen.getByText('Enter your daily rate.')).toBeInTheDocument()
+    expect(await screen.findByText('Enter your rate.')).toBeInTheDocument()
     expect(
       screen.getByText('Paste your Wise payment link, starting with https://.'),
     ).toBeInTheDocument()
@@ -89,7 +96,6 @@ describe('BillingStatementModal', () => {
     const user = userEvent.setup()
     const onClose = open()
 
-    await user.type(screen.getByLabelText(/Position/), 'Virtual assistant')
     await user.type(screen.getByLabelText(/Daily rate/), '45')
     await user.type(screen.getByLabelText(/^Bonus/), '50')
     await user.click(screen.getByRole('button', { name: 'Add an expense' }))
@@ -104,7 +110,6 @@ describe('BillingStatementModal', () => {
     await waitFor(() =>
       expect(rpc.saveBillingStatement).toHaveBeenCalledWith(
         expect.objectContaining({
-          position: 'Virtual assistant',
           dailyRateCents: 4_500,
           bonusCents: 5_000,
           expenses: [{ description: 'Internet', amountCents: 2_500 }],
@@ -130,7 +135,7 @@ describe('BillingStatementModal', () => {
     expect(
       await screen.findAllByText('The billing period ends before it starts.'),
     ).not.toHaveLength(0)
-    expect(screen.getByLabelText(/Position/)).toHaveValue('Designer')
+    expect(screen.getByLabelText(/Daily rate/)).toHaveValue('$60')
     expect(print.printHtml).not.toHaveBeenCalled()
     expect(onClose).not.toHaveBeenCalled()
   })
@@ -148,6 +153,16 @@ describe('BillingStatementModal', () => {
       await screen.findByText(/The statement is saved, but the print view/),
     ).toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('bills a fixed amount once, whatever the days', async () => {
+    const user = userEvent.setup()
+    open({ ...INITIAL, fixedPay: true })
+
+    expect(screen.getByText(/You are on fixed pay/)).toBeInTheDocument()
+    await user.type(screen.getByLabelText(/Fixed amount/), '1500')
+
+    expect(screen.getByText('$1,500.00 USD')).toBeInTheDocument()
   })
 
   it('has no axe violations', async () => {

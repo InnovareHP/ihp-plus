@@ -49,8 +49,9 @@ const prisma = vi.hoisted(() => ({
     deleteMany: vi.fn(),
   },
   attendanceStatement: { upsert: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
+  attendancePayTerms: { findUnique: vi.fn(), findMany: vi.fn(), upsert: vi.fn() },
   member: { findMany: vi.fn(), findFirst: vi.fn() },
-  user: { findMany: vi.fn() },
+  user: { findMany: vi.fn(), findUnique: vi.fn() },
 }))
 
 const guard = vi.hoisted(() => ({ getSession: vi.fn(), readProfile: vi.fn() }))
@@ -108,6 +109,9 @@ const {
   revokeDayOff,
   saveBillingStatement,
   loadBillingStatements,
+  loadPayTerms,
+  loadStatementDefaults,
+  setPayTerms,
   deleteBillingStatement,
 } = await import('./service')
 
@@ -1390,6 +1394,61 @@ describe('a day off an admin grants', () => {
   })
 })
 
+describe('pay terms', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    signedInAs('member')
+    prisma.member.findFirst.mockResolvedValue({ id: 'member-2' })
+    prisma.attendancePayTerms.findMany.mockResolvedValue([{ userId: 'user-2', fixedPay: true }])
+  })
+
+  it('lets only an admin read or set how people are paid', async () => {
+    await expect(loadPayTerms()).rejects.toMatchObject({ code: Code.PermissionDenied })
+    await expect(setPayTerms({ userId: 'user-2', fixedPay: true })).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+    expect(prisma.attendancePayTerms.upsert).not.toHaveBeenCalled()
+
+    signedInAs('admin')
+    expect(await loadPayTerms()).toEqual([{ userId: 'user-2', fixedPay: true }])
+  })
+
+  it('records a contractor as fixed pay within the admin’s organization', async () => {
+    signedInAs('admin')
+
+    expect(await setPayTerms({ userId: 'user-2', fixedPay: true })).toEqual({
+      userId: 'user-2',
+      fixedPay: true,
+    })
+    expect(prisma.attendancePayTerms.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { organizationId_userId: { organizationId: 'org-1', userId: 'user-2' } },
+        update: { fixedPay: true },
+      }),
+    )
+  })
+
+  it('refuses someone from another organization', async () => {
+    signedInAs('admin')
+    prisma.member.findFirst.mockResolvedValue(null)
+
+    await expect(setPayTerms({ userId: 'stranger', fixedPay: true })).rejects.toMatchObject({
+      code: Code.NotFound,
+    })
+  })
+
+  it('gives a contractor their own name, job title and a daily rate by default', async () => {
+    prisma.user.findUnique.mockResolvedValue({ name: 'Grace Reyes', jobTitle: null })
+    prisma.attendancePayTerms.findUnique.mockResolvedValue(null)
+
+    expect(await loadStatementDefaults()).toEqual({
+      contractorName: 'Grace Reyes',
+      position: '',
+      fixedPay: false,
+    })
+  })
+})
+
 describe('billing statements', () => {
   const STATEMENT = {
     contractorName: 'Grace Reyes',
@@ -1401,6 +1460,7 @@ describe('billing statements', () => {
     daysWorked: 20,
     hoursWorked: 160,
     dailyRateCents: 4_500,
+    fixedPay: false,
     bonusCents: 5_000,
     expenses: [{ description: 'Internet', amountCents: 2_500 }],
     wiseLink: 'https://wise.com/pay/r/abc',
@@ -1423,6 +1483,28 @@ describe('billing statements', () => {
     prisma.attendanceStatement.upsert.mockResolvedValue(RECORD)
     prisma.attendanceStatement.findMany.mockResolvedValue([RECORD])
     prisma.attendanceStatement.deleteMany.mockResolvedValue({ count: 1 })
+    prisma.user.findUnique.mockResolvedValue({ name: 'Grace Reyes', jobTitle: 'Virtual assistant' })
+    prisma.attendancePayTerms.findUnique.mockResolvedValue(null)
+  })
+
+  it('bills under the profile’s name, title and pay basis, whatever the form says', async () => {
+    prisma.attendancePayTerms.findUnique.mockResolvedValue({ fixedPay: true })
+
+    await saveBillingStatement({
+      ...STATEMENT,
+      contractorName: 'Someone else',
+      position: 'CEO',
+      dailyRateCents: 150_000,
+    })
+
+    const call = prisma.attendanceStatement.upsert.mock.calls[0]?.[0]
+    expect(call.create).toMatchObject({
+      contractorName: 'Grace Reyes',
+      position: 'Virtual assistant',
+      fixedPay: true,
+      // One flat amount plus the bonus and expense, however many days were worked.
+      totalCents: 157_500,
+    })
   })
 
   it('keeps the statement under its invoice number with a total the server works out', async () => {

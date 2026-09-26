@@ -32,6 +32,8 @@ export const attendanceEvents = {
   statementPrinted: 'attendance.statement.printed',
   statementPrintFailed: 'attendance.statement.print_failed',
   statementSaved: 'attendance.statement.saved',
+  payTermsSet: 'attendance.pay_terms.set',
+  payTermsSetFailed: 'attendance.pay_terms.set_failed',
   statementSaveFailed: 'attendance.statement.save_failed',
   statementDeleted: 'attendance.statement.deleted',
   statementDeleteFailed: 'attendance.statement.delete_failed',

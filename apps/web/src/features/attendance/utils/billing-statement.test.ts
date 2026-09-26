@@ -10,6 +10,7 @@ function day(workDate: string, workedSeconds: number): AttendanceDayRow {
 const VALUES: BillingStatementValues = {
   contractorName: 'Dana Reyes',
   position: 'Virtual assistant',
+  fixedPay: false,
   invoiceNumber: 'INV-20260930',
   invoiceDate: '2026-09-30',
   daysWorked: 20,
@@ -52,10 +53,18 @@ describe('statementTotals', () => {
       totalCents: 97_500,
     })
   })
+
+  it('bills a fixed rate once, whatever the days', () => {
+    expect(statementTotals({ ...VALUES, fixedPay: true, dailyRateCents: 150_000 })).toEqual({
+      regularCents: 150_000,
+      expensesCents: 2_500,
+      totalCents: 157_500,
+    })
+  })
 })
 
 describe('billingStatementSchema', () => {
-  it('asks for a daily rate and an https Wise link', () => {
+  it('asks for a rate and an https Wise link', () => {
     const result = billingStatementSchema.safeParse({
       ...VALUES,
       dailyRateCents: 0,
@@ -63,7 +72,7 @@ describe('billingStatementSchema', () => {
     })
     expect(result.success).toBe(false)
     const messages = result.error?.issues.map((issue) => issue.message)
-    expect(messages).toContain('Enter your daily rate.')
+    expect(messages).toContain('Enter your rate.')
     expect(messages).toContain('Paste your Wise payment link, starting with https://.')
   })
 })

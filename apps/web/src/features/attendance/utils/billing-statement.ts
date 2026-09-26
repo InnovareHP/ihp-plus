@@ -37,10 +37,15 @@ export function timeWorked(
   }
 }
 
+/** A fixed rate is billed whole whatever the days; a daily one is days × the rate. */
 export function statementTotals(
-  values: Pick<BillingStatementValues, 'daysWorked' | 'dailyRateCents' | 'bonusCents' | 'expenses'>,
+  values: Pick<
+    BillingStatementValues,
+    'fixedPay' | 'daysWorked' | 'dailyRateCents' | 'bonusCents' | 'expenses'
+  >,
 ): StatementTotals {
-  const regularCents = Math.round((values.daysWorked || 0) * (values.dailyRateCents || 0))
+  const rate = values.dailyRateCents || 0
+  const regularCents = values.fixedPay ? rate : Math.round((values.daysWorked || 0) * rate)
   const expensesCents = values.expenses.reduce((sum, row) => sum + (row.amountCents || 0), 0)
   return {
     regularCents,
@@ -117,7 +122,7 @@ export function billingStatementHtml(values: BillingStatementValues, period: Sta
 <h1>BILLING STATEMENT</h1>
 <dl>
   <dt>Contractor:</dt><dd>${escapeHtml(values.contractorName)}</dd>
-  <dt>Position / Role:</dt><dd>${escapeHtml(values.position)}</dd>
+  <dt>Position / Role:</dt><dd>${escapeHtml(values.position || '—')}</dd>
   <dt>Company:</dt><dd>${STATEMENT_COMPANY}</dd>
   <dt>Billing Period:</dt><dd>${formatStatementDate(period.from)} – ${formatStatementDate(period.to)}</dd>
   <dt>Invoice Date:</dt><dd>${formatStatementDate(values.invoiceDate)}</dd>
@@ -129,7 +134,7 @@ export function billingStatementHtml(values: BillingStatementValues, period: Sta
   <tbody>
     ${row('Days Worked', `${values.daysWorked} ${values.daysWorked === 1 ? 'day' : 'days'}`)}
     ${row('Total Hours Worked', `${values.hoursWorked.toFixed(2)} hours`)}
-    ${row('Daily Rate', formatUsd(values.dailyRateCents))}
+    ${row(values.fixedPay ? 'Fixed Rate (per statement)' : 'Daily Rate', formatUsd(values.dailyRateCents))}
     ${row('Regular Compensation', formatUsd(totals.regularCents))}
   </tbody>
 </table>

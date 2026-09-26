@@ -531,6 +531,8 @@ message BillingStatement {
   int32 total_cents = 15;
   // RFC 3339.
   string created_at = 16;
+  // Billed as one flat amount (daily_rate_cents) instead of days × a daily rate.
+  bool fixed_pay = 17;
 }
 
 // Saving an invoice number the member already used replaces that statement.
@@ -557,6 +559,37 @@ message DeleteBillingStatementRequest {
 }
 
 message DeleteBillingStatementResponse {}
+
+// How one contractor is paid; set by an admin, never by the contractor.
+message PayTerms {
+  string user_id = 1;
+  bool fixed_pay = 2;
+}
+
+// Every contractor with terms on file; admins only. Anyone missing is on a daily rate.
+message ListPayTermsRequest {}
+
+message ListPayTermsResponse {
+  repeated PayTerms pay_terms = 1;
+}
+
+message SetPayTermsRequest {
+  string user_id = 1;
+  bool fixed_pay = 2;
+}
+
+message SetPayTermsResponse {
+  PayTerms pay_terms = 1;
+}
+
+// What a new statement starts from: the caller's profile and pay terms, none of it editable.
+message GetStatementDefaultsRequest {}
+
+message GetStatementDefaultsResponse {
+  string contractor_name = 1;
+  string position = 2;
+  bool fixed_pay = 3;
+}
 
 service AttendanceService {
   rpc RequestCorrection(RequestCorrectionRequest) returns (RequestCorrectionResponse);
@@ -591,4 +624,7 @@ service AttendanceService {
   rpc SaveBillingStatement(SaveBillingStatementRequest) returns (SaveBillingStatementResponse);
   rpc ListBillingStatements(ListBillingStatementsRequest) returns (ListBillingStatementsResponse);
   rpc DeleteBillingStatement(DeleteBillingStatementRequest) returns (DeleteBillingStatementResponse);
+  rpc ListPayTerms(ListPayTermsRequest) returns (ListPayTermsResponse);
+  rpc SetPayTerms(SetPayTermsRequest) returns (SetPayTermsResponse);
+  rpc GetStatementDefaults(GetStatementDefaultsRequest) returns (GetStatementDefaultsResponse);
 }

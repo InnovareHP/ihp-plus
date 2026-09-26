@@ -23,4 +23,6 @@ export const attendanceKeys = {
   holidayCountries: () => [...attendanceKeys.all, 'holiday-countries'] as const,
   statements: () => [...attendanceKeys.all, 'statements'] as const,
   statementList: () => [...attendanceKeys.statements(), 'mine'] as const,
+  statementDefaults: () => [...attendanceKeys.statements(), 'defaults'] as const,
+  payTerms: () => [...attendanceKeys.all, 'pay-terms'] as const,
 }

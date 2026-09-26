@@ -35,6 +35,7 @@ export const ACTIVITY_LABELS = {
   'attendance.day_off.granted': 'Day off granted',
   'attendance.day_off.revoked': 'Day off taken back',
   'attendance.statement.saved': 'Billing statement saved',
+  'attendance.pay_terms.set': 'Pay basis changed',
 } as const
 
 export type ActivityAction = keyof typeof ACTIVITY_LABELS

@@ -261,7 +261,9 @@ model AttendanceStatement {
   position       String
   daysWorked     Int
   hoursWorked    Float
+  // The flat amount per statement when fixedPay, otherwise the rate for one day.
   dailyRateCents Int
+  fixedPay       Boolean  @default(false)
   bonusCents     Int
   // [{ description, amountCents }] in the order they were typed.
   expenses       Json
@@ -274,5 +276,20 @@ model AttendanceStatement {
   @@unique([userId, invoiceNumber])
   @@index([organizationId, createdAt])
   @@map("attendanceStatement")
+  @@schema("attendance")
+}
+
+// How a contractor is paid, set by an admin: a flat amount per statement, or days × a daily rate.
+model AttendancePayTerms {
+  id             String  @id @default(uuid())
+  organizationId String
+  userId         String
+  fixedPay       Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, userId])
+  @@map("attendancePayTerms")
   @@schema("attendance")
 }

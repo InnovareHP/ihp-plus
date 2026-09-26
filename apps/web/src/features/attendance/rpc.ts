@@ -21,6 +21,8 @@ import type {
   AttendanceBoard,
   BillingStatementRow,
   SavedStatementValues,
+  PayTermsRow,
+  StatementDefaults,
   AttendanceDayRow,
   AttendanceDayValues,
   AttendanceHolidayRow,
@@ -361,6 +363,24 @@ export async function saveBillingStatement(
 export async function listBillingStatements(): Promise<BillingStatementRow[]> {
   const response = await call(() => browserClients.attendance.listBillingStatements({}))
   return response.statements.map(statementFromProto)
+}
+
+export async function getStatementDefaults(): Promise<StatementDefaults> {
+  const response = await call(() => browserClients.attendance.getStatementDefaults({}))
+  return {
+    contractorName: response.contractorName,
+    position: response.position,
+    fixedPay: response.fixedPay,
+  }
+}
+
+export async function listPayTerms(): Promise<PayTermsRow[]> {
+  const response = await call(() => browserClients.attendance.listPayTerms({}))
+  return response.payTerms.map((terms) => ({ userId: terms.userId, fixedPay: terms.fixedPay }))
+}
+
+export async function setPayTerms(values: PayTermsRow): Promise<void> {
+  await call(() => browserClients.attendance.setPayTerms(values))
 }
 
 export async function deleteBillingStatement(statementId: string): Promise<void> {

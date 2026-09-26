@@ -489,13 +489,16 @@ const cents = z.number().int().min(0, 'An amount cannot be negative.').max(100_0
  * money is typed in, because rates and bonuses are not stored anywhere yet.
  */
 export const billingStatementSchema = z.object({
-  contractorName: z.string().trim().min(1, 'Enter your full name.').max(120),
-  position: z.string().trim().min(1, 'Enter your position or role.').max(120),
+  // Read from the profile, not typed: the server overwrites both with what is on file.
+  contractorName: z.string().trim().max(120),
+  position: z.string().trim().max(120),
+  /** Set by an admin per contractor: one flat amount instead of days × a daily rate. */
+  fixedPay: z.boolean(),
   invoiceNumber: z.string().trim().min(1, 'Enter an invoice number.').max(40),
   invoiceDate: dateKey,
   daysWorked: z.number().int().min(0, 'Days cannot be negative.').max(366),
   hoursWorked: z.number().min(0, 'Hours cannot be negative.').max(10_000),
-  dailyRateCents: cents.refine((value) => value > 0, 'Enter your daily rate.'),
+  dailyRateCents: cents.refine((value) => value > 0, 'Enter your rate.'),
   bonusCents: cents,
   expenses: z
     .array(
@@ -522,6 +525,16 @@ export const savedStatementSchema = billingStatementSchema
   })
 
 export type SavedStatementValues = z.infer<typeof savedStatementSchema>
+
+export const setPayTermsSchema = z.object({ userId: z.string().min(1), fixedPay: z.boolean() })
+export type PayTermsRow = z.infer<typeof setPayTermsSchema>
+
+/** A new statement's starting point: who is billing, and on which basis. */
+export interface StatementDefaults {
+  contractorName: string
+  position: string
+  fixedPay: boolean
+}
 
 export interface BillingStatementRow extends SavedStatementValues {
   id: string

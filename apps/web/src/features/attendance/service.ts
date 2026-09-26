@@ -54,6 +54,9 @@ import {
   type ShiftValues,
   type TimeClockView,
   savedStatementSchema,
+  setPayTermsSchema,
+  type PayTermsRow,
+  type StatementDefaults,
   type BillingStatementRow,
   type SavedStatementValues,
 } from './schema'
@@ -1852,6 +1855,7 @@ const statementSelect = {
   daysWorked: true,
   hoursWorked: true,
   dailyRateCents: true,
+  fixedPay: true,
   bonusCents: true,
   expenses: true,
   wiseLink: true,
@@ -1871,6 +1875,7 @@ interface StatementRecord {
   daysWorked: number
   hoursWorked: number
   dailyRateCents: number
+  fixedPay: boolean
   bonusCents: number
   expenses: unknown
   wiseLink: string
@@ -1914,7 +1919,9 @@ export async function saveBillingStatement(
     )
   }
 
-  const statement = parsed.data
+  // Who is billing and on which basis come from the record, whatever the form sent.
+  const defaults = await statementDefaultsOf(caller)
+  const statement = { ...parsed.data, ...defaults }
   const data = {
     invoiceDate: dateOf(statement.invoiceDate),
     periodStart: dateOf(statement.periodStart),
@@ -1924,6 +1931,7 @@ export async function saveBillingStatement(
     daysWorked: statement.daysWorked,
     hoursWorked: statement.hoursWorked,
     dailyRateCents: statement.dailyRateCents,
+    fixedPay: statement.fixedPay,
     bonusCents: statement.bonusCents,
     expenses: statement.expenses,
     wiseLink: statement.wiseLink,
@@ -1956,6 +1964,71 @@ export async function saveBillingStatement(
   })
 
   return toStatementRow(saved)
+}
+
+async function fixedPayOf(organizationId: string, userId: string) {
+  const terms = await db.attendancePayTerms.findUnique({
+    where: { organizationId_userId: { organizationId, userId } },
+    select: { fixedPay: true },
+  })
+  return terms?.fixedPay ?? false
+}
+
+async function statementDefaultsOf(caller: Caller): Promise<StatementDefaults> {
+  const [user, fixedPay] = await Promise.all([
+    db.user.findUnique({ where: { id: caller.userId }, select: { name: true, jobTitle: true } }),
+    fixedPayOf(caller.organizationId, caller.userId),
+  ])
+  return {
+    contractorName: user?.name ?? caller.name,
+    position: user?.jobTitle ?? '',
+    fixedPay,
+  }
+}
+
+/** The caller's name, job title and pay basis, which a statement shows but never lets them edit. */
+export async function loadStatementDefaults(): Promise<StatementDefaults> {
+  return statementDefaultsOf(await requireMember())
+}
+
+/** Every contractor's pay basis on file; anyone without a row is on a daily rate. */
+export async function loadPayTerms(): Promise<PayTermsRow[]> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin sets how people are paid.')
+
+  return db.attendancePayTerms.findMany({
+    where: { organizationId: caller.organizationId },
+    select: { userId: true, fixedPay: true },
+  })
+}
+
+export async function setPayTerms(values: PayTermsRow): Promise<PayTermsRow> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin sets how people are paid.')
+
+  const { userId, fixedPay } = setPayTermsSchema.parse(values)
+  const member = await db.member.findFirst({
+    where: { organizationId: caller.organizationId, userId },
+    select: { id: true },
+  })
+  if (!member) throw new ConnectError('That person is not in this organization.', Code.NotFound)
+
+  await db.attendancePayTerms.upsert({
+    where: { organizationId_userId: { organizationId: caller.organizationId, userId } },
+    create: { organizationId: caller.organizationId, userId, fixedPay },
+    update: { fixedPay },
+    select: { id: true },
+  })
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'attendance',
+    subjectId: userId,
+    action: 'attendance.pay_terms.set',
+    actorId: caller.userId,
+    actorName: caller.name,
+    detail: fixedPay ? 'fixed' : 'daily',
+  })
+  return { userId, fixedPay }
 }
 
 /** Statements are private pay records: a member reads only their own, newest first. */

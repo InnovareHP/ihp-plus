@@ -29,6 +29,7 @@ const STATEMENT: BillingStatementRow = {
   daysWorked: 20,
   hoursWorked: 160,
   dailyRateCents: 4_500,
+  fixedPay: false,
   bonusCents: 5_000,
   expenses: [{ description: 'Internet', amountCents: 2_500 }],
   wiseLink: 'https://wise.com/pay/r/abc',
