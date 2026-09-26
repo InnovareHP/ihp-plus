@@ -25,6 +25,7 @@ import { StatementIdentity } from './statement-identity'
 import { billingStatementSchema, type BillingStatementValues } from '../schema'
 import {
   billingStatementHtml,
+  loadStatementLetterhead,
   formatStatementDate,
   formatUsd,
   printHtml,
@@ -95,7 +96,7 @@ export function BillingStatementModal({
     }
 
     try {
-      printHtml(billingStatementHtml(values, period))
+      printHtml(billingStatementHtml(values, period, await loadStatementLetterhead()))
     } catch (error) {
       track(attendanceEvents.statementPrintFailed, {
         reason: error instanceof Error ? error.message : 'unknown',

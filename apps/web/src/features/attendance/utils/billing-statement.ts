@@ -89,13 +89,44 @@ function row(label: string, value: string, strong = false) {
   return `<tr><${cell} scope="row">${escapeHtml(label)}</${cell}><${cell} class="num">${escapeHtml(value)}</${cell}></tr>`
 }
 
-/** The statement as a standalone page, laid out like the template contractors already send. */
-export function billingStatementHtml(values: BillingStatementValues, period: StatementPeriod) {
+/** The official letterhead's header band and footer strip, as image sources and their proportions. */
+export interface StatementLetterhead {
+  header: { src: string; width: number; height: number }
+  footer: { src: string; width: number; height: number }
+}
+
+// Loaded on print only, so the art does not ride in the time clock's bundle.
+export async function loadStatementLetterhead(): Promise<StatementLetterhead> {
+  const { LETTERHEAD_ARTWORK } = await import('@/features/letterhead/utils/letterhead-artwork')
+  const art = (part: typeof LETTERHEAD_ARTWORK.header) => ({
+    src: `data:image/png;base64,${part.base64}`,
+    width: part.width,
+    height: part.height,
+  })
+  return { header: art(LETTERHEAD_ARTWORK.header), footer: art(LETTERHEAD_ARTWORK.footer) }
+}
+
+// US Letter, which is the page the letterhead's Word original is set on.
+const PAGE_WIDTH_IN = 8.5
+
+function bandHeight(part: { width: number; height: number }) {
+  return `${((PAGE_WIDTH_IN * part.height) / part.width).toFixed(3)}in`
+}
+
+/** The statement as a standalone page on the official letterhead, laid out like the template. */
+export function billingStatementHtml(
+  values: BillingStatementValues,
+  period: StatementPeriod,
+  letterhead?: StatementLetterhead,
+) {
   const totals = statementTotals(values)
   const expenseRows = values.expenses.map((expense) =>
     row(expense.description, formatUsd(expense.amountCents)),
   )
   const link = escapeHtml(values.wiseLink)
+
+  const header = letterhead ? bandHeight(letterhead.header) : '0in'
+  const footer = letterhead ? bandHeight(letterhead.footer) : '0in'
 
   return `<!doctype html>
 <html lang="en">
@@ -103,60 +134,81 @@ export function billingStatementHtml(values: BillingStatementValues, period: Sta
 <meta charset="utf-8">
 <title>Billing statement ${escapeHtml(values.invoiceNumber)}</title>
 <style>
-  @page { margin: 18mm; }
+  @page { size: letter; margin: 0; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { font-family: Poppins, Arial, sans-serif; color: #222222; font-size: 13px; margin: 0; }
+  .band { position: fixed; left: 0; width: 100%; display: block; }
+  .band-top { top: 0; }
+  .band-bottom { bottom: 0; }
+  .page { width: 100%; border-collapse: collapse; }
+  .page > thead td { height: calc(${header} + 0.35in); padding: 0; border: 0; }
+  .page > tfoot td { height: calc(${footer} + 0.35in); padding: 0; border: 0; }
+  .page > tbody > tr > td { padding: 0 1in; border: 0; }
   h1 { color: #1346c5; font-size: 24px; letter-spacing: 0.04em; margin: 0 0 16px; }
   h2 { color: #0b286b; font-size: 14px; letter-spacing: 0.06em; margin: 28px 0 8px; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
   dt { font-weight: 600; }
   dd { margin: 0; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #dce7ff; }
-  thead th { background: #dce7ff; color: #0b286b; }
-  .num { text-align: right; }
-  .total th { background: #1346c5; color: #ffffff; font-size: 15px; }
+  .lines { width: 100%; border-collapse: collapse; }
+  .lines th, .lines td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #dce7ff; }
+  .lines thead th { background: #dce7ff; color: #0b286b; }
+  .lines .num { text-align: right; }
+  .lines .total th { background: #1346c5; color: #ffffff; font-size: 15px; }
   a { color: #1346c5; word-break: break-all; }
 </style>
 </head>
 <body>
-<h1>BILLING STATEMENT</h1>
-<dl>
-  <dt>Contractor:</dt><dd>${escapeHtml(values.contractorName)}</dd>
-  <dt>Position / Role:</dt><dd>${escapeHtml(values.position || '—')}</dd>
-  <dt>Company:</dt><dd>${STATEMENT_COMPANY}</dd>
-  <dt>Billing Period:</dt><dd>${formatStatementDate(period.from)} – ${formatStatementDate(period.to)}</dd>
-  <dt>Invoice Date:</dt><dd>${formatStatementDate(values.invoiceDate)}</dd>
-</dl>
+${
+  letterhead
+    ? `<img class="band band-top" src="${letterhead.header.src}" alt="">
+<img class="band band-bottom" src="${letterhead.footer.src}" alt="">`
+    : ''
+}
+<!-- The empty head and foot repeat on every printed page, keeping text clear of the art. -->
+<table class="page" role="presentation">
+  <thead><tr><td></td></tr></thead>
+  <tfoot><tr><td></td></tr></tfoot>
+  <tbody><tr><td>
+      <h1>BILLING STATEMENT</h1>
+      <dl>
+        <dt>Contractor:</dt><dd>${escapeHtml(values.contractorName)}</dd>
+        <dt>Position / Role:</dt><dd>${escapeHtml(values.position || '—')}</dd>
+        <dt>Company:</dt><dd>${STATEMENT_COMPANY}</dd>
+        <dt>Billing Period:</dt><dd>${formatStatementDate(period.from)} – ${formatStatementDate(period.to)}</dd>
+        <dt>Invoice Date:</dt><dd>${formatStatementDate(values.invoiceDate)}</dd>
+      </dl>
 
-<h2>WORK SUMMARY</h2>
-<table>
-  <thead><tr><th scope="col">Description</th><th scope="col" class="num">Details</th></tr></thead>
-  <tbody>
-    ${row('Days Worked', `${values.daysWorked} ${values.daysWorked === 1 ? 'day' : 'days'}`)}
-    ${row('Total Hours Worked', `${values.hoursWorked.toFixed(2)} hours`)}
-    ${row(values.fixedPay ? 'Fixed Rate (per statement)' : 'Daily Rate', formatUsd(values.dailyRateCents))}
-    ${row('Regular Compensation', formatUsd(totals.regularCents))}
-  </tbody>
+      <h2>WORK SUMMARY</h2>
+      <table class="lines">
+        <thead><tr><th scope="col">Description</th><th scope="col" class="num">Details</th></tr></thead>
+        <tbody>
+          ${row('Days Worked', `${values.daysWorked} ${values.daysWorked === 1 ? 'day' : 'days'}`)}
+          ${row('Total Hours Worked', `${values.hoursWorked.toFixed(2)} hours`)}
+          ${row(values.fixedPay ? 'Fixed Rate (per statement)' : 'Daily Rate', formatUsd(values.dailyRateCents))}
+          ${row('Regular Compensation', formatUsd(totals.regularCents))}
+        </tbody>
+      </table>
+
+      <h2>COMPENSATION</h2>
+      <table class="lines">
+        <thead><tr><th scope="col">Description</th><th scope="col" class="num">Amount</th></tr></thead>
+        <tbody>
+          ${row('Regular Compensation', formatUsd(totals.regularCents))}
+          ${row('Bonus', formatUsd(values.bonusCents))}
+          ${expenseRows.join('\n    ')}
+        </tbody>
+        <tfoot class="total">${row('TOTAL AMOUNT DUE', `${formatUsd(totals.totalCents)} USD`, true)}</tfoot>
+      </table>
+
+      <h2>PAYMENT DETAILS</h2>
+      <dl>
+        <dt>Payment Method:</dt><dd>Wise</dd>
+        <dt>Payment Link:</dt><dd><a href="${link}">${link}</a></dd>
+        <dt>Payment Currency:</dt><dd>USD</dd>
+        <dt>Payment Reference:</dt><dd>${escapeHtml(values.invoiceNumber)}</dd>
+      </dl>
+  </td></tr></tbody>
 </table>
-
-<h2>COMPENSATION</h2>
-<table>
-  <thead><tr><th scope="col">Description</th><th scope="col" class="num">Amount</th></tr></thead>
-  <tbody>
-    ${row('Regular Compensation', formatUsd(totals.regularCents))}
-    ${row('Bonus', formatUsd(values.bonusCents))}
-    ${expenseRows.join('\n    ')}
-  </tbody>
-  <tfoot class="total">${row('TOTAL AMOUNT DUE', `${formatUsd(totals.totalCents)} USD`, true)}</tfoot>
-</table>
-
-<h2>PAYMENT DETAILS</h2>
-<dl>
-  <dt>Payment Method:</dt><dd>Wise</dd>
-  <dt>Payment Link:</dt><dd><a href="${link}">${link}</a></dd>
-  <dt>Payment Currency:</dt><dd>USD</dd>
-  <dt>Payment Reference:</dt><dd>${escapeHtml(values.invoiceNumber)}</dd>
-</dl>
 </body>
 </html>`
 }

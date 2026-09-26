@@ -59,15 +59,17 @@ describe('BillingStatementsPanel', () => {
     expect(await screen.findByText('No billing statements yet')).toBeInTheDocument()
   })
 
-  it('prints a statement again exactly as it was saved', async () => {
+  it('prints a statement again exactly as it was saved, on the letterhead', async () => {
     const user = userEvent.setup()
     render(<BillingStatementsPanel />)
 
     await user.click(await screen.findByRole('button', { name: 'Print INV-20260930' }))
 
+    await waitFor(() => expect(print.printHtml).toHaveBeenCalledOnce())
     const html = String(print.printHtml.mock.calls[0]?.[0])
     expect(html).toContain('Internet')
     expect(html).toContain('$975.00 USD')
+    expect(html).toContain('class="band band-top"')
   })
 
   it('removes a statement at once, and deletes it only when the undo window closes', async () => {

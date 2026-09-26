@@ -8,13 +8,21 @@ import { attendanceEvents } from '../events'
 import { useBillingStatements, useDeleteStatement } from '../hooks/use-statements'
 import { attendanceKeys } from '../query-keys'
 import type { BillingStatementRow } from '../schema'
-import { billingStatementHtml, printHtml } from '../utils/billing-statement'
+import {
+  billingStatementHtml,
+  loadStatementLetterhead,
+  printHtml,
+} from '../utils/billing-statement'
 import { BillingStatementsTable } from './billing-statements-table'
 
-function reprint(statement: BillingStatementRow) {
+async function reprint(statement: BillingStatementRow) {
   try {
     printHtml(
-      billingStatementHtml(statement, { from: statement.periodStart, to: statement.periodEnd }),
+      billingStatementHtml(
+        statement,
+        { from: statement.periodStart, to: statement.periodEnd },
+        await loadStatementLetterhead(),
+      ),
     )
     track(attendanceEvents.statementPrinted, { days: statement.daysWorked, reprint: true })
   } catch (error) {
@@ -54,7 +62,7 @@ export function BillingStatementsPanel() {
       isError={statements.isError}
       isFetching={statements.isFetching}
       onRetry={() => void statements.refetch()}
-      onPrint={reprint}
+      onPrint={(statement) => void reprint(statement)}
       onDelete={deleteWithUndo}
       emptyHint="Print a billing statement above and it is kept here, ready to print again."
     />
