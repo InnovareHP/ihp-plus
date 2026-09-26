@@ -725,7 +725,7 @@ async function absencesFor(
     }),
     db.attendanceLeave.findMany({
       where: { organizationId: caller.organizationId, userId: { in: userIds }, date: window },
-      select: { userId: true, date: true, name: true, submissionId: true },
+      select: { userId: true, date: true, name: true, paid: true, submissionId: true },
     }),
   ])
 
@@ -744,7 +744,7 @@ async function absencesFor(
     leave: new Map(
       leave.map((one) => [
         personDateKey(one.userId, dateKeyOf(one.date)),
-        { name: one.name, granted: one.submissionId === null },
+        { name: one.name, granted: one.submissionId === null, paid: one.paid },
       ]),
     ),
     worked: new Set(days.map((day) => personDateKey(day.userId, dateKeyOf(day.workDate)))),

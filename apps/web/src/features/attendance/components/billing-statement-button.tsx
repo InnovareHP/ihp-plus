@@ -4,12 +4,13 @@ import { Button } from '@mantine/core'
 import { IconFileInvoice } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useSession } from '@/lib/auth-client'
-import type { AttendanceDayRow } from '../schema'
+import type { AttendanceAbsenceRow, AttendanceDayRow } from '../schema'
 import { defaultInvoiceNumber, timeWorked } from '../utils/billing-statement'
 import { BillingStatementModal } from './billing-statement-modal'
 
 export interface BillingStatementButtonProps {
   days: readonly AttendanceDayRow[] | undefined
+  absences: readonly AttendanceAbsenceRow[] | undefined
   from: string
   to: string
   /** Today in the company zone, the statement's default invoice date. */
@@ -17,11 +18,17 @@ export interface BillingStatementButtonProps {
 }
 
 /** Opens the statement form for the range on screen, seeded from the timesheet. */
-export function BillingStatementButton({ days, from, to, today }: BillingStatementButtonProps) {
+export function BillingStatementButton({
+  days,
+  absences,
+  from,
+  to,
+  today,
+}: BillingStatementButtonProps) {
   const session = useSession()
   // Whether the form is open is a disclosure nothing else reads.
   const [opened, setOpened] = useState(false)
-  const worked = timeWorked(days ?? [])
+  const { paidDaysOff, ...worked } = timeWorked(days ?? [], absences ?? [])
 
   return (
     <>
@@ -38,6 +45,7 @@ export function BillingStatementButton({ days, from, to, today }: BillingStateme
           opened
           onClose={() => setOpened(false)}
           period={{ from, to }}
+          paidDaysOff={paidDaysOff}
           initial={{
             contractorName: session.data?.user.name ?? '',
             position: '',

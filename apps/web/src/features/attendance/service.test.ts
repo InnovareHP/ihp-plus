@@ -683,6 +683,7 @@ describe('days nobody clocked', () => {
         userId: 'user-2',
         date: new Date('2026-09-23T00:00:00.000Z'),
         name: 'Vacation leave',
+        paid: true,
         submissionId: 'sub-1',
       },
     ])
@@ -697,6 +698,7 @@ describe('days nobody clocked', () => {
         kind: 'leave',
         leaveName: 'Vacation leave',
         granted: false,
+        paid: true,
       },
       {
         userId: 'user-2',
@@ -705,6 +707,7 @@ describe('days nobody clocked', () => {
         kind: 'absent',
         leaveName: undefined,
         granted: false,
+        paid: false,
       },
     ])
     vi.useRealTimers()

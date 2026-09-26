@@ -33,6 +33,7 @@ export function useGrantDayOff() {
                 kind: 'leave' as const,
                 leaveName: grantedDayOffName(values.paid),
                 granted: true,
+                paid: values.paid,
               }
             : row,
         ),

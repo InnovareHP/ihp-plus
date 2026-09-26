@@ -53,6 +53,8 @@ export interface AttendanceAbsenceRow {
   leaveName: string | undefined
   /** Given by an admin from the timesheet rather than a request, so it can be taken back there. */
   granted: boolean
+  /** Leave payroll pays for, so a billing statement counts the day; never true for an absence. */
+  paid: boolean
 }
 
 export interface AttendanceShiftRow {

@@ -15,7 +15,7 @@ const base = {
   to: '2026-09-27',
   today: '2026-09-25',
   holidays: [] as { date: string; name: string; country: string }[],
-  leave: new Map<string, { name: string; granted: boolean }>(),
+  leave: new Map<string, { name: string; granted: boolean; paid: boolean }>(),
   worked: new Set<string>(),
 }
 
@@ -35,7 +35,10 @@ describe('absencesOf', () => {
       worked: new Set([personDateKey('u-1', '2026-09-21')]),
       holidays: [{ date: '2026-09-22', name: 'Company day', country: '' }],
       leave: new Map([
-        [personDateKey('u-1', '2026-09-23'), { name: 'Vacation leave', granted: false }],
+        [
+          personDateKey('u-1', '2026-09-23'),
+          { name: 'Vacation leave', granted: false, paid: true },
+        ],
       ]),
     })
 
@@ -49,16 +52,22 @@ describe('absencesOf', () => {
     const rows = absencesOf({
       ...base,
       leave: new Map([
-        [personDateKey('u-1', '2026-09-24'), { name: 'Day off', granted: true }],
-        [personDateKey('u-1', '2026-09-23'), { name: 'Vacation leave', granted: false }],
+        [
+          personDateKey('u-1', '2026-09-24'),
+          { name: 'Unpaid day off', granted: true, paid: false },
+        ],
+        [
+          personDateKey('u-1', '2026-09-23'),
+          { name: 'Vacation leave', granted: false, paid: true },
+        ],
       ]),
     })
 
-    expect(rows.map((row) => [row.workDate, row.kind, row.granted])).toEqual([
-      ['2026-09-24', 'leave', true],
-      ['2026-09-23', 'leave', false],
-      ['2026-09-22', 'absent', false],
-      ['2026-09-21', 'absent', false],
+    expect(rows.map((row) => [row.workDate, row.kind, row.granted, row.paid])).toEqual([
+      ['2026-09-24', 'leave', true, false],
+      ['2026-09-23', 'leave', false, true],
+      ['2026-09-22', 'absent', false, false],
+      ['2026-09-21', 'absent', false, false],
     ])
   })
 

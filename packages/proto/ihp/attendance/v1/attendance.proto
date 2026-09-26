@@ -54,6 +54,8 @@ message AttendanceAbsence {
   // Leave an admin gave straight from the timesheet rather than an approved request; only this
   // kind can be taken back there.
   bool granted = 6;
+  // Paid leave counts toward the days a contractor bills; false for an absence.
+  bool paid = 7;
 }
 
 // How the organization runs its clock. Every member reads it; only an admin writes it.

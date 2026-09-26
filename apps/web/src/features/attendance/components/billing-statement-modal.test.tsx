@@ -59,6 +59,20 @@ describe('BillingStatementModal', () => {
     expect(screen.getByLabelText(/Hours worked/)).toHaveValue('160')
   })
 
+  it('says how many of the days were paid leave', () => {
+    render(
+      <BillingStatementModal
+        opened
+        onClose={vi.fn()}
+        period={{ from: '2026-09-01', to: '2026-09-30' }}
+        paidDaysOff={2}
+        initial={INITIAL}
+      />,
+    )
+
+    expect(screen.getByText('Days worked includes 2 paid days off.')).toBeInTheDocument()
+  })
+
   it('asks for the position, rate and Wise link before printing', async () => {
     const user = userEvent.setup()
     open()

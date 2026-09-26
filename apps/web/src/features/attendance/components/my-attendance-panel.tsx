@@ -72,6 +72,7 @@ export function MyAttendancePanel() {
             />
             <BillingStatementButton
               days={log.data?.days}
+              absences={log.data?.absences}
               from={range.from}
               to={range.to}
               today={today}

@@ -25,7 +25,7 @@ export function AbsenceActions({ absence }: AbsenceActionsProps) {
     const previous = await editAbsences(queryClient, (rows) =>
       rows.map((row) =>
         row.userId === absence.userId && row.workDate === absence.workDate
-          ? { ...row, kind: 'absent' as const, leaveName: undefined, granted: false }
+          ? { ...row, kind: 'absent' as const, leaveName: undefined, granted: false, paid: false }
           : row,
       ),
     )

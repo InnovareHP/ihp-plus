@@ -1,4 +1,4 @@
-import type { AttendanceDayRow, BillingStatementValues } from '../schema'
+import type { AttendanceAbsenceRow, AttendanceDayRow, BillingStatementValues } from '../schema'
 
 export const STATEMENT_COMPANY = 'Innovare HP'
 
@@ -13,11 +13,28 @@ export interface StatementTotals {
   totalCents: number
 }
 
-/** A day counts once it has time on it, however many punches it took to get there. */
-export function timeWorked(days: readonly AttendanceDayRow[]) {
-  const dates = new Set(days.filter((day) => day.workedSeconds > 0).map((day) => day.workDate))
+/**
+ * A day counts once it has time on it, however many punches it took; a paid day off counts as a
+ * day too, since payroll pays it, but adds no hours.
+ */
+export function timeWorked(
+  days: readonly AttendanceDayRow[],
+  absences: readonly AttendanceAbsenceRow[] = [],
+) {
+  const worked = new Set(days.filter((day) => day.workedSeconds > 0).map((day) => day.workDate))
+  const paidOff = new Set(
+    absences
+      .filter(
+        (absence) => absence.kind === 'leave' && absence.paid && !worked.has(absence.workDate),
+      )
+      .map((absence) => absence.workDate),
+  )
   const seconds = days.reduce((sum, day) => sum + day.workedSeconds, 0)
-  return { daysWorked: dates.size, hoursWorked: Math.round((seconds / 3600) * 100) / 100 }
+  return {
+    daysWorked: worked.size + paidOff.size,
+    hoursWorked: Math.round((seconds / 3600) * 100) / 100,
+    paidDaysOff: paidOff.size,
+  }
 }
 
 export function statementTotals(

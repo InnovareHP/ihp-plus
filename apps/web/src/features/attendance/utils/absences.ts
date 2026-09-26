@@ -21,7 +21,7 @@ export interface AbsenceInput {
   today: string
   holidays: readonly HolidayEntry[]
   /** Keyed `${userId}|${date}`: the leave's name, and whether an admin granted it directly. */
-  leave: ReadonlyMap<string, { name: string; granted: boolean }>
+  leave: ReadonlyMap<string, { name: string; granted: boolean; paid: boolean }>
   /** Keyed `${userId}|${date}` for every day with a clock-in. */
   worked: ReadonlySet<string>
 }
@@ -57,6 +57,7 @@ export function absencesOf(input: AbsenceInput): AttendanceAbsenceRow[] {
         kind: leave ? 'leave' : 'absent',
         leaveName: leave?.name,
         granted: leave?.granted ?? false,
+        paid: leave?.paid ?? false,
       })
     }
   }

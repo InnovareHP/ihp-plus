@@ -36,6 +36,8 @@ export interface BillingStatementModalProps {
   opened: boolean
   onClose: () => void
   period: StatementPeriod
+  /** How many of the seeded days were paid leave rather than clocked, said under the summary. */
+  paidDaysOff?: number
   /** Filled from the timesheet and the session; every field stays editable. */
   initial: BillingStatementValues
 }
@@ -51,6 +53,7 @@ export function BillingStatementModal({
   opened,
   onClose,
   period,
+  paidDaysOff = 0,
   initial,
 }: BillingStatementModalProps) {
   const {
@@ -166,6 +169,11 @@ export function BillingStatementModal({
           </Fieldset>
 
           <Fieldset legend="Work summary">
+            {paidDaysOff > 0 ? (
+              <Text size="sm" c="dimmed" mb="sm">
+                Days worked includes {paidDaysOff} paid {paidDaysOff === 1 ? 'day' : 'days'} off.
+              </Text>
+            ) : null}
             <SimpleGrid cols={{ base: 1, sm: 3 }}>
               <Controller
                 control={control}

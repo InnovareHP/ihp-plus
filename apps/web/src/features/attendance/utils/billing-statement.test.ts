@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { AttendanceDayRow, BillingStatementValues } from '../schema'
+import type { AttendanceAbsenceRow, AttendanceDayRow, BillingStatementValues } from '../schema'
 import { billingStatementSchema } from '../schema'
 import { billingStatementHtml, statementTotals, timeWorked } from './billing-statement'
 
@@ -24,7 +24,19 @@ describe('timeWorked', () => {
   it('counts each dated day once and skips days with no time', () => {
     expect(
       timeWorked([day('2026-09-01', 4 * 3600), day('2026-09-01', 4 * 3600), day('2026-09-02', 0)]),
-    ).toEqual({ daysWorked: 1, hoursWorked: 8 })
+    ).toEqual({ daysWorked: 1, hoursWorked: 8, paidDaysOff: 0 })
+  })
+
+  it('bills a paid day off as a day, but not an unpaid one or an absence', () => {
+    const off = (workDate: string, paid: boolean, kind: 'leave' | 'absent' = 'leave') =>
+      ({ workDate, kind, paid }) as AttendanceAbsenceRow
+
+    expect(
+      timeWorked(
+        [day('2026-09-01', 8 * 3600)],
+        [off('2026-09-02', true), off('2026-09-03', false), off('2026-09-04', false, 'absent')],
+      ),
+    ).toEqual({ daysWorked: 2, hoursWorked: 8, paidDaysOff: 1 })
   })
 
   it('rounds hours to two decimals', () => {
