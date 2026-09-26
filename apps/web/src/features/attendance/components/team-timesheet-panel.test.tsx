@@ -191,7 +191,7 @@ describe('TeamTimesheetPanel', () => {
       })
     }
 
-    it('turns the absent row into leave before the server answers', async () => {
+    it('turns the absent row into paid leave before the server answers', async () => {
       withAbsences([ABSENT])
       rpc.grantDayOff.mockReturnValue(new Promise(() => {}))
       const user = userEvent.setup()
@@ -203,11 +203,39 @@ describe('TeamTimesheetPanel', () => {
           name: 'Grant day off to Ada Lovelace on 2026-09-21',
         }),
       )
+      await user.click(await screen.findByRole('menuitem', { name: 'Paid day off' }))
 
-      expect(await within(table).findByText('On leave: Day off')).toBeInTheDocument()
+      expect(await within(table).findByText('On leave: Paid day off')).toBeInTheDocument()
       expect(within(table).queryByText('Absent')).not.toBeInTheDocument()
-      expect(rpc.grantDayOff).toHaveBeenCalledWith({ userId: 'user-2', workDate: '2026-09-21' })
+      expect(rpc.grantDayOff).toHaveBeenCalledWith({
+        userId: 'user-2',
+        workDate: '2026-09-21',
+        paid: true,
+      })
       expect(await axe(container)).toHaveNoViolations()
+    })
+
+    it('grants an unpaid day off from the keyboard', async () => {
+      withAbsences([ABSENT])
+      rpc.grantDayOff.mockReturnValue(new Promise(() => {}))
+      const user = userEvent.setup()
+      render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
+
+      const table = await screen.findByRole('table', { name: 'Days not clocked' })
+      within(table)
+        .getByRole('button', { name: /^Grant day off/ })
+        .focus()
+      await user.keyboard('{Enter}')
+      const unpaid = await screen.findByRole('menuitem', { name: 'Unpaid day off' })
+      unpaid.focus()
+      await user.keyboard('{Enter}')
+
+      expect(await within(table).findByText('On leave: Unpaid day off')).toBeInTheDocument()
+      expect(rpc.grantDayOff).toHaveBeenCalledWith({
+        userId: 'user-2',
+        workDate: '2026-09-21',
+        paid: false,
+      })
     })
 
     it('puts the row back to absent and says why when the grant fails', async () => {
@@ -218,6 +246,7 @@ describe('TeamTimesheetPanel', () => {
 
       const table = await screen.findByRole('table', { name: 'Days not clocked' })
       await user.click(within(table).getByRole('button', { name: /^Grant day off/ }))
+      await user.click(await screen.findByRole('menuitem', { name: 'Paid day off' }))
 
       await waitFor(() =>
         expect(toast.show).toHaveBeenCalledWith(
@@ -228,7 +257,7 @@ describe('TeamTimesheetPanel', () => {
     })
 
     it('takes back a granted day behind an undo, and only then tells the server', async () => {
-      withAbsences([{ ...ABSENT, kind: 'leave', leaveName: 'Day off', granted: true }])
+      withAbsences([{ ...ABSENT, kind: 'leave', leaveName: 'Paid day off', granted: true }])
       rpc.revokeDayOff.mockResolvedValue(undefined)
       const user = userEvent.setup()
       render(<TeamTimesheetPanel timeZone="Asia/Manila" />)

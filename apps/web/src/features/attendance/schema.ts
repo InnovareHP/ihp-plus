@@ -289,7 +289,9 @@ export const holidaySchema = z.object({
 export type HolidayValues = z.infer<typeof holidaySchema>
 
 /** What a day an admin grants is called on the timesheet, since no request form named it. */
-export const GRANTED_DAY_OFF = 'Day off'
+export function grantedDayOffName(paid: boolean) {
+  return paid ? 'Paid day off' : 'Unpaid day off'
+}
 
 export const dayOffSchema = z.object({
   userId: z.string().min(1, 'Pick the person.'),
@@ -297,6 +299,10 @@ export const dayOffSchema = z.object({
 })
 
 export type DayOffValues = z.infer<typeof dayOffSchema>
+
+export const grantDayOffSchema = dayOffSchema.extend({ paid: z.boolean() })
+
+export type GrantDayOffValues = z.infer<typeof grantDayOffSchema>
 
 export const importHolidaysSchema = z.object({
   year: z.number().int().min(2000).max(2100),

@@ -197,7 +197,7 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
   },
 
   grantDayOff: async (request) => {
-    await grantDayOff({ userId: request.userId, workDate: request.workDate })
+    await grantDayOff({ userId: request.userId, workDate: request.workDate, paid: request.paid })
     return {}
   },
 

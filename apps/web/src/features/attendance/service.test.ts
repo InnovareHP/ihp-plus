@@ -1312,33 +1312,53 @@ describe('a day off an admin grants', () => {
     prisma.attendanceLeave.create.mockResolvedValue({ id: 'leave-1' })
   })
 
-  it('books the day as leave for that person and records who gave it', async () => {
-    await grantDayOff(DAY_OFF)
+  it('books the day as paid leave for that person and records who gave it', async () => {
+    await grantDayOff({ ...DAY_OFF, paid: true })
 
     expect(prisma.attendanceLeave.create).toHaveBeenCalledWith({
       data: {
         organizationId: 'org-1',
         userId: 'user-2',
         date: new Date('2026-09-21T00:00:00.000Z'),
-        name: 'Day off',
+        name: 'Paid day off',
+        paid: true,
       },
       select: { id: true },
     })
     expect(activity.recordActivity).toHaveBeenCalledWith(
-      expect.objectContaining({ action: 'attendance.day_off.granted', detail: '2026-09-21' }),
+      expect.objectContaining({
+        action: 'attendance.day_off.granted',
+        detail: '2026-09-21 · paid',
+      }),
+    )
+  })
+
+  it('books an unpaid day off as unpaid', async () => {
+    await grantDayOff({ ...DAY_OFF, paid: false })
+
+    expect(prisma.attendanceLeave.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ name: 'Unpaid day off', paid: false }),
+      }),
     )
   })
 
   it('refuses a member, somebody outside the organization, and a day already off', async () => {
     signedInAs('member')
-    await expect(grantDayOff(DAY_OFF)).rejects.toMatchObject({ code: Code.PermissionDenied })
+    await expect(grantDayOff({ ...DAY_OFF, paid: true })).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
 
     signedInAs('admin')
     prisma.member.findFirst.mockResolvedValueOnce(null)
-    await expect(grantDayOff(DAY_OFF)).rejects.toMatchObject({ code: Code.NotFound })
+    await expect(grantDayOff({ ...DAY_OFF, paid: true })).rejects.toMatchObject({
+      code: Code.NotFound,
+    })
 
     prisma.attendanceLeave.findUnique.mockResolvedValueOnce({ name: 'Vacation leave' })
-    await expect(grantDayOff(DAY_OFF)).rejects.toMatchObject({ code: Code.AlreadyExists })
+    await expect(grantDayOff({ ...DAY_OFF, paid: true })).rejects.toMatchObject({
+      code: Code.AlreadyExists,
+    })
 
     expect(prisma.attendanceLeave.create).not.toHaveBeenCalled()
   })

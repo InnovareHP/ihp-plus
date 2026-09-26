@@ -185,6 +185,8 @@ model AttendanceLeave {
   date           DateTime @db.Date
   // The form it came through, such as "Vacation leave", which is what the timesheet shows.
   name           String
+  // Whether payroll pays the day; an admin picks it on a granted day, request leave counts as paid.
+  paid           Boolean  @default(true)
   // Plain column, not a relation: requests live in another Postgres schema.
   submissionId   String?
 

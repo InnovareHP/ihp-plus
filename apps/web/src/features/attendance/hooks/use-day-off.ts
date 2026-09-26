@@ -6,7 +6,12 @@ import { announceFailure } from '@/lib/announce'
 import { attendanceEvents } from '../events'
 import { attendanceKeys } from '../query-keys'
 import { grantDayOff, revokeDayOff } from '../rpc'
-import { GRANTED_DAY_OFF, type AttendanceAbsenceRow, type DayOffValues } from '../schema'
+import {
+  grantedDayOffName,
+  type AttendanceAbsenceRow,
+  type DayOffValues,
+  type GrantDayOffValues,
+} from '../schema'
 import { editAbsences, restoreLogs, type LogSnapshot } from './use-attendance-cache'
 
 function isDay(row: AttendanceAbsenceRow, values: DayOffValues) {
@@ -18,17 +23,22 @@ export function useGrantDayOff() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (values: DayOffValues) => grantDayOff(values),
+    mutationFn: (values: GrantDayOffValues) => grantDayOff(values),
     onMutate: async (values) => ({
       previous: await editAbsences(queryClient, (rows) =>
         rows.map((row) =>
           isDay(row, values)
-            ? { ...row, kind: 'leave' as const, leaveName: GRANTED_DAY_OFF, granted: true }
+            ? {
+                ...row,
+                kind: 'leave' as const,
+                leaveName: grantedDayOffName(values.paid),
+                granted: true,
+              }
             : row,
         ),
       ),
     }),
-    onSuccess: () => track(attendanceEvents.dayOffGranted),
+    onSuccess: (_data, values) => track(attendanceEvents.dayOffGranted, { paid: values.paid }),
     onError: (error: Error, _values, context: { previous: LogSnapshot } | undefined) => {
       restoreLogs(queryClient, context?.previous)
       track(attendanceEvents.dayOffGrantFailed, { reason: error.message })

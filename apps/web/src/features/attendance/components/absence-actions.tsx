@@ -1,6 +1,7 @@
 'use client'
 
-import { Button } from '@mantine/core'
+import { Button, Menu } from '@mantine/core'
+import { IconChevronDown } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { offerUndo } from '@/lib/undo'
 import { editAbsences, restoreLogs } from '../hooks/use-attendance-cache'
@@ -39,13 +40,25 @@ export function AbsenceActions({ absence }: AbsenceActionsProps) {
 
   if (absence.kind === 'absent') {
     return (
-      <Button
-        variant="light"
-        onClick={() => grant.mutate(target)}
-        aria-label={`Grant day off to ${name}`}
-      >
-        Grant day off
-      </Button>
+      <Menu position="bottom-end" withinPortal>
+        <Menu.Target>
+          <Button
+            variant="light"
+            rightSection={<IconChevronDown size={16} aria-hidden />}
+            aria-label={`Grant day off to ${name}`}
+          >
+            Grant day off
+          </Button>
+        </Menu.Target>
+        <Menu.Dropdown>
+          <Menu.Item onClick={() => grant.mutate({ ...target, paid: true })}>
+            Paid day off
+          </Menu.Item>
+          <Menu.Item onClick={() => grant.mutate({ ...target, paid: false })}>
+            Unpaid day off
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
     )
   }
 

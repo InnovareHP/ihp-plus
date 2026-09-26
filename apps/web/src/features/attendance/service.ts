@@ -11,7 +11,8 @@ import {
   correctionDecisionSchema,
   correctionSchema,
   dayOffSchema,
-  GRANTED_DAY_OFF,
+  grantDayOffSchema,
+  grantedDayOffName,
   attendanceSettingsSchema,
   clockActionSchema,
   holidaySchema,
@@ -35,6 +36,7 @@ import {
   type CorrectionStatus,
   type CorrectionValues,
   type DayOffValues,
+  type GrantDayOffValues,
   type AttendanceHolidayRow,
   type AttendanceLog,
   type AttendanceScheduleRow,
@@ -1296,11 +1298,11 @@ export async function deleteHoliday(holidayId: string): Promise<void> {
 }
 
 /** Excuses one person's scheduled day, so the timesheet reads it as leave rather than absent. */
-export async function grantDayOff(values: DayOffValues): Promise<void> {
+export async function grantDayOff(values: GrantDayOffValues): Promise<void> {
   const caller = await requireMember()
   requireAdmin(caller, 'Only an admin grants a day off.')
 
-  const { userId, workDate } = dayOffSchema.parse(values)
+  const { userId, workDate, paid } = grantDayOffSchema.parse(values)
   const member = await db.member.findFirst({
     where: { organizationId: caller.organizationId, userId },
     select: { userId: true },
@@ -1320,7 +1322,8 @@ export async function grantDayOff(values: DayOffValues): Promise<void> {
       organizationId: caller.organizationId,
       userId,
       date: dateOf(workDate),
-      name: GRANTED_DAY_OFF,
+      name: grantedDayOffName(paid),
+      paid,
     },
     select: { id: true },
   })
@@ -1332,7 +1335,7 @@ export async function grantDayOff(values: DayOffValues): Promise<void> {
     action: 'attendance.day_off.granted',
     actorId: caller.userId,
     actorName: caller.name,
-    detail: workDate,
+    detail: `${workDate} · ${paid ? 'paid' : 'unpaid'}`,
   })
 }
 

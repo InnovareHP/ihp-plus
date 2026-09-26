@@ -30,6 +30,7 @@ import type {
   CorrectionDecisionValues,
   CorrectionValues,
   DayOffValues,
+  GrantDayOffValues,
   TeamCalendarMonth,
   AssignShiftValues,
   ClockActionValues,
@@ -173,7 +174,7 @@ export async function deleteAttendanceDay(dayId: string): Promise<void> {
   await call(() => browserClients.attendance.deleteAttendanceDay({ dayId }))
 }
 
-export async function grantDayOff(values: DayOffValues): Promise<void> {
+export async function grantDayOff(values: GrantDayOffValues): Promise<void> {
   await call(() => browserClients.attendance.grantDayOff(values))
 }
 

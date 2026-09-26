@@ -492,6 +492,8 @@ message WithdrawCorrectionResponse {
 message GrantDayOffRequest {
   string user_id = 1;
   string work_date = 2;
+  // Unpaid days still excuse the absence but are docked by payroll.
+  bool paid = 3;
 }
 
 message GrantDayOffResponse {}
