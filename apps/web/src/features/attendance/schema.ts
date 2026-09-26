@@ -479,3 +479,34 @@ export const correctionDecisionSchema = z
   })
 
 export type CorrectionDecisionValues = z.infer<typeof correctionDecisionSchema>
+
+const cents = z.number().int().min(0, 'An amount cannot be negative.').max(100_000_000)
+
+/**
+ * A contractor's billing statement for a range: days and hours start from the timesheet, the
+ * money is typed in, because rates and bonuses are not stored anywhere yet.
+ */
+export const billingStatementSchema = z.object({
+  contractorName: z.string().trim().min(1, 'Enter your full name.').max(120),
+  position: z.string().trim().min(1, 'Enter your position or role.').max(120),
+  invoiceNumber: z.string().trim().min(1, 'Enter an invoice number.').max(40),
+  invoiceDate: dateKey,
+  daysWorked: z.number().int().min(0, 'Days cannot be negative.').max(366),
+  hoursWorked: z.number().min(0, 'Hours cannot be negative.').max(10_000),
+  dailyRateCents: cents.refine((value) => value > 0, 'Enter your daily rate.'),
+  bonusCents: cents,
+  expenses: z
+    .array(
+      z.object({
+        description: z.string().trim().min(1, 'Say what the expense was for.').max(120),
+        amountCents: cents.refine((value) => value > 0, 'Enter the amount.'),
+      }),
+    )
+    .max(20, 'Keep it to 20 expenses.'),
+  wiseLink: z.url({
+    protocol: /^https$/,
+    error: 'Paste your Wise payment link, starting with https://.',
+  }),
+})
+
+export type BillingStatementValues = z.infer<typeof billingStatementSchema>

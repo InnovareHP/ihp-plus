@@ -29,6 +29,8 @@ export const attendanceEvents = {
   settingsSaved: 'attendance.settings.saved',
   settingsSaveFailed: 'attendance.settings.save_failed',
   exported: 'attendance.timesheet.exported',
+  statementPrinted: 'attendance.statement.printed',
+  statementPrintFailed: 'attendance.statement.print_failed',
   correctionRequested: 'attendance.correction.requested',
   correctionRequestFailed: 'attendance.correction.request_failed',
   correctionDecided: 'attendance.correction.decided',

@@ -10,6 +10,7 @@ import type { AttendanceDayRow, CorrectionValues } from '../schema'
 import { AbsencesTable } from './absences-table'
 import { AttendanceLogTable } from './attendance-log-table'
 import { AttendanceRangeFields } from './attendance-range-fields'
+import { BillingStatementButton } from './billing-statement-button'
 import { CorrectionRequestModal } from './correction-request-modal'
 import { DayTotals } from './day-totals'
 import { ExportTimesheetButton } from './export-timesheet-button'
@@ -68,6 +69,12 @@ export function MyAttendancePanel() {
               from={range.from}
               to={range.to}
               timeZone={timeZone}
+            />
+            <BillingStatementButton
+              days={log.data?.days}
+              from={range.from}
+              to={range.to}
+              today={today}
             />
             <Button variant="default" onClick={askAboutAnotherDay}>
               Ask for a correction
