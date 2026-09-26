@@ -5,6 +5,7 @@ import {
   IconCalendarMonth,
   IconCalendarTime,
   IconClockHour4,
+  IconFileInvoice,
   IconFileSpreadsheet,
 } from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -13,6 +14,7 @@ import { ATTENDANCE_TABS, type AttendanceTab } from '@/lib/routes'
 import { useCorrectionQueue } from '../hooks/use-corrections'
 import { useAttendanceSettings } from '../hooks/use-time-clock'
 import { AttendanceBoardPanel } from './attendance-board-panel'
+import { BillingStatementsPanel } from './billing-statements-panel'
 import { ShiftsPanel } from './shifts-panel'
 import { TeamCalendarPanel } from './team-calendar-panel'
 import { TeamTimesheetPanel } from './team-timesheet-panel'
@@ -26,6 +28,11 @@ const TABS: { value: AttendanceTab; label: string; icon: ReactNode }[] = [
   },
   { value: 'calendar', label: 'Calendar', icon: <IconCalendarMonth size={16} aria-hidden /> },
   { value: 'shifts', label: 'Shifts', icon: <IconCalendarTime size={16} aria-hidden /> },
+  {
+    value: 'statements',
+    label: 'Statements',
+    icon: <IconFileInvoice size={16} aria-hidden />,
+  },
 ]
 
 function tabOf(value: string | null): AttendanceTab {
@@ -89,6 +96,9 @@ export function TeamAttendanceTabs() {
       </Tabs.Panel>
       <Tabs.Panel value="shifts">
         <ShiftsPanel />
+      </Tabs.Panel>
+      <Tabs.Panel value="statements">
+        <BillingStatementsPanel everyone />
       </Tabs.Panel>
     </Tabs>
   )

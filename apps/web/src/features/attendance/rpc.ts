@@ -13,10 +13,14 @@ import {
   settingsFromProto,
   settingsToProto,
   shiftFromProto,
+  statementFromProto,
+  statementToProto,
 } from '@/rpc/attendance-codec'
 import { browserClients } from '@/rpc/browser'
 import type {
   AttendanceBoard,
+  BillingStatementRow,
+  SavedStatementValues,
   AttendanceDayRow,
   AttendanceDayValues,
   AttendanceHolidayRow,
@@ -342,4 +346,27 @@ export async function decideCorrection(
 export async function withdrawCorrection(correctionId: string): Promise<AttendanceCorrectionRow> {
   const response = await call(() => browserClients.attendance.withdrawCorrection({ correctionId }))
   return requiredCorrection(response.correction)
+}
+
+export async function saveBillingStatement(
+  values: SavedStatementValues,
+): Promise<BillingStatementRow> {
+  const response = await call(() =>
+    browserClients.attendance.saveBillingStatement({ statement: statementToProto(values) }),
+  )
+  if (!response.statement) throw new Error('The server did not return the statement.')
+  return statementFromProto(response.statement)
+}
+
+export async function listBillingStatements(
+  query: { everyone?: boolean } = {},
+): Promise<BillingStatementRow[]> {
+  const response = await call(() =>
+    browserClients.attendance.listBillingStatements({ everyone: query.everyone ?? false }),
+  )
+  return response.statements.map(statementFromProto)
+}
+
+export async function deleteBillingStatement(statementId: string): Promise<void> {
+  await call(() => browserClients.attendance.deleteBillingStatement({ statementId }))
 }

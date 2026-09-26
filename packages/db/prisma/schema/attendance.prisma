@@ -245,3 +245,34 @@ model AttendanceCorrection {
   @@map("attendanceCorrection")
   @@schema("attendance")
 }
+
+// A contractor's billing statement as it was printed, so it can be printed again and payroll can
+// find it. Figures are copied rather than recomputed: the timesheet may be corrected afterwards.
+model AttendanceStatement {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  // Printing the same invoice number again replaces the statement rather than adding a second.
+  invoiceNumber  String
+  invoiceDate    DateTime @db.Date
+  periodStart    DateTime @db.Date
+  periodEnd      DateTime @db.Date
+  contractorName String
+  position       String
+  daysWorked     Int
+  hoursWorked    Float
+  dailyRateCents Int
+  bonusCents     Int
+  // [{ description, amountCents }] in the order they were typed.
+  expenses       Json
+  wiseLink       String
+  totalCents     Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, invoiceNumber])
+  @@index([organizationId, createdAt])
+  @@map("attendanceStatement")
+  @@schema("attendance")
+}

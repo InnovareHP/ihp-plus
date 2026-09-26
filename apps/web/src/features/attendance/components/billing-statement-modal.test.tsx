@@ -5,12 +5,14 @@ import type { BillingStatementValues } from '../schema'
 import { BillingStatementModal } from './billing-statement-modal'
 
 const print = vi.hoisted(() => ({ printHtml: vi.fn() }))
+const rpc = vi.hoisted(() => ({ saveBillingStatement: vi.fn(), listBillingStatements: vi.fn() }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 
 vi.mock('../utils/billing-statement', async (original) => ({
   ...(await original<typeof import('../utils/billing-statement')>()),
   printHtml: print.printHtml,
 }))
+vi.mock('../rpc', () => rpc)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 
 const INITIAL: BillingStatementValues = {
@@ -26,19 +28,21 @@ const INITIAL: BillingStatementValues = {
   wiseLink: '',
 }
 
-const SAVED = JSON.stringify({
+const FILLED: BillingStatementValues = {
+  ...INITIAL,
   position: 'Designer',
   dailyRateCents: 6_000,
   wiseLink: 'https://wise.com/x',
-})
+}
 
-function open(onClose = vi.fn()) {
+function open(initial = INITIAL, onClose = vi.fn(), paidDaysOff = 0) {
   render(
     <BillingStatementModal
       opened
       onClose={onClose}
       period={{ from: '2026-09-01', to: '2026-09-30' }}
-      initial={INITIAL}
+      paidDaysOff={paidDaysOff}
+      initial={initial}
     />,
   )
   return onClose
@@ -48,7 +52,8 @@ describe('BillingStatementModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     print.printHtml.mockReset()
-    window.localStorage.clear()
+    rpc.listBillingStatements.mockResolvedValue([])
+    rpc.saveBillingStatement.mockResolvedValue({ id: 'st-1' })
   })
 
   it('starts from the timesheet', () => {
@@ -60,34 +65,27 @@ describe('BillingStatementModal', () => {
   })
 
   it('says how many of the days were paid leave', () => {
-    render(
-      <BillingStatementModal
-        opened
-        onClose={vi.fn()}
-        period={{ from: '2026-09-01', to: '2026-09-30' }}
-        paidDaysOff={2}
-        initial={INITIAL}
-      />,
-    )
+    open(INITIAL, vi.fn(), 2)
 
     expect(screen.getByText('Days worked includes 2 paid days off.')).toBeInTheDocument()
   })
 
-  it('asks for the position, rate and Wise link before printing', async () => {
+  it('asks for the position, rate and Wise link before saving', async () => {
     const user = userEvent.setup()
     open()
 
-    await user.click(screen.getByRole('button', { name: 'Print statement' }))
+    await user.click(screen.getByRole('button', { name: 'Save and print' }))
 
     expect(await screen.findByText('Enter your position or role.')).toBeInTheDocument()
     expect(screen.getByText('Enter your daily rate.')).toBeInTheDocument()
     expect(
       screen.getByText('Paste your Wise payment link, starting with https://.'),
     ).toBeInTheDocument()
+    expect(rpc.saveBillingStatement).not.toHaveBeenCalled()
     expect(print.printHtml).not.toHaveBeenCalled()
   })
 
-  it('totals the bill as it is typed and prints it with the expenses', async () => {
+  it('totals the bill as it is typed, saves it with the period, then prints it', async () => {
     const user = userEvent.setup()
     const onClose = open()
 
@@ -101,37 +99,54 @@ describe('BillingStatementModal', () => {
 
     expect(screen.getByText('$975.00 USD')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Print statement' }))
+    await user.click(screen.getByRole('button', { name: 'Save and print' }))
 
+    await waitFor(() =>
+      expect(rpc.saveBillingStatement).toHaveBeenCalledWith(
+        expect.objectContaining({
+          position: 'Virtual assistant',
+          dailyRateCents: 4_500,
+          bonusCents: 5_000,
+          expenses: [{ description: 'Internet', amountCents: 2_500 }],
+          periodStart: '2026-09-01',
+          periodEnd: '2026-09-30',
+        }),
+      ),
+    )
     await waitFor(() => expect(print.printHtml).toHaveBeenCalledOnce())
-    const html = String(print.printHtml.mock.calls[0]?.[0])
-    expect(html).toContain('Virtual assistant')
-    expect(html).toContain('Internet')
-    expect(html).toContain('$975.00 USD')
+    expect(String(print.printHtml.mock.calls[0]?.[0])).toContain('$975.00 USD')
     expect(onClose).toHaveBeenCalled()
   })
 
-  it('remembers the position, rate and link for next time', () => {
-    window.localStorage.setItem('ihp.billing-statement.defaults', SAVED)
-    open()
+  it('keeps the form, says why and prints nothing when the server refuses', async () => {
+    rpc.saveBillingStatement.mockRejectedValue(
+      new Error('The billing period ends before it starts.'),
+    )
+    const user = userEvent.setup()
+    const onClose = open(FILLED)
 
+    await user.click(screen.getByRole('button', { name: 'Save and print' }))
+
+    expect(
+      await screen.findAllByText('The billing period ends before it starts.'),
+    ).not.toHaveLength(0)
     expect(screen.getByLabelText(/Position/)).toHaveValue('Designer')
-    expect(screen.getByLabelText(/Daily rate/)).toHaveValue('$60')
-    expect(screen.getByLabelText(/Wise payment link/)).toHaveValue('https://wise.com/x')
+    expect(print.printHtml).not.toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
   })
 
-  it('keeps the form and says why when printing fails', async () => {
+  it('says the statement is saved when only the print view fails', async () => {
     print.printHtml.mockImplementation(() => {
       throw new Error('blocked')
     })
-    window.localStorage.setItem('ihp.billing-statement.defaults', SAVED)
     const user = userEvent.setup()
-    const onClose = open()
+    const onClose = open(FILLED)
 
-    await user.click(screen.getByRole('button', { name: 'Print statement' }))
+    await user.click(screen.getByRole('button', { name: 'Save and print' }))
 
-    expect(await screen.findByText(/Could not open the print view/)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Position/)).toHaveValue('Designer')
+    expect(
+      await screen.findByText(/The statement is saved, but the print view/),
+    ).toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
   })
 

@@ -9,6 +9,7 @@ import type {
   AttendanceSchedule as AttendanceScheduleMessage,
   AttendanceSettings as AttendanceSettingsMessage,
   AttendanceShift as AttendanceShiftMessage,
+  BillingStatement as BillingStatementMessage,
 } from '@ihp/rpc/attendance'
 import {
   DEFAULT_ATTENDANCE_SETTINGS,
@@ -20,6 +21,8 @@ import {
   TEAM_CALENDAR_STATES,
   type TeamCalendarDayRow,
   type AttendanceAbsenceRow,
+  type BillingStatementRow,
+  type SavedStatementValues,
   type AttendanceBoardRow,
   type AttendanceDayRow,
   type AttendanceHolidayRow,
@@ -395,5 +398,59 @@ export function correctionFromProto(message: AttendanceCorrectionMessage): Atten
     createdAt: message.createdAt,
     canDecide: message.canDecide,
     isMine: message.isMine,
+  }
+}
+
+/** A statement being saved has no id or total yet; the server fills both in. */
+export function statementToProto(
+  row: SavedStatementValues &
+    Partial<Pick<BillingStatementRow, 'id' | 'userId' | 'totalCents' | 'createdAt'>>,
+): BillingStatementMessage {
+  return {
+    $typeName: 'ihp.attendance.v1.BillingStatement',
+    id: row.id ?? '',
+    userId: row.userId ?? '',
+    invoiceNumber: row.invoiceNumber,
+    invoiceDate: row.invoiceDate,
+    periodStart: row.periodStart,
+    periodEnd: row.periodEnd,
+    contractorName: row.contractorName,
+    position: row.position,
+    daysWorked: row.daysWorked,
+    hoursWorked: row.hoursWorked,
+    dailyRateCents: row.dailyRateCents,
+    bonusCents: row.bonusCents,
+    expenses: row.expenses.map((expense) => ({
+      $typeName: 'ihp.attendance.v1.BillingExpense',
+      description: expense.description,
+      amountCents: expense.amountCents,
+    })),
+    wiseLink: row.wiseLink,
+    totalCents: row.totalCents ?? 0,
+    createdAt: row.createdAt ?? '',
+  }
+}
+
+export function statementFromProto(message: BillingStatementMessage): BillingStatementRow {
+  return {
+    id: message.id,
+    userId: message.userId,
+    invoiceNumber: message.invoiceNumber,
+    invoiceDate: message.invoiceDate,
+    periodStart: message.periodStart,
+    periodEnd: message.periodEnd,
+    contractorName: message.contractorName,
+    position: message.position,
+    daysWorked: message.daysWorked,
+    hoursWorked: message.hoursWorked,
+    dailyRateCents: message.dailyRateCents,
+    bonusCents: message.bonusCents,
+    expenses: message.expenses.map((expense) => ({
+      description: expense.description,
+      amountCents: expense.amountCents,
+    })),
+    wiseLink: message.wiseLink,
+    totalCents: message.totalCents,
+    createdAt: message.createdAt,
   }
 }

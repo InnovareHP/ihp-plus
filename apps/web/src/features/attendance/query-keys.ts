@@ -21,4 +21,7 @@ export const attendanceKeys = {
     ] as const,
   holidays: (year: number) => [...attendanceKeys.all, 'holidays', year] as const,
   holidayCountries: () => [...attendanceKeys.all, 'holiday-countries'] as const,
+  statements: () => [...attendanceKeys.all, 'statements'] as const,
+  statementList: (everyone: boolean) =>
+    [...attendanceKeys.statements(), everyone ? 'everyone' : 'mine'] as const,
 }

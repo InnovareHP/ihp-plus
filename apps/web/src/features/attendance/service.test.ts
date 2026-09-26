@@ -48,6 +48,7 @@ const prisma = vi.hoisted(() => ({
     update: vi.fn(),
     deleteMany: vi.fn(),
   },
+  attendanceStatement: { upsert: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
   member: { findMany: vi.fn(), findFirst: vi.fn() },
   user: { findMany: vi.fn() },
 }))
@@ -105,6 +106,9 @@ const {
   startBreak,
   grantDayOff,
   revokeDayOff,
+  saveBillingStatement,
+  loadBillingStatements,
+  deleteBillingStatement,
 } = await import('./service')
 
 const RULES = { timeZone: 'UTC', defaultShiftId: null }
@@ -1383,5 +1387,109 @@ describe('a day off an admin grants', () => {
 
     prisma.attendanceLeave.findFirst.mockResolvedValueOnce(null)
     await expect(revokeDayOff(DAY_OFF)).rejects.toMatchObject({ code: Code.NotFound })
+  })
+})
+
+describe('billing statements', () => {
+  const STATEMENT = {
+    contractorName: 'Grace Reyes',
+    position: 'Virtual assistant',
+    invoiceNumber: 'INV-20260930',
+    invoiceDate: '2026-09-30',
+    periodStart: '2026-09-01',
+    periodEnd: '2026-09-30',
+    daysWorked: 20,
+    hoursWorked: 160,
+    dailyRateCents: 4_500,
+    bonusCents: 5_000,
+    expenses: [{ description: 'Internet', amountCents: 2_500 }],
+    wiseLink: 'https://wise.com/pay/r/abc',
+  }
+
+  const RECORD = {
+    ...STATEMENT,
+    id: 'st-1',
+    userId: 'user-1',
+    invoiceDate: new Date('2026-09-30T00:00:00.000Z'),
+    periodStart: new Date('2026-09-01T00:00:00.000Z'),
+    periodEnd: new Date('2026-09-30T00:00:00.000Z'),
+    totalCents: 97_500,
+    createdAt: new Date('2026-09-30T08:00:00.000Z'),
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    signedInAs('member')
+    prisma.attendanceStatement.upsert.mockResolvedValue(RECORD)
+    prisma.attendanceStatement.findMany.mockResolvedValue([RECORD])
+    prisma.attendanceStatement.deleteMany.mockResolvedValue({ count: 1 })
+  })
+
+  it('keeps the statement under its invoice number with a total the server works out', async () => {
+    const saved = await saveBillingStatement(STATEMENT)
+
+    const call = prisma.attendanceStatement.upsert.mock.calls[0]?.[0]
+    expect(call.where).toEqual({
+      userId_invoiceNumber: { userId: 'user-1', invoiceNumber: 'INV-20260930' },
+    })
+    expect(call.create).toMatchObject({
+      organizationId: 'org-1',
+      userId: 'user-1',
+      periodStart: new Date('2026-09-01T00:00:00.000Z'),
+      totalCents: 97_500,
+    })
+    expect(call.update.totalCents).toBe(97_500)
+    expect(saved).toMatchObject({
+      id: 'st-1',
+      invoiceDate: '2026-09-30',
+      periodEnd: '2026-09-30',
+      expenses: [{ description: 'Internet', amountCents: 2_500 }],
+    })
+    expect(activity.recordActivity).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'attendance.statement.saved' }),
+    )
+  })
+
+  it('refuses a statement without a daily rate or with a period that runs backwards', async () => {
+    await expect(saveBillingStatement({ ...STATEMENT, dailyRateCents: 0 })).rejects.toMatchObject({
+      code: Code.InvalidArgument,
+    })
+    await expect(
+      saveBillingStatement({ ...STATEMENT, periodStart: '2026-10-01' }),
+    ).rejects.toMatchObject({ code: Code.InvalidArgument })
+    expect(prisma.attendanceStatement.upsert).not.toHaveBeenCalled()
+  })
+
+  it('lists only the member’s own statements', async () => {
+    const rows = await loadBillingStatements({})
+
+    expect(prisma.attendanceStatement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { organizationId: 'org-1', userId: 'user-1' } }),
+    )
+    expect(rows[0]?.createdAt).toBe('2026-09-30T08:00:00.000Z')
+  })
+
+  it('lets only an admin read everyone’s', async () => {
+    await expect(loadBillingStatements({ everyone: true })).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+    })
+
+    signedInAs('admin')
+    await loadBillingStatements({ everyone: true })
+    expect(prisma.attendanceStatement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { organizationId: 'org-1' } }),
+    )
+  })
+
+  it('deletes only the member’s own statement', async () => {
+    await deleteBillingStatement('st-1')
+    expect(prisma.attendanceStatement.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'st-1', organizationId: 'org-1', userId: 'user-1' },
+    })
+
+    prisma.attendanceStatement.deleteMany.mockResolvedValue({ count: 0 })
+    await expect(deleteBillingStatement('someone-else')).rejects.toMatchObject({
+      code: Code.NotFound,
+    })
   })
 })

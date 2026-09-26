@@ -507,6 +507,56 @@ message RevokeDayOffRequest {
 
 message RevokeDayOffResponse {}
 
+message BillingExpense {
+  string description = 1;
+  int32 amount_cents = 2;
+}
+
+// A contractor's billing statement as printed: the timesheet's figures and the money they typed.
+message BillingStatement {
+  string id = 1;
+  string user_id = 2;
+  string invoice_number = 3;
+  string invoice_date = 4;
+  string period_start = 5;
+  string period_end = 6;
+  string contractor_name = 7;
+  string position = 8;
+  int32 days_worked = 9;
+  double hours_worked = 10;
+  int32 daily_rate_cents = 11;
+  int32 bonus_cents = 12;
+  repeated BillingExpense expenses = 13;
+  string wise_link = 14;
+  int32 total_cents = 15;
+  // RFC 3339.
+  string created_at = 16;
+}
+
+// Saving an invoice number the member already used replaces that statement.
+message SaveBillingStatementRequest {
+  BillingStatement statement = 1;
+}
+
+message SaveBillingStatementResponse {
+  BillingStatement statement = 1;
+}
+
+message ListBillingStatementsRequest {
+  // Everyone's statements, newest first; admins only.
+  bool everyone = 1;
+}
+
+message ListBillingStatementsResponse {
+  repeated BillingStatement statements = 1;
+}
+
+message DeleteBillingStatementRequest {
+  string statement_id = 1;
+}
+
+message DeleteBillingStatementResponse {}
+
 service AttendanceService {
   rpc RequestCorrection(RequestCorrectionRequest) returns (RequestCorrectionResponse);
   rpc ListCorrections(ListCorrectionsRequest) returns (ListCorrectionsResponse);
@@ -537,4 +587,7 @@ service AttendanceService {
   rpc ImportHolidays(ImportHolidaysRequest) returns (ImportHolidaysResponse);
   rpc GrantDayOff(GrantDayOffRequest) returns (GrantDayOffResponse);
   rpc RevokeDayOff(RevokeDayOffRequest) returns (RevokeDayOffResponse);
+  rpc SaveBillingStatement(SaveBillingStatementRequest) returns (SaveBillingStatementResponse);
+  rpc ListBillingStatements(ListBillingStatementsRequest) returns (ListBillingStatementsResponse);
+  rpc DeleteBillingStatement(DeleteBillingStatementRequest) returns (DeleteBillingStatementResponse);
 }

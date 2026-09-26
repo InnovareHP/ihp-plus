@@ -1,4 +1,4 @@
-import type { ServiceImpl } from '@ihp/rpc'
+import { Code, ConnectError, type ServiceImpl } from '@ihp/rpc'
 import { AttendanceService } from '@ihp/rpc/attendance'
 import {
   assignShift,
@@ -30,6 +30,9 @@ import {
   saveHoliday,
   saveShift,
   startBreak,
+  saveBillingStatement,
+  loadBillingStatements,
+  deleteBillingStatement,
 } from '@/features/attendance/service'
 import {
   absenceToProto,
@@ -43,6 +46,8 @@ import {
   settingsFromProto,
   settingsToProto,
   shiftToProto,
+  statementFromProto,
+  statementToProto,
 } from './attendance-codec'
 
 // Thin by design: every implementation converts at the wire boundary and delegates to the
@@ -203,6 +208,26 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
 
   revokeDayOff: async (request) => {
     await revokeDayOff({ userId: request.userId, workDate: request.workDate })
+    return {}
+  },
+
+  saveBillingStatement: async (request) => {
+    if (!request.statement) {
+      throw new ConnectError('Send the statement to save.', Code.InvalidArgument)
+    }
+    return {
+      statement: statementToProto(
+        await saveBillingStatement(statementFromProto(request.statement)),
+      ),
+    }
+  },
+
+  listBillingStatements: async (request) => ({
+    statements: (await loadBillingStatements({ everyone: request.everyone })).map(statementToProto),
+  }),
+
+  deleteBillingStatement: async (request) => {
+    await deleteBillingStatement(request.statementId)
     return {}
   },
 

@@ -20,14 +20,13 @@ import { FormError } from '@/components/form-error'
 import { track } from '@/lib/analytics'
 import { announceSuccess } from '@/lib/announce'
 import { attendanceEvents } from '../events'
+import { useSaveStatement } from '../hooks/use-statements'
 import { billingStatementSchema, type BillingStatementValues } from '../schema'
 import {
   billingStatementHtml,
   formatStatementDate,
   formatUsd,
-  loadStatementDefaults,
   printHtml,
-  saveStatementDefaults,
   statementTotals,
   type StatementPeriod,
 } from '../utils/billing-statement'
@@ -38,7 +37,7 @@ export interface BillingStatementModalProps {
   period: StatementPeriod
   /** How many of the seeded days were paid leave rather than clocked, said under the summary. */
   paidDaysOff?: number
-  /** Filled from the timesheet and the session; every field stays editable. */
+  /** Filled from the timesheet, the session and the last statement; every field stays editable. */
   initial: BillingStatementValues
 }
 
@@ -48,7 +47,7 @@ function toCents(value: string | number) {
   return Math.round(Number(value || 0) * 100)
 }
 
-/** A contractor's statement for the range on screen, printed or saved as a PDF from the browser. */
+/** A contractor's statement for the range on screen: kept on file, then printed or saved as a PDF. */
 export function BillingStatementModal({
   opened,
   onClose,
@@ -56,6 +55,7 @@ export function BillingStatementModal({
   paidDaysOff = 0,
   initial,
 }: BillingStatementModalProps) {
+  const save = useSaveStatement()
   const {
     control,
     register,
@@ -66,7 +66,7 @@ export function BillingStatementModal({
     resolver: zodResolver(billingStatementSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: { ...initial, ...loadStatementDefaults() },
+    defaultValues: initial,
   })
   const expenses = useFieldArray({ control, name: 'expenses' })
 
@@ -82,28 +82,35 @@ export function BillingStatementModal({
     })),
   })
 
-  function submit(values: BillingStatementValues) {
+  async function submit(values: BillingStatementValues) {
+    try {
+      await save.mutateAsync({ ...values, periodStart: period.from, periodEnd: period.to })
+    } catch (error) {
+      setError('root', {
+        message: error instanceof Error ? error.message : 'Could not save the statement.',
+      })
+      return
+    }
+
     try {
       printHtml(billingStatementHtml(values, period))
-      saveStatementDefaults({
-        position: values.position,
-        dailyRateCents: values.dailyRateCents,
-        wiseLink: values.wiseLink,
-      })
-      track(attendanceEvents.statementPrinted, {
-        days: values.daysWorked,
-        expenses: values.expenses.length,
-      })
-      announceSuccess('Billing statement ready — print it or save it as a PDF.')
-      onClose()
     } catch (error) {
       track(attendanceEvents.statementPrintFailed, {
         reason: error instanceof Error ? error.message : 'unknown',
       })
       setError('root', {
-        message: 'Could not open the print view — allow printing for this site and try again.',
+        message:
+          'The statement is saved, but the print view would not open — allow printing for this site and print it from your statements.',
       })
+      return
     }
+
+    track(attendanceEvents.statementPrinted, {
+      days: values.daysWorked,
+      expenses: values.expenses.length,
+    })
+    announceSuccess('Billing statement saved — print it or save it as a PDF.')
+    onClose()
   }
 
   return (
@@ -331,7 +338,7 @@ export function BillingStatementModal({
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
-              Print statement
+              {isSubmitting ? 'Saving…' : 'Save and print'}
             </Button>
           </Group>
         </Stack>

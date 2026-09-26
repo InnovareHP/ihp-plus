@@ -512,3 +512,20 @@ export const billingStatementSchema = z.object({
 })
 
 export type BillingStatementValues = z.infer<typeof billingStatementSchema>
+
+/** What is stored: the form plus the range it billed, which the form reads from the page. */
+export const savedStatementSchema = billingStatementSchema
+  .extend({ periodStart: dateKey, periodEnd: dateKey })
+  .refine((values) => values.periodStart <= values.periodEnd, {
+    message: 'The billing period ends before it starts.',
+    path: ['periodEnd'],
+  })
+
+export type SavedStatementValues = z.infer<typeof savedStatementSchema>
+
+export interface BillingStatementRow extends SavedStatementValues {
+  id: string
+  userId: string
+  totalCents: number
+  createdAt: string
+}

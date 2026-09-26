@@ -11,6 +11,7 @@ import { AbsencesTable } from './absences-table'
 import { AttendanceLogTable } from './attendance-log-table'
 import { AttendanceRangeFields } from './attendance-range-fields'
 import { BillingStatementButton } from './billing-statement-button'
+import { BillingStatementsPanel } from './billing-statements-panel'
 import { CorrectionRequestModal } from './correction-request-modal'
 import { DayTotals } from './day-totals'
 import { ExportTimesheetButton } from './export-timesheet-button'
@@ -128,6 +129,8 @@ export function MyAttendancePanel() {
           onRetry={() => void corrections.refetch()}
           onWithdraw={(row) => withdraw.mutate({ correctionId: row.id })}
         />
+
+        <BillingStatementsPanel />
 
         {asking ? (
           <CorrectionRequestModal

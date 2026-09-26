@@ -4,6 +4,7 @@ import { Button } from '@mantine/core'
 import { IconFileInvoice } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useSession } from '@/lib/auth-client'
+import { useBillingStatements } from '../hooks/use-statements'
 import type { AttendanceAbsenceRow, AttendanceDayRow } from '../schema'
 import { defaultInvoiceNumber, timeWorked } from '../utils/billing-statement'
 import { BillingStatementModal } from './billing-statement-modal'
@@ -26,6 +27,8 @@ export function BillingStatementButton({
   today,
 }: BillingStatementButtonProps) {
   const session = useSession()
+  // The newest statement carries the rate and link that rarely change between periods.
+  const latest = useBillingStatements().data?.[0]
   // Whether the form is open is a disclosure nothing else reads.
   const [opened, setOpened] = useState(false)
   const { paidDaysOff, ...worked } = timeWorked(days ?? [], absences ?? [])
@@ -48,14 +51,14 @@ export function BillingStatementButton({
           paidDaysOff={paidDaysOff}
           initial={{
             contractorName: session.data?.user.name ?? '',
-            position: '',
+            position: latest?.position ?? '',
             invoiceNumber: defaultInvoiceNumber(to),
             invoiceDate: today,
             ...worked,
-            dailyRateCents: 0,
+            dailyRateCents: latest?.dailyRateCents ?? 0,
             bonusCents: 0,
             expenses: [],
-            wiseLink: '',
+            wiseLink: latest?.wiseLink ?? '',
           }}
         />
       ) : null}

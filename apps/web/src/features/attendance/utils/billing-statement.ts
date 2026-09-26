@@ -173,34 +173,3 @@ export function printHtml(html: string) {
   frame.srcdoc = html
   document.body.append(frame)
 }
-
-const DEFAULTS_KEY = 'ihp.billing-statement.defaults'
-
-export type StatementDefaults = Partial<
-  Pick<BillingStatementValues, 'position' | 'dailyRateCents' | 'wiseLink'>
->
-
-// Per-browser convenience only: the rate and link are re-typed if storage is blocked or cleared.
-export function loadStatementDefaults(): StatementDefaults {
-  try {
-    const raw = window.localStorage.getItem(DEFAULTS_KEY)
-    const parsed: unknown = raw ? JSON.parse(raw) : {}
-    if (!parsed || typeof parsed !== 'object') return {}
-    const saved = parsed as Record<string, unknown>
-    const defaults: StatementDefaults = {}
-    if (typeof saved.position === 'string' && saved.position) defaults.position = saved.position
-    if (typeof saved.dailyRateCents === 'number') defaults.dailyRateCents = saved.dailyRateCents
-    if (typeof saved.wiseLink === 'string' && saved.wiseLink) defaults.wiseLink = saved.wiseLink
-    return defaults
-  } catch {
-    return {}
-  }
-}
-
-export function saveStatementDefaults(values: StatementDefaults) {
-  try {
-    window.localStorage.setItem(DEFAULTS_KEY, JSON.stringify(values))
-  } catch {
-    // Storage is a convenience; a blocked write only means the fields start blank next time.
-  }
-}

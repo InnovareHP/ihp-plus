@@ -53,9 +53,13 @@ import {
   type ImportHolidaysValues,
   type ShiftValues,
   type TimeClockView,
+  savedStatementSchema,
+  type BillingStatementRow,
+  type SavedStatementValues,
 } from './schema'
 import { fillHolidays, fillUpcomingHolidays, holidaySelect, toHolidayRow } from './holiday-calendar'
 import { absencesOf, personDateKey } from './utils/absences'
+import { statementTotals } from './utils/billing-statement'
 import { datesOfMonth, isMonthKey, monthOf } from './utils/calendar'
 import { holidayFor } from './utils/holidays'
 import { holidayCountries, isHolidayCountry } from './utils/public-holidays'
@@ -1834,4 +1838,150 @@ export async function withdrawCorrection(correctionId: string): Promise<Attendan
     select: correctionSelect,
   })
   return toCorrectionRow(withdrawn, new Map([[caller.userId, caller.name]]), caller)
+}
+
+const statementSelect = {
+  id: true,
+  userId: true,
+  invoiceNumber: true,
+  invoiceDate: true,
+  periodStart: true,
+  periodEnd: true,
+  contractorName: true,
+  position: true,
+  daysWorked: true,
+  hoursWorked: true,
+  dailyRateCents: true,
+  bonusCents: true,
+  expenses: true,
+  wiseLink: true,
+  totalCents: true,
+  createdAt: true,
+} as const
+
+interface StatementRecord {
+  id: string
+  userId: string
+  invoiceNumber: string
+  invoiceDate: Date
+  periodStart: Date
+  periodEnd: Date
+  contractorName: string
+  position: string
+  daysWorked: number
+  hoursWorked: number
+  dailyRateCents: number
+  bonusCents: number
+  expenses: unknown
+  wiseLink: string
+  totalCents: number
+  createdAt: Date
+}
+
+// The column is JSON, so a row written by hand or an older build is read defensively.
+function expensesOf(value: unknown): BillingStatementRow['expenses'] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((one: unknown) => {
+    if (!one || typeof one !== 'object') return []
+    const { description, amountCents } = one as Record<string, unknown>
+    return typeof description === 'string' && typeof amountCents === 'number'
+      ? [{ description, amountCents }]
+      : []
+  })
+}
+
+function toStatementRow(record: StatementRecord): BillingStatementRow {
+  return {
+    ...record,
+    invoiceDate: dateKeyOf(record.invoiceDate),
+    periodStart: dateKeyOf(record.periodStart),
+    periodEnd: dateKeyOf(record.periodEnd),
+    expenses: expensesOf(record.expenses),
+    createdAt: record.createdAt.toISOString(),
+  }
+}
+
+/** Keeps a member's statement as printed; the same invoice number again replaces it. */
+export async function saveBillingStatement(
+  values: SavedStatementValues,
+): Promise<BillingStatementRow> {
+  const caller = await requireMember()
+  const parsed = savedStatementSchema.safeParse(values)
+  if (!parsed.success) {
+    throw new ConnectError(
+      parsed.error.issues[0]?.message ?? 'Check the highlighted fields.',
+      Code.InvalidArgument,
+    )
+  }
+
+  const statement = parsed.data
+  const data = {
+    invoiceDate: dateOf(statement.invoiceDate),
+    periodStart: dateOf(statement.periodStart),
+    periodEnd: dateOf(statement.periodEnd),
+    contractorName: statement.contractorName,
+    position: statement.position,
+    daysWorked: statement.daysWorked,
+    hoursWorked: statement.hoursWorked,
+    dailyRateCents: statement.dailyRateCents,
+    bonusCents: statement.bonusCents,
+    expenses: statement.expenses,
+    wiseLink: statement.wiseLink,
+    // Worked out here, not trusted from the client, so the list's totals match the printout.
+    totalCents: statementTotals(statement).totalCents,
+  }
+
+  const saved = await db.attendanceStatement.upsert({
+    where: {
+      userId_invoiceNumber: { userId: caller.userId, invoiceNumber: statement.invoiceNumber },
+    },
+    create: {
+      ...data,
+      organizationId: caller.organizationId,
+      userId: caller.userId,
+      invoiceNumber: statement.invoiceNumber,
+    },
+    update: data,
+    select: statementSelect,
+  })
+
+  await recordActivity({
+    organizationId: caller.organizationId,
+    subjectType: 'attendance',
+    subjectId: saved.id,
+    action: 'attendance.statement.saved',
+    actorId: caller.userId,
+    actorName: caller.name,
+    detail: statement.invoiceNumber,
+  })
+
+  return toStatementRow(saved)
+}
+
+/** A member reads their own statements; an admin may read everyone's, newest first. */
+export async function loadBillingStatements(query: {
+  everyone?: boolean
+}): Promise<BillingStatementRow[]> {
+  const caller = await requireMember()
+  if (query.everyone) requireAdmin(caller, 'Only an admin reads everyone’s billing statements.')
+
+  const records = await db.attendanceStatement.findMany({
+    where: {
+      organizationId: caller.organizationId,
+      ...(query.everyone ? {} : { userId: caller.userId }),
+    },
+    select: statementSelect,
+    orderBy: [{ invoiceDate: 'desc' }, { createdAt: 'desc' }],
+    take: 200,
+  })
+  return records.map(toStatementRow)
+}
+
+/** Only the contractor who wrote a statement can take it back. */
+export async function deleteBillingStatement(statementId: string): Promise<void> {
+  const caller = await requireMember()
+  const { count } = await db.attendanceStatement.deleteMany({
+    where: { id: statementId, organizationId: caller.organizationId, userId: caller.userId },
+  })
+  if (count === 0) throw new ConnectError('That statement is no longer there.', Code.NotFound)
 }
