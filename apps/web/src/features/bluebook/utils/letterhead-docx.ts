@@ -1,9 +1,11 @@
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
+import { LETTERHEAD_ARTWORK } from './letterhead-artwork'
 import { LETTERHEAD_LOGO } from './letterhead-logo'
-import { LETTERHEAD_COLORS, type LetterheadLayout } from './letterhead-templates'
+import { LETTERHEAD_COLORS, type DrawnLayout, type LetterheadLayout } from './letterhead-templates'
 
 const TWIPS_PER_POINT = 20
 const EMU_PER_POINT = 12700
+const EMU_PER_TWIP = 635
 // Word's own defaults: US Letter with one-inch margins and half-inch header/footer distances.
 const DEFAULT_PAGE = { width: 12240, left: 1440, right: 1440 }
 const DEFAULT_MARGIN = { top: 1440, bottom: 1440, header: 720, footer: 720 }
@@ -12,10 +14,9 @@ const GAP = 12 * TWIPS_PER_POINT
 
 const HEADER_PART = 'header-ihp-letterhead.xml'
 const FOOTER_PART = 'footer-ihp-letterhead.xml'
-const LOGO_PART = 'media/ihp-letterhead-logo.png'
 const HEADER_ID = 'rIdIhpLetterheadHeader'
 const FOOTER_ID = 'rIdIhpLetterheadFooter'
-const LOGO_ID = 'rIdIhpLetterheadLogo'
+const IMAGE_ID = 'rIdIhpLetterheadImage'
 
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 const NAMESPACES = [
@@ -46,29 +47,78 @@ function setAttribute(tag: string, name: string, value: number) {
   return tag.replace(/\s*\/>$/, ` w:${name}="${value}"/>`)
 }
 
-/** Twips of body height each letterhead part occupies, measured from its distance to the edge. */
-export function docxClearance(layout: LetterheadLayout) {
+interface Section {
+  pageWidth: number
+  headerDistance: number
+  footerDistance: number
+}
+
+function hasFooter(layout: LetterheadLayout) {
+  return layout.kind === 'artwork' || layout.footerHeight > 0
+}
+
+/** The smallest top and bottom margins, in twips, that keep the body clear of the letterhead. */
+export function requiredMargins(layout: LetterheadLayout, section: Section) {
+  if (layout.kind === 'artwork') {
+    const { header, footer } = LETTERHEAD_ARTWORK
+    return {
+      top: Math.round((section.pageWidth * header.height) / header.width) + GAP,
+      bottom: Math.round((section.pageWidth * footer.height) / footer.width) + GAP / 2,
+    }
+  }
   return {
-    header: (layout.logoHeight + 10) * TWIPS_PER_POINT + GAP,
-    footer: layout.footerHeight === 0 ? 0 : 20 * TWIPS_PER_POINT + GAP,
+    top: section.headerDistance + (layout.logoHeight + 10) * TWIPS_PER_POINT + GAP,
+    bottom: layout.footerHeight === 0 ? 0 : section.footerDistance + 20 * TWIPS_PER_POINT + GAP,
   }
 }
 
-function logoRun(layout: LetterheadLayout, organizationName: string) {
+function bytesOf(base64: string) {
+  return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0))
+}
+
+function pictureXml(name: string, width: number, height: number) {
+  const extent = `cx="${width}" cy="${height}"`
+  return (
+    '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    `<pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="${name}"/><pic:cNvPicPr/>` +
+    `</pic:nvPicPr><pic:blipFill><a:blip r:embed="${IMAGE_ID}"/><a:stretch><a:fillRect/>` +
+    `</a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext ${extent}/>` +
+    '</a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>' +
+    '</a:graphicData></a:graphic>'
+  )
+}
+
+/** Pinned to the page edge rather than the margins, so any margin keeps the art full-bleed. */
+function anchoredArtwork(
+  id: number,
+  name: string,
+  width: number,
+  height: number,
+  edge: 'top' | 'bottom',
+) {
+  const vertical = edge === 'top' ? '<wp:posOffset>0</wp:posOffset>' : '<wp:align>bottom</wp:align>'
+  return (
+    '<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:drawing>' +
+    '<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251659264"' +
+    ' behindDoc="1" locked="1" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/>' +
+    '<wp:positionH relativeFrom="page"><wp:posOffset>0</wp:posOffset></wp:positionH>' +
+    `<wp:positionV relativeFrom="page">${vertical}</wp:positionV>` +
+    `<wp:extent cx="${width}" cy="${height}"/><wp:effectExtent l="0" t="0" r="0" b="0"/>` +
+    `<wp:wrapNone/><wp:docPr id="${id}" name="${name}" descr="IHP+ letterhead"/>` +
+    `<wp:cNvGraphicFramePr/>${pictureXml(name, width, height)}</wp:anchor></w:drawing></w:r></w:p>`
+  )
+}
+
+function logoRun(layout: DrawnLayout, organizationName: string) {
   const height = Math.round(layout.logoHeight * EMU_PER_POINT)
   const width = Math.round((LETTERHEAD_LOGO.width / LETTERHEAD_LOGO.height) * height)
-  const extent = `cx="${width}" cy="${height}"`
   const name = escapeXml(`${organizationName} logo`)
 
   return (
     '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">' +
-    `<wp:extent ${extent}/><wp:docPr id="7301" name="Letterhead logo" descr="${name}"/>` +
-    '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
-    '<pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="ihp-letterhead-logo.png"/><pic:cNvPicPr/>' +
-    `</pic:nvPicPr><pic:blipFill><a:blip r:embed="${LOGO_ID}"/><a:stretch><a:fillRect/>` +
-    `</a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext ${extent}/>` +
-    '</a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>' +
-    '</a:graphicData></a:graphic></wp:inline></w:drawing></w:r>'
+    `<wp:extent cx="${width}" cy="${height}"/>` +
+    `<wp:docPr id="7301" name="Letterhead logo" descr="${name}"/>` +
+    `${pictureXml('ihp-letterhead-logo.png', width, height)}</wp:inline></w:drawing></w:r>`
   )
 }
 
@@ -80,7 +130,7 @@ function fieldRun(instruction: string, props: string) {
   return `<w:fldSimple w:instr=" ${instruction} ">${textRun('1', props)}</w:fldSimple>`
 }
 
-function headerXml(layout: LetterheadLayout, organizationName: string, contentWidth: number) {
+function headerXml(layout: DrawnLayout, organizationName: string, contentWidth: number) {
   const paragraph: string[] = ['<w:spacing w:before="0" w:after="0"/>']
   if (layout.band)
     paragraph.push(`<w:shd w:val="clear" w:color="auto" w:fill="${LETTERHEAD_COLORS.navy}"/>`)
@@ -117,7 +167,7 @@ function sortPPr(children: string[]) {
   return [...children].sort((a, b) => rank(a) - rank(b)).join('')
 }
 
-function footerXml(layout: LetterheadLayout, organizationName: string, contentWidth: number) {
+function footerXml(layout: DrawnLayout, organizationName: string, contentWidth: number) {
   const color = layout.band ? LETTERHEAD_COLORS.brand : LETTERHEAD_COLORS.mint
   const size = layout.band ? 24 : 8
   const props = `<w:color w:val="${LETTERHEAD_COLORS.ink}"/><w:sz w:val="16"/>`
@@ -139,7 +189,6 @@ const AFTER_PG_MAR =
 
 /** Points a section at the letterhead parts and grows its margins until the body clears them. */
 export function withLetterhead(sectPr: string, layout: LetterheadLayout) {
-  const clearance = docxClearance(layout)
   const selfClosing = sectPr.endsWith('/>')
   const open = selfClosing
     ? sectPr.replace(/\s*\/>$/, '>')
@@ -155,13 +204,16 @@ export function withLetterhead(sectPr: string, layout: LetterheadLayout) {
   const top = attribute(margin, 'top') ?? DEFAULT_MARGIN.top
   const bottom = attribute(margin, 'bottom') ?? DEFAULT_MARGIN.bottom
 
-  margin = setAttribute(margin, 'top', Math.max(Math.abs(top), headerDistance + clearance.header))
-  if (clearance.footer > 0) {
-    margin = setAttribute(
-      margin,
-      'bottom',
-      Math.max(Math.abs(bottom), footerDistance + clearance.footer),
-    )
+  const size = /<w:pgSz\b[^>]*\/>/.exec(body)?.[0] ?? ''
+  const needed = requiredMargins(layout, {
+    pageWidth: attribute(size, 'w') ?? DEFAULT_PAGE.width,
+    headerDistance,
+    footerDistance,
+  })
+
+  margin = setAttribute(margin, 'top', Math.max(Math.abs(top), needed.top))
+  if (needed.bottom > 0) {
+    margin = setAttribute(margin, 'bottom', Math.max(Math.abs(bottom), needed.bottom))
   }
   for (const [name, fallback] of [
     ['header', DEFAULT_MARGIN.header],
@@ -185,7 +237,7 @@ export function withLetterhead(sectPr: string, layout: LetterheadLayout) {
   const references = ['default', 'first', 'even']
     .map((type) => `<w:headerReference w:type="${type}" r:id="${HEADER_ID}"/>`)
     .concat(
-      clearance.footer > 0
+      hasFooter(layout)
         ? ['default', 'first', 'even'].map(
             (type) => `<w:footerReference w:type="${type}" r:id="${FOOTER_ID}"/>`,
           )
@@ -196,14 +248,60 @@ export function withLetterhead(sectPr: string, layout: LetterheadLayout) {
   return `${open}${references}${body}</w:sectPr>`
 }
 
-function contentWidthOf(sectPr: string | undefined) {
+function widthsOf(sectPr: string | undefined) {
   const size = /<w:pgSz\b[^>]*\/>/.exec(sectPr ?? '')?.[0] ?? ''
   const margin = /<w:pgMar\b[^>]*\/>/.exec(sectPr ?? '')?.[0] ?? ''
-  const width = attribute(size, 'w') ?? DEFAULT_PAGE.width
+  const page = attribute(size, 'w') ?? DEFAULT_PAGE.width
   const left = attribute(margin, 'left') ?? DEFAULT_PAGE.left
   const right = attribute(margin, 'right') ?? DEFAULT_PAGE.right
   const gutter = attribute(margin, 'gutter') ?? 0
-  return Math.max(width - left - right - gutter, 1440)
+  return { page, content: Math.max(page - left - right - gutter, 1440) }
+}
+
+interface Part {
+  xml: string
+  image: { path: string; bytes: Uint8Array } | undefined
+}
+
+function artworkPart(
+  kind: 'header' | 'footer',
+  art: { width: number; height: number; base64: string },
+  pageWidth: number,
+): Part {
+  const width = pageWidth * EMU_PER_TWIP
+  const height = Math.round((width * art.height) / art.width)
+  const root = kind === 'header' ? 'w:hdr' : 'w:ftr'
+  const name = `ihp-letterhead-${kind}.png`
+  const drawing =
+    kind === 'header'
+      ? anchoredArtwork(7301, name, width, height, 'top')
+      : anchoredArtwork(7302, name, width, height, 'bottom')
+  return {
+    xml: `${XML_DECLARATION}<${root} ${NAMESPACES}>${drawing}</${root}>`,
+    image: { path: `media/${name}`, bytes: bytesOf(art.base64) },
+  }
+}
+
+/** The header and footer parts one template adds, each with the image its drawing embeds. */
+function partsOf(
+  layout: LetterheadLayout,
+  organizationName: string,
+  widths: { page: number; content: number },
+): { header: Part; footer: Part | undefined } {
+  if (layout.kind === 'artwork') {
+    return {
+      header: artworkPart('header', LETTERHEAD_ARTWORK.header, widths.page),
+      footer: artworkPart('footer', LETTERHEAD_ARTWORK.footer, widths.page),
+    }
+  }
+  const logo = { path: 'media/ihp-letterhead-logo.png', bytes: bytesOf(LETTERHEAD_LOGO.base64) }
+  return {
+    header: { xml: headerXml(layout, organizationName, widths.content), image: logo },
+    footer:
+      layout.footerHeight > 0
+        ? { xml: footerXml(layout, organizationName, widths.content), image: undefined }
+        : undefined,
+  }
 }
 
 function addRelationship(rels: string, id: string, type: string, target: string) {
@@ -256,7 +354,7 @@ export function letterheadDocx(
     document = document.replace('</w:body>', '<w:sectPr/></w:body>')
 
   const sections = document.match(/<w:sectPr\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/w:sectPr>)/g) ?? []
-  const contentWidth = contentWidthOf(sections.at(-1))
+  const parts = partsOf(layout, organizationName, widthsOf(sections.at(-1)))
   document = document.replace(/<w:sectPr\b(?:[^>]*\/>|[^>]*>[\s\S]*?<\/w:sectPr>)/g, (section) =>
     withLetterhead(section, layout),
   )
@@ -264,35 +362,34 @@ export function letterheadDocx(
   if (!/xmlns:r=/.test(document))
     document = document.replace(/<w:document\b/, `<w:document xmlns:r="${REL}"`)
 
-  let rels = addRelationship(strFromU8(relsFile), HEADER_ID, 'header', HEADER_PART)
-  let types = addContentType(
-    strFromU8(typesFile),
-    `/${directory}${HEADER_PART}`,
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml',
-  )
+  let rels = strFromU8(relsFile)
+  let types = strFromU8(typesFile)
   if (!/Extension="png"/i.test(types)) {
     types = types.replace('</Types>', '<Default Extension="png" ContentType="image/png"/></Types>')
   }
 
   const out: Zippable = { ...files }
   out[documentPath] = strToU8(document)
-  out[`${directory}${HEADER_PART}`] = strToU8(headerXml(layout, organizationName, contentWidth))
-  out[`${directory}_rels/${HEADER_PART}.rels`] = strToU8(
-    `${XML_DECLARATION}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-      `<Relationship Id="${LOGO_ID}" Type="${REL}/image" Target="${LOGO_PART}"/></Relationships>`,
-  )
-  out[`${directory}${LOGO_PART}`] = Uint8Array.from(atob(LETTERHEAD_LOGO.base64), (char) =>
-    char.charCodeAt(0),
-  )
 
-  if (layout.footerHeight > 0) {
-    rels = addRelationship(rels, FOOTER_ID, 'footer', FOOTER_PART)
+  const placed = [
+    { part: parts.header, id: HEADER_ID, kind: 'header', file: HEADER_PART },
+    { part: parts.footer, id: FOOTER_ID, kind: 'footer', file: FOOTER_PART },
+  ] as const
+  for (const { part, id, kind, file } of placed) {
+    if (!part) continue
+    rels = addRelationship(rels, id, kind, file)
     types = addContentType(
       types,
-      `/${directory}${FOOTER_PART}`,
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml',
+      `/${directory}${file}`,
+      `application/vnd.openxmlformats-officedocument.wordprocessingml.${kind}+xml`,
     )
-    out[`${directory}${FOOTER_PART}`] = strToU8(footerXml(layout, organizationName, contentWidth))
+    out[`${directory}${file}`] = strToU8(part.xml)
+    if (!part.image) continue
+    out[`${directory}${part.image.path}`] = part.image.bytes
+    out[`${directory}_rels/${file}.rels`] = strToU8(
+      `${XML_DECLARATION}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="${IMAGE_ID}" Type="${REL}/image" Target="${part.image.path}"/></Relationships>`,
+    )
   }
 
   out[relsPath] = strToU8(rels)

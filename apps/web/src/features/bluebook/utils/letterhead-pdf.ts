@@ -13,10 +13,13 @@ import {
   type PDFFont,
   type PDFPage,
 } from 'pdf-lib'
+import { LETTERHEAD_ARTWORK } from './letterhead-artwork'
 import { LETTERHEAD_LOGO } from './letterhead-logo'
-import { LETTERHEAD_COLORS, type LetterheadLayout } from './letterhead-templates'
+import { LETTERHEAD_COLORS, type DrawnLayout, type LetterheadLayout } from './letterhead-templates'
 
 const MARGIN = 40
+// Room between the artwork's lowest point and where the page's own content starts.
+const ARTWORK_GAP = 12
 
 export class LockedPdfError extends Error {}
 
@@ -59,14 +62,29 @@ function viewOf(page: PDFPage) {
 
 type View = ReturnType<typeof viewOf>
 
-/** How far the page's own content shrinks, and where it lands, to clear the letterhead. */
-export function fitContent(width: number, height: number, layout: LetterheadLayout) {
-  const scale = (height - layout.headerHeight - layout.footerHeight) / height
-  return { scale, offsetX: (width - width * scale) / 2, offsetY: layout.footerHeight }
+interface Reserve {
+  top: number
+  bottom: number
 }
 
-function shrinkContent(document: PDFDocument, page: PDFPage, view: View, layout: LetterheadLayout) {
-  const { scale, offsetX, offsetY } = fitContent(view.width, view.height, layout)
+/** Artwork scales with the page width, so a wider page gives up a taller band. */
+export function reserveOf(layout: LetterheadLayout, width: number): Reserve {
+  if (layout.kind === 'drawn') return { top: layout.headerHeight, bottom: layout.footerHeight }
+  const { header, footer } = LETTERHEAD_ARTWORK
+  return {
+    top: (width * header.height) / header.width + ARTWORK_GAP,
+    bottom: (width * footer.height) / footer.width + ARTWORK_GAP / 2,
+  }
+}
+
+/** How far the page's own content shrinks, and where it lands, to clear the letterhead. */
+export function fitContent(width: number, height: number, reserve: Reserve) {
+  const scale = (height - reserve.top - reserve.bottom) / height
+  return { scale, offsetX: (width - width * scale) / 2, offsetY: reserve.bottom }
+}
+
+function shrinkContent(document: PDFDocument, page: PDFPage, view: View, reserve: Reserve) {
+  const { scale, offsetX, offsetY } = fitContent(view.width, view.height, reserve)
   const origin = view.toUser({ x: 0, y: 0 })
   const target = view.toUser({ x: offsetX, y: offsetY })
   const move = { x: target.x - scale * origin.x, y: target.y - scale * origin.y }
@@ -133,7 +151,7 @@ interface Kit {
   organizationName: string
 }
 
-function drawHeader(page: PDFPage, view: View, layout: LetterheadLayout, kit: Kit) {
+function drawHeader(page: PDFPage, view: View, layout: DrawnLayout, kit: Kit) {
   const at = (point: Point) => ({ ...view.toUser(point), rotate: view.rotate })
   const top = view.height
   const logoHeight = layout.logoHeight
@@ -187,7 +205,7 @@ function drawHeader(page: PDFPage, view: View, layout: LetterheadLayout, kit: Ki
 function drawFooter(
   page: PDFPage,
   view: View,
-  layout: LetterheadLayout,
+  layout: DrawnLayout,
   kit: Kit,
   pageNumber: number,
   pageCount: number,
@@ -224,6 +242,27 @@ function drawFooter(
   })
 }
 
+type Art = Awaited<ReturnType<PDFDocument['embedPng']>>
+
+function drawArtwork(page: PDFPage, view: View, header: Art, footer: Art) {
+  const headerHeight = (view.width * header.height) / header.width
+  const footerHeight = (view.width * footer.height) / footer.width
+  const rotate = view.rotate
+
+  page.drawImage(header, {
+    ...view.toUser({ x: 0, y: view.height - headerHeight }),
+    rotate,
+    width: view.width,
+    height: headerHeight,
+  })
+  page.drawImage(footer, {
+    ...view.toUser({ x: 0, y: 0 }),
+    rotate,
+    width: view.width,
+    height: footerHeight,
+  })
+}
+
 /** Shrinks every page just enough to clear the letterhead, then draws it on top. */
 export async function letterheadPdf(
   bytes: Uint8Array,
@@ -233,17 +272,28 @@ export async function letterheadPdf(
   // Loaded past the lock only to detect it: stamping would corrupt what a key still protects.
   const document = await PDFDocument.load(bytes, { ignoreEncryption: true })
   if (document.isEncrypted) throw new LockedPdfError()
+  const pages = document.getPages()
+
+  if (layout.kind === 'artwork') {
+    const header = await document.embedPng(LETTERHEAD_ARTWORK.header.base64)
+    const footer = await document.embedPng(LETTERHEAD_ARTWORK.footer.base64)
+    for (const page of pages) {
+      const view = viewOf(page)
+      shrinkContent(document, page, view, reserveOf(layout, view.width))
+      drawArtwork(page, view, header, footer)
+    }
+    return document.save()
+  }
+
   const kit: Kit = {
     logo: await document.embedPng(LETTERHEAD_LOGO.base64),
     bold: await document.embedFont(StandardFonts.HelveticaBold),
     regular: await document.embedFont(StandardFonts.Helvetica),
     organizationName,
   }
-
-  const pages = document.getPages()
   pages.forEach((page, index) => {
     const view = viewOf(page)
-    shrinkContent(document, page, view, layout)
+    shrinkContent(document, page, view, reserveOf(layout, view.width))
     drawHeader(page, view, layout, kit)
     drawFooter(page, view, layout, kit, index + 1, pages.length)
   })

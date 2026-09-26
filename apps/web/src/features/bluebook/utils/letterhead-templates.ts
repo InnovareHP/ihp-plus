@@ -1,4 +1,4 @@
-export const LETTERHEAD_TEMPLATES = ['none', 'classic', 'minimal', 'banner'] as const
+export const LETTERHEAD_TEMPLATES = ['none', 'official', 'classic', 'minimal', 'banner'] as const
 export type LetterheadTemplate = (typeof LETTERHEAD_TEMPLATES)[number]
 
 /** Brand hex without the '#', the form both OOXML and the PDF colour helper start from. */
@@ -11,7 +11,8 @@ export const LETTERHEAD_COLORS = {
 } as const
 
 /** Every size is in points; the stampers turn them into each format's own unit. */
-export interface LetterheadLayout {
+export interface DrawnLayout {
+  kind: 'drawn'
   /** Space reserved at the top of every page for the letterhead. */
   headerHeight: number
   /** Space reserved at the bottom; 0 means no footer and no page numbers. */
@@ -24,8 +25,17 @@ export interface LetterheadLayout {
   rule: boolean
 }
 
-export const LETTERHEAD_LAYOUTS: Record<Exclude<LetterheadTemplate, 'none'>, LetterheadLayout> = {
+/** The designed letterhead: its header and footer art run edge to edge, scaled to the page width. */
+export interface ArtworkLayout {
+  kind: 'artwork'
+}
+
+export type LetterheadLayout = DrawnLayout | ArtworkLayout
+
+export const LETTERHEAD_LAYOUTS = {
+  official: { kind: 'artwork' },
   classic: {
+    kind: 'drawn',
     headerHeight: 84,
     footerHeight: 36,
     logoHeight: 44,
@@ -34,6 +44,7 @@ export const LETTERHEAD_LAYOUTS: Record<Exclude<LetterheadTemplate, 'none'>, Let
     rule: true,
   },
   minimal: {
+    kind: 'drawn',
     headerHeight: 64,
     footerHeight: 0,
     logoHeight: 36,
@@ -42,6 +53,7 @@ export const LETTERHEAD_LAYOUTS: Record<Exclude<LetterheadTemplate, 'none'>, Let
     rule: false,
   },
   banner: {
+    kind: 'drawn',
     headerHeight: 80,
     footerHeight: 32,
     logoHeight: 44,
@@ -49,10 +61,11 @@ export const LETTERHEAD_LAYOUTS: Record<Exclude<LetterheadTemplate, 'none'>, Let
     band: true,
     rule: false,
   },
-}
+} as const satisfies Record<Exclude<LetterheadTemplate, 'none'>, LetterheadLayout>
 
 export const LETTERHEAD_OPTIONS: { value: LetterheadTemplate; label: string }[] = [
   { value: 'none', label: 'No letterhead' },
+  { value: 'official', label: 'IHP+ letterhead — the official design' },
   { value: 'classic', label: 'Classic — logo, name and page numbers' },
   { value: 'minimal', label: 'Minimal — centred logo only' },
   { value: 'banner', label: 'Banner — navy band with logo and name' },

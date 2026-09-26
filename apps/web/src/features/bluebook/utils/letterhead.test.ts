@@ -11,8 +11,9 @@ import {
 } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 import { applyLetterhead, LetterheadError } from './letterhead'
-import { docxClearance, withLetterhead } from './letterhead-docx'
-import { fitContent } from './letterhead-pdf'
+import { LETTERHEAD_ARTWORK } from './letterhead-artwork'
+import { requiredMargins, withLetterhead } from './letterhead-docx'
+import { fitContent, reserveOf } from './letterhead-pdf'
 import { LETTERHEAD_LAYOUTS } from './letterhead-templates'
 
 const PDF = 'application/pdf'
@@ -97,7 +98,7 @@ describe('applyLetterhead', () => {
 describe('the PDF letterhead', () => {
   it('shrinks the page to leave exactly the header and footer bands clear', () => {
     const layout = LETTERHEAD_LAYOUTS.classic
-    const fit = fitContent(612, 792, layout)
+    const fit = fitContent(612, 792, reserveOf(layout, 612))
 
     expect(792 * fit.scale).toBeCloseTo(792 - layout.headerHeight - layout.footerHeight)
     expect(fit.offsetY).toBe(layout.footerHeight)
@@ -114,12 +115,42 @@ describe('the PDF letterhead', () => {
     const page = (await PDFDocument.load(stamped)).getPages()[0]
     if (!page) throw new Error('no page')
 
-    const { scale, offsetX, offsetY } = fitContent(612, 792, LETTERHEAD_LAYOUTS.classic)
+    const { scale, offsetX, offsetY } = fitContent(
+      612,
+      792,
+      reserveOf(LETTERHEAD_LAYOUTS.classic, 612),
+    )
     const expected = [72, 700, 172, 720].map((value, index) =>
       index % 2 === 0 ? value * scale + offsetX : value * scale + offsetY,
     )
     rectOf(page).forEach((value, index) => expect(value).toBeCloseTo(expected[index] ?? NaN))
     expect(page.getSize()).toEqual({ width: 612, height: 792 })
+  })
+
+  it('clears the official artwork, which grows with the page width', () => {
+    const { header, footer } = LETTERHEAD_ARTWORK
+    const letter = reserveOf(LETTERHEAD_LAYOUTS.official, 612)
+    const wide = reserveOf(LETTERHEAD_LAYOUTS.official, 1224)
+
+    expect(letter.top).toBeGreaterThan((612 * header.height) / header.width)
+    expect(letter.bottom).toBeGreaterThan((612 * footer.height) / footer.width)
+    expect(wide.top).toBeGreaterThan(letter.top)
+  })
+
+  it('stamps the official artwork onto every page', async () => {
+    const stamped = await applyLetterhead({
+      bytes: await pdfWithLink(),
+      contentType: PDF,
+      template: 'official',
+      organizationName: 'IHP+',
+    })
+    const document = await PDFDocument.load(stamped)
+    const page = document.getPages()[0]
+    if (!page) throw new Error('no page')
+
+    const { scale, offsetY } = fitContent(612, 792, reserveOf(LETTERHEAD_LAYOUTS.official, 612))
+    expect(rectOf(page)[1]).toBeCloseTo(700 * scale + offsetY)
+    expect(stamped.byteLength).toBeGreaterThan(20_000)
   })
 
   it('stamps a rotated page without losing its rotation', async () => {
@@ -167,14 +198,45 @@ describe('the Word letterhead', () => {
   it('grows the margins until the body clears the letterhead', () => {
     const layout = LETTERHEAD_LAYOUTS.classic
     const section = withLetterhead(/<w:sectPr>[\s\S]*<\/w:sectPr>/.exec(body)?.[0] ?? '', layout)
-    const clearance = docxClearance(layout)
+    const needed = requiredMargins(layout, {
+      pageWidth: 12240,
+      headerDistance: 360,
+      footerDistance: 360,
+    })
 
-    expect(section).toContain(`w:top="${360 + clearance.header}"`)
-    expect(section).toContain(`w:bottom="${360 + clearance.footer}"`)
+    expect(section).toContain(`w:top="${needed.top}"`)
+    expect(section).toContain(`w:bottom="${needed.bottom}"`)
     // Schema order: references first, then page size, margins, and the title-page flag.
     expect(section.indexOf('headerReference')).toBeLessThan(section.indexOf('<w:pgSz'))
     expect(section.indexOf('<w:pgSz')).toBeLessThan(section.indexOf('<w:pgMar'))
     expect(section).toContain('w:type="first"')
+  })
+
+  it('pins the official artwork to the page edges, full width, with its own images', async () => {
+    const stamped = await applyLetterhead({
+      bytes: docx(body),
+      contentType: DOCX,
+      template: 'official',
+      organizationName: 'IHP+',
+    })
+    const files = unzipSync(stamped)
+    const read = (path: string) => strFromU8(files[path] ?? new Uint8Array())
+    const pageWidthEmu = 12240 * 635
+
+    expect(read('word/header-ihp-letterhead.xml')).toContain('relativeFrom="page"')
+    expect(read('word/header-ihp-letterhead.xml')).toContain(`cx="${pageWidthEmu}"`)
+    expect(read('word/footer-ihp-letterhead.xml')).toContain('<wp:align>bottom</wp:align>')
+    expect(read('word/_rels/footer-ihp-letterhead.xml.rels')).toContain(
+      'media/ihp-letterhead-footer.png',
+    )
+    expect(files['word/media/ihp-letterhead-header.png']?.byteLength).toBeGreaterThan(0)
+
+    const { top } = requiredMargins(LETTERHEAD_LAYOUTS.official, {
+      pageWidth: 12240,
+      headerDistance: 360,
+      footerDistance: 360,
+    })
+    expect(read('word/document.xml')).toContain(`w:top="${top}"`)
   })
 
   it('never shrinks a margin that is already deep enough', () => {
