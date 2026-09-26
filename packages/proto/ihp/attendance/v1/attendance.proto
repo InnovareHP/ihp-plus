@@ -542,9 +542,10 @@ message SaveBillingStatementResponse {
   BillingStatement statement = 1;
 }
 
+// Always the caller's own statements: pay records are private, admins included.
 message ListBillingStatementsRequest {
-  // Everyone's statements, newest first; admins only.
-  bool everyone = 1;
+  reserved 1;
+  reserved "everyone";
 }
 
 message ListBillingStatementsResponse {

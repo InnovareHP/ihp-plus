@@ -358,12 +358,8 @@ export async function saveBillingStatement(
   return statementFromProto(response.statement)
 }
 
-export async function listBillingStatements(
-  query: { everyone?: boolean } = {},
-): Promise<BillingStatementRow[]> {
-  const response = await call(() =>
-    browserClients.attendance.listBillingStatements({ everyone: query.everyone ?? false }),
-  )
+export async function listBillingStatements(): Promise<BillingStatementRow[]> {
+  const response = await call(() => browserClients.attendance.listBillingStatements({}))
   return response.statements.map(statementFromProto)
 }
 

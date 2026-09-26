@@ -11,11 +11,6 @@ import type { BillingStatementRow } from '../schema'
 import { billingStatementHtml, printHtml } from '../utils/billing-statement'
 import { BillingStatementsTable } from './billing-statements-table'
 
-export interface BillingStatementsPanelProps {
-  /** An admin's view of every contractor's statements, read-only. */
-  everyone?: boolean
-}
-
 function reprint(statement: BillingStatementRow) {
   try {
     printHtml(
@@ -30,12 +25,12 @@ function reprint(statement: BillingStatementRow) {
   }
 }
 
-/** The statements a contractor has issued, or, for an admin, everyone's. */
-export function BillingStatementsPanel({ everyone = false }: BillingStatementsPanelProps) {
-  const statements = useBillingStatements(everyone)
+/** The statements a contractor has issued; they are private, so nobody else can list them. */
+export function BillingStatementsPanel() {
+  const statements = useBillingStatements()
   const remove = useDeleteStatement()
   const queryClient = useQueryClient()
-  const key = attendanceKeys.statementList(false)
+  const key = attendanceKeys.statementList()
 
   function deleteWithUndo(statement: BillingStatementRow) {
     // Undo over confirm: the row goes at once, and the server is told when the toast closes.
@@ -53,20 +48,15 @@ export function BillingStatementsPanel({ everyone = false }: BillingStatementsPa
 
   return (
     <BillingStatementsTable
-      title={everyone ? 'Billing statements' : 'Your billing statements'}
+      title="Your billing statements"
       statements={statements.data}
       isPending={statements.isPending}
       isError={statements.isError}
       isFetching={statements.isFetching}
       onRetry={() => void statements.refetch()}
       onPrint={reprint}
-      onDelete={everyone ? undefined : deleteWithUndo}
-      showContractor={everyone}
-      emptyHint={
-        everyone
-          ? 'Statements contractors print from their time clock are kept here.'
-          : 'Print a billing statement above and it is kept here, ready to print again.'
-      }
+      onDelete={deleteWithUndo}
+      emptyHint="Print a billing statement above and it is kept here, ready to print again."
     />
   )
 }

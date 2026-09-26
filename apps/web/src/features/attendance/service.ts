@@ -1958,18 +1958,12 @@ export async function saveBillingStatement(
   return toStatementRow(saved)
 }
 
-/** A member reads their own statements; an admin may read everyone's, newest first. */
-export async function loadBillingStatements(query: {
-  everyone?: boolean
-}): Promise<BillingStatementRow[]> {
+/** Statements are private pay records: a member reads only their own, newest first. */
+export async function loadBillingStatements(): Promise<BillingStatementRow[]> {
   const caller = await requireMember()
-  if (query.everyone) requireAdmin(caller, 'Only an admin reads everyone’s billing statements.')
 
   const records = await db.attendanceStatement.findMany({
-    where: {
-      organizationId: caller.organizationId,
-      ...(query.everyone ? {} : { userId: caller.userId }),
-    },
+    where: { organizationId: caller.organizationId, userId: caller.userId },
     select: statementSelect,
     orderBy: [{ invoiceDate: 'desc' }, { createdAt: 'desc' }],
     take: 200,

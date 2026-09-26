@@ -222,8 +222,8 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
     }
   },
 
-  listBillingStatements: async (request) => ({
-    statements: (await loadBillingStatements({ everyone: request.everyone })).map(statementToProto),
+  listBillingStatements: async () => ({
+    statements: (await loadBillingStatements()).map(statementToProto),
   }),
 
   deleteBillingStatement: async (request) => {

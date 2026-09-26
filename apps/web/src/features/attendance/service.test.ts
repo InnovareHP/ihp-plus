@@ -1461,7 +1461,7 @@ describe('billing statements', () => {
   })
 
   it('lists only the member’s own statements', async () => {
-    const rows = await loadBillingStatements({})
+    const rows = await loadBillingStatements()
 
     expect(prisma.attendanceStatement.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { organizationId: 'org-1', userId: 'user-1' } }),
@@ -1469,15 +1469,11 @@ describe('billing statements', () => {
     expect(rows[0]?.createdAt).toBe('2026-09-30T08:00:00.000Z')
   })
 
-  it('lets only an admin read everyone’s', async () => {
-    await expect(loadBillingStatements({ everyone: true })).rejects.toMatchObject({
-      code: Code.PermissionDenied,
-    })
-
+  it('keeps an admin to their own statements too', async () => {
     signedInAs('admin')
-    await loadBillingStatements({ everyone: true })
+    await loadBillingStatements()
     expect(prisma.attendanceStatement.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { organizationId: 'org-1' } }),
+      expect.objectContaining({ where: expect.objectContaining({ userId: expect.any(String) }) }),
     )
   })
 

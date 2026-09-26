@@ -16,8 +16,6 @@ export interface BillingStatementsTableProps {
   onPrint: (statement: BillingStatementRow) => void
   /** Left out where the viewer is not the statement's author, such as an admin's list. */
   onDelete?: (statement: BillingStatementRow) => void
-  /** An admin's list covers everyone, so it says whose each statement is. */
-  showContractor?: boolean
   emptyHint: string
 }
 
@@ -31,7 +29,6 @@ export function BillingStatementsTable({
   onRetry,
   onPrint,
   onDelete,
-  showContractor = false,
   emptyHint,
 }: BillingStatementsTableProps) {
   const columns: DataTableColumn<BillingStatementRow>[] = [
@@ -50,15 +47,6 @@ export function BillingStatementsTable({
         </Stack>
       ),
     },
-    ...(showContractor
-      ? [
-          {
-            key: 'contractor',
-            header: 'Contractor',
-            render: (row: BillingStatementRow) => row.contractorName,
-          },
-        ]
-      : []),
     {
       key: 'period',
       header: 'Billing period',
@@ -131,7 +119,7 @@ export function BillingStatementsTable({
         isFetching={isFetching}
         onRetry={onRetry}
         errorTitle="Could not load the billing statements"
-        minWidth={showContractor ? 720 : 600}
+        minWidth={600}
         empty={<EmptyState title="No billing statements yet" description={emptyHint} />}
       />
     </Stack>

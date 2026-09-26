@@ -49,7 +49,7 @@ export const ORGANIZATION_TABS = [
 export type OrganizationTab = (typeof ORGANIZATION_TABS)[number]
 
 /** The admin half of attendance is one screen of tabs, from today's board to contractors' bills. */
-export const ATTENDANCE_TABS = ['today', 'timesheets', 'calendar', 'shifts', 'statements'] as const
+export const ATTENDANCE_TABS = ['today', 'timesheets', 'calendar', 'shifts'] as const
 
 export type AttendanceTab = (typeof ATTENDANCE_TABS)[number]
 

@@ -110,14 +110,6 @@ describe('BillingStatementsPanel', () => {
     expect(await screen.findByText('INV-20260930')).toBeInTheDocument()
   })
 
-  it('shows an admin whose each statement is, with no delete', async () => {
-    render(<BillingStatementsPanel everyone />)
-
-    expect(await screen.findByText('Dana Reyes')).toBeInTheDocument()
-    expect(rpc.listBillingStatements).toHaveBeenCalledWith({ everyone: true })
-    expect(screen.queryByRole('button', { name: /Delete/ })).not.toBeInTheDocument()
-  })
-
   it('has no axe violations', async () => {
     const { container } = render(<BillingStatementsPanel />)
     await screen.findByText('INV-20260930')

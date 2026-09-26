@@ -8,10 +8,10 @@ import { deleteBillingStatement, listBillingStatements, saveBillingStatement } f
 import type { BillingStatementRow, SavedStatementValues } from '../schema'
 import { statementTotals } from '../utils/billing-statement'
 
-export function useBillingStatements(everyone = false, enabled = true) {
+export function useBillingStatements(enabled = true) {
   return useQuery({
-    queryKey: attendanceKeys.statementList(everyone),
-    queryFn: () => listBillingStatements({ everyone }),
+    queryKey: attendanceKeys.statementList(),
+    queryFn: listBillingStatements,
     enabled,
     staleTime: 60 * 1000,
   })
@@ -19,7 +19,7 @@ export function useBillingStatements(everyone = false, enabled = true) {
 
 export function useSaveStatement() {
   return useOptimisticListMutation<BillingStatementRow, SavedStatementValues>({
-    queryKey: attendanceKeys.statementList(false),
+    queryKey: attendanceKeys.statementList(),
     mutationFn: async (values) => {
       await saveBillingStatement(values)
     },
@@ -43,7 +43,7 @@ export function useSaveStatement() {
 
 export function useDeleteStatement() {
   return useOptimisticListMutation<BillingStatementRow, { statementId: string }>({
-    queryKey: attendanceKeys.statementList(false),
+    queryKey: attendanceKeys.statementList(),
     mutationFn: async ({ statementId }) => {
       await deleteBillingStatement(statementId)
     },
