@@ -1,3 +1,4 @@
+import type { GraphConfig } from './config'
 import { getAccessToken } from './token'
 
 const BASE_URL = 'https://graph.microsoft.com/v1.0'
@@ -36,6 +37,8 @@ export interface GraphRequest {
   /** Absolute URLs come back from Graph itself — delta links, monitor URLs, @odata.nextLink. */
   absolute?: boolean
   signal?: AbortSignal
+  /** The app to call as; unset is the GRAPH_ app every drive call uses. */
+  credential?: GraphConfig
 }
 
 function sleep(ms: number) {
@@ -72,7 +75,7 @@ export async function graphFetch(path: string, request: GraphRequest = {}) {
   let forceToken = false
 
   for (let attempt = 0; ; attempt++) {
-    const token = await getAccessToken({ force: forceToken })
+    const token = await getAccessToken({ force: forceToken, config: request.credential })
     forceToken = false
 
     const response = await fetch(url, {

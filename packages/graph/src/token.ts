@@ -12,8 +12,9 @@ interface CachedToken {
   expiresAt: number
 }
 
-let cached: CachedToken | undefined
-let inFlight: Promise<string> | undefined
+// Keyed by credential: drive calls use the GRAPH_ app, calendar calls the MICROSOFT_ one.
+const cached = new Map<string, CachedToken>()
+const inFlight = new Map<string, Promise<string>>()
 
 function base64url(value: Buffer) {
   return value.toString('base64url')
@@ -92,35 +93,40 @@ function cacheKey(config: GraphConfig) {
   return `${config.tenantId}:${config.clientId}:${config.certificate?.thumbprint ?? config.secret}`
 }
 
-export async function getAccessToken({ force = false } = {}) {
-  const config = requireGraphConfig()
-  const key = cacheKey(config)
+export async function getAccessToken({
+  force = false,
+  config,
+}: { force?: boolean; config?: GraphConfig } = {}) {
+  const credential = config ?? requireGraphConfig()
+  const key = cacheKey(credential)
+  const hit = cached.get(key)
 
-  if (!force && cached && cached.key === key && cached.expiresAt > Date.now()) {
-    return cached.accessToken
-  }
+  if (!force && hit && hit.expiresAt > Date.now()) return hit.accessToken
   if (force) {
-    cached = undefined
-    inFlight = undefined
+    cached.delete(key)
+    inFlight.delete(key)
   }
-  // One token request even when a burst of calls all find the cache cold.
-  inFlight ??= requestToken(config)
-    .then(({ accessToken, expiresIn }) => {
-      cached = {
-        key,
-        accessToken,
-        expiresAt: Date.now() + (expiresIn - EXPIRY_SKEW_SECONDS) * 1000,
-      }
-      return accessToken
-    })
-    .finally(() => {
-      inFlight = undefined
-    })
 
-  return inFlight
+  // One token request even when a burst of calls all find the cache cold.
+  const pending =
+    inFlight.get(key) ??
+    requestToken(credential)
+      .then(({ accessToken, expiresIn }) => {
+        cached.set(key, {
+          key,
+          accessToken,
+          expiresAt: Date.now() + (expiresIn - EXPIRY_SKEW_SECONDS) * 1000,
+        })
+        return accessToken
+      })
+      .finally(() => {
+        inFlight.delete(key)
+      })
+  inFlight.set(key, pending)
+  return pending
 }
 
 export function resetTokenCache() {
-  cached = undefined
-  inFlight = undefined
+  cached.clear()
+  inFlight.clear()
 }

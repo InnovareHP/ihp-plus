@@ -22,10 +22,13 @@ function graphCalls() {
 }
 
 beforeEach(() => {
-  process.env.GRAPH_TENANT_ID = 'tenant-1'
-  process.env.GRAPH_CLIENT_ID = 'client-1'
-  process.env.GRAPH_CLIENT_SECRET = 'secret-1'
-  process.env.GRAPH_CALENDAR_MAILBOX = 'careers@ihp.test'
+  process.env.MICROSOFT_TENANT_ID = 'tenant-1'
+  process.env.MICROSOFT_CLIENT_ID = 'signin-client'
+  process.env.MICROSOFT_CLIENT_SECRET = 'signin-secret'
+  process.env.MICROSOFT_CALENDAR_MAILBOX = 'careers@ihp.test'
+  delete process.env.GRAPH_TENANT_ID
+  delete process.env.GRAPH_CLIENT_ID
+  delete process.env.GRAPH_CLIENT_SECRET
   resetTokenCache()
   fetchMock = vi.fn((url: string) =>
     Promise.resolve(
@@ -38,10 +41,31 @@ beforeEach(() => {
 })
 
 describe('calendar configuration', () => {
-  it('needs the shared mailbox as well as the Graph app', () => {
+  it('runs on the Microsoft sign-in app alone, with no GRAPH_ variables set', () => {
     expect(isCalendarConfigured()).toBe(true)
-    delete process.env.GRAPH_CALENDAR_MAILBOX
+  })
+
+  it('needs the shared mailbox', () => {
+    delete process.env.MICROSOFT_CALENDAR_MAILBOX
     expect(isCalendarConfigured()).toBe(false)
+  })
+
+  it('refuses the multi-tenant "common", which cannot issue an app-only token', () => {
+    process.env.MICROSOFT_TENANT_ID = 'common'
+    expect(isCalendarConfigured()).toBe(false)
+  })
+
+  it('asks for its token as the sign-in app', async () => {
+    await getAvailability({
+      emails: ['rita@ihp.test'],
+      start: new Date('2030-10-14T00:00:00.000Z'),
+      end: new Date('2030-10-15T00:00:00.000Z'),
+      intervalMinutes: 30,
+    }).catch(() => undefined)
+
+    const tokenCall = fetchMock.mock.calls.find(([url]) => String(url).includes('login.'))
+    expect(String(tokenCall?.[0])).toContain('/tenant-1/')
+    expect(String(tokenCall?.[1]?.body)).toContain('client_id=signin-client')
   })
 })
 

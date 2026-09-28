@@ -1,25 +1,54 @@
-import { graphJson, graphVoid } from './client'
-import { GraphNotConfiguredError, requireGraphConfig } from './config'
+import { graphJson, graphVoid, type GraphRequest } from './client'
+import type { GraphConfig } from './config'
+
+export class CalendarNotConfiguredError extends Error {
+  constructor() {
+    super(
+      'Interview calendars are not configured — set MICROSOFT_TENANT_ID and MICROSOFT_CALENDAR_MAILBOX.',
+    )
+    this.name = 'CalendarNotConfiguredError'
+  }
+}
 
 /**
- * Interviews live in one shared mailbox's calendar (careers@, say), so the app needs
- * Calendars.ReadWrite on that mailbox alone; an Exchange application access policy can hold it
- * to exactly that.
+ * Interviews are booked as the Microsoft sign-in app, called app-only, so it needs the
+ * Calendars.ReadWrite application permission and a real tenant id rather than `common`.
  */
+export function readCalendarConfig(): (GraphConfig & { mailbox: string }) | null {
+  const tenantId = process.env.MICROSOFT_TENANT_ID
+  const clientId = process.env.MICROSOFT_CLIENT_ID
+  const secret = process.env.MICROSOFT_CLIENT_SECRET
+  const mailbox = process.env.MICROSOFT_CALENDAR_MAILBOX
+  // `common` works for a login, but an app-only token is issued by one tenant only.
+  if (!tenantId || tenantId === 'common' || !clientId || !secret || !mailbox) return null
+  return {
+    tenantId,
+    clientId,
+    secret,
+    certificate: undefined,
+    internalDriveId: undefined,
+    clientDriveId: undefined,
+    mailbox,
+  }
+}
+
+function requireCalendar() {
+  const config = readCalendarConfig()
+  if (!config) throw new CalendarNotConfiguredError()
+  return config
+}
+
 export function requireCalendarMailbox() {
-  const mailbox = process.env.GRAPH_CALENDAR_MAILBOX
-  requireGraphConfig()
-  if (!mailbox) throw new GraphNotConfiguredError()
-  return mailbox
+  return requireCalendar().mailbox
 }
 
 export function isCalendarConfigured() {
-  try {
-    requireCalendarMailbox()
-    return true
-  } catch {
-    return false
-  }
+  return readCalendarConfig() !== null
+}
+
+/** Every calendar call goes as the sign-in app, never as the GRAPH_ drive app. */
+function asCalendarApp(request: GraphRequest): GraphRequest {
+  return { ...request, credential: requireCalendar() }
 }
 
 export interface CalendarAttendee {
@@ -56,7 +85,7 @@ export async function createCalendarEvent(event: NewCalendarEvent): Promise<Crea
   const mailbox = requireCalendarMailbox()
   const created = await graphJson<{ id: string; onlineMeeting?: { joinUrl?: string } | null }>(
     `/users/${encodeURIComponent(mailbox)}/events`,
-    {
+    asCalendarApp({
       method: 'POST',
       body: {
         subject: event.subject,
@@ -73,7 +102,7 @@ export async function createCalendarEvent(event: NewCalendarEvent): Promise<Crea
         ...(event.online ? { onlineMeetingProvider: 'teamsForBusiness' } : {}),
         transactionId: event.transactionId,
       },
-    },
+    }),
   )
   return { id: created.id, joinUrl: created.onlineMeeting?.joinUrl ?? undefined }
 }
@@ -83,7 +112,7 @@ export async function cancelCalendarEvent(eventId: string, comment: string) {
   const mailbox = requireCalendarMailbox()
   await graphVoid(
     `/users/${encodeURIComponent(mailbox)}/events/${encodeURIComponent(eventId)}/cancel`,
-    { method: 'POST', body: { comment } },
+    asCalendarApp({ method: 'POST', body: { comment } }),
   )
 }
 
@@ -102,15 +131,18 @@ export async function getAvailability(options: {
   const mailbox = requireCalendarMailbox()
   const response = await graphJson<{
     value: { scheduleId: string; availabilityView?: string; error?: { message?: string } }[]
-  }>(`/users/${encodeURIComponent(mailbox)}/calendar/getSchedule`, {
-    method: 'POST',
-    body: {
-      schedules: options.emails,
-      startTime: utcTime(options.start),
-      endTime: utcTime(options.end),
-      availabilityViewInterval: options.intervalMinutes,
-    },
-  })
+  }>(
+    `/users/${encodeURIComponent(mailbox)}/calendar/getSchedule`,
+    asCalendarApp({
+      method: 'POST',
+      body: {
+        schedules: options.emails,
+        startTime: utcTime(options.start),
+        endTime: utcTime(options.end),
+        availabilityViewInterval: options.intervalMinutes,
+      },
+    }),
+  )
   return response.value.map((schedule) => ({
     email: schedule.scheduleId,
     // A calendar Graph cannot read comes back empty; it counts as busy, never as free.

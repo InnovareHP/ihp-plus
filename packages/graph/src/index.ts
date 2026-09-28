@@ -11,11 +11,13 @@ export {
 export { GraphError, graphFetch, graphJson, graphVoid, type GraphRequest } from './client'
 export { getAccessToken, resetTokenCache } from './token'
 export {
+  CalendarNotConfiguredError,
   cancelCalendarEvent,
   commonFreeStarts,
   createCalendarEvent,
   getAvailability,
   isCalendarConfigured,
+  readCalendarConfig,
   requireCalendarMailbox,
   type Availability,
   type CalendarAttendee,
