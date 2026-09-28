@@ -16,6 +16,7 @@ import {
   addNote,
   deleteNote,
   getApplication,
+  hireApplication,
   listApplications,
   listPipeline,
   moveApplication,
@@ -286,4 +287,20 @@ export function useDeleteNoteWithUndo(applicationId: string) {
         }),
     })
   }
+}
+
+// Not optimistic: hiring sends an invitation email, so the page waits for the server to say it went.
+export function useHireApplication() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (values: { applicationId: string; teamId: string }) => hireApplication(values),
+    onMutate: () => track(hiringEvents.hireStarted),
+    onSuccess: (detail) => {
+      track(hiringEvents.hired, { existingMember: detail.joined })
+      queryClient.setQueryData(hiringKeys.application(detail.summary.id), detail)
+    },
+    onError: (error: Error) => track(hiringEvents.hireFailed, { reason: error.message }),
+    onSettled: (_data, _error, values) => settle(queryClient, values.applicationId),
+  })
 }

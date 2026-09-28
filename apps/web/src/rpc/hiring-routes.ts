@@ -19,6 +19,7 @@ import {
   rejectApplication,
   reopenApplication,
 } from '@/features/hiring/pipeline-service'
+import { hireApplication } from '@/features/hiring/hire-service'
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import {
   applicationFilterFromProto,
@@ -143,4 +144,13 @@ export const hiring: ServiceImpl<typeof HiringService> = {
     await deleteNote(request.noteId)
     return {}
   },
+
+  hireApplication: async (request) => ({
+    application: applicationToProto(
+      await hireApplication({
+        applicationId: request.applicationId,
+        teamId: request.teamId ?? '',
+      }),
+    ),
+  }),
 }

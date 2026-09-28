@@ -404,6 +404,9 @@ export function applicationToProto(detail: ApplicationDetail): ApplicationMessag
     stages: detail.stages.map(stageToProto),
     rejectionReason: detail.rejectionReason,
     postingSlug: detail.postingSlug,
+    joined: detail.joined,
+    invitationExpiresAt: detail.invitationExpiresAt,
+    postingTeamId: detail.postingTeamId,
   }
 }
 
@@ -419,5 +422,8 @@ export function applicationFromProto(message: ApplicationMessage): ApplicationDe
     stages: message.stages.map(stageFromProto),
     rejectionReason: message.rejectionReason,
     postingSlug: message.postingSlug,
+    joined: message.joined,
+    invitationExpiresAt: message.invitationExpiresAt,
+    postingTeamId: message.postingTeamId,
   }
 }

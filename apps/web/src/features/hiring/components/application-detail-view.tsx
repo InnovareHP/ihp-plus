@@ -1,13 +1,19 @@
 'use client'
 
 import { Alert, Badge, Button, Grid, Group, Menu, Stack, Text } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import { IconArrowBackUp, IconChevronDown, IconMail } from '@tabler/icons-react'
 import { ActivityTimeline } from '@/components/activity-timeline'
 import { FormAnswers } from '@/components/form-answers'
 import { PageSection } from '@/components/page-section'
 import { applicationFileHref } from '@/lib/routes'
 import { useApplicationDecisions } from '../hooks/use-application-decisions'
-import { useAddNote, useApplication, useDeleteNoteWithUndo } from '../hooks/use-applications'
+import {
+  useAddNote,
+  useApplication,
+  useDeleteNoteWithUndo,
+  useHireApplication,
+} from '../hooks/use-applications'
 import {
   APPLICATION_STATUS_COLORS,
   APPLICATION_STATUS_LABELS,
@@ -17,6 +23,8 @@ import { ApplicantContact } from './applicant-contact'
 import { ApplicationFiles } from './application-files'
 import { ApplicationNotes } from './application-notes'
 import { DecisionModals } from './decision-modals'
+import { HireApplicationModal } from './hire-application-modal'
+import { HiredStatus } from './hired-status'
 import { NoteComposer } from './note-composer'
 
 export interface ApplicationDetailViewProps {
@@ -24,12 +32,14 @@ export interface ApplicationDetailViewProps {
   rejectionMessage: string
   /** The signed-in person, named on a note while it is still being saved. */
   viewerName: string
+  organizationName: string
 }
 
 export function ApplicationDetailView({
   application: initial,
   rejectionMessage,
   viewerName,
+  organizationName,
 }: ApplicationDetailViewProps) {
   const query = useApplication(initial.summary.id, initial)
   const application = query.data ?? initial
@@ -37,6 +47,8 @@ export function ApplicationDetailView({
   const decisions = useApplicationDecisions()
   const addNote = useAddNote(viewerName)
   const deleteNote = useDeleteNoteWithUndo(summary.id)
+  const resend = useHireApplication()
+  const [hiring, hireDialog] = useDisclosure(false)
   const targets = application.stages.filter((stage) => stage.id !== summary.stageId)
 
   // A file answer links to its upload, found by the question it answered.
@@ -57,10 +69,11 @@ export function ApplicationDetailView({
         </Group>
 
         <Group gap="sm">
+          {summary.status === 'active' ? <Button onClick={hireDialog.open}>Hire</Button> : null}
           {summary.status === 'active' && targets.length > 0 ? (
             <Menu position="bottom-end" withinPortal>
               <Menu.Target>
-                <Button rightSection={<IconChevronDown size={16} aria-hidden />}>
+                <Button variant="default" rightSection={<IconChevronDown size={16} aria-hidden />}>
                   Move to a stage
                 </Button>
               </Menu.Target>
@@ -97,6 +110,21 @@ export function ApplicationDetailView({
           ) : null}
         </Group>
       </Group>
+
+      {summary.status === 'hired' ? (
+        <HiredStatus
+          email={summary.email}
+          joined={application.joined}
+          invitationExpiresAt={application.invitationExpiresAt}
+          isResending={resend.isPending}
+          onResend={() =>
+            resend.mutate({
+              applicationId: summary.id,
+              teamId: application.postingTeamId ?? '',
+            })
+          }
+        />
+      ) : null}
 
       {summary.status === 'rejected' && application.rejectionReason ? (
         <Alert color="gray" variant="light" title="Why the team passed">
@@ -157,6 +185,14 @@ export function ApplicationDetailView({
       </Grid>
 
       <DecisionModals decisions={decisions} rejectionMessage={rejectionMessage} />
+      {hiring ? (
+        <HireApplicationModal
+          application={summary}
+          defaultTeamId={application.postingTeamId}
+          organizationName={organizationName}
+          onClose={hireDialog.close}
+        />
+      ) : null}
     </Stack>
   )
 }

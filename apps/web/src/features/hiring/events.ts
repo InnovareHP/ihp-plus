@@ -29,4 +29,7 @@ export const hiringEvents = {
   noteAddFailed: 'hiring.note.add_failed',
   noteDeleted: 'hiring.note.deleted',
   noteDeleteFailed: 'hiring.note.delete_failed',
+  hireStarted: 'hiring.application.hire_started',
+  hired: 'hiring.application.hired',
+  hireFailed: 'hiring.application.hire_failed',
 } as const satisfies Record<string, EventName>

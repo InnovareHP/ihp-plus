@@ -406,6 +406,10 @@ export interface ApplicationDetail {
   stages: Stage[]
   rejectionReason: string | undefined
   postingSlug: string
+  joined: boolean
+  /** Set only while the invitation is pending and its link still works. */
+  invitationExpiresAt: string | undefined
+  postingTeamId: string | undefined
 }
 
 export type ApplicationsPage = Paginated<ApplicationSummary>

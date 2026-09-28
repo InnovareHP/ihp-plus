@@ -183,3 +183,17 @@ export async function addNote(values: NoteValues): Promise<ApplicationNote> {
 export async function deleteNote(noteId: string): Promise<void> {
   await call(() => browserClients.hiring.deleteNote({ noteId }))
 }
+
+export async function hireApplication(values: {
+  applicationId: string
+  teamId: string
+}): Promise<ApplicationDetail> {
+  const response = await call(() =>
+    browserClients.hiring.hireApplication({
+      applicationId: values.applicationId,
+      teamId: values.teamId || undefined,
+    }),
+  )
+  if (!response.application) throw new Error('The server did not return the application.')
+  return applicationFromProto(response.application)
+}

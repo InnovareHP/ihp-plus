@@ -108,7 +108,7 @@ async function findApplication(caller: HiringCaller, applicationId: string) {
     where: { id: applicationId, organizationId: caller.organizationId },
     include: {
       ...SUMMARY_INCLUDE,
-      posting: { select: { stages: true, title: true, slug: true } },
+      posting: { select: { stages: true, title: true, slug: true, teamId: true } },
     },
   })
   if (!row) throw new ConnectError('That application no longer exists.', Code.NotFound)
@@ -129,6 +129,8 @@ interface EventDetail {
   toStageName?: string
   emailed?: boolean
   reason?: string
+  existingMember?: boolean
+  resent?: boolean
 }
 
 function detailOf(value: Prisma.JsonValue): EventDetail {
@@ -154,7 +156,12 @@ function eventRowOf(
     rejected: 'Not moving forward',
     reopened: 'Reopened',
     withdrawn: 'Withdrew their application',
-    hired: 'Hired',
+    hired: detail.existingMember
+      ? 'Hired from inside the organization'
+      : detail.resent
+        ? 'Sent the invitation again'
+        : 'Hired and invited to join',
+    joined: 'Accepted the invitation and joined',
   }
 
   return {
@@ -184,7 +191,7 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
   const caller = await requireHiringCaller()
   const row = await findApplication(caller, applicationId)
 
-  const [files, notes, events] = await Promise.all([
+  const [files, notes, events, invitation] = await Promise.all([
     db.applicationAttachment.findMany({
       where: { applicationId: row.id },
       orderBy: { createdAt: 'asc' },
@@ -198,6 +205,12 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
       where: { applicationId: row.id },
       orderBy: { createdAt: 'asc' },
     }),
+    row.invitationId && !row.hiredUserId
+      ? db.invitation.findUnique({
+          where: { id: row.invitationId },
+          select: { expiresAt: true, status: true },
+        })
+      : null,
   ])
   const names = await namesOf([
     ...notes.map((note) => note.authorId),
@@ -221,6 +234,13 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
     stages: stagesOf(row.posting.stages),
     rejectionReason: row.rejectionReason ?? undefined,
     postingSlug: row.posting.slug,
+    joined: Boolean(row.hiredUserId),
+    // Only a link that still works is reported; anything else reads as expired.
+    invitationExpiresAt:
+      invitation?.status === 'pending' && invitation.expiresAt.getTime() > Date.now()
+        ? invitation.expiresAt.toISOString()
+        : undefined,
+    postingTeamId: row.posting.teamId ?? undefined,
   }
 }
 

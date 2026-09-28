@@ -40,6 +40,7 @@ export default async function ApplicationPage({
         application={application}
         rejectionMessage={settings.rejectionMessage}
         viewerName={access.name}
+        organizationName={access.membership.organization?.name ?? 'IHP+'}
       />
     </PageShell>
   )

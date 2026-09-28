@@ -11,10 +11,13 @@ const rpc = vi.hoisted(() => ({
   reopenApplication: vi.fn(),
   addNote: vi.fn(),
   deleteNote: vi.fn(),
+  hireApplication: vi.fn(),
 }))
+const organization = vi.hoisted(() => ({ listTeams: vi.fn() }))
 const toast = vi.hoisted(() => ({ show: vi.fn(), hide: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
+vi.mock('@/features/organization/actions', () => organization)
 vi.mock('@mantine/notifications', () => ({ notifications: toast }))
 
 const DETAIL: ApplicationDetail = {
@@ -76,16 +79,30 @@ const DETAIL: ApplicationDetail = {
   stages: [...DEFAULT_STAGES],
   rejectionReason: undefined,
   postingSlug: 'registered-nurse-abc123',
+  joined: false,
+  invitationExpiresAt: undefined,
+  postingTeamId: 'team-care',
 }
 
 function renderView(detail: ApplicationDetail = DETAIL) {
   rpc.getApplication.mockResolvedValue(detail)
   return render(
-    <ApplicationDetailView application={detail} rejectionMessage="Thanks." viewerName="Rita" />,
+    <ApplicationDetailView
+      application={detail}
+      rejectionMessage="Thanks."
+      viewerName="Rita"
+      organizationName="IHP+"
+    />,
   )
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  organization.listTeams.mockResolvedValue({
+    ok: true,
+    data: [{ id: 'team-care', name: 'Care Management', memberCount: 4, createdAt: '2026-01-01' }],
+  })
+})
 
 describe('ApplicationDetailView', () => {
   it('shows where they stand, how to reach them, what they sent and said', async () => {
@@ -165,5 +182,57 @@ describe('ApplicationDetailView', () => {
 
     await user.click(screen.getByRole('button', { name: 'Reopen' }))
     expect(await screen.findByText('Stage: Screening')).toBeInTheDocument()
+  })
+
+  it('hires them into the posting’s department and shows the invitation waiting', async () => {
+    const expires = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+    const hired: ApplicationDetail = {
+      ...DETAIL,
+      summary: { ...DETAIL.summary, status: 'hired' },
+      invitationExpiresAt: expires,
+    }
+    rpc.hireApplication.mockResolvedValue(hired)
+    const user = userEvent.setup()
+    renderView()
+    // What the server holds from here on, which the refetch after hiring reads back.
+    rpc.getApplication.mockResolvedValue(hired)
+
+    await user.click(screen.getByRole('button', { name: 'Hire' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Hire Grace Hopper?' })
+    await user.click(within(dialog).getByRole('button', { name: 'Hire and send invitation' }))
+
+    await waitFor(() =>
+      expect(rpc.hireApplication).toHaveBeenCalledWith({
+        applicationId: 'app-1',
+        teamId: 'team-care',
+      }),
+    )
+    expect(await screen.findByText(/Waiting for grace@example.com to accept/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Hire' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the dialog open with the reason when hiring fails', async () => {
+    rpc.hireApplication.mockRejectedValue(new Error('That department no longer exists.'))
+    const user = userEvent.setup()
+    renderView()
+
+    await user.click(screen.getByRole('button', { name: 'Hire' }))
+    const dialog = await screen.findByRole('dialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Hire and send invitation' }))
+
+    expect(await within(dialog).findByText('That department no longer exists.')).toBeInTheDocument()
+  })
+
+  it('offers to send an expired invitation again', async () => {
+    rpc.hireApplication.mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    renderView({ ...DETAIL, summary: { ...DETAIL.summary, status: 'hired' } })
+
+    expect(screen.getByText(/has expired without being accepted/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Send the invitation again' }))
+    expect(rpc.hireApplication).toHaveBeenCalledWith({
+      applicationId: 'app-1',
+      teamId: 'team-care',
+    })
   })
 })

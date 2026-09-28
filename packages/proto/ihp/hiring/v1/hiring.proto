@@ -251,6 +251,12 @@ message Application {
   repeated Stage stages = 7;
   optional string rejection_reason = 8;
   string posting_slug = 9;
+  // Hired and signed in: the invitation became an account.
+  bool joined = 10;
+  // Hired but not joined yet: when the invitation stops working.
+  optional string invitation_expires_at = 11;
+  // The posting's department, which a hire lands in unless HR picks another.
+  optional string posting_team_id = 12;
 }
 
 message ListApplicationsRequest {
@@ -332,6 +338,18 @@ message DeleteNoteRequest {
 
 message DeleteNoteResponse {}
 
+// Hires the applicant: an invitation to join goes to their email, or, for someone already in the
+// organization, the application is simply marked hired. Called again, it resends the invitation.
+message HireApplicationRequest {
+  string application_id = 1;
+  // The department they join; absent means the posting's own.
+  optional string team_id = 2;
+}
+
+message HireApplicationResponse {
+  Application application = 1;
+}
+
 service HiringService {
   // Which department runs hiring, and the defaults a new posting starts from.
   rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
@@ -353,4 +371,5 @@ service HiringService {
   rpc ReopenApplication(ReopenApplicationRequest) returns (ReopenApplicationResponse);
   rpc AddNote(AddNoteRequest) returns (AddNoteResponse);
   rpc DeleteNote(DeleteNoteRequest) returns (DeleteNoteResponse);
+  rpc HireApplication(HireApplicationRequest) returns (HireApplicationResponse);
 }
