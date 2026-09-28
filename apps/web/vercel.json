@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/.well-known/microsoft-identity-association.json",
+      "destination": "/app/api/microsoft-identity-association"
+    }
+  ],
   "crons": [
     { "path": "/app/api/cron/attendance-reminders", "schedule": "0 2 * * *" },
     { "path": "/app/api/cron/attendance-reminders", "schedule": "0 11 * * *" },
