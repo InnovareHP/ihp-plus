@@ -18,10 +18,10 @@ export interface CareersList {
   fetched: boolean
 }
 
-// The portal answers on its own host; read at build time only, so it is never in the browser bundle.
+// Origin only: a pasted `.../app` is trimmed, since the paths below already carry the basePath.
 export const PORTAL_URL = (
   import.meta.env.PORTAL_URL ?? 'https://portal.ihpplusglobal.com'
-).replace(/\/$/, '')
+).replace(/\/(app\/?)?$/, '')
 
 const TIMEOUT_MS = 8000
 
