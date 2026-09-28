@@ -11,6 +11,18 @@ export {
 export { GraphError, graphFetch, graphJson, graphVoid, type GraphRequest } from './client'
 export { getAccessToken, resetTokenCache } from './token'
 export {
+  cancelCalendarEvent,
+  commonFreeStarts,
+  createCalendarEvent,
+  getAvailability,
+  isCalendarConfigured,
+  requireCalendarMailbox,
+  type Availability,
+  type CalendarAttendee,
+  type CreatedCalendarEvent,
+  type NewCalendarEvent,
+} from './calendar'
+export {
   copyItem,
   createUploadSession,
   deleteItem,

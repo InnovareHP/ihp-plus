@@ -5,6 +5,7 @@ import {
   notifyInterviewCancelled,
   notifyRescheduleRequested,
 } from './interview-notifications'
+import { putInCalendar, takeOutOfCalendar } from './interview-calendar'
 import { INTERVIEW_INCLUDE, loadInterviewContext, offerOf } from './interviews'
 import { findByLink } from './public-service'
 import { bookSlotSchema, type ActionResult, type InterviewOffer } from './schema'
@@ -72,14 +73,22 @@ export async function bookInterviewSlot(input: unknown): Promise<ActionResult> {
 
   const loaded = await loadInterviewContext(values.interviewId)
   if (loaded) {
+    // Outlook first; if it answers, its own invite goes out and ours carries no .ics.
+    const event = await putInCalendar(loaded.context, { start: slot.start, end: slot.end })
+    if (event) {
+      await db.interview.update({
+        where: { id: values.interviewId },
+        data: { calendarEventId: event.id, joinUrl: event.joinUrl ?? null },
+      })
+    }
     notifyInterviewBooked(
-      loaded.context,
+      { ...loaded.context, joinUrl: event?.joinUrl ?? loaded.context.joinUrl },
       {
         start: slot.start,
         end: slot.end,
         applicantTimeZone: applicantTimeZone ?? loaded.context.timeZone,
       },
-      { attachInvite: !loaded.row.calendarEventId },
+      { attachInvite: !event },
     )
   }
   return { ok: true, data: undefined }
@@ -125,7 +134,10 @@ export async function requestNewTimes(input: unknown): Promise<ActionResult> {
   ])
 
   // A booking already sits in calendars, so it is taken back out before new times are offered.
-  if (row.status === 'booked' && row.bookedStart && row.bookedEnd) {
+  const outlookHandled = row.calendarEventId
+    ? await takeOutOfCalendar(row.calendarEventId, 'New times are being arranged.')
+    : false
+  if (row.status === 'booked' && row.bookedStart && row.bookedEnd && !outlookHandled) {
     notifyInterviewCancelled(
       { ...context, sequence },
       {
@@ -133,7 +145,7 @@ export async function requestNewTimes(input: unknown): Promise<ActionResult> {
         end: row.bookedEnd,
         applicantTimeZone: row.applicantTimeZone ?? context.timeZone,
       },
-      { attachInvite: !row.calendarEventId },
+      { attachInvite: true },
     )
   }
   await notifyRescheduleRequested(context)

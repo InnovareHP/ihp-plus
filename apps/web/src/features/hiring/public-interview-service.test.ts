@@ -22,6 +22,8 @@ vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./public-service', () => link)
 vi.mock('./interview-notifications', () => notify)
 vi.mock('./interviews', () => interviews)
+const calendar = vi.hoisted(() => ({ putInCalendar: vi.fn(), takeOutOfCalendar: vi.fn() }))
+vi.mock('./interview-calendar', () => calendar)
 
 const { bookInterviewSlot, requestNewTimes } = await import('./public-interview-service')
 
@@ -45,6 +47,8 @@ beforeEach(() => {
   prisma.$transaction.mockImplementation((operations: Promise<unknown>[]) =>
     Promise.all(operations),
   )
+  calendar.putInCalendar.mockResolvedValue(null)
+  calendar.takeOutOfCalendar.mockResolvedValue(false)
   interviews.loadInterviewContext.mockResolvedValue({
     row: { calendarEventId: null },
     context: { interviewId: 'int-1', timeZone: 'Asia/Manila' },
@@ -68,6 +72,22 @@ describe('booking a time', () => {
       expect.objectContaining({ interviewId: 'int-1' }),
       { start: START, end: END, applicantTimeZone: 'America/Detroit' },
       { attachInvite: true },
+    )
+  })
+
+  it('puts the booking in Outlook when it can, and then sends no .ics of its own', async () => {
+    calendar.putInCalendar.mockResolvedValue({ id: 'event-1', joinUrl: 'https://teams.test/j' })
+
+    await bookInterviewSlot(BOOKING)
+
+    expect(prisma.interview.update).toHaveBeenCalledWith({
+      where: { id: 'int-1' },
+      data: { calendarEventId: 'event-1', joinUrl: 'https://teams.test/j' },
+    })
+    expect(notify.notifyInterviewBooked).toHaveBeenCalledWith(
+      expect.objectContaining({ joinUrl: 'https://teams.test/j' }),
+      expect.anything(),
+      { attachInvite: false },
     )
   })
 
@@ -138,6 +158,31 @@ describe('asking for other times', () => {
       data: { status: 'reschedule_requested', sequence: 3 },
     })
     expect(notify.notifyInterviewCancelled).toHaveBeenCalled()
+    expect(notify.notifyRescheduleRequested).toHaveBeenCalled()
+  })
+
+  it('lets Outlook send the cancellation when the booking lives there', async () => {
+    calendar.takeOutOfCalendar.mockResolvedValue(true)
+    interviews.loadInterviewContext.mockResolvedValue({
+      row: {
+        id: 'int-1',
+        applicationId: 'app-1',
+        status: 'booked',
+        sequence: 2,
+        bookedStart: START,
+        bookedEnd: END,
+        calendarEventId: 'event-1',
+      },
+      context: { interviewId: 'int-1', timeZone: 'Asia/Manila', sequence: 2 },
+    })
+
+    await requestNewTimes({ applicationId: 'app-1', signature: 'sig', interviewId: 'int-1' })
+
+    expect(calendar.takeOutOfCalendar).toHaveBeenCalledWith(
+      'event-1',
+      'New times are being arranged.',
+    )
+    expect(notify.notifyInterviewCancelled).not.toHaveBeenCalled()
     expect(notify.notifyRescheduleRequested).toHaveBeenCalled()
   })
 

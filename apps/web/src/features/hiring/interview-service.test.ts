@@ -25,6 +25,11 @@ vi.mock('./access', () => access)
 vi.mock('./interview-notifications', () => notify)
 vi.mock('./interviews', () => interviews)
 vi.mock('./pipeline-service', () => pipeline)
+const calendar = vi.hoisted(() => ({
+  takeOutOfCalendar: vi.fn(),
+  suggestInterviewTimes: vi.fn(),
+}))
+vi.mock('./interview-calendar', () => calendar)
 
 const { cancelInterview, offerInterview } = await import('./interview-service')
 
@@ -63,6 +68,7 @@ beforeEach(() => {
     typeof work === 'function' ? work(tx) : Promise.all(work as Promise<unknown>[]),
   )
   interviews.loadInterviewContext.mockResolvedValue({ row: {}, context: { interviewId: 'int-1' } })
+  calendar.takeOutOfCalendar.mockResolvedValue(false)
 })
 
 describe('offering an interview', () => {
@@ -137,6 +143,22 @@ describe('cancelling', () => {
       expect.objectContaining({ applicantTimeZone: 'America/Detroit' }),
       { attachInvite: true },
     )
+  })
+
+  it('leaves the cancellation to Outlook when the booking lives there', async () => {
+    calendar.takeOutOfCalendar.mockResolvedValue(true)
+    interviews.loadInterviewContext.mockResolvedValue({
+      row: { ...BOOKED, calendarEventId: 'event-1' },
+      context: { interviewId: 'int-1', sequence: 1 },
+    })
+
+    await cancelInterview('int-1')
+
+    expect(calendar.takeOutOfCalendar).toHaveBeenCalledWith(
+      'event-1',
+      'This interview has been cancelled.',
+    )
+    expect(notify.notifyInterviewCancelled).not.toHaveBeenCalled()
   })
 
   it('withdraws an offer nobody picked without emailing anyone', async () => {

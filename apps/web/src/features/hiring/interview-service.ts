@@ -1,6 +1,7 @@
 import { db } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { requireHiringCaller } from './access'
+import { suggestInterviewTimes, takeOutOfCalendar } from './interview-calendar'
 import { notifyInterviewCancelled, notifyInterviewOffered } from './interview-notifications'
 import { loadInterviewContext } from './interviews'
 import { loadApplication } from './pipeline-service'
@@ -134,8 +135,11 @@ export async function cancelInterview(interviewId: string): Promise<ApplicationD
     }),
   ])
 
-  // Only a booked interview sits in anyone's calendar, so only that one needs taking back out.
-  if (row.status === 'booked' && row.bookedStart && row.bookedEnd) {
+  // Only a booked interview sits in anyone's calendar; Outlook tells its own attendees when it can.
+  const outlookHandled = row.calendarEventId
+    ? await takeOutOfCalendar(row.calendarEventId, 'This interview has been cancelled.')
+    : false
+  if (row.status === 'booked' && row.bookedStart && row.bookedEnd && !outlookHandled) {
     notifyInterviewCancelled(
       { ...loaded.context, sequence },
       {
@@ -143,9 +147,23 @@ export async function cancelInterview(interviewId: string): Promise<ApplicationD
         end: row.bookedEnd,
         applicantTimeZone: row.applicantTimeZone ?? loaded.context.timeZone,
       },
-      { attachInvite: !row.calendarEventId },
+      { attachInvite: true },
     )
   }
 
   return loadApplication(row.applicationId)
+}
+
+export async function suggestSlots(input: {
+  interviewerIds: readonly string[]
+  durationMinutes: number
+  fromDate: string
+  toDate: string
+}) {
+  const caller = await requireHiringCaller()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.fromDate) || !/^\d{4}-\d{2}-\d{2}$/.test(input.toDate)) {
+    throw new ConnectError('Pick the days to look across.', Code.InvalidArgument)
+  }
+  const durationMinutes = Math.min(240, Math.max(15, Math.round(input.durationMinutes)))
+  return suggestInterviewTimes({ ...input, durationMinutes, organizationId: caller.organizationId })
 }

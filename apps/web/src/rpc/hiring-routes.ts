@@ -24,6 +24,7 @@ import {
   cancelInterview,
   listInterviewers,
   offerInterview,
+  suggestSlots,
 } from '@/features/hiring/interview-service'
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import {
@@ -166,8 +167,17 @@ export const hiring: ServiceImpl<typeof HiringService> = {
     people: (await listInterviewers()).map(interviewerToProto),
   }),
 
-  // Free/busy needs Graph, which the next step wires; until then the dialog is told why it has none.
-  suggestSlots: async () => ({ slots: [], fromCalendar: false }),
+  suggestSlots: async (request) => {
+    const suggested = await suggestSlots(request)
+    return {
+      slots: suggested.starts.map((start) => ({
+        $typeName: 'ihp.hiring.v1.NewSlot' as const,
+        start: start.toISOString(),
+        end: start.toISOString(),
+      })),
+      fromCalendar: suggested.fromCalendar,
+    }
+  },
 
   offerInterview: async (request) => ({
     application: applicationToProto(

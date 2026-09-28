@@ -30,6 +30,7 @@ import {
   type OfferInterviewInput,
   type OfferInterviewValues,
 } from '../schema'
+import { FreeTimeSuggestions } from './free-time-suggestions'
 
 const LOCATION_LABEL = {
   video: {
@@ -59,6 +60,7 @@ export function ScheduleInterviewModal({
     control,
     register,
     handleSubmit,
+    getValues,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<OfferInterviewInput, unknown, OfferInterviewValues>({
@@ -77,6 +79,15 @@ export function ScheduleInterviewModal({
   })
   const slots = useFieldArray({ control, name: 'slots' })
   const format = useWatch({ control, name: 'format' }) ?? 'video'
+  const interviewerIds = useWatch({ control, name: 'interviewerIds' }) ?? []
+  const durationMinutes = Number(useWatch({ control, name: 'durationMinutes' }) ?? 45)
+
+  // A suggestion fills the first empty row before it adds one, so the blank starter row is used.
+  function addSuggested(slot: { date: string; time: string }) {
+    const empty = (getValues('slots') ?? []).findIndex((row) => !row.date && !row.time)
+    if (empty >= 0) slots.update(empty, slot)
+    else if (slots.fields.length < MAX_INTERVIEW_SLOTS) slots.append(slot)
+  }
   const place = LOCATION_LABEL[format]
 
   async function onSubmit(values: OfferInterviewValues) {
@@ -176,6 +187,12 @@ export function ScheduleInterviewModal({
               <Text size="xs" c="dimmed">
                 They pick one on their status page, where each time shows in their own zone.
               </Text>
+              <FreeTimeSuggestions
+                interviewerIds={interviewerIds}
+                durationMinutes={durationMinutes}
+                timeZone={timeZone}
+                onPick={addSuggested}
+              />
               {errors.slots?.message || errors.slots?.root?.message ? (
                 <Text size="sm" c="red" role="alert">
                   {errors.slots?.message ?? errors.slots?.root?.message}
