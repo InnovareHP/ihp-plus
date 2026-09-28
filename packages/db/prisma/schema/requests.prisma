@@ -10,7 +10,8 @@ model RequestForm {
 
   name        String
   description String?
-  // "request" runs the approval queue; "evaluation" is assigned to a supervisor and has none.
+  // "request" runs the approval queue; "evaluation" is assigned to a supervisor and has none;
+  // "application" is the extra questions a job posting asks.
   kind        String  @default("request")
   // draft is invisible to requesters, published is live, archived keeps past submissions
   // readable without offering the form again.
@@ -26,6 +27,7 @@ model RequestForm {
   teams       RequestFormTeam[]
   submissions RequestSubmission[]
   evaluations EvaluationAssignment[]
+  postings    JobPosting[]
 
   @@index([organizationId, kind, status])
   @@map("requestForm")

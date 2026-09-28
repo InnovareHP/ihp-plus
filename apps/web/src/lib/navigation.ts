@@ -3,6 +3,7 @@ import {
   IconClipboardCheck,
   IconUsers,
   IconBook2,
+  IconBriefcase,
   IconBuilding,
   IconClipboardList,
   IconClockHour4,
@@ -25,6 +26,8 @@ export interface NavLink {
   manageOnly?: boolean
   /** Only rendered for a department approver, or an admin, who has a queue to read. */
   approverOnly?: boolean
+  /** Only rendered for HR, or an admin, who runs hiring. */
+  hiringOnly?: boolean
   /** A live count beside the label; the shell decides what renders it. */
   badge?: 'bulletinUnread'
 }
@@ -49,6 +52,7 @@ export interface NavSection {
 export interface NavAccess {
   canManageOrganization: boolean
   canApproveRequests: boolean
+  canManageHiring: boolean
 }
 
 export const NAV_SECTIONS: readonly NavSection[] = [
@@ -185,6 +189,33 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           },
         ],
       },
+      {
+        href: routes.hiring,
+        label: 'Hiring',
+        description: 'Job postings, applicants and the stages they move through',
+        icon: IconBriefcase,
+        hiringOnly: true,
+        children: [
+          {
+            href: routes.hiring,
+            label: 'Job postings',
+            description: 'Write, open and close them',
+            hiringOnly: true,
+          },
+          {
+            href: routes.hiringForms,
+            label: 'Application forms',
+            description: 'The questions a posting asks',
+            hiringOnly: true,
+          },
+          {
+            href: routes.hiringSettings,
+            label: 'Settings',
+            description: 'Who runs hiring and the default stages',
+            hiringOnly: true,
+          },
+        ],
+      },
     ],
   },
   {
@@ -239,6 +270,7 @@ function itemsFor(section: NavSection, access: NavAccess): NavItem[] {
 function canSee(item: NavLink, access: NavAccess) {
   if (item.manageOnly && !access.canManageOrganization) return false
   if (item.approverOnly && !access.canApproveRequests) return false
+  if (item.hiringOnly && !access.canManageHiring) return false
   return true
 }
 

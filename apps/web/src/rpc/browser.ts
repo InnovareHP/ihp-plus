@@ -4,6 +4,7 @@ import { BulletinService } from '@ihp/rpc/bulletin'
 import { ContractsService } from '@ihp/rpc/contracts'
 import { DirectoryService } from '@ihp/rpc/directory'
 import { EvaluationsService } from '@ihp/rpc/evaluations'
+import { HiringService } from '@ihp/rpc/hiring'
 import { LookupsService } from '@ihp/rpc/lookups'
 import { MembersService } from '@ihp/rpc/members'
 import { RequestsService } from '@ihp/rpc/requests'
@@ -17,6 +18,7 @@ export const browserClients = {
   contracts: createClient(ContractsService, browserTransport),
   directory: createClient(DirectoryService, browserTransport),
   evaluations: createClient(EvaluationsService, browserTransport),
+  hiring: createClient(HiringService, browserTransport),
   lookups: createClient(LookupsService, browserTransport),
   members: createClient(MembersService, browserTransport),
   requests: createClient(RequestsService, browserTransport),

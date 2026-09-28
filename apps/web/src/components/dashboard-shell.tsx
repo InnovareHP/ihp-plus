@@ -40,6 +40,7 @@ export interface DashboardShellProps {
   organization: { name: string; role?: string }
   canManageOrganization?: boolean
   canApproveRequests?: boolean
+  canManageHiring?: boolean
   /** True while a portal admin is signed in as this user. */
   impersonating?: boolean
   children: ReactNode
@@ -59,6 +60,7 @@ export function DashboardShell({
   organization,
   canManageOrganization = false,
   canApproveRequests = false,
+  canManageHiring = false,
   impersonating = false,
   children,
 }: DashboardShellProps) {
@@ -69,7 +71,11 @@ export function DashboardShell({
   const pathname = usePathname()
   const signOut = useSignOut()
   const stopImpersonating = useStopImpersonating()
-  const sections = visibleSections({ canManageOrganization, canApproveRequests })
+  const sections = visibleSections({
+    canManageOrganization,
+    canApproveRequests,
+    canManageHiring,
+  })
 
   useHotkeys([['Escape', closeNav]])
 

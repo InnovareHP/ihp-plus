@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { breadcrumbsFor, isGroupOpen, isNavItemActive, visibleSections } from './navigation'
 import { routes } from './routes'
 
-const NOBODY = { canManageOrganization: false, canApproveRequests: false }
-const APPROVER = { canManageOrganization: false, canApproveRequests: true }
-const ADMIN = { canManageOrganization: true, canApproveRequests: true }
+const NOBODY = { canManageOrganization: false, canApproveRequests: false, canManageHiring: false }
+const APPROVER = { canManageOrganization: false, canApproveRequests: true, canManageHiring: false }
+const HR = { canManageOrganization: false, canApproveRequests: false, canManageHiring: true }
+const ADMIN = { canManageOrganization: true, canApproveRequests: true, canManageHiring: true }
 
 function itemIn(access: typeof NOBODY, sectionId: string, label: string) {
   return visibleSections(access)
@@ -48,6 +49,18 @@ describe('navigation', () => {
       routes.letterhead,
       routes.library,
     ])
+  })
+
+  it('shows hiring to HR and admins only, without handing HR the admin section', () => {
+    expect(itemIn(NOBODY, 'work', 'Hiring')).toBeUndefined()
+    expect(itemIn(APPROVER, 'work', 'Hiring')).toBeUndefined()
+    expect(itemIn(HR, 'work', 'Hiring')?.children?.map((child) => child.href)).toEqual([
+      routes.hiring,
+      routes.hiringForms,
+      routes.hiringSettings,
+    ])
+    expect(visibleSections(HR).map((section) => section.id)).toEqual(['workspace', 'work'])
+    expect(itemIn(ADMIN, 'work', 'Hiring')).toBeDefined()
   })
 
   it('collapses a group down to a plain row when only one page inside it is reachable', () => {

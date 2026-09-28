@@ -12,8 +12,9 @@ export const FIELD_TYPES = [
   'file',
 ] as const
 export const FORM_STATUSES = ['draft', 'published', 'archived'] as const
-// A request form runs the approval queue; an evaluation form is assigned to a supervisor.
-export const FORM_KINDS = ['request', 'evaluation'] as const
+// A request form runs the approval queue; an evaluation form is assigned to a supervisor; an
+// application form is the extra questions a job posting asks.
+export const FORM_KINDS = ['request', 'evaluation', 'application'] as const
 export const REQUEST_STATUSES = [
   'pending',
   'approved',

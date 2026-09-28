@@ -1,0 +1,162 @@
+// Hiring: job postings, the people who apply through the public careers pages, and the stages
+// each posting moves them through. Its own Postgres schema because `pnpm db:auth-schema`
+// rewrites auth.prisma wholesale.
+
+// One row per organization. hrTeamId names the department whose members run hiring beside the
+// admins; unset means only admins do.
+model HiringSettings {
+  organizationId   String   @id
+  hrTeamId         String?
+  // Copied into a new posting as its starting pipeline, validated by features/hiring.
+  defaultStages    Json     @default("[]")
+  // What a rejected applicant is sent, unless HR rewrites it for that one person.
+  rejectionMessage String   @default("")
+  updatedAt        DateTime @updatedAt
+
+  @@map("hiringSettings")
+  @@schema("hiring")
+}
+
+model JobPosting {
+  id             String  @id @default(uuid())
+  // Plain columns, not relations: a relation field would have to be added to the generated
+  // User, Organization and Team models in auth.prisma.
+  organizationId String
+  createdById    String?
+  teamId         String?
+
+  // Set once from the title and never rewritten, so a shared link keeps working after a rename.
+  slug           String
+  title          String
+  summary        String  @default("")
+  description    String  @default("")
+  location       String  @default("")
+  workplace      String  @default("onsite")
+  employmentType String  @default("full_time")
+  // Whole currency units; both absent means the posting does not show pay.
+  salaryMin      Int?
+  salaryMax      Int?
+  salaryCurrency String  @default("USD")
+
+  // draft is invisible to the public, open takes applications, closed stops them while the
+  // pipeline carries on, archived hides it from the staff list too.
+  status         String  @default("draft")
+  resumeRequired Boolean @default(true)
+  // Ordered pipeline, validated by features/hiring; applications point at a stage id.
+  stages         Json    @default("[]")
+
+  // Extra questions come from a requests form of kind "application", so one builder serves all.
+  applicationFormId String?
+  applicationForm   RequestForm? @relation(fields: [applicationFormId], references: [id], onDelete: Restrict)
+
+  openedAt  DateTime?
+  closesAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  applications JobApplication[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, status])
+  @@map("jobPosting")
+  @@schema("hiring")
+}
+
+model JobApplication {
+  id             String     @id @default(uuid())
+  organizationId String
+  postingId      String
+  posting        JobPosting @relation(fields: [postingId], references: [id], onDelete: Restrict)
+
+  fullName String
+  email    String
+  phone    String @default("")
+
+  // Snapshots: the posting's form may be edited after someone has already answered it.
+  postingTitle String
+  fields       Json   @default("[]")
+  values       Json   @default("{}")
+
+  // active moves through the posting's stages; hired, rejected and withdrawn end it.
+  status          String    @default("active")
+  stageId         String
+  stageChangedAt  DateTime  @default(now())
+  rejectionReason String?
+  decidedById     String?
+  decidedAt       DateTime?
+
+  // When the applicant agreed to their details being kept, which the retention sweep counts from.
+  consentAt DateTime
+  source    String   @default("careers")
+
+  // Set by Hire: the invitation sent, then the account it became once accepted.
+  invitationId String?
+  hiredUserId  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attachments ApplicationAttachment[]
+  events      ApplicationEvent[]
+  notes       ApplicationNote[]
+
+  @@index([organizationId, status])
+  @@index([postingId, status, stageId])
+  @@index([email])
+  @@map("jobApplication")
+  @@schema("hiring")
+}
+
+// A file sent with an application. Uploaded before the application exists, so it lands
+// unclaimed and submitting claims it; the bytes live in S3, never in Postgres.
+model ApplicationAttachment {
+  id             String @id @default(uuid())
+  organizationId String
+  postingId      String
+  // "resume", or the id of a file question on the application form.
+  fieldId        String
+
+  applicationId String?
+  application   JobApplication? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  fileKey     String
+  fileName    String
+  contentType String
+  fileSize    Int
+  createdAt   DateTime @default(now())
+
+  @@index([applicationId, fieldId])
+  @@index([applicationId, createdAt])
+  @@map("applicationAttachment")
+  @@schema("hiring")
+}
+
+// Everything that happened to an application, oldest first: the audit trail HR reads.
+model ApplicationEvent {
+  id            String         @id @default(uuid())
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  // Null when the applicant or the portal itself did it.
+  actorId       String?
+  kind          String
+  detail        Json           @default("{}")
+  createdAt     DateTime       @default(now())
+
+  @@index([applicationId, createdAt])
+  @@map("applicationEvent")
+  @@schema("hiring")
+}
+
+// Internal notes; the applicant never sees these.
+model ApplicationNote {
+  id            String         @id @default(uuid())
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  authorId      String
+  body          String
+  createdAt     DateTime       @default(now())
+
+  @@index([applicationId, createdAt])
+  @@map("applicationNote")
+  @@schema("hiring")
+}

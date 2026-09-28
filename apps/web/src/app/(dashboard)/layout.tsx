@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { SkipLink } from '@/components/skip-link'
 import { canReachApprovals, requestsAccess } from '@/features/requests/guards'
+import { canManageHiring } from '@/features/hiring/access'
 import { canManageOrganization, getSession, membershipOf } from '@/lib/auth-guard'
 import { profilePhotoUrl } from '@/lib/profile-photo'
 
@@ -19,6 +20,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <DashboardShell
         canManageOrganization={canManageOrganization(membership)}
         canApproveRequests={canReachApprovals(access)}
+        canManageHiring={await canManageHiring(membership)}
         impersonating={Boolean(session?.session.impersonatedBy)}
         organization={{
           name: membership.organization?.name ?? 'IHP+',

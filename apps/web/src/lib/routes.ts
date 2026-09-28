@@ -21,6 +21,10 @@ export const routes = {
   evaluations: '/evaluations',
   evaluationTracker: '/evaluations/assigned',
   evaluationForms: '/evaluations/forms',
+  hiring: '/hiring',
+  hiringForms: '/hiring/forms',
+  hiringSettings: '/hiring/settings',
+  careers: '/careers',
   organization: '/organization',
   folderAccess: '/folder-access',
   settings: '/settings',
@@ -107,6 +111,22 @@ export function evaluationFormRoute(formId: string) {
 
 export const NEW_EVALUATION_FORM_ROUTE = `${routes.evaluationForms}/new`
 
+export function postingRoute(postingId: string) {
+  return `${routes.hiring}/postings/${postingId}`
+}
+
+export const NEW_POSTING_ROUTE = `${routes.hiring}/postings/new`
+
+export function applicationFormRoute(formId: string) {
+  return `${routes.hiringForms}/${formId}`
+}
+
+export const NEW_APPLICATION_FORM_ROUTE = `${routes.hiringForms}/new`
+
+export function careersPostingRoute(slug: string) {
+  return `${routes.careers}/${slug}`
+}
+
 export function invitationRoute(invitationId: string) {
   return `${routes.acceptInvitation}/${invitationId}`
 }
@@ -124,7 +144,11 @@ export function clientContractRoute(contractId: string, signature: string) {
 
 // Open with or without a session: a manager opening a client link sees what the client sees, and
 // accepting an invitation needs the session the guard would otherwise bounce to the dashboard.
-export const SHARED_ROUTES: readonly Route[] = [routes.clientContract, routes.acceptInvitation]
+export const SHARED_ROUTES: readonly Route[] = [
+  routes.clientContract,
+  routes.acceptInvitation,
+  routes.careers,
+]
 
 export function isSharedRoute(pathname: string) {
   return SHARED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))

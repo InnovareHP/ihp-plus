@@ -7,6 +7,7 @@ import { pageInfoOf, skipTake } from '@/lib/pagination'
 import { recordActivity } from '@/lib/activity'
 import { objectUrl } from '@/lib/s3'
 import { bookLeave } from '@/features/attendance/leave'
+import { hrTeamIdOf } from '@/features/hiring/access'
 import {
   notifyApprovers,
   notifyApproversWithdrawn,
@@ -80,6 +81,26 @@ async function requireAdmin() {
   return caller
 }
 
+// HR runs hiring, so beside the admins it builds the application forms a job posting asks.
+async function assertManagesForms(caller: Caller, kind: FormKind) {
+  if (caller.isAdmin) return
+  if (kind === 'application' && caller.team) {
+    if (caller.team.id === (await hrTeamIdOf(caller.organizationId))) return
+  }
+  throw new ConnectError(
+    kind === 'application'
+      ? 'Only HR and admins can manage application forms.'
+      : 'Only an admin can manage request forms.',
+    Code.PermissionDenied,
+  )
+}
+
+async function requireFormManager(kind: FormKind) {
+  const caller = await requireRequester()
+  await assertManagesForms(caller, kind)
+  return caller
+}
+
 const fieldsSchema = z.array(formFieldSchema)
 
 // Stored JSON is data the app wrote, but a hand-edited row must not crash a whole list.
@@ -100,8 +121,19 @@ function valuesOf(value: Prisma.JsonValue): RequestValues {
 }
 
 type FormRecord = Prisma.RequestFormGetPayload<{
-  include: { teams: true; _count: { select: { submissions: true; evaluations: true } } }
+  include: {
+    teams: true
+    _count: { select: { submissions: true; evaluations: true; postings: true } }
+  }
 }>
+
+// One count, whichever kind the form is: what has been filled in against it, or for an
+// application form the postings that ask it.
+function usageOf(form: FormRecord) {
+  if (form.kind === 'evaluation') return form._count.evaluations
+  if (form.kind === 'application') return form._count.postings
+  return form._count.submissions
+}
 
 async function toFormRow(form: FormRecord, teamNames: Map<string, string>): Promise<FormRow> {
   return {
@@ -115,8 +147,7 @@ async function toFormRow(form: FormRecord, teamNames: Map<string, string>): Prom
       id: link.teamId,
       name: teamNames.get(link.teamId) ?? 'Removed department',
     })),
-    // One count, whichever kind the form is: what has been filled in against it.
-    submissionCount: form.kind === 'evaluation' ? form._count.evaluations : form._count.submissions,
+    submissionCount: usageOf(form),
     updatedAt: form.updatedAt.toISOString(),
     timeOff: form.timeOff,
   }
@@ -132,11 +163,11 @@ async function teamNameMap(organizationId: string) {
 
 const FORM_INCLUDE = {
   teams: true,
-  _count: { select: { submissions: true, evaluations: true } },
+  _count: { select: { submissions: true, evaluations: true, postings: true } },
 } satisfies Prisma.RequestFormInclude
 
 export async function loadFormsPage(query: FormListQuery): Promise<FormsPage> {
-  const caller = await requireAdmin()
+  const caller = await requireFormManager(query.kind)
 
   const where: Prisma.RequestFormWhereInput = {
     organizationId: caller.organizationId,
@@ -171,22 +202,24 @@ export async function loadFormsPage(query: FormListQuery): Promise<FormsPage> {
 }
 
 export async function loadForm(formId: string): Promise<FormRow> {
-  const caller = await requireAdmin()
+  const caller = await requireRequester()
   const form = await db.requestForm.findFirst({
     where: { id: formId, organizationId: caller.organizationId },
     include: FORM_INCLUDE,
   })
   if (!form) throw new ConnectError('That form no longer exists.', Code.NotFound)
+  await assertManagesForms(caller, form.kind as FormKind)
   return toFormRow(form, await teamNameMap(caller.organizationId))
 }
 
 export async function saveForm(input: FormDraftValues): Promise<FormRow> {
-  const caller = await requireAdmin()
+  const caller = await requireRequester()
   const parsed = formDraftSchema.safeParse(input)
   if (!parsed.success) {
     throw new ConnectError('Check the highlighted fields and try again.', Code.InvalidArgument)
   }
   const draft = parsed.data
+  await assertManagesForms(caller, draft.kind)
   // Only a request reaches an approver, so only a request can book time off.
   const timeOff = draft.kind === 'request' && draft.timeOff
   // Enforced here too, so an older client cannot save a time off form without its dates.
@@ -195,9 +228,13 @@ export async function saveForm(input: FormDraftValues): Promise<FormRow> {
   if (draft.formId) {
     const existing = await db.requestForm.findFirst({
       where: { id: draft.formId, organizationId: caller.organizationId },
-      select: { timeOff: true, _count: { select: { submissions: true } } },
+      select: { kind: true, timeOff: true, _count: { select: { submissions: true } } },
     })
     if (!existing) throw new ConnectError('That form no longer exists.', Code.NotFound)
+    // The kind decides who may edit it, so a draft claiming another kind is refused outright.
+    if (existing.kind !== draft.kind) {
+      throw new ConnectError('That form belongs to a different catalogue.', Code.PermissionDenied)
+    }
     // Flipping it later would change what approving the requests already made does.
     if (existing.timeOff !== timeOff && existing._count.submissions > 0) {
       throw new ConnectError(
@@ -207,9 +244,9 @@ export async function saveForm(input: FormDraftValues): Promise<FormRow> {
     }
   }
 
-  // An evaluation is assigned to a person, never offered to a department.
+  // Only a request is offered to departments; the other kinds reach people another way.
   const teamIds =
-    draft.kind === 'evaluation' ? [] : await validTeamIds(caller.organizationId, draft.teamIds)
+    draft.kind === 'request' ? await validTeamIds(caller.organizationId, draft.teamIds) : []
 
   const form = await db.$transaction(async (tx) => {
     const saved = draft.formId
@@ -258,12 +295,13 @@ export async function setFormStatus(input: {
   formId: string
   status: FormStatus
 }): Promise<FormRow> {
-  const caller = await requireAdmin()
+  const caller = await requireRequester()
   const form = await db.requestForm.findFirst({
     where: { id: input.formId, organizationId: caller.organizationId },
     include: FORM_INCLUDE,
   })
   if (!form) throw new ConnectError('That form no longer exists.', Code.NotFound)
+  await assertManagesForms(caller, form.kind as FormKind)
 
   if (input.status === 'published') {
     const names = await teamNameMap(caller.organizationId)
@@ -280,15 +318,16 @@ export async function setFormStatus(input: {
 }
 
 export async function deleteForm(formId: string): Promise<void> {
-  const caller = await requireAdmin()
+  const caller = await requireRequester()
   const form = await db.requestForm.findFirst({
     where: { id: formId, organizationId: caller.organizationId },
-    include: { _count: { select: { submissions: true, evaluations: true } } },
+    include: { _count: { select: { submissions: true, evaluations: true, postings: true } } },
   })
   if (!form) throw new ConnectError('That form no longer exists.', Code.NotFound)
+  await assertManagesForms(caller, form.kind as FormKind)
 
   // The requests raised against it stay readable, so a used form is archived, never deleted.
-  if (form._count.submissions > 0 || form._count.evaluations > 0) {
+  if (form._count.submissions > 0 || form._count.evaluations > 0 || form._count.postings > 0) {
     throw new ConnectError(
       'This form has already been filled in, so it can only be archived.',
       Code.FailedPrecondition,

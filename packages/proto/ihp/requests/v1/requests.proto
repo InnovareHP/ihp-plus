@@ -24,11 +24,12 @@ enum FormStatus {
 }
 
 // A request form runs the approval queue; an evaluation form is assigned to a supervisor and
-// has no approver at all.
+// has no approver at all; an application form is the extra questions a job posting asks.
 enum FormKind {
   FORM_KIND_UNSPECIFIED = 0;
   FORM_KIND_REQUEST = 1;
   FORM_KIND_EVALUATION = 2;
+  FORM_KIND_APPLICATION = 3;
 }
 
 enum RequestStatus {

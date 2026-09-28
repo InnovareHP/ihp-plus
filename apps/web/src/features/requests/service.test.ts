@@ -26,6 +26,7 @@ const prisma = vi.hoisted(() => ({
   team: { findMany: vi.fn() },
   requestApprover: { findMany: vi.fn() },
   user: { findMany: vi.fn() },
+  hiringSettings: { findUnique: vi.fn() },
 }))
 
 const guard = vi.hoisted(() => ({
@@ -612,7 +613,11 @@ describe('time off', () => {
 
   it('will not flip a form people have already used', async () => {
     signedIn({ isAdmin: true })
-    prisma.requestForm.findFirst.mockResolvedValue({ timeOff: false, _count: { submissions: 2 } })
+    prisma.requestForm.findFirst.mockResolvedValue({
+      kind: 'request',
+      timeOff: false,
+      _count: { submissions: 2 },
+    })
 
     expect(
       await codeOf(() =>
@@ -628,6 +633,71 @@ describe('time off', () => {
       ),
     ).toBe(Code.FailedPrecondition)
     expect(prisma.requestForm.update).not.toHaveBeenCalled()
+  })
+})
+
+describe('application forms', () => {
+  const APPLICATION_DRAFT = {
+    kind: 'application' as const,
+    name: 'General application',
+    description: '',
+    fields: [],
+    teamIds: [],
+    timeOff: false,
+  }
+
+  it('lets the HR department build one without being an admin', async () => {
+    prisma.hiringSettings.findUnique.mockResolvedValue({ hrTeamId: 'team-2' })
+    prisma.requestForm.create.mockResolvedValue({ id: 'form-9' })
+    prisma.requestForm.findUniqueOrThrow.mockResolvedValue({
+      id: 'form-9',
+      organizationId: 'org-1',
+      kind: 'application',
+      name: 'General application',
+      description: '',
+      status: 'draft',
+      fields: [],
+      teams: [],
+      timeOff: false,
+      updatedAt: new Date('2026-09-24T00:00:00.000Z'),
+      _count: { submissions: 0, evaluations: 0, postings: 0 },
+    })
+    prisma.team.findMany.mockResolvedValue([])
+
+    const saved = await saveForm(APPLICATION_DRAFT)
+
+    expect(saved.kind).toBe('application')
+    // An application form is never offered to a department.
+    expect(prisma.requestFormTeam.createMany).not.toHaveBeenCalled()
+  })
+
+  it('refuses someone outside the HR department', async () => {
+    prisma.hiringSettings.findUnique.mockResolvedValue({ hrTeamId: 'team-hr' })
+
+    expect(await codeOf(() => saveForm(APPLICATION_DRAFT))).toBe(Code.PermissionDenied)
+    expect(prisma.requestForm.create).not.toHaveBeenCalled()
+  })
+
+  it('does not let HR edit a request form by calling it an application', async () => {
+    prisma.hiringSettings.findUnique.mockResolvedValue({ hrTeamId: 'team-2' })
+    prisma.requestForm.findFirst.mockResolvedValue({
+      kind: 'request',
+      timeOff: false,
+      _count: { submissions: 0 },
+    })
+
+    expect(await codeOf(() => saveForm({ ...APPLICATION_DRAFT, formId: 'form-1' }))).toBe(
+      Code.PermissionDenied,
+    )
+    expect(prisma.requestForm.update).not.toHaveBeenCalled()
+  })
+
+  it('keeps request forms admin-only, even for HR', async () => {
+    prisma.hiringSettings.findUnique.mockResolvedValue({ hrTeamId: 'team-2' })
+
+    expect(await codeOf(() => saveForm({ ...APPLICATION_DRAFT, kind: 'request' }))).toBe(
+      Code.PermissionDenied,
+    )
   })
 })
 

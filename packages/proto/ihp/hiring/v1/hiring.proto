@@ -1,0 +1,178 @@
+syntax = "proto3";
+
+package ihp.hiring.v1;
+
+import "ihp/requests/v1/requests.proto";
+
+// draft is invisible to the public, open takes applications, closed stops them while the
+// pipeline carries on, archived hides the posting from the staff list too.
+enum PostingStatus {
+  POSTING_STATUS_UNSPECIFIED = 0;
+  POSTING_STATUS_DRAFT = 1;
+  POSTING_STATUS_OPEN = 2;
+  POSTING_STATUS_CLOSED = 3;
+  POSTING_STATUS_ARCHIVED = 4;
+}
+
+// Filter value: CURRENT is every posting not archived, and the list's default.
+enum PostingStatusFilter {
+  POSTING_STATUS_FILTER_UNSPECIFIED = 0;
+  POSTING_STATUS_FILTER_CURRENT = 1;
+  POSTING_STATUS_FILTER_DRAFT = 2;
+  POSTING_STATUS_FILTER_OPEN = 3;
+  POSTING_STATUS_FILTER_CLOSED = 4;
+  POSTING_STATUS_FILTER_ARCHIVED = 5;
+}
+
+enum Workplace {
+  WORKPLACE_UNSPECIFIED = 0;
+  WORKPLACE_ONSITE = 1;
+  WORKPLACE_HYBRID = 2;
+  WORKPLACE_REMOTE = 3;
+}
+
+enum EmploymentType {
+  EMPLOYMENT_TYPE_UNSPECIFIED = 0;
+  EMPLOYMENT_TYPE_FULL_TIME = 1;
+  EMPLOYMENT_TYPE_PART_TIME = 2;
+  EMPLOYMENT_TYPE_CONTRACT = 3;
+  EMPLOYMENT_TYPE_INTERNSHIP = 4;
+  EMPLOYMENT_TYPE_TEMPORARY = 5;
+}
+
+// One step of a posting's pipeline. A non-empty message is emailed to the applicant when they
+// are moved into the stage.
+message Stage {
+  string id = 1;
+  string name = 2;
+  string message = 3;
+}
+
+message HiringSettings {
+  optional string hr_team_id = 1;
+  optional string hr_team_name = 2;
+  repeated Stage default_stages = 3;
+  string rejection_message = 4;
+  // Only an admin decides which department runs hiring; HR edits the rest.
+  bool can_edit_hr_team = 5;
+}
+
+message Posting {
+  string id = 1;
+  string slug = 2;
+  string title = 3;
+  string summary = 4;
+  string description = 5;
+  string location = 6;
+  Workplace workplace = 7;
+  EmploymentType employment_type = 8;
+  optional int32 salary_min = 9;
+  optional int32 salary_max = 10;
+  string salary_currency = 11;
+  PostingStatus status = 12;
+  bool resume_required = 13;
+  repeated Stage stages = 14;
+  optional string application_form_id = 15;
+  optional string application_form_name = 16;
+  // The form's questions, so the preview and the public page render without a second call.
+  repeated ihp.requests.v1.FormField application_fields = 17;
+  optional string team_id = 18;
+  optional string team_name = 19;
+  optional string opened_at = 20;
+  optional string closes_at = 21;
+  string created_at = 22;
+  string updated_at = 23;
+  int32 applicant_count = 24;
+  // Applicants still moving through the pipeline, and how many sit in each stage.
+  int32 active_count = 25;
+  map<string, int32> stage_counts = 26;
+}
+
+message GetSettingsRequest {}
+
+message GetSettingsResponse {
+  HiringSettings settings = 1;
+}
+
+message SaveSettingsRequest {
+  optional string hr_team_id = 1;
+  repeated Stage default_stages = 2;
+  string rejection_message = 3;
+}
+
+message SaveSettingsResponse {
+  HiringSettings settings = 1;
+}
+
+message ListPostingsRequest {
+  PostingStatusFilter status = 1;
+  string search = 2;
+  repeated string team_ids = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+message ListPostingsResponse {
+  repeated Posting rows = 1;
+  ihp.requests.v1.PageInfo page_info = 2;
+}
+
+message GetPostingRequest {
+  string posting_id = 1;
+}
+
+message GetPostingResponse {
+  Posting posting = 1;
+}
+
+// Creates when posting_id is absent. Status is not part of a save: publishing is its own call.
+message SavePostingRequest {
+  optional string posting_id = 1;
+  string title = 2;
+  string summary = 3;
+  string description = 4;
+  string location = 5;
+  Workplace workplace = 6;
+  EmploymentType employment_type = 7;
+  optional int32 salary_min = 8;
+  optional int32 salary_max = 9;
+  string salary_currency = 10;
+  bool resume_required = 11;
+  repeated Stage stages = 12;
+  optional string application_form_id = 13;
+  optional string team_id = 14;
+  // An ISO date; absent means the posting stays open until someone closes it.
+  optional string closes_at = 15;
+}
+
+message SavePostingResponse {
+  Posting posting = 1;
+}
+
+message SetPostingStatusRequest {
+  string posting_id = 1;
+  PostingStatus status = 2;
+}
+
+message SetPostingStatusResponse {
+  Posting posting = 1;
+}
+
+message DeletePostingRequest {
+  string posting_id = 1;
+}
+
+message DeletePostingResponse {}
+
+service HiringService {
+  // Which department runs hiring, and the defaults a new posting starts from.
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
+  rpc SaveSettings(SaveSettingsRequest) returns (SaveSettingsResponse);
+
+  rpc ListPostings(ListPostingsRequest) returns (ListPostingsResponse);
+  rpc GetPosting(GetPostingRequest) returns (GetPostingResponse);
+  rpc SavePosting(SavePostingRequest) returns (SavePostingResponse);
+  rpc SetPostingStatus(SetPostingStatusRequest) returns (SetPostingStatusResponse);
+  // Only a draft nobody has applied to; anything else is archived instead.
+  rpc DeletePosting(DeletePostingRequest) returns (DeletePostingResponse);
+}

@@ -4,6 +4,7 @@ import { BulletinService } from '@ihp/rpc/bulletin'
 import { ContractsService } from '@ihp/rpc/contracts'
 import { DirectoryService } from '@ihp/rpc/directory'
 import { EvaluationsService } from '@ihp/rpc/evaluations'
+import { HiringService } from '@ihp/rpc/hiring'
 import { LookupsService } from '@ihp/rpc/lookups'
 import { MembersService } from '@ihp/rpc/members'
 import { RequestsService } from '@ihp/rpc/requests'
@@ -27,6 +28,7 @@ import { bulletin } from './bulletin-routes'
 import { contracts } from './contracts-routes'
 import { directory } from './directory-routes'
 import { evaluations } from './evaluations-routes'
+import { hiring } from './hiring-routes'
 import { lookups } from './lookups-routes'
 import { requests } from './requests-routes'
 import { tasks } from './tasks-routes'
@@ -97,4 +99,5 @@ export function registerRoutes(router: ConnectRouter) {
   router.service(TasksService, tasks)
   router.service(AttendanceService, attendance)
   router.service(BulletinService, bulletin)
+  router.service(HiringService, hiring)
 }

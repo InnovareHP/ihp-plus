@@ -10,7 +10,9 @@ import { EmptyState } from '@/components/empty-state'
 import { RowActionsMenu } from '@/components/row-actions-menu'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import {
+  applicationFormRoute,
   evaluationFormRoute,
+  NEW_APPLICATION_FORM_ROUTE,
   NEW_EVALUATION_FORM_ROUTE,
   NEW_REQUEST_FORM_ROUTE,
   requestFormRoute,
@@ -57,17 +59,55 @@ const departmentsColumn: DataTableColumn<FormRow> = {
     ),
 }
 
+interface KindCopy {
+  newRoute: string
+  editRoute: (formId: string) => string
+  label: string
+  usage: string
+  emptyTitle: string
+  emptyDescription: string
+}
+
+const KIND_COPY: Record<FormKind, KindCopy> = {
+  request: {
+    newRoute: NEW_REQUEST_FORM_ROUTE,
+    editRoute: requestFormRoute,
+    label: 'Request forms',
+    usage: 'Requests',
+    emptyTitle: 'No request forms yet',
+    emptyDescription: 'Build the first one and pick which departments it is offered to.',
+  },
+  evaluation: {
+    newRoute: NEW_EVALUATION_FORM_ROUTE,
+    editRoute: evaluationFormRoute,
+    label: 'Evaluation forms',
+    usage: 'Evaluations',
+    emptyTitle: 'No evaluation forms yet',
+    emptyDescription: 'Build the first one and you can assign it to a supervisor.',
+  },
+  application: {
+    newRoute: NEW_APPLICATION_FORM_ROUTE,
+    editRoute: applicationFormRoute,
+    label: 'Application forms',
+    usage: 'Postings',
+    emptyTitle: 'No application forms yet',
+    emptyDescription:
+      'Build one for the questions a job posting asks beyond name, email, phone and resume.',
+  },
+}
+
 export interface FormsTableProps {
-  /** Which catalogue to list: the request forms or the evaluation forms. */
+  /** Which catalogue to list: request, evaluation or application forms. */
   kind?: FormKind
 }
 
-// One table for both kinds: an evaluation form has no department, so that column and filter
-// are the only difference.
+// One table for every kind: only a request is offered to departments, so that column and filter
+// are the only structural difference.
 export function FormsTable({ kind = 'request' }: FormsTableProps) {
-  const isEvaluation = kind === 'evaluation'
-  const newFormRoute = isEvaluation ? NEW_EVALUATION_FORM_ROUTE : NEW_REQUEST_FORM_ROUTE
-  const editRoute = isEvaluation ? evaluationFormRoute : requestFormRoute
+  const isRequest = kind === 'request'
+  const copy = KIND_COPY[kind]
+  const newFormRoute = copy.newRoute
+  const editRoute = copy.editRoute
   const { query, setQuery, clearFilters } = useUrlQuery(parseFormQuery, DEFAULT_FORM_QUERY)
   const forms = useForms({ ...query, kind })
   const teams = useTeams()
@@ -75,7 +115,7 @@ export function FormsTable({ kind = 'request' }: FormsTableProps) {
   const deleteForm = useDeleteForm(kind)
   const [deleting, setDeleting] = useState<FormRow | null>(null)
 
-  const filters: readonly FilterControl[] = isEvaluation
+  const filters: readonly FilterControl[] = !isRequest
     ? [{ kind: 'select', key: 'status', label: 'Status', options: FORM_STATUS_OPTIONS }]
     : [
         { kind: 'select', key: 'status', label: 'Status', options: FORM_STATUS_OPTIONS },
@@ -114,7 +154,7 @@ export function FormsTable({ kind = 'request' }: FormsTableProps) {
         </Stack>
       ),
     },
-    ...(isEvaluation ? [] : [departmentsColumn]),
+    ...(isRequest ? [departmentsColumn] : []),
     {
       key: 'status',
       header: 'Status',
@@ -127,7 +167,7 @@ export function FormsTable({ kind = 'request' }: FormsTableProps) {
     },
     {
       key: 'submissions',
-      header: isEvaluation ? 'Evaluations' : 'Requests',
+      header: copy.usage,
       width: 110,
       render: (form) => <Text size="sm">{form.submissionCount}</Text>,
     },
@@ -179,7 +219,7 @@ export function FormsTable({ kind = 'request' }: FormsTableProps) {
       />
 
       <DataTable
-        label={isEvaluation ? 'Evaluation forms' : 'Request forms'}
+        label={copy.label}
         columns={columns}
         rows={forms.data?.rows}
         rowKey={(form) => form.id}
@@ -206,12 +246,8 @@ export function FormsTable({ kind = 'request' }: FormsTableProps) {
         }
         empty={
           <EmptyState
-            title={isEvaluation ? 'No evaluation forms yet' : 'No request forms yet'}
-            description={
-              isEvaluation
-                ? 'Build the first one and you can assign it to a supervisor.'
-                : 'Build the first one and pick which departments it is offered to.'
-            }
+            title={copy.emptyTitle}
+            description={copy.emptyDescription}
             action={<LinkButton href={newFormRoute}>New form</LinkButton>}
           />
         }

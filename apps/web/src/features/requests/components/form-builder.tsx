@@ -20,7 +20,7 @@ import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { EmptyState } from '@/components/empty-state'
 import { announceSuccess } from '@/lib/announce'
-import { evaluationFormRoute, requestFormRoute } from '@/lib/routes'
+import { applicationFormRoute, evaluationFormRoute, requestFormRoute } from '@/lib/routes'
 // Departments are organization data; the requests feature is a consumer of them.
 import { useTeams } from '@/features/organization/hooks/use-teams'
 import {
@@ -48,8 +48,33 @@ function draftOf(form: FormRow | undefined, kind: FormKind): FormDraftValues {
   }
 }
 
+const EDIT_ROUTE: Record<FormKind, (formId: string) => string> = {
+  request: requestFormRoute,
+  evaluation: evaluationFormRoute,
+  application: applicationFormRoute,
+}
+
 function editRoute(form: FormRow) {
-  return form.kind === 'evaluation' ? evaluationFormRoute(form.id) : requestFormRoute(form.id)
+  return EDIT_ROUTE[form.kind](form.id)
+}
+
+const COPY: Record<FormKind, { published: string; about: string; questions: string }> = {
+  request: {
+    published: 'is live for the departments you picked.',
+    about: 'What requesters see in the catalogue before they open it.',
+    questions: 'What the requester fills in. They are asked in this order.',
+  },
+  evaluation: {
+    published: 'is ready to assign.',
+    about: 'What the supervisor sees before they open it.',
+    questions: 'What the supervisor answers about the employee, in this order.',
+  },
+  application: {
+    published: 'is ready to add to a job posting.',
+    about: 'For HR only — applicants see the job posting, not this name.',
+    questions:
+      'Asked after the applicant’s name, email, phone and resume, in this order. Ask only what you will use.',
+  },
 }
 
 export interface FormBuilderProps {
@@ -58,14 +83,16 @@ export interface FormBuilderProps {
   kind?: FormKind
 }
 
-// One builder for both kinds: an evaluation form asks the same questions, it just reaches
-// people by assignment rather than by department.
+// One builder for every kind: evaluation and application forms ask the same questions, they just
+// reach people another way than by department.
 export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
   const router = useRouter()
   const teams = useTeams()
   const save = useSaveForm()
   const formKind = form?.kind ?? kind
-  const isEvaluation = formKind === 'evaluation'
+  // Only a request is offered to departments and can book time off.
+  const isRequest = formKind === 'request'
+  const copy = COPY[formKind]
   const setStatus = useSetFormStatus(formKind)
 
   const {
@@ -118,11 +145,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
       const saved = await save.mutateAsync(values)
       await setStatus.mutateAsync({ formId: saved.id, status: 'published' })
       reset(draftOf({ ...saved, status: 'published' }, formKind))
-      announceSuccess(
-        isEvaluation
-          ? `${saved.name} is ready to assign.`
-          : `${saved.name} is live for the departments you picked.`,
-      )
+      announceSuccess(`${saved.name} ${copy.published}`)
       if (!values.formId) router.replace(editRoute(saved))
     } catch (error) {
       setError('root', {
@@ -136,11 +159,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
       <Stack gap="xl">
         <PageSection
           title="About this form"
-          description={
-            isEvaluation
-              ? 'What the supervisor sees before they open it.'
-              : 'What requesters see in the catalogue before they open it.'
-          }
+          description={copy.about}
           actions={
             form ? (
               <Badge variant="light" tt="capitalize">
@@ -172,7 +191,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
               error={errors.description?.message}
             />
 
-            {isEvaluation ? null : (
+            {!isRequest ? null : (
               <Controller
                 control={control}
                 name="timeOff"
@@ -201,7 +220,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
               />
             )}
 
-            {isEvaluation ? null : (
+            {!isRequest ? null : (
               <Controller
                 control={control}
                 name="teamIds"
@@ -226,11 +245,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
 
         <PageSection
           title="Questions"
-          description={
-            isEvaluation
-              ? 'What the supervisor answers about the employee, in this order.'
-              : 'What the requester fills in. They are asked in this order.'
-          }
+          description={copy.questions}
           actions={
             <Button
               variant="default"
@@ -292,7 +307,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
                     key={field.id}
                     index={index}
                     firstMovableIndex={lockedCount}
-                    allowFile={formKind === 'request'}
+                    allowFile={formKind !== 'evaluation'}
                     total={fields.fields.length}
                     control={control}
                     register={register}
