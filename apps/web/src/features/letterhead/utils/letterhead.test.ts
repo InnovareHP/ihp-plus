@@ -12,6 +12,7 @@ import {
 import { describe, expect, it } from 'vitest'
 import { applyLetterhead, LetterheadError } from './letterhead'
 import { LETTERHEAD_ARTWORK } from './letterhead-artwork'
+import { INNOVARE_ARTWORK } from './letterhead-artwork-innovare'
 import { requiredMargins, withLetterhead } from './letterhead-docx'
 import { fitContent, reserveOf } from './letterhead-pdf'
 import { LETTERHEAD_LAYOUTS } from './letterhead-templates'
@@ -153,6 +154,15 @@ describe('the PDF letterhead', () => {
     expect(stamped.byteLength).toBeGreaterThan(20_000)
   })
 
+  it('reserves room for the Innovare HP artwork, not the official one', () => {
+    const { header, footer } = INNOVARE_ARTWORK
+    const reserve = reserveOf(LETTERHEAD_LAYOUTS.innovarehp, 612)
+
+    expect(reserve.top).toBeCloseTo((612 * header.height) / header.width + 12)
+    expect(reserve.bottom).toBeCloseTo((612 * footer.height) / footer.width + 6)
+    expect(reserve).not.toEqual(reserveOf(LETTERHEAD_LAYOUTS.official, 612))
+  })
+
   it('stamps a rotated page without losing its rotation', async () => {
     const stamped = await applyLetterhead({
       bytes: await pdfWithLink(90),
@@ -237,6 +247,21 @@ describe('the Word letterhead', () => {
       footerDistance: 360,
     })
     expect(read('word/document.xml')).toContain(`w:top="${top}"`)
+  })
+
+  it('embeds the Innovare HP artwork in a Word file', async () => {
+    const stamped = await applyLetterhead({
+      bytes: docx(body),
+      contentType: DOCX,
+      template: 'innovarehp',
+      organizationName: 'Innovare HP',
+    })
+    const files = unzipSync(stamped)
+    const header = files['word/media/ihp-letterhead-header.png']
+    const expected = Uint8Array.from(atob(INNOVARE_ARTWORK.header.base64), (c) => c.charCodeAt(0))
+
+    expect(header).toEqual(expected)
+    expect(files['word/media/ihp-letterhead-footer.png']?.byteLength).toBeGreaterThan(0)
   })
 
   it('never shrinks a margin that is already deep enough', () => {

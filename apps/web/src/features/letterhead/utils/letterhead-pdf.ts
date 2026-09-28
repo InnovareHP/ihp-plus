@@ -13,7 +13,7 @@ import {
   type PDFFont,
   type PDFPage,
 } from 'pdf-lib'
-import { LETTERHEAD_ARTWORK } from './letterhead-artwork'
+import { LETTERHEAD_ARTWORKS } from './letterhead-artworks'
 import { LETTERHEAD_LOGO } from './letterhead-logo'
 import { LETTERHEAD_COLORS, type DrawnLayout, type LetterheadLayout } from './letterhead-templates'
 
@@ -70,7 +70,7 @@ interface Reserve {
 /** Artwork scales with the page width, so a wider page gives up a taller band. */
 export function reserveOf(layout: LetterheadLayout, width: number): Reserve {
   if (layout.kind === 'drawn') return { top: layout.headerHeight, bottom: layout.footerHeight }
-  const { header, footer } = LETTERHEAD_ARTWORK
+  const { header, footer } = LETTERHEAD_ARTWORKS[layout.artwork]
   return {
     top: (width * header.height) / header.width + ARTWORK_GAP,
     bottom: (width * footer.height) / footer.width + ARTWORK_GAP / 2,
@@ -275,8 +275,8 @@ export async function letterheadPdf(
   const pages = document.getPages()
 
   if (layout.kind === 'artwork') {
-    const header = await document.embedPng(LETTERHEAD_ARTWORK.header.base64)
-    const footer = await document.embedPng(LETTERHEAD_ARTWORK.footer.base64)
+    const header = await document.embedPng(LETTERHEAD_ARTWORKS[layout.artwork].header.base64)
+    const footer = await document.embedPng(LETTERHEAD_ARTWORKS[layout.artwork].footer.base64)
     for (const page of pages) {
       const view = viewOf(page)
       shrinkContent(document, page, view, reserveOf(layout, view.width))

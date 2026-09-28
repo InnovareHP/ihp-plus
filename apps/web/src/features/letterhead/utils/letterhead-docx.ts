@@ -1,5 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate'
-import { LETTERHEAD_ARTWORK } from './letterhead-artwork'
+import { LETTERHEAD_ARTWORKS } from './letterhead-artworks'
 import { LETTERHEAD_LOGO } from './letterhead-logo'
 import { LETTERHEAD_COLORS, type DrawnLayout, type LetterheadLayout } from './letterhead-templates'
 
@@ -60,7 +60,7 @@ function hasFooter(layout: LetterheadLayout) {
 /** The smallest top and bottom margins, in twips, that keep the body clear of the letterhead. */
 export function requiredMargins(layout: LetterheadLayout, section: Section) {
   if (layout.kind === 'artwork') {
-    const { header, footer } = LETTERHEAD_ARTWORK
+    const { header, footer } = LETTERHEAD_ARTWORKS[layout.artwork]
     return {
       top: Math.round((section.pageWidth * header.height) / header.width) + GAP,
       bottom: Math.round((section.pageWidth * footer.height) / footer.width) + GAP / 2,
@@ -290,8 +290,8 @@ function partsOf(
 ): { header: Part; footer: Part | undefined } {
   if (layout.kind === 'artwork') {
     return {
-      header: artworkPart('header', LETTERHEAD_ARTWORK.header, widths.page),
-      footer: artworkPart('footer', LETTERHEAD_ARTWORK.footer, widths.page),
+      header: artworkPart('header', LETTERHEAD_ARTWORKS[layout.artwork].header, widths.page),
+      footer: artworkPart('footer', LETTERHEAD_ARTWORKS[layout.artwork].footer, widths.page),
     }
   }
   const logo = { path: 'media/ihp-letterhead-logo.png', bytes: bytesOf(LETTERHEAD_LOGO.base64) }

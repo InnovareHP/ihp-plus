@@ -1,4 +1,11 @@
-export const LETTERHEAD_TEMPLATES = ['none', 'official', 'classic', 'minimal', 'banner'] as const
+export const LETTERHEAD_TEMPLATES = [
+  'none',
+  'official',
+  'innovarehp',
+  'classic',
+  'minimal',
+  'banner',
+] as const
 export type LetterheadTemplate = (typeof LETTERHEAD_TEMPLATES)[number]
 
 /** Brand hex without the '#', the form both OOXML and the PDF colour helper start from. */
@@ -28,12 +35,16 @@ export interface DrawnLayout {
 /** The designed letterhead: its header and footer art run edge to edge, scaled to the page width. */
 export interface ArtworkLayout {
   kind: 'artwork'
+  artwork: ArtworkName
 }
+
+export type ArtworkName = 'official' | 'innovarehp'
 
 export type LetterheadLayout = DrawnLayout | ArtworkLayout
 
 export const LETTERHEAD_LAYOUTS = {
-  official: { kind: 'artwork' },
+  official: { kind: 'artwork', artwork: 'official' },
+  innovarehp: { kind: 'artwork', artwork: 'innovarehp' },
   classic: {
     kind: 'drawn',
     headerHeight: 84,
@@ -66,6 +77,7 @@ export const LETTERHEAD_LAYOUTS = {
 export const LETTERHEAD_OPTIONS: { value: LetterheadTemplate; label: string }[] = [
   { value: 'none', label: 'No letterhead' },
   { value: 'official', label: 'IHP+ letterhead — the official design' },
+  { value: 'innovarehp', label: 'Innovare HP letterhead — logo, address and contact strip' },
   { value: 'classic', label: 'Classic — logo, name and page numbers' },
   { value: 'minimal', label: 'Minimal — centred logo only' },
   { value: 'banner', label: 'Banner — navy band with logo and name' },
