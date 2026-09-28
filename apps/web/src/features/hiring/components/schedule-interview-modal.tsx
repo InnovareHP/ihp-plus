@@ -16,10 +16,12 @@ import {
   TextInput,
 } from '@mantine/core'
 import { IconPlus, IconTrash } from '@tabler/icons-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useRef } from 'react'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { announceSuccess } from '@/lib/announce'
-import { useInterviewers, useOfferInterview } from '../hooks/use-interviews'
+import { suggestionsQuery, useInterviewers, useOfferInterview } from '../hooks/use-interviews'
 import {
   INTERVIEW_DURATIONS,
   INTERVIEW_FORMAT_LABELS,
@@ -30,12 +32,20 @@ import {
   type OfferInterviewInput,
   type OfferInterviewValues,
 } from '../schema'
+import { spreadAcrossDays, suggestionWindow } from '../utils/interview-time'
 import { FreeTimeSuggestions } from './free-time-suggestions'
+
+// How many free times the form fills in by itself, each on a different day.
+const AUTO_SLOTS = 3
 
 const LOCATION_LABEL = {
   video: {
     label: 'Video link',
     help: 'Paste the meeting link, or leave it empty and send it later.',
+  },
+  teams: {
+    label: 'Video link',
+    help: 'Leave empty and a Microsoft Teams meeting is created when they pick a time.',
   },
   onsite: { label: 'Address', help: 'Where they should come, with a floor or room if it helps.' },
   phone: { label: 'Calling from', help: 'Optional. We call the number they applied with.' },
@@ -45,16 +55,22 @@ export interface ScheduleInterviewModalProps {
   application: ApplicationSummary
   /** The organization's zone, which every time typed here is read in. */
   timeZone: string
+  /** Outlook is connected: free times come from calendars and video calls get a Teams link. */
+  calendarConnected: boolean
   onClose: () => void
 }
 
 export function ScheduleInterviewModal({
   application,
   timeZone,
+  calendarConnected,
   onClose,
 }: ScheduleInterviewModalProps) {
   const interviewers = useInterviewers()
   const offer = useOfferInterview(timeZone)
+  const queryClient = useQueryClient()
+  // The rows the last auto-fill wrote; once HR edits them, auto-fill leaves them alone.
+  const autoFilled = useRef('')
 
   const {
     control,
@@ -81,6 +97,28 @@ export function ScheduleInterviewModal({
   const format = useWatch({ control, name: 'format' }) ?? 'video'
   const interviewerIds = useWatch({ control, name: 'interviewerIds' }) ?? []
   const durationMinutes = Number(useWatch({ control, name: 'durationMinutes' }) ?? 45)
+  const chosen = (useWatch({ control, name: 'slots' }) ?? []).map(
+    (row) => `${row.date ?? ''} ${row.time ?? ''}`,
+  )
+
+  function untouched() {
+    const rows = getValues('slots') ?? []
+    return (
+      rows.every((row) => !row.date && !row.time) || JSON.stringify(rows) === autoFilled.current
+    )
+  }
+
+  // Runs from the controls' own change handlers, so a new pick of interviewers refills the times.
+  async function autoFill(ids: readonly string[], minutes: number) {
+    if (!calendarConnected || ids.length === 0 || !untouched()) return
+    const request = { interviewerIds: ids, durationMinutes: minutes, ...suggestionWindow(timeZone) }
+    // A failed read is already on screen through FreeTimeSuggestions, which shares this query.
+    const result = await queryClient.fetchQuery(suggestionsQuery(request)).catch(() => undefined)
+    const picks = result ? spreadAcrossDays(result.starts, timeZone, AUTO_SLOTS) : []
+    if (picks.length === 0 || !untouched()) return
+    slots.replace(picks)
+    autoFilled.current = JSON.stringify(picks)
+  }
 
   // A suggestion fills the first empty row before it adds one, so the blank starter row is used.
   function addSuggested(slot: { date: string; time: string }) {
@@ -88,7 +126,7 @@ export function ScheduleInterviewModal({
     if (empty >= 0) slots.update(empty, slot)
     else if (slots.fields.length < MAX_INTERVIEW_SLOTS) slots.append(slot)
   }
-  const place = LOCATION_LABEL[format]
+  const place = LOCATION_LABEL[format === 'video' && calendarConnected ? 'teams' : format]
 
   async function onSubmit(values: OfferInterviewValues) {
     try {
@@ -154,7 +192,11 @@ export function ScheduleInterviewModal({
                     label: `${minutes} minutes`,
                   }))}
                   value={String(field.value ?? 45)}
-                  onChange={(value) => field.onChange(Number(value ?? 45))}
+                  onChange={(value) => {
+                    const minutes = Number(value ?? 45)
+                    field.onChange(minutes)
+                    void autoFill(getValues('interviewerIds') ?? [], minutes)
+                  }}
                 />
               )}
             />
@@ -174,7 +216,10 @@ export function ScheduleInterviewModal({
                     label: person.name,
                   }))}
                   value={field.value ?? []}
-                  onChange={field.onChange}
+                  onChange={(ids) => {
+                    field.onChange(ids)
+                    void autoFill(ids, durationMinutes)
+                  }}
                   onBlur={field.onBlur}
                   error={errors.interviewerIds?.message}
                 />
@@ -187,12 +232,19 @@ export function ScheduleInterviewModal({
               <Text size="xs" c="dimmed">
                 They pick one on their status page, where each time shows in their own zone.
               </Text>
-              <FreeTimeSuggestions
-                interviewerIds={interviewerIds}
-                durationMinutes={durationMinutes}
-                timeZone={timeZone}
-                onPick={addSuggested}
-              />
+              {calendarConnected ? (
+                <FreeTimeSuggestions
+                  interviewerIds={interviewerIds}
+                  durationMinutes={durationMinutes}
+                  timeZone={timeZone}
+                  chosen={chosen}
+                  onPick={addSuggested}
+                />
+              ) : (
+                <Text size="xs" c="dimmed">
+                  Outlook is not connected, so free times cannot be read — type them in.
+                </Text>
+              )}
               {errors.slots?.message || errors.slots?.root?.message ? (
                 <Text size="sm" c="red" role="alert">
                   {errors.slots?.message ?? errors.slots?.root?.message}

@@ -14,12 +14,14 @@ export interface ApplicationInterviewsProps {
   application: ApplicationSummary
   interviews: readonly InterviewRow[]
   timeZone: string
+  calendarConnected: boolean
 }
 
 export function ApplicationInterviews({
   application,
   interviews,
   timeZone,
+  calendarConnected,
 }: ApplicationInterviewsProps) {
   const cancel = useCancelInterview()
   // Ephemeral dialog state; the offer itself lives on the server once sent.
@@ -70,6 +72,7 @@ export function ApplicationInterviews({
         <ScheduleInterviewModal
           application={application}
           timeZone={timeZone}
+          calendarConnected={calendarConnected}
           onClose={() => setScheduling(false)}
         />
       ) : null}

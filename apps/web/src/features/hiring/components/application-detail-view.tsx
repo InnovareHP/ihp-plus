@@ -37,6 +37,8 @@ export interface ApplicationDetailViewProps {
   organizationName: string
   /** The organization's interview zone. */
   timeZone: string
+  /** Outlook is connected, so interviews are booked there with a Teams link. */
+  calendarConnected: boolean
 }
 
 export function ApplicationDetailView({
@@ -45,6 +47,7 @@ export function ApplicationDetailView({
   viewerName,
   organizationName,
   timeZone,
+  calendarConnected,
 }: ApplicationDetailViewProps) {
   const query = useApplication(initial.summary.id, initial)
   const application = query.data ?? initial
@@ -144,6 +147,7 @@ export function ApplicationDetailView({
               application={summary}
               interviews={application.interviews}
               timeZone={timeZone}
+              calendarConnected={calendarConnected}
             />
             <ApplicationScorecards scorecards={application.scorecards} />
             <PageSection title="Contact">

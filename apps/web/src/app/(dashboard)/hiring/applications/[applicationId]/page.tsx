@@ -1,3 +1,4 @@
+import { isCalendarConfigured } from '@ihp/graph'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { PageShell } from '@/components/page-shell'
@@ -42,6 +43,7 @@ export default async function ApplicationPage({
         viewerName={access.name}
         organizationName={access.membership.organization?.name ?? 'IHP+'}
         timeZone={settings.timeZone}
+        calendarConnected={isCalendarConfigured()}
       />
     </PageShell>
   )

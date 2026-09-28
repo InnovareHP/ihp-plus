@@ -17,18 +17,32 @@ export function useInterviewers() {
   })
 }
 
-export function useSlotSuggestions(
-  values: {
-    interviewerIds: readonly string[]
-    durationMinutes: number
-    fromDate: string
-    toDate: string
-  },
-  enabled: boolean,
-) {
+interface SuggestionRequest {
+  interviewerIds: readonly string[]
+  durationMinutes: number
+  fromDate: string
+  toDate: string
+}
+
+/** One key for the list and for the offer form's auto-fill, so a calendar is read once. */
+export function suggestionsQuery(values: SuggestionRequest) {
+  const request = {
+    interviewerIds: [...values.interviewerIds].sort(),
+    durationMinutes: values.durationMinutes,
+    fromDate: values.fromDate,
+    toDate: values.toDate,
+  }
+  return {
+    queryKey: hiringKeys.suggestions(JSON.stringify(request)),
+    queryFn: () => suggestSlots(request),
+    // Calendars move while HR fills the form, but not from one keystroke to the next.
+    staleTime: 60 * 1000,
+  }
+}
+
+export function useSlotSuggestions(values: SuggestionRequest, enabled: boolean) {
   return useQuery({
-    queryKey: hiringKeys.suggestions(JSON.stringify(values)),
-    queryFn: () => suggestSlots(values),
+    ...suggestionsQuery(values),
     enabled: enabled && values.interviewerIds.length > 0,
   })
 }

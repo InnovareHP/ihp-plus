@@ -95,6 +95,7 @@ function renderView(detail: ApplicationDetail = DETAIL) {
       viewerName="Rita"
       organizationName="IHP+"
       timeZone="Asia/Manila"
+      calendarConnected={false}
     />,
   )
 }
