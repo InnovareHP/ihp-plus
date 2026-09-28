@@ -107,6 +107,7 @@ model JobApplication {
   events      ApplicationEvent[]
   notes       ApplicationNote[]
   interviews  Interview[]
+  offers      JobOffer[]
 
   @@index([organizationId, status])
   @@index([postingId, status, stageId])
@@ -237,5 +238,33 @@ model InterviewFeedback {
 
   @@unique([interviewId, interviewerId])
   @@map("interviewFeedback")
+  @@schema("hiring")
+}
+
+// An offer sent to an applicant in the offer stage. A declined one stays as history and HR sends
+// a new row, so only the newest can still be sent.
+model JobOffer {
+  id             String         @id @default(uuid())
+  organizationId String
+  applicationId  String
+  application    JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdById    String
+
+  // sent until the applicant answers, then accepted or declined.
+  status        String    @default("sent")
+  message       String
+  // The offer letter in S3, optional; the original name is kept for the download.
+  fileKey       String?
+  fileName      String?
+  contentType   String?
+  fileSize      Int?
+  declineReason String?
+  respondedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([applicationId, createdAt])
+  @@map("jobOffer")
   @@schema("hiring")
 }

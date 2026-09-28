@@ -4,6 +4,8 @@ import {
   applicationReceivedTemplate,
   applicationRejectedTemplate,
   applicationStageTemplate,
+  jobOfferTemplate,
+  offerAnsweredTemplate,
   bulletinMentionTemplate,
   clientFolderSharedTemplate,
   correctionDecidedTemplate,
@@ -454,6 +456,55 @@ describe('hiring emails', () => {
 
     expect(email.text).toContain('We would like to meet you. Pick a time below.')
     expect(email.html).toContain('See you soon.')
+  })
+
+  it('sends an offer with a link to answer it, and says when it replaces a declined one', () => {
+    const first = jobOfferTemplate({
+      organizationName: 'IHP+',
+      firstName: 'Grace',
+      postingTitle: 'Registered nurse',
+      message: 'We would love you to join.',
+      revised: false,
+      hasLetter: true,
+      url: 'https://ihp.test/app/careers/status/app-1/sig',
+    })
+    const revised = jobOfferTemplate({
+      organizationName: 'IHP+',
+      firstName: 'Grace',
+      postingTitle: 'Registered nurse',
+      message: 'We raised the salary.',
+      revised: true,
+      hasLetter: false,
+      url: 'https://ihp.test/app/careers/status/app-1/sig',
+    })
+
+    expect(first.subject).toBe('Your offer for Registered nurse')
+    expect(first.text).toContain('Your offer letter is on the page below.')
+    expect(first.html).toContain('https://ihp.test/app/careers/status/app-1/sig')
+    expect(revised.subject).toBe('A revised offer for Registered nurse')
+    expect(revised.text).not.toContain('offer letter')
+  })
+
+  it('tells HR how an offer was answered, with the reason for a decline', () => {
+    const declined = offerAnsweredTemplate({
+      applicantName: 'Grace Hopper',
+      postingTitle: 'Registered nurse',
+      decision: 'declined',
+      reason: 'The salary is below my current one.',
+      url: 'https://ihp.test/app/hiring/applications/app-1',
+    })
+    const accepted = offerAnsweredTemplate({
+      applicantName: 'Grace Hopper',
+      postingTitle: 'Registered nurse',
+      decision: 'accepted',
+      reason: '',
+      url: 'https://ihp.test/app/hiring/applications/app-1',
+    })
+
+    expect(declined.subject).toBe('Grace Hopper declined the offer for Registered nurse')
+    expect(declined.text).toContain('Their reason: The salary is below my current one.')
+    expect(accepted.subject).toBe('Grace Hopper accepted the offer for Registered nurse')
+    expect(accepted.text).not.toContain('Their reason')
   })
 
   it('sends a rejection with no button to click', () => {

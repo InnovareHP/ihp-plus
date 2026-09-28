@@ -6,6 +6,7 @@ import { objectUrl } from '@/lib/s3'
 import type { RequestValues } from '@/features/requests/schema'
 import { requireHiringCaller, type HiringCaller } from './access'
 import { interviewsOf } from './interviews'
+import { offerRecordsOf, offerRowOf } from './offers'
 import { interviewsApplicant, scorecardsOf } from './scorecard-service'
 import { requireMemberCaller } from './access'
 import { notifyRejected, notifyStageMessage } from './notifications'
@@ -129,6 +130,7 @@ async function namesOf(userIds: readonly (string | null)[]) {
 }
 
 interface EventDetail {
+  revised?: boolean
   toStageName?: string
   emailed?: boolean
   reason?: string
@@ -170,6 +172,9 @@ function eventRowOf(
     interview_cancelled: 'Cancelled an interview',
     interview_reschedule_requested: 'Asked for other interview times',
     scorecard_submitted: 'Filled in a scorecard',
+    offer_sent: detail.revised ? 'Sent a revised offer' : 'Sent an offer',
+    offer_accepted: 'Accepted the offer',
+    offer_declined: 'Declined the offer',
   }
 
   return {
@@ -199,7 +204,7 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
   const caller = await requireHiringCaller()
   const row = await findApplication(caller, applicationId)
 
-  const [files, notes, events, invitation, interviews, scorecards] = await Promise.all([
+  const [files, notes, events, invitation, interviews, scorecards, offers] = await Promise.all([
     db.applicationAttachment.findMany({
       where: { applicationId: row.id },
       orderBy: { createdAt: 'asc' },
@@ -221,10 +226,12 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
       : null,
     interviewsOf(row.id),
     scorecardsOf(row.id),
+    offerRecordsOf(row.id),
   ])
   const names = await namesOf([
     ...notes.map((note) => note.authorId),
     ...events.map((event) => event.actorId),
+    ...offers.map((offer) => offer.createdById),
   ])
 
   return {
@@ -253,6 +260,7 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
     postingTeamId: row.posting.teamId ?? undefined,
     interviews,
     scorecards,
+    offers: offers.map((offer) => offerRowOf(offer, names)),
   }
 }
 

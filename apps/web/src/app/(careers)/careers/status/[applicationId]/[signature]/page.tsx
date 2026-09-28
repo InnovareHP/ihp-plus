@@ -3,9 +3,11 @@ import type { Metadata } from 'next'
 import { LinkAnchor } from '@/components/link-anchor'
 import { ApplicationStatusCard } from '@/features/hiring/components/application-status-card'
 import { InterviewPicker } from '@/features/hiring/components/interview-picker'
+import { OfferResponse } from '@/features/hiring/components/offer-response'
+import { loadPublicOffer } from '@/features/hiring/offer-service'
 import { loadInterviewOffers } from '@/features/hiring/public-interview-service'
 import { loadApplicationStatus } from '@/features/hiring/public-service'
-import { routes } from '@/lib/routes'
+import { publicOfferLetterHref, routes } from '@/lib/routes'
 
 // A signed link is a credential, so it must never be indexed or followed from a search result.
 export const metadata: Metadata = {
@@ -40,11 +42,26 @@ export default async function ApplicationStatusPage({
     )
   }
 
-  // Only a live application has an interview worth acting on.
-  const offers = application.status === 'active' ? await loadInterviewOffers(application.id) : []
+  // Only a live application has an interview worth acting on; an answered offer stays as a record.
+  const [offers, jobOffer] = await Promise.all([
+    application.status === 'active' ? loadInterviewOffers(application.id) : [],
+    loadPublicOffer(application.id),
+  ])
 
   return (
     <Stack maw={720} mx="auto">
+      {jobOffer ? (
+        <OfferResponse
+          offer={jobOffer}
+          applicationId={application.id}
+          signature={signature}
+          letterHref={
+            jobOffer.fileName
+              ? publicOfferLetterHref(application.id, signature, jobOffer.id)
+              : undefined
+          }
+        />
+      ) : null}
       {offers.map((offer) => (
         <InterviewPicker
           key={offer.id}

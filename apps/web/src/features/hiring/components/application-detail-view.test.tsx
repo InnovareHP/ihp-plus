@@ -84,6 +84,7 @@ const DETAIL: ApplicationDetail = {
   postingTeamId: 'team-care',
   interviews: [],
   scorecards: [],
+  offers: [],
 }
 
 function renderView(detail: ApplicationDetail = DETAIL) {

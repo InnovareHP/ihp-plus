@@ -424,6 +424,8 @@ export interface ApplicationDetail {
   postingTeamId: string | undefined
   interviews: InterviewRow[]
   scorecards: ScorecardRow[]
+  /** Newest first; only the newest can still be answered. */
+  offers: OfferRow[]
 }
 
 export type ApplicationsPage = Paginated<ApplicationSummary>
@@ -665,4 +667,116 @@ export function scorecardSchemaOf(fields: readonly FormField[]) {
   return answerSchemaOf(fields).extend({
     recommendation: z.enum(RECOMMENDATIONS, RECOMMENDATION_REQUIRED),
   })
+}
+
+export const OFFER_STATUSES = ['sent', 'accepted', 'declined'] as const
+export type OfferStatus = (typeof OFFER_STATUSES)[number]
+
+export const OFFER_STATUS_LABELS: Record<OfferStatus, string> = {
+  sent: 'Waiting for their answer',
+  accepted: 'Accepted',
+  declined: 'Declined',
+}
+
+export const OFFER_STATUS_COLORS: Record<OfferStatus, string> = {
+  sent: 'blue',
+  accepted: 'green',
+  declined: 'orange',
+}
+
+export interface OfferRow {
+  id: string
+  status: OfferStatus
+  message: string
+  fileName: string | undefined
+  fileSize: number | undefined
+  declineReason: string | undefined
+  createdAt: string
+  respondedAt: string | undefined
+  createdByName: string
+}
+
+// Custom stages get random ids, so the offer stage is also recognised by what HR named it.
+export function isOfferStage(stage: Pick<Stage, 'id' | 'name'> | undefined) {
+  return Boolean(stage && (stage.id === 'offer' || /\boffers?\b/i.test(stage.name)))
+}
+
+export const DEFAULT_OFFER_MESSAGE =
+  'We are delighted to offer you this role. The attached letter sets out the terms — please read it, then accept or decline the offer from this page.'
+
+export const sendOfferSchema = z.object({
+  applicationId: z.string().min(1),
+  message: z
+    .string()
+    .trim()
+    .min(1, 'Write the message they will read with the offer.')
+    .max(4000, 'Keep the message under 4,000 characters.'),
+  // The letter itself travels beside these values as a File, which zod does not see.
+})
+
+export type SendOfferInput = z.input<typeof sendOfferSchema>
+export type SendOfferValues = z.infer<typeof sendOfferSchema>
+
+// An offer letter is something to sign and keep, so only document formats are taken.
+export const OFFER_LETTER_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+] as const
+
+export const OFFER_LETTER_ACCEPT = OFFER_LETTER_TYPES.join(',')
+
+const OFFER_LETTER_MAX_BYTES = 25 * 1024 * 1024
+
+/** Why this file cannot be an offer letter, or undefined when it can. */
+export function offerLetterProblem(file: { size: number; type: string }) {
+  if (file.size === 0) return 'That file is empty.'
+  if (file.size > OFFER_LETTER_MAX_BYTES) return 'The letter has to be 25 MB or smaller.'
+  if (!(OFFER_LETTER_TYPES as readonly string[]).includes(file.type)) {
+    return 'Attach the letter as a PDF or Word document.'
+  }
+  return undefined
+}
+
+/** The modal's form: the offer plus the letter, which the server re-checks on arrival. */
+export const sendOfferFormSchema = sendOfferSchema.extend({
+  letter: z
+    .custom<File | null>((value) => value === null || value instanceof File)
+    .superRefine((file, context) => {
+      const problem = file ? offerLetterProblem(file) : undefined
+      if (problem) context.addIssue({ code: 'custom', message: problem })
+    })
+    .default(null),
+})
+
+export type SendOfferFormInput = z.input<typeof sendOfferFormSchema>
+export type SendOfferFormValues = z.infer<typeof sendOfferFormSchema>
+
+export const DECLINE_REASON_REQUIRED = 'Tell us why, so we can do better next time.'
+
+export const offerAnswerSchema = z
+  .object({
+    applicationId: z.string().min(1).max(100),
+    signature: z.string().min(1).max(200),
+    offerId: z.string().min(1).max(100),
+    decision: z.enum(['accept', 'decline']),
+    reason: z.string().trim().max(1000, 'Keep the reason under 1,000 characters.').default(''),
+  })
+  // A decline without a reason leaves HR nothing to improve the next offer with.
+  .refine((values) => values.decision === 'accept' || values.reason.length > 0, {
+    message: DECLINE_REASON_REQUIRED,
+    path: ['reason'],
+  })
+
+export type OfferAnswerInput = z.input<typeof offerAnswerSchema>
+export type OfferAnswerValues = z.infer<typeof offerAnswerSchema>
+
+/** What the applicant's status page shows of an offer; never who sent it. */
+export interface PublicOffer {
+  id: string
+  status: OfferStatus
+  message: string
+  fileName: string | undefined
+  createdAt: string
+  respondedAt: string | undefined
 }

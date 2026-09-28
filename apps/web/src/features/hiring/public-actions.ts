@@ -8,6 +8,7 @@ import {
   submitApplication as submit,
   withdrawApplication as withdraw,
 } from './public-service'
+import { answerOffer as answer } from './offer-service'
 import { bookInterviewSlot, requestNewTimes } from './public-interview-service'
 import type { ActionResult } from './schema'
 
@@ -43,4 +44,8 @@ export async function bookInterview(input: unknown): Promise<ActionResult> {
 
 export async function askForOtherTimes(input: unknown): Promise<ActionResult> {
   return requestNewTimes(input)
+}
+
+export async function answerOffer(input: unknown): Promise<ActionResult> {
+  return answer(input)
 }

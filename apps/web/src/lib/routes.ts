@@ -208,6 +208,18 @@ export function requestFileHref(submissionId: string, fieldId: string) {
   )
 }
 
+/** An offer letter as HR opens it; signed afresh per click like an application file. */
+export function offerLetterHref(offerId: string) {
+  return withBasePath(`/api/hiring/offers/${encodeURIComponent(offerId)}/letter`)
+}
+
+/** The same letter for the applicant, authorised by their signed status link instead of a session. */
+export function publicOfferLetterHref(applicationId: string, signature: string, offerId: string) {
+  return withBasePath(
+    `/api/careers/offers/${encodeURIComponent(applicationId)}/${encodeURIComponent(signature)}/${encodeURIComponent(offerId)}`,
+  )
+}
+
 /** A file sent with an application; the route signs a short-lived storage link per click. */
 export function applicationFileHref(attachmentId: string) {
   return withBasePath(`/api/hiring/attachments/${encodeURIComponent(attachmentId)}`)

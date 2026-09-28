@@ -93,6 +93,14 @@ enum Recommendation {
   RECOMMENDATION_STRONG_NO = 4;
 }
 
+// sent until the applicant answers; a declined offer is followed by a new one, never edited.
+enum OfferStatus {
+  OFFER_STATUS_UNSPECIFIED = 0;
+  OFFER_STATUS_SENT = 1;
+  OFFER_STATUS_ACCEPTED = 2;
+  OFFER_STATUS_DECLINED = 3;
+}
+
 // One step of a posting's pipeline. A non-empty message is emailed to the applicant when they
 // are moved into the stage.
 message Stage {
@@ -291,6 +299,21 @@ message Application {
   optional string posting_team_id = 12;
   repeated Interview interviews = 13;
   repeated Scorecard scorecards = 14;
+  // Every offer made, newest first; only the newest can still be answered.
+  repeated Offer offers = 15;
+}
+
+message Offer {
+  string id = 1;
+  OfferStatus status = 2;
+  string message = 3;
+  // The offer letter, when HR attached one.
+  optional string file_name = 4;
+  optional int32 file_size = 5;
+  optional string decline_reason = 6;
+  string created_at = 7;
+  optional string responded_at = 8;
+  string created_by_name = 9;
 }
 
 message Scorecard {

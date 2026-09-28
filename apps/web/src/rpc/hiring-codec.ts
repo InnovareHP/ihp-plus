@@ -4,6 +4,7 @@ import {
   EmploymentType,
   InterviewFormat,
   InterviewStatus,
+  OfferStatus as OfferStatusEnum,
   Recommendation as RecommendationEnum,
   PostingStatus,
   PostingStatusFilter,
@@ -16,6 +17,7 @@ import {
   type ApplicationSummary as SummaryMessage,
   type Interview as InterviewMessage,
   type Interviewer as InterviewerMessage,
+  type Offer as OfferMessage,
   type InterviewerView as InterviewerViewMessage,
   type Scorecard as ScorecardMessage,
   type HiringSettings as SettingsMessage,
@@ -37,6 +39,8 @@ import type {
   InterviewStatus as InterviewState,
   Interviewer,
   InterviewerView,
+  OfferRow,
+  OfferStatus as OfferState,
   Recommendation,
   ScorecardRow,
   HiringSettings,
@@ -431,6 +435,7 @@ export function applicationToProto(detail: ApplicationDetail): ApplicationMessag
     postingTeamId: detail.postingTeamId,
     interviews: detail.interviews.map(interviewToProto),
     scorecards: detail.scorecards.map(scorecardToProto),
+    offers: detail.offers.map(offerToProto),
   }
 }
 
@@ -451,6 +456,49 @@ export function applicationFromProto(message: ApplicationMessage): ApplicationDe
     postingTeamId: message.postingTeamId,
     interviews: message.interviews.map(interviewFromProto),
     scorecards: message.scorecards.map(scorecardFromProto),
+    offers: message.offers.map(offerFromProto),
+  }
+}
+
+const OFFER_STATUS_TO_PROTO: Record<OfferState, OfferStatusEnum> = {
+  sent: OfferStatusEnum.SENT,
+  accepted: OfferStatusEnum.ACCEPTED,
+  declined: OfferStatusEnum.DECLINED,
+}
+
+const OFFER_STATUS_FROM_PROTO: Record<OfferStatusEnum, OfferState> = {
+  [OfferStatusEnum.UNSPECIFIED]: 'sent',
+  [OfferStatusEnum.SENT]: 'sent',
+  [OfferStatusEnum.ACCEPTED]: 'accepted',
+  [OfferStatusEnum.DECLINED]: 'declined',
+}
+
+export function offerToProto(row: OfferRow): OfferMessage {
+  return {
+    $typeName: 'ihp.hiring.v1.Offer',
+    id: row.id,
+    status: OFFER_STATUS_TO_PROTO[row.status],
+    message: row.message,
+    fileName: row.fileName,
+    fileSize: row.fileSize,
+    declineReason: row.declineReason,
+    createdAt: row.createdAt,
+    respondedAt: row.respondedAt,
+    createdByName: row.createdByName,
+  }
+}
+
+export function offerFromProto(message: OfferMessage): OfferRow {
+  return {
+    id: message.id,
+    status: OFFER_STATUS_FROM_PROTO[message.status],
+    message: message.message,
+    fileName: message.fileName,
+    fileSize: message.fileSize,
+    declineReason: message.declineReason,
+    createdAt: message.createdAt,
+    respondedAt: message.respondedAt,
+    createdByName: message.createdByName,
   }
 }
 

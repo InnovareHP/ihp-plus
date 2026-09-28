@@ -689,6 +689,69 @@ export function applicationRejectedTemplate(options: {
   }
 }
 
+export function jobOfferTemplate(options: {
+  organizationName: string
+  firstName: string
+  postingTitle: string
+  message: string
+  /** True when an earlier offer was declined and this one replaces it. */
+  revised: boolean
+  hasLetter: boolean
+  url: string
+}): PreparedEmail {
+  return {
+    subject: options.revised
+      ? `A revised offer for ${options.postingTitle}`
+      : `Your offer for ${options.postingTitle}`,
+    ...renderEmail({
+      preheader: `${options.organizationName} has ${options.revised ? 'sent a revised' : 'made you an'} offer.`,
+      heading: `Congratulations, ${options.firstName}`,
+      body: [
+        ...paragraphsOf(options.message),
+        options.hasLetter
+          ? 'Your offer letter is on the page below. Read it, then accept or decline the offer there.'
+          : 'Accept or decline the offer from the page below.',
+      ],
+      action: { label: 'Review your offer', url: options.url },
+      footnote: `Sent by ${options.organizationName} about your application for ${options.postingTitle}.`,
+    }),
+  }
+}
+
+export function offerAnsweredTemplate(options: {
+  applicantName: string
+  postingTitle: string
+  decision: 'accepted' | 'declined'
+  /** Only a decline carries one. */
+  reason: string
+  url: string
+}): PreparedEmail {
+  const accepted = options.decision === 'accepted'
+  return {
+    subject: accepted
+      ? `${options.applicantName} accepted the offer for ${options.postingTitle}`
+      : `${options.applicantName} declined the offer for ${options.postingTitle}`,
+    ...renderEmail({
+      preheader: accepted
+        ? 'They said yes — hire them to send their portal invitation.'
+        : 'They said no. You can send them a revised offer.',
+      heading: accepted ? 'Offer accepted' : 'Offer declined',
+      body: accepted
+        ? [
+            `${options.applicantName} accepted your offer for ${options.postingTitle}.`,
+            'Hire them from the application to send the invitation that sets up their portal account.',
+          ]
+        : [
+            `${options.applicantName} declined your offer for ${options.postingTitle}.`,
+            `Their reason: ${options.reason}`,
+            'If you can change the terms, send them a revised offer from the application.',
+          ],
+      action: { label: 'Open the application', url: options.url },
+      footnote: 'You get this because you run hiring for your organization.',
+    }),
+  }
+}
+
 export function interviewOfferedTemplate(options: {
   organizationName: string
   firstName: string

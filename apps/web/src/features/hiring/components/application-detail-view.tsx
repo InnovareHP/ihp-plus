@@ -17,11 +17,13 @@ import {
 import {
   APPLICATION_STATUS_COLORS,
   APPLICATION_STATUS_LABELS,
+  isOfferStage,
   type ApplicationDetail,
 } from '../schema'
 import { ApplicantContact } from './applicant-contact'
 import { ApplicationFiles } from './application-files'
 import { ApplicationInterviews } from './application-interviews'
+import { ApplicationOffers } from './application-offers'
 import { ApplicationScorecards } from './application-scorecards'
 import { ApplicationNotes } from './application-notes'
 import { DecisionModals } from './decision-modals'
@@ -58,6 +60,9 @@ export function ApplicationDetailView({
   const resend = useHireApplication()
   const [hiring, hireDialog] = useDisclosure(false)
   const targets = application.stages.filter((stage) => stage.id !== summary.stageId)
+  const inOfferStage = isOfferStage(
+    application.stages.find((stage) => stage.id === summary.stageId),
+  )
 
   // A file answer links to its upload, found by the question it answered.
   const fileIds = new Map(application.files.map((file) => [file.fieldId, file.id]))
@@ -143,6 +148,13 @@ export function ApplicationDetailView({
       <Grid gap="xl">
         <Grid.Col span={{ base: 12, lg: 7 }}>
           <Stack gap="xl">
+            {inOfferStage || application.offers.length > 0 ? (
+              <ApplicationOffers
+                application={summary}
+                offers={application.offers}
+                inOfferStage={inOfferStage}
+              />
+            ) : null}
             <ApplicationInterviews
               application={summary}
               interviews={application.interviews}

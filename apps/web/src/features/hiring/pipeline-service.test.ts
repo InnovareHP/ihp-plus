@@ -12,6 +12,7 @@ const prisma = vi.hoisted(() => ({
   applicationAttachment: { findFirst: vi.fn(), findMany: vi.fn() },
   applicationEvent: { create: vi.fn(), findMany: vi.fn() },
   applicationNote: { create: vi.fn(), delete: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
+  jobOffer: { findMany: vi.fn(async () => []) },
   organization: { findUnique: vi.fn() },
   user: { findMany: vi.fn() },
   $transaction: vi.fn(),
