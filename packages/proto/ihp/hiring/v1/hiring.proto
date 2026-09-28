@@ -84,6 +84,15 @@ enum InterviewStatus {
   INTERVIEW_STATUS_CANCELLED = 4;
 }
 
+// The one question every scorecard asks, whatever else the posting's scorecard form adds.
+enum Recommendation {
+  RECOMMENDATION_UNSPECIFIED = 0;
+  RECOMMENDATION_STRONG_YES = 1;
+  RECOMMENDATION_YES = 2;
+  RECOMMENDATION_NO = 3;
+  RECOMMENDATION_STRONG_NO = 4;
+}
+
 // One step of a posting's pipeline. A non-empty message is emailed to the applicant when they
 // are moved into the stage.
 message Stage {
@@ -281,6 +290,34 @@ message Application {
   // The posting's department, which a hire lands in unless HR picks another.
   optional string posting_team_id = 12;
   repeated Interview interviews = 13;
+  repeated Scorecard scorecards = 14;
+}
+
+message Scorecard {
+  string interview_id = 1;
+  string interviewer_id = 2;
+  string interviewer_name = 3;
+  Recommendation recommendation = 4;
+  // The scorecard's questions as they were asked, and the answers given.
+  repeated ihp.requests.v1.FormField fields = 5;
+  repeated ihp.requests.v1.FieldValue values = 6;
+  string updated_at = 7;
+}
+
+// What an interviewer sees of one interview: enough to prepare, and their own scorecard.
+message InterviewerView {
+  Interview interview = 1;
+  ApplicationSummary applicant = 2;
+  repeated ihp.requests.v1.FormField application_fields = 3;
+  repeated ihp.requests.v1.FieldValue application_values = 4;
+  repeated ApplicationFile files = 5;
+  // The posting's scorecard questions now; empty means only the recommendation is asked.
+  repeated ihp.requests.v1.FormField scorecard_fields = 6;
+  optional Scorecard mine = 7;
+  // The organization's interview zone.
+  string time_zone = 8;
+  // The caller is an interviewer on it, so they may fill in the scorecard.
+  bool can_score = 9;
 }
 
 message InterviewSlot {
@@ -449,6 +486,24 @@ message SuggestSlotsRequest {
   string to_date = 4;
 }
 
+message GetInterviewRequest {
+  string interview_id = 1;
+}
+
+message GetInterviewResponse {
+  InterviewerView view = 1;
+}
+
+message SubmitScorecardRequest {
+  string interview_id = 1;
+  Recommendation recommendation = 2;
+  repeated ihp.requests.v1.FieldValue values = 3;
+}
+
+message SubmitScorecardResponse {
+  Scorecard scorecard = 1;
+}
+
 message SuggestSlotsResponse {
   repeated NewSlot slots = 1;
   // False when Graph is not set up, so the dialog says why it has no suggestions.
@@ -483,4 +538,8 @@ service HiringService {
   rpc SuggestSlots(SuggestSlotsRequest) returns (SuggestSlotsResponse);
   rpc OfferInterview(OfferInterviewRequest) returns (OfferInterviewResponse);
   rpc CancelInterview(CancelInterviewRequest) returns (CancelInterviewResponse);
+
+  // For the people on an interview, HR or not: prepare for it, then score it.
+  rpc GetInterview(GetInterviewRequest) returns (GetInterviewResponse);
+  rpc SubmitScorecard(SubmitScorecardRequest) returns (SubmitScorecardResponse);
 }

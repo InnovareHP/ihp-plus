@@ -20,6 +20,7 @@ import {
   reopenApplication,
 } from '@/features/hiring/pipeline-service'
 import { hireApplication } from '@/features/hiring/hire-service'
+import { loadInterviewerView, submitScorecard } from '@/features/hiring/scorecard-service'
 import {
   cancelInterview,
   listInterviewers,
@@ -32,6 +33,9 @@ import {
   applicationToProto,
   interviewFormatFromProto,
   interviewerToProto,
+  interviewerViewToProto,
+  recommendationFromProto,
+  scorecardToProto,
   draftFromProto,
   noteToProto,
   postingFilterFromProto,
@@ -41,6 +45,7 @@ import {
   stageFromProto,
   summaryToProto,
 } from './hiring-codec'
+import { valuesFromProto } from './requests-codec'
 
 // Thin by design: every implementation converts at the wire boundary and delegates to the
 // feature's service, so the business rules stay testable without a transport.
@@ -195,5 +200,19 @@ export const hiring: ServiceImpl<typeof HiringService> = {
 
   cancelInterview: async (request) => ({
     application: applicationToProto(await cancelInterview(request.interviewId)),
+  }),
+
+  getInterview: async (request) => ({
+    view: interviewerViewToProto(await loadInterviewerView(request.interviewId)),
+  }),
+
+  submitScorecard: async (request) => ({
+    scorecard: scorecardToProto(
+      await submitScorecard({
+        interviewId: request.interviewId,
+        recommendation: recommendationFromProto(request.recommendation),
+        values: valuesFromProto(request.values),
+      }),
+    ),
   }),
 }

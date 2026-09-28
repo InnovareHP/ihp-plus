@@ -9,6 +9,9 @@ import {
   draftToProto,
   interviewFormatToProto,
   interviewerFromProto,
+  interviewerViewFromProto,
+  recommendationToProto,
+  scorecardFromProto,
   noteFromProto,
   postingFilterToProto,
   postingFromProto,
@@ -18,6 +21,8 @@ import {
   summaryFromProto,
 } from '@/rpc/hiring-codec'
 import { pageInfoFromProto } from '@/rpc/page-info'
+import { valuesToProto } from '@/rpc/requests-codec'
+import type { FormField, RequestValues } from '@/features/requests/schema'
 import type {
   ApplicationDetail,
   ApplicationNote,
@@ -26,7 +31,10 @@ import type {
   ApplicationSummary,
   HiringSettings,
   Interviewer,
+  InterviewerView,
   OfferInterviewValues,
+  Recommendation,
+  ScorecardRow,
   MoveValues,
   NoteValues,
   RejectValues,
@@ -250,4 +258,27 @@ export async function suggestSlots(values: {
     browserClients.hiring.suggestSlots({ ...values, interviewerIds: [...values.interviewerIds] }),
   )
   return { starts: response.slots.map((slot) => slot.start), fromCalendar: response.fromCalendar }
+}
+
+export async function getInterview(interviewId: string): Promise<InterviewerView> {
+  const response = await call(() => browserClients.hiring.getInterview({ interviewId }))
+  if (!response.view) throw new Error('The server did not return the interview.')
+  return interviewerViewFromProto(response.view)
+}
+
+export async function submitScorecard(values: {
+  interviewId: string
+  recommendation: Recommendation
+  fields: readonly FormField[]
+  answers: RequestValues
+}): Promise<ScorecardRow> {
+  const response = await call(() =>
+    browserClients.hiring.submitScorecard({
+      interviewId: values.interviewId,
+      recommendation: recommendationToProto(values.recommendation),
+      values: valuesToProto(values.fields, values.answers),
+    }),
+  )
+  if (!response.scorecard) throw new Error('The server did not return the scorecard.')
+  return scorecardFromProto(response.scorecard)
 }

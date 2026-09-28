@@ -83,6 +83,7 @@ const DETAIL: ApplicationDetail = {
   invitationExpiresAt: undefined,
   postingTeamId: 'team-care',
   interviews: [],
+  scorecards: [],
 }
 
 function renderView(detail: ApplicationDetail = DETAIL) {

@@ -16,12 +16,17 @@ const prisma = vi.hoisted(() => ({
   user: { findMany: vi.fn() },
   $transaction: vi.fn(),
 }))
-const access = vi.hoisted(() => ({ requireHiringCaller: vi.fn() }))
+const access = vi.hoisted(() => ({ requireHiringCaller: vi.fn(), requireMemberCaller: vi.fn() }))
+const scorecards = vi.hoisted(() => ({
+  scorecardsOf: vi.fn(async () => []),
+  interviewsApplicant: vi.fn(async () => false),
+}))
 const notifications = vi.hoisted(() => ({ notifyStageMessage: vi.fn(), notifyRejected: vi.fn() }))
 const s3 = vi.hoisted(() => ({ objectUrl: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./access', () => access)
+vi.mock('./scorecard-service', () => scorecards)
 vi.mock('./notifications', () => notifications)
 vi.mock('@/lib/s3', () => s3)
 // Interviews have their own tests; here an application simply has none.
@@ -288,8 +293,14 @@ describe('notes and files', () => {
   })
 
   it('signs a download only for a file that belongs to a sent application here', async () => {
+    access.requireMemberCaller.mockResolvedValue({
+      userId: 'user-hr',
+      organizationId: 'org-1',
+      canHire: true,
+    })
     prisma.applicationAttachment.findFirst.mockResolvedValue({
       fileKey: 'hiring/org-1/post-1/cv.pdf',
+      applicationId: 'app-1',
     })
     s3.objectUrl.mockResolvedValue('https://storage.test/signed')
 
@@ -299,5 +310,25 @@ describe('notes and files', () => {
       organizationId: 'org-1',
       applicationId: { not: null },
     })
+  })
+
+  it('lets an interviewer open the files of someone they interview, and nobody else', async () => {
+    access.requireMemberCaller.mockResolvedValue({
+      userId: 'user-lead',
+      organizationId: 'org-1',
+      canHire: false,
+    })
+    prisma.applicationAttachment.findFirst.mockResolvedValue({
+      fileKey: 'k',
+      applicationId: 'app-1',
+    })
+    s3.objectUrl.mockResolvedValue('https://storage.test/signed')
+
+    scorecards.interviewsApplicant.mockResolvedValue(true)
+    expect(await attachmentDownloadUrl('file-resume')).toBe('https://storage.test/signed')
+    expect(scorecards.interviewsApplicant).toHaveBeenCalledWith('user-lead', 'app-1')
+
+    scorecards.interviewsApplicant.mockResolvedValue(false)
+    expect((await errorOf(() => attachmentDownloadUrl('file-resume')))?.code).toBe(Code.NotFound)
   })
 })

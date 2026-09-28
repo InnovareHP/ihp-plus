@@ -4,6 +4,7 @@ import {
   EmploymentType,
   InterviewFormat,
   InterviewStatus,
+  Recommendation as RecommendationEnum,
   PostingStatus,
   PostingStatusFilter,
   SalaryPeriod,
@@ -15,6 +16,8 @@ import {
   type ApplicationSummary as SummaryMessage,
   type Interview as InterviewMessage,
   type Interviewer as InterviewerMessage,
+  type InterviewerView as InterviewerViewMessage,
+  type Scorecard as ScorecardMessage,
   type HiringSettings as SettingsMessage,
   type Posting as PostingMessage,
   type SavePostingRequest,
@@ -33,6 +36,9 @@ import type {
   InterviewRow,
   InterviewStatus as InterviewState,
   Interviewer,
+  InterviewerView,
+  Recommendation,
+  ScorecardRow,
   HiringSettings,
   PostingDraftValues,
   PostingRow,
@@ -424,6 +430,7 @@ export function applicationToProto(detail: ApplicationDetail): ApplicationMessag
     invitationExpiresAt: detail.invitationExpiresAt,
     postingTeamId: detail.postingTeamId,
     interviews: detail.interviews.map(interviewToProto),
+    scorecards: detail.scorecards.map(scorecardToProto),
   }
 }
 
@@ -443,6 +450,7 @@ export function applicationFromProto(message: ApplicationMessage): ApplicationDe
     invitationExpiresAt: message.invitationExpiresAt,
     postingTeamId: message.postingTeamId,
     interviews: message.interviews.map(interviewFromProto),
+    scorecards: message.scorecards.map(scorecardFromProto),
   }
 }
 
@@ -531,5 +539,94 @@ export function interviewFromProto(message: InterviewMessage): InterviewRow {
     joinUrl: message.joinUrl,
     inCalendar: message.inCalendar,
     createdAt: message.createdAt,
+  }
+}
+
+const RECOMMENDATION_TO_PROTO: Record<Recommendation, RecommendationEnum> = {
+  strong_yes: RecommendationEnum.STRONG_YES,
+  yes: RecommendationEnum.YES,
+  no: RecommendationEnum.NO,
+  strong_no: RecommendationEnum.STRONG_NO,
+}
+
+// UNSPECIFIED has no verdict to fall back on, so it reads as the empty string the server refuses.
+const RECOMMENDATION_FROM_PROTO: Record<RecommendationEnum, Recommendation | ''> = {
+  [RecommendationEnum.UNSPECIFIED]: '',
+  [RecommendationEnum.STRONG_YES]: 'strong_yes',
+  [RecommendationEnum.YES]: 'yes',
+  [RecommendationEnum.NO]: 'no',
+  [RecommendationEnum.STRONG_NO]: 'strong_no',
+}
+
+export function recommendationToProto(value: Recommendation) {
+  return RECOMMENDATION_TO_PROTO[value]
+}
+
+export function recommendationFromProto(value: RecommendationEnum) {
+  return RECOMMENDATION_FROM_PROTO[value]
+}
+
+export function scorecardToProto(row: ScorecardRow): ScorecardMessage {
+  return {
+    $typeName: 'ihp.hiring.v1.Scorecard',
+    interviewId: row.interviewId,
+    interviewerId: row.interviewerId,
+    interviewerName: row.interviewerName,
+    recommendation: RECOMMENDATION_TO_PROTO[row.recommendation],
+    fields: row.fields.map(fieldToProto),
+    values: valuesToProto(row.fields, row.values),
+    updatedAt: row.updatedAt,
+  }
+}
+
+export function scorecardFromProto(message: ScorecardMessage): ScorecardRow {
+  return {
+    interviewId: message.interviewId,
+    interviewerId: message.interviewerId,
+    interviewerName: message.interviewerName,
+    recommendation: RECOMMENDATION_FROM_PROTO[message.recommendation] || 'no',
+    fields: message.fields.map(fieldFromProto),
+    values: valuesFromProto(message.values),
+    updatedAt: message.updatedAt,
+  }
+}
+
+export function interviewerViewToProto(view: InterviewerView): InterviewerViewMessage {
+  return {
+    $typeName: 'ihp.hiring.v1.InterviewerView',
+    interview: interviewToProto(view.interview),
+    applicant: summaryToProto(view.applicant),
+    applicationFields: view.applicationFields.map(fieldToProto),
+    applicationValues: valuesToProto(view.applicationFields, view.applicationValues),
+    files: view.files.map((file) => ({
+      $typeName: 'ihp.hiring.v1.ApplicationFile' as const,
+      ...file,
+    })),
+    scorecardFields: view.scorecardFields.map(fieldToProto),
+    mine: view.mine ? scorecardToProto(view.mine) : undefined,
+    timeZone: view.timeZone,
+    canScore: view.canScore,
+  }
+}
+
+export function interviewerViewFromProto(message: InterviewerViewMessage): InterviewerView {
+  if (!message.interview || !message.applicant)
+    throw new Error('The server did not return the interview.')
+  return {
+    interview: interviewFromProto(message.interview),
+    applicant: summaryFromProto(message.applicant),
+    applicationFields: message.applicationFields.map(fieldFromProto),
+    applicationValues: valuesFromProto(message.applicationValues),
+    files: message.files.map((file) => ({
+      id: file.id,
+      fieldId: file.fieldId,
+      fileName: file.fileName,
+      contentType: file.contentType,
+      fileSize: file.fileSize,
+    })),
+    scorecardFields: message.scorecardFields.map(fieldFromProto),
+    mine: message.mine ? scorecardFromProto(message.mine) : undefined,
+    timeZone: message.timeZone,
+    canScore: message.canScore,
   }
 }

@@ -22,6 +22,7 @@ import {
 import { ApplicantContact } from './applicant-contact'
 import { ApplicationFiles } from './application-files'
 import { ApplicationInterviews } from './application-interviews'
+import { ApplicationScorecards } from './application-scorecards'
 import { ApplicationNotes } from './application-notes'
 import { DecisionModals } from './decision-modals'
 import { HireApplicationModal } from './hire-application-modal'
@@ -144,6 +145,7 @@ export function ApplicationDetailView({
               interviews={application.interviews}
               timeZone={timeZone}
             />
+            <ApplicationScorecards scorecards={application.scorecards} />
             <PageSection title="Contact">
               <ApplicantContact application={summary} />
             </PageSection>

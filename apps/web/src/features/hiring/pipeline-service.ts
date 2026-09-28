@@ -6,6 +6,8 @@ import { objectUrl } from '@/lib/s3'
 import type { RequestValues } from '@/features/requests/schema'
 import { requireHiringCaller, type HiringCaller } from './access'
 import { interviewsOf } from './interviews'
+import { interviewsApplicant, scorecardsOf } from './scorecard-service'
+import { requireMemberCaller } from './access'
 import { notifyRejected, notifyStageMessage } from './notifications'
 import {
   moveSchema,
@@ -167,6 +169,7 @@ function eventRowOf(
     interview_booked: 'Booked an interview time',
     interview_cancelled: 'Cancelled an interview',
     interview_reschedule_requested: 'Asked for other interview times',
+    scorecard_submitted: 'Filled in a scorecard',
   }
 
   return {
@@ -196,7 +199,7 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
   const caller = await requireHiringCaller()
   const row = await findApplication(caller, applicationId)
 
-  const [files, notes, events, invitation, interviews] = await Promise.all([
+  const [files, notes, events, invitation, interviews, scorecards] = await Promise.all([
     db.applicationAttachment.findMany({
       where: { applicationId: row.id },
       orderBy: { createdAt: 'asc' },
@@ -217,6 +220,7 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
         })
       : null,
     interviewsOf(row.id),
+    scorecardsOf(row.id),
   ])
   const names = await namesOf([
     ...notes.map((note) => note.authorId),
@@ -248,6 +252,7 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
         : undefined,
     postingTeamId: row.posting.teamId ?? undefined,
     interviews,
+    scorecards,
   }
 }
 
@@ -426,8 +431,9 @@ export async function deleteNote(noteId: string) {
   await db.applicationNote.delete({ where: { id: note.id } })
 }
 
+// HR opens any applicant's files; an interviewer only those of the people they interview.
 export async function attachmentDownloadUrl(attachmentId: string): Promise<string> {
-  const caller = await requireHiringCaller()
+  const caller = await requireMemberCaller()
   const attachment = await db.applicationAttachment.findFirst({
     where: {
       id: attachmentId,
@@ -435,8 +441,12 @@ export async function attachmentDownloadUrl(attachmentId: string): Promise<strin
       // An upload nobody sent is not part of any application, so it is not downloadable.
       applicationId: { not: null },
     },
-    select: { fileKey: true },
+    select: { fileKey: true, applicationId: true },
   })
-  if (!attachment) throw new ConnectError('That file is no longer there.', Code.NotFound)
+  const allowed =
+    attachment?.applicationId &&
+    (caller.canHire || (await interviewsApplicant(caller.userId, attachment.applicationId)))
+  if (!attachment || !allowed)
+    throw new ConnectError('That file is no longer there.', Code.NotFound)
   return objectUrl(attachment.fileKey)
 }

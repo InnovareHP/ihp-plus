@@ -1,6 +1,8 @@
 'use client'
 
 import { Anchor, Badge, Button, Card, Group, List, Modal, Stack, Text } from '@mantine/core'
+import Link from 'next/link'
+import { interviewRoute } from '@/lib/routes'
 import { useDisclosure } from '@mantine/hooks'
 import {
   INTERVIEW_FORMAT_LABELS,
@@ -106,6 +108,16 @@ export function InterviewCard({
 
         {open ? (
           <Group gap="xs">
+            {interview.status === 'booked' ? (
+              <Button
+                component={Link}
+                href={interviewRoute(interview.id)}
+                variant="light"
+                size="compact-sm"
+              >
+                Open interview and scorecard
+              </Button>
+            ) : null}
             {interview.status !== 'booked' ? (
               <Button variant="light" size="compact-sm" onClick={onOfferNewTimes}>
                 Offer new times

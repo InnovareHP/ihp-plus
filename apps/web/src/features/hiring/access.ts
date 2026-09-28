@@ -77,3 +77,26 @@ export async function requireHiringCaller() {
 }
 
 export type HiringCaller = Awaited<ReturnType<typeof requireHiringCaller>>
+
+/** Any member of the organization: interviewers need not be HR to prepare for and score an interview. */
+export async function requireMemberCaller() {
+  const session = await getSession()
+  if (!session) throw new ConnectError('Sign in to continue.', Code.Unauthenticated)
+
+  const profile = await readProfile(session.user.id)
+  if (!profile) throw new ConnectError('Sign in to continue.', Code.Unauthenticated)
+
+  const membership = membershipOf(profile)
+  if (!membership.organizationId) {
+    throw new ConnectError('Finish setting up your profile first.', Code.FailedPrecondition)
+  }
+
+  return {
+    userId: session.user.id,
+    name: profile.preferredName ?? session.user.name,
+    organizationId: membership.organizationId,
+    canHire: await canManageHiring(membership),
+  }
+}
+
+export type MemberCaller = Awaited<ReturnType<typeof requireMemberCaller>>

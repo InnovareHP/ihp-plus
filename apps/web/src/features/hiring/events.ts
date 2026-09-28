@@ -39,4 +39,6 @@ export const hiringEvents = {
   interviewBooked: 'hiring.interview.booked',
   interviewBookFailed: 'hiring.interview.book_failed',
   interviewTimesAsked: 'hiring.interview.other_times_asked',
+  scorecardSubmitted: 'hiring.scorecard.submitted',
+  scorecardSubmitFailed: 'hiring.scorecard.submit_failed',
 } as const satisfies Record<string, EventName>

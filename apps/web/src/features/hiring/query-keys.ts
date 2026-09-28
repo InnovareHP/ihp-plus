@@ -15,5 +15,6 @@ export const hiringKeys = {
   application: (applicationId: string) =>
     [...hiringKeys.all, 'application', applicationId] as const,
   interviewers: () => [...hiringKeys.all, 'interviewers'] as const,
+  interview: (interviewId: string) => [...hiringKeys.all, 'interview', interviewId] as const,
   suggestions: (key: string) => [...hiringKeys.all, 'suggestions', key] as const,
 }

@@ -423,6 +423,7 @@ export interface ApplicationDetail {
   invitationExpiresAt: string | undefined
   postingTeamId: string | undefined
   interviews: InterviewRow[]
+  scorecards: ScorecardRow[]
 }
 
 export type ApplicationsPage = Paginated<ApplicationSummary>
@@ -617,3 +618,51 @@ export const bookSlotSchema = z.object({
 })
 
 export type BookSlotValues = z.infer<typeof bookSlotSchema>
+
+export const RECOMMENDATIONS = ['strong_yes', 'yes', 'no', 'strong_no'] as const
+export type Recommendation = (typeof RECOMMENDATIONS)[number]
+
+export const RECOMMENDATION_LABELS: Record<Recommendation, string> = {
+  strong_yes: 'Strong yes',
+  yes: 'Yes',
+  no: 'No',
+  strong_no: 'Strong no',
+}
+
+export const RECOMMENDATION_COLORS: Record<Recommendation, string> = {
+  strong_yes: 'green',
+  yes: 'teal',
+  no: 'orange',
+  strong_no: 'red',
+}
+
+export interface ScorecardRow {
+  interviewId: string
+  interviewerId: string
+  interviewerName: string
+  recommendation: Recommendation
+  fields: FormField[]
+  values: RequestValues
+  updatedAt: string
+}
+
+export interface InterviewerView {
+  interview: InterviewRow
+  applicant: ApplicationSummary
+  applicationFields: FormField[]
+  applicationValues: RequestValues
+  files: ApplicationFile[]
+  scorecardFields: FormField[]
+  mine: ScorecardRow | undefined
+  timeZone: string
+  canScore: boolean
+}
+
+export const RECOMMENDATION_REQUIRED = 'Give your overall recommendation.'
+
+/** The scorecard as a form: the posting's own questions beside the one fixed verdict. */
+export function scorecardSchemaOf(fields: readonly FormField[]) {
+  return answerSchemaOf(fields).extend({
+    recommendation: z.enum(RECOMMENDATIONS, RECOMMENDATION_REQUIRED),
+  })
+}
