@@ -24,7 +24,7 @@ function whereLine(format: string, location: string, joinUrl: string | null) {
   return link ? `A video call: ${link}` : 'A video call; the link is in your calendar invite.'
 }
 
-/** Runs hourly; each interview is reminded once and asked for scorecards once, stamped as it goes. */
+/** Runs twice a day; each interview is reminded once and asked for scorecards once, stamped as it goes. */
 export async function sendInterviewReminders(now = new Date()) {
   const upcoming = await db.interview.findMany({
     where: {
