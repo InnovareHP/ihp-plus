@@ -8,12 +8,14 @@ import {
 } from '@ihp/clock'
 import { db } from '@ihp/db'
 import {
+  GraphError,
   cancelCalendarEvent,
   commonFreeStarts,
   createCalendarEvent,
   getAvailability,
   isCalendarConfigured,
 } from '@ihp/graph'
+import { Code, ConnectError } from '@ihp/rpc'
 import type { InterviewContext } from './interview-notifications'
 import { DEFAULT_TIME_ZONE } from './schema'
 
@@ -88,6 +90,46 @@ export async function takeOutOfCalendar(eventId: string, comment: string) {
 }
 
 /**
+ * Microsoft's refusal in words HR can act on; the raw reason goes to the log, since it names the
+ * tenant setting an admin has to change.
+ */
+export function calendarFailure(error: unknown): ConnectError {
+  console.error('[hiring] reading Outlook free/busy failed', error)
+  const reason = error instanceof Error ? error.message : String(error)
+
+  if (error instanceof GraphError) {
+    if (error.status === 401 || error.status === 403) {
+      return new ConnectError(
+        'Outlook refused to share calendars — an admin must grant the app Calendars.ReadWrite (application) with admin consent.',
+        Code.PermissionDenied,
+      )
+    }
+    if (error.status === 404) {
+      return new ConnectError(
+        'Outlook cannot find the interview mailbox — check MICROSOFT_CALENDAR_MAILBOX is a real mailbox.',
+        Code.FailedPrecondition,
+      )
+    }
+  }
+  if (/AADSTS7000215|AADSTS7000222/.test(reason)) {
+    return new ConnectError(
+      'Microsoft rejected the client secret — copy the secret’s Value, not its ID, or create a new one.',
+      Code.FailedPrecondition,
+    )
+  }
+  if (/AADSTS700016|AADSTS90002|AADSTS900023/.test(reason)) {
+    return new ConnectError(
+      'Microsoft does not know this app in that tenant — check MICROSOFT_TENANT_ID and MICROSOFT_CLIENT_ID.',
+      Code.FailedPrecondition,
+    )
+  }
+  return new ConnectError(
+    'Could not read the calendars from Outlook right now — type the times in, or try again.',
+    Code.Unavailable,
+  )
+}
+
+/**
  * Times every interviewer is free, within company hours on working days in the organization's
  * zone. Empty with fromCalendar false when Graph is not set up.
  */
@@ -130,6 +172,8 @@ export async function suggestInterviewTimes(input: {
     start: windowStart,
     end: windowEnd,
     intervalMinutes: INTERVAL_MINUTES,
+  }).catch((error: unknown) => {
+    throw calendarFailure(error)
   })
   const earliest = Date.now() + MIN_NOTICE_MS
   const lastStartMinutes = COMPANY_HOURS.shiftEndMinutes - input.durationMinutes

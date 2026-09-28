@@ -17,8 +17,10 @@ vi.mock('@ihp/graph', async (importOriginal) => ({
 }))
 vi.mock('@ihp/db', () => ({ db: prisma }))
 
-const { putInCalendar, suggestInterviewTimes, takeOutOfCalendar } =
+const { calendarFailure, putInCalendar, suggestInterviewTimes, takeOutOfCalendar } =
   await import('./interview-calendar')
+const { GraphError } = await import('@ihp/graph')
+const { Code } = await import('@ihp/rpc')
 
 const CONTEXT = {
   interviewId: 'int-1',
@@ -148,5 +150,49 @@ describe('suggestInterviewTimes', () => {
     // Monday comes first: the weekend is skipped, and each day starts at 09:00.
     expect(local.slice(0, 4)).toEqual(['Mon 09:00', 'Mon 09:30', 'Mon 10:00', 'Tue 09:00'])
     expect(starts).toHaveLength(12)
+  })
+})
+
+describe('when Outlook refuses', () => {
+  const REQUEST = {
+    organizationId: 'org-1',
+    interviewerIds: ['user-hr'],
+    durationMinutes: 60,
+    fromDate: '2026-10-12',
+    toDate: '2026-10-16',
+  }
+
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    graph.isCalendarConfigured.mockReturnValue(true)
+    prisma.hiringSettings.findUnique.mockResolvedValue({ timeZone: 'Asia/Manila' })
+    prisma.member.findMany.mockResolvedValue([{ user: { email: 'rita@ihp.test' } }])
+  })
+
+  it('names the missing permission instead of failing with a bare 500', async () => {
+    graph.getAvailability.mockRejectedValue(
+      new GraphError(403, 'ErrorAccessDenied', 'Access is denied.'),
+    )
+
+    await expect(suggestInterviewTimes(REQUEST)).rejects.toMatchObject({
+      code: Code.PermissionDenied,
+      rawMessage: expect.stringMatching(/Calendars.ReadWrite/),
+    })
+  })
+
+  it('tells a wrong secret, a wrong tenant and a missing mailbox apart', () => {
+    expect(
+      calendarFailure(
+        new Error('Could not get a Graph token: AADSTS7000215: Invalid client secret'),
+      ).rawMessage,
+    ).toMatch(/client secret/)
+    expect(
+      calendarFailure(new Error('Could not get a Graph token: AADSTS700016: Application not found'))
+        .rawMessage,
+    ).toMatch(/MICROSOFT_TENANT_ID/)
+    expect(
+      calendarFailure(new GraphError(404, 'ErrorInvalidUser', 'Not found')).rawMessage,
+    ).toMatch(/MICROSOFT_CALENDAR_MAILBOX/)
+    expect(calendarFailure(new Error('socket hang up')).code).toBe(Code.Unavailable)
   })
 })
