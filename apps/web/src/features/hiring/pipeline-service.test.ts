@@ -24,6 +24,8 @@ vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./access', () => access)
 vi.mock('./notifications', () => notifications)
 vi.mock('@/lib/s3', () => s3)
+// Interviews have their own tests; here an application simply has none.
+vi.mock('./interviews', () => ({ interviewsOf: vi.fn(async () => []) }))
 
 process.env.BETTER_AUTH_SECRET = 'test-secret'
 

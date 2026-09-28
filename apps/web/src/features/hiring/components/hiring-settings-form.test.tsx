@@ -17,6 +17,7 @@ const SETTINGS: HiringSettings = {
   defaultStages: [...DEFAULT_STAGES],
   rejectionMessage: 'Thank you for applying.',
   canEditHrTeam: false,
+  timeZone: 'Asia/Manila',
 }
 
 beforeEach(() => {
@@ -52,6 +53,7 @@ describe('HiringSettingsForm', () => {
         hrTeamId: 'team-hr',
         defaultStages: DEFAULT_STAGES,
         rejectionMessage: 'Not this time, but thank you.',
+        timeZone: 'Asia/Manila',
       }),
     )
   })

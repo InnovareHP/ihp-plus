@@ -1,11 +1,14 @@
 'use client'
 
+import { zonedInstant } from '@ihp/clock'
 import { ConnectError } from '@ihp/rpc'
 import { browserClients } from '@/rpc/browser'
 import {
   applicationFilterToProto,
   applicationFromProto,
   draftToProto,
+  interviewFormatToProto,
+  interviewerFromProto,
   noteFromProto,
   postingFilterToProto,
   postingFromProto,
@@ -22,6 +25,8 @@ import type {
   ApplicationsPage,
   ApplicationSummary,
   HiringSettings,
+  Interviewer,
+  OfferInterviewValues,
   MoveValues,
   NoteValues,
   RejectValues,
@@ -69,6 +74,7 @@ export async function saveSettings(values: HiringSettingsValues): Promise<Hiring
       hrTeamId: values.hrTeamId || undefined,
       defaultStages: values.defaultStages.map(stageToProto),
       rejectionMessage: values.rejectionMessage,
+      timeZone: values.timeZone,
     }),
   )
   return requiredSettings(response.settings)
@@ -196,4 +202,52 @@ export async function hireApplication(values: {
   )
   if (!response.application) throw new Error('The server did not return the application.')
   return applicationFromProto(response.application)
+}
+
+export async function listInterviewers(): Promise<Interviewer[]> {
+  const response = await call(() => browserClients.hiring.listInterviewers({}))
+  return response.people.map(interviewerFromProto)
+}
+
+/** HR types each time as a wall clock in the organization's zone; it leaves here as an instant. */
+export async function offerInterview(
+  values: OfferInterviewValues,
+  timeZone: string,
+): Promise<ApplicationDetail> {
+  const starts = values.slots.map((slot) => {
+    const start = zonedInstant(slot.date, slot.time, timeZone)
+    if (!start) throw new Error('One of the times could not be read.')
+    return start.toISOString()
+  })
+  const response = await call(() =>
+    browserClients.hiring.offerInterview({
+      applicationId: values.applicationId,
+      format: interviewFormatToProto(values.format),
+      location: values.location,
+      note: values.note,
+      durationMinutes: values.durationMinutes,
+      interviewerIds: values.interviewerIds,
+      slots: starts.map((start) => ({ start, end: start })),
+    }),
+  )
+  if (!response.application) throw new Error('The server did not return the application.')
+  return applicationFromProto(response.application)
+}
+
+export async function cancelInterview(interviewId: string): Promise<ApplicationDetail> {
+  const response = await call(() => browserClients.hiring.cancelInterview({ interviewId }))
+  if (!response.application) throw new Error('The server did not return the application.')
+  return applicationFromProto(response.application)
+}
+
+export async function suggestSlots(values: {
+  interviewerIds: readonly string[]
+  durationMinutes: number
+  fromDate: string
+  toDate: string
+}): Promise<{ starts: string[]; fromCalendar: boolean }> {
+  const response = await call(() =>
+    browserClients.hiring.suggestSlots({ ...values, interviewerIds: [...values.interviewerIds] }),
+  )
+  return { starts: response.slots.map((slot) => slot.start), fromCalendar: response.fromCalendar }
 }

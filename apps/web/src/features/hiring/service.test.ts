@@ -74,6 +74,8 @@ const POSTING = {
   stages: DEFAULT_STAGES,
   applicationFormId: null,
   applicationForm: null,
+  scorecardFormId: null,
+  scorecardForm: null,
   openedAt: null,
   closesAt: null,
   createdAt: new Date('2026-09-01T00:00:00.000Z'),
@@ -94,6 +96,7 @@ const DRAFT = {
   resumeRequired: true,
   stages: [...DEFAULT_STAGES],
   applicationFormId: '',
+  scorecardFormId: '',
   teamId: '',
   closesAt: '',
 }
@@ -148,6 +151,7 @@ describe('settings', () => {
     hrTeamId: 'team-hr',
     defaultStages: [...DEFAULT_STAGES],
     rejectionMessage: 'Thanks, but not this time.',
+    timeZone: 'Asia/Manila',
   }
 
   it('lets HR change the stages and the message but not who runs hiring', async () => {

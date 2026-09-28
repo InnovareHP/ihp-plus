@@ -13,9 +13,11 @@ import {
   applicationFormRoute,
   evaluationFormRoute,
   NEW_APPLICATION_FORM_ROUTE,
+  NEW_SCORECARD_FORM_ROUTE,
   NEW_EVALUATION_FORM_ROUTE,
   NEW_REQUEST_FORM_ROUTE,
   requestFormRoute,
+  scorecardFormRoute,
 } from '@/lib/routes'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 // Departments are organization data; the requests feature is a consumer of them.
@@ -93,6 +95,15 @@ const KIND_COPY: Record<FormKind, KindCopy> = {
     emptyTitle: 'No application forms yet',
     emptyDescription:
       'Build one for the questions a job posting asks beyond name, email, phone and resume.',
+  },
+  scorecard: {
+    newRoute: NEW_SCORECARD_FORM_ROUTE,
+    editRoute: scorecardFormRoute,
+    label: 'Scorecards',
+    usage: 'Postings',
+    emptyTitle: 'No scorecards yet',
+    emptyDescription:
+      'Build one for what interviewers should judge, then pick it on a job posting.',
   },
 }
 

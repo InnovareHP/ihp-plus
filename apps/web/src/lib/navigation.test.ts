@@ -58,6 +58,7 @@ describe('navigation', () => {
       routes.hiring,
       routes.hiringApplicants,
       routes.hiringForms,
+      routes.hiringScorecards,
       routes.hiringSettings,
     ])
     expect(visibleSections(HR).map((section) => section.id)).toEqual(['workspace', 'work'])

@@ -41,6 +41,7 @@ export default async function ApplicationPage({
         rejectionMessage={settings.rejectionMessage}
         viewerName={access.name}
         organizationName={access.membership.organization?.name ?? 'IHP+'}
+        timeZone={settings.timeZone}
       />
     </PageShell>
   )

@@ -358,7 +358,8 @@ async function claimableFiles(
   return { ok: true, values, attachmentIds: [...wanted.keys()] }
 }
 
-async function findByLink(applicationId: string, signature: string) {
+// The signed link is the applicant's only credential, so every public read and write goes through it.
+export async function findByLink(applicationId: string, signature: string) {
   const application = await db.jobApplication.findUnique({
     where: { id: applicationId },
     include: { posting: { select: { slug: true, stages: true } } },

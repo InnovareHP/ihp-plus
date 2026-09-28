@@ -692,6 +692,33 @@ describe('application forms', () => {
     expect(prisma.requestForm.update).not.toHaveBeenCalled()
   })
 
+  it('treats a scorecard as HR’s to build, like an application form', async () => {
+    prisma.hiringSettings.findUnique.mockResolvedValue({ hrTeamId: 'team-hr' })
+
+    expect(await codeOf(() => saveForm({ ...APPLICATION_DRAFT, kind: 'scorecard' }))).toBe(
+      Code.PermissionDenied,
+    )
+    expect(
+      await codeOf(() =>
+        saveForm({
+          ...APPLICATION_DRAFT,
+          kind: 'scorecard',
+          fields: [
+            {
+              id: 'cv',
+              type: 'file',
+              label: 'CV',
+              help: '',
+              placeholder: '',
+              required: false,
+              options: [],
+            },
+          ],
+        }),
+      ),
+    ).toBe(Code.InvalidArgument)
+  })
+
   it('keeps request forms admin-only, even for HR', async () => {
     prisma.hiringSettings.findUnique.mockResolvedValue({ hrTeamId: 'team-2' })
 

@@ -15,6 +15,7 @@ import {
   type HiringSettingsInput,
   type HiringSettingsValues,
 } from '../schema'
+import { timeZoneOptions } from '../utils/interview-time'
 import { StageListEditor } from './stage-list-editor'
 
 function valuesOf(settings: HiringSettings): HiringSettingsInput {
@@ -22,6 +23,7 @@ function valuesOf(settings: HiringSettings): HiringSettingsInput {
     hrTeamId: settings.hrTeamId ?? '',
     defaultStages: settings.defaultStages,
     rejectionMessage: settings.rejectionMessage,
+    timeZone: settings.timeZone,
   }
 }
 
@@ -129,6 +131,30 @@ export function HiringSettingsForm({ settings }: { settings: HiringSettings }) {
             minRows={4}
             error={errors.rejectionMessage?.message}
             errorProps={{ role: 'alert' }}
+          />
+        </PageSection>
+
+        <PageSection
+          title="Interview time zone"
+          description="The zone HR offers interview times in and interviewers read them in. Applicants always see times in their own."
+          maw={720}
+        >
+          <Controller
+            control={control}
+            name="timeZone"
+            render={({ field }) => (
+              <Select
+                label="Time zone"
+                searchable
+                allowDeselect={false}
+                data={timeZoneOptions(field.value || settings.timeZone)}
+                value={field.value || settings.timeZone}
+                onChange={(value) => field.onChange(value ?? settings.timeZone)}
+                onBlur={field.onBlur}
+                error={errors.timeZone?.message}
+                maw={360}
+              />
+            )}
           />
         </PageSection>
 

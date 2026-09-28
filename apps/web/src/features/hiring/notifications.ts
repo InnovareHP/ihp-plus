@@ -14,7 +14,7 @@ export function firstNameOf(fullName: string) {
 }
 
 /** The HR department when one is set, otherwise the admins: whoever can act on the applicant. */
-async function hiringTeamEmails(organizationId: string) {
+export async function hiringTeamEmails(organizationId: string) {
   const settings = await db.hiringSettings.findUnique({
     where: { organizationId },
     select: { hrTeamId: true },

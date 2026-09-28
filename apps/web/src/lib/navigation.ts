@@ -215,6 +215,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
             hiringOnly: true,
           },
           {
+            href: routes.hiringScorecards,
+            label: 'Scorecards',
+            description: 'What interviewers judge',
+            hiringOnly: true,
+          },
+          {
             href: routes.hiringSettings,
             label: 'Settings',
             description: 'Who runs hiring and the default stages',

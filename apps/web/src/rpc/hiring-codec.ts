@@ -2,6 +2,8 @@ import {
   ApplicationStatus,
   ApplicationStatusFilter,
   EmploymentType,
+  InterviewFormat,
+  InterviewStatus,
   PostingStatus,
   PostingStatusFilter,
   SalaryPeriod,
@@ -11,6 +13,8 @@ import {
   type ApplicationFile as FileMessage,
   type ApplicationNote as NoteMessage,
   type ApplicationSummary as SummaryMessage,
+  type Interview as InterviewMessage,
+  type Interviewer as InterviewerMessage,
   type HiringSettings as SettingsMessage,
   type Posting as PostingMessage,
   type SavePostingRequest,
@@ -25,6 +29,10 @@ import type {
   ApplicationStatusFilter as AppStatusFilter,
   ApplicationSummary,
   EmploymentType as Employment,
+  InterviewFormat as Format,
+  InterviewRow,
+  InterviewStatus as InterviewState,
+  Interviewer,
   HiringSettings,
   PostingDraftValues,
   PostingRow,
@@ -150,6 +158,7 @@ export function settingsToProto(settings: HiringSettings): SettingsMessage {
     defaultStages: settings.defaultStages.map(stageToProto),
     rejectionMessage: settings.rejectionMessage,
     canEditHrTeam: settings.canEditHrTeam,
+    timeZone: settings.timeZone,
   }
 }
 
@@ -160,6 +169,7 @@ export function settingsFromProto(message: SettingsMessage): HiringSettings {
     defaultStages: message.defaultStages.map(stageFromProto),
     rejectionMessage: message.rejectionMessage,
     canEditHrTeam: message.canEditHrTeam,
+    timeZone: message.timeZone || 'Asia/Manila',
   }
 }
 
@@ -184,6 +194,8 @@ export function postingToProto(row: PostingRow): PostingMessage {
     applicationFormId: row.applicationFormId,
     applicationFormName: row.applicationFormName,
     applicationFields: row.applicationFields.map(fieldToProto),
+    scorecardFormId: row.scorecardFormId,
+    scorecardFormName: row.scorecardFormName,
     teamId: row.teamId,
     teamName: row.teamName,
     openedAt: row.openedAt,
@@ -216,6 +228,8 @@ export function postingFromProto(message: PostingMessage): PostingRow {
     applicationFormId: message.applicationFormId,
     applicationFormName: message.applicationFormName,
     applicationFields: message.applicationFields.map(fieldFromProto),
+    scorecardFormId: message.scorecardFormId,
+    scorecardFormName: message.scorecardFormName,
     teamId: message.teamId,
     teamName: message.teamName,
     openedAt: message.openedAt,
@@ -246,6 +260,7 @@ export function draftToProto(draft: PostingDraftValues): SavePostingFields {
     resumeRequired: draft.resumeRequired,
     stages: draft.stages.map(stageToProto),
     applicationFormId: draft.applicationFormId || undefined,
+    scorecardFormId: draft.scorecardFormId || undefined,
     teamId: draft.teamId || undefined,
     closesAt: draft.closesAt || undefined,
   }
@@ -267,6 +282,7 @@ export function draftFromProto(request: SavePostingRequest): PostingDraftValues 
     resumeRequired: request.resumeRequired,
     stages: request.stages.map(stageFromProto),
     applicationFormId: request.applicationFormId ?? '',
+    scorecardFormId: request.scorecardFormId ?? '',
     teamId: request.teamId ?? '',
     closesAt: request.closesAt ?? '',
   }
@@ -407,6 +423,7 @@ export function applicationToProto(detail: ApplicationDetail): ApplicationMessag
     joined: detail.joined,
     invitationExpiresAt: detail.invitationExpiresAt,
     postingTeamId: detail.postingTeamId,
+    interviews: detail.interviews.map(interviewToProto),
   }
 }
 
@@ -425,5 +442,94 @@ export function applicationFromProto(message: ApplicationMessage): ApplicationDe
     joined: message.joined,
     invitationExpiresAt: message.invitationExpiresAt,
     postingTeamId: message.postingTeamId,
+    interviews: message.interviews.map(interviewFromProto),
+  }
+}
+
+const FORMAT_TO_PROTO: Record<Format, InterviewFormat> = {
+  video: InterviewFormat.VIDEO,
+  onsite: InterviewFormat.ONSITE,
+  phone: InterviewFormat.PHONE,
+}
+
+const FORMAT_FROM_PROTO: Record<InterviewFormat, Format> = {
+  [InterviewFormat.UNSPECIFIED]: 'video',
+  [InterviewFormat.VIDEO]: 'video',
+  [InterviewFormat.ONSITE]: 'onsite',
+  [InterviewFormat.PHONE]: 'phone',
+}
+
+const INTERVIEW_STATUS_TO_PROTO: Record<InterviewState, InterviewStatus> = {
+  offered: InterviewStatus.OFFERED,
+  booked: InterviewStatus.BOOKED,
+  reschedule_requested: InterviewStatus.RESCHEDULE_REQUESTED,
+  cancelled: InterviewStatus.CANCELLED,
+}
+
+const INTERVIEW_STATUS_FROM_PROTO: Record<InterviewStatus, InterviewState> = {
+  [InterviewStatus.UNSPECIFIED]: 'offered',
+  [InterviewStatus.OFFERED]: 'offered',
+  [InterviewStatus.BOOKED]: 'booked',
+  [InterviewStatus.RESCHEDULE_REQUESTED]: 'reschedule_requested',
+  [InterviewStatus.CANCELLED]: 'cancelled',
+}
+
+export function interviewFormatToProto(format: Format) {
+  return FORMAT_TO_PROTO[format]
+}
+
+export function interviewFormatFromProto(format: InterviewFormat) {
+  return FORMAT_FROM_PROTO[format]
+}
+
+export function interviewerToProto(person: Interviewer): InterviewerMessage {
+  return { $typeName: 'ihp.hiring.v1.Interviewer', ...person }
+}
+
+export function interviewerFromProto(message: InterviewerMessage): Interviewer {
+  return { userId: message.userId, name: message.name, email: message.email }
+}
+
+export function interviewToProto(row: InterviewRow): InterviewMessage {
+  return {
+    $typeName: 'ihp.hiring.v1.Interview',
+    id: row.id,
+    applicationId: row.applicationId,
+    format: FORMAT_TO_PROTO[row.format],
+    location: row.location,
+    note: row.note,
+    durationMinutes: row.durationMinutes,
+    interviewers: row.interviewers.map(interviewerToProto),
+    status: INTERVIEW_STATUS_TO_PROTO[row.status],
+    slots: row.slots.map((slot) => ({
+      $typeName: 'ihp.hiring.v1.InterviewSlot' as const,
+      ...slot,
+    })),
+    bookedStart: row.bookedStart,
+    bookedEnd: row.bookedEnd,
+    applicantTimeZone: row.applicantTimeZone,
+    joinUrl: row.joinUrl,
+    inCalendar: row.inCalendar,
+    createdAt: row.createdAt,
+  }
+}
+
+export function interviewFromProto(message: InterviewMessage): InterviewRow {
+  return {
+    id: message.id,
+    applicationId: message.applicationId,
+    format: FORMAT_FROM_PROTO[message.format],
+    location: message.location,
+    note: message.note,
+    durationMinutes: message.durationMinutes,
+    interviewers: message.interviewers.map(interviewerFromProto),
+    status: INTERVIEW_STATUS_FROM_PROTO[message.status],
+    slots: message.slots.map((slot) => ({ id: slot.id, start: slot.start, end: slot.end })),
+    bookedStart: message.bookedStart,
+    bookedEnd: message.bookedEnd,
+    applicantTimeZone: message.applicantTimeZone,
+    joinUrl: message.joinUrl,
+    inCalendar: message.inCalendar,
+    createdAt: message.createdAt,
   }
 }

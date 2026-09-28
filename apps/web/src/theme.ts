@@ -91,5 +91,8 @@ export const theme = createTheme({
     Paper: { defaultProps: { radius: 'md' } },
     Button: { defaultProps: { fw: 600 } },
     Title: { defaultProps: { fw: 700 } },
+    // Mantine's close button is an icon alone, so every dialog names it here once.
+    Modal: { defaultProps: { closeButtonProps: { 'aria-label': 'Close dialog' } } },
+    Drawer: { defaultProps: { closeButtonProps: { 'aria-label': 'Close panel' } } },
   },
 })

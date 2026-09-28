@@ -23,7 +23,12 @@ import { Controller, useForm, useWatch } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { announceSuccess } from '@/lib/announce'
-import { careersPostingRoute, NEW_APPLICATION_FORM_ROUTE, postingRoute } from '@/lib/routes'
+import {
+  careersPostingRoute,
+  NEW_APPLICATION_FORM_ROUTE,
+  NEW_SCORECARD_FORM_ROUTE,
+  postingRoute,
+} from '@/lib/routes'
 // Departments are organization data and application forms are request forms; hiring consumes both.
 import { useTeams } from '@/features/organization/hooks/use-teams'
 import { usePublishedForms } from '@/features/requests/hooks/use-forms'
@@ -76,6 +81,7 @@ function draftOf(
     resumeRequired: posting?.resumeRequired ?? true,
     stages: posting?.stages ?? [...defaultStages],
     applicationFormId: posting?.applicationFormId ?? '',
+    scorecardFormId: posting?.scorecardFormId ?? '',
     teamId: posting?.teamId ?? '',
     closesAt: posting?.closesAt?.slice(0, 10) ?? '',
   }
@@ -91,6 +97,7 @@ export function PostingEditor({ posting, defaultStages }: PostingEditorProps) {
   const router = useRouter()
   const teams = useTeams()
   const forms = usePublishedForms('application')
+  const scorecards = usePublishedForms('scorecard')
   const save = useSavePosting()
   const setStatus = useSetPostingStatus()
 
@@ -374,6 +381,36 @@ export function PostingEditor({ posting, defaultStages }: PostingEditorProps) {
                   onChange={(value) => field.onChange(value ?? '')}
                   onBlur={field.onBlur}
                   error={errors.applicationFormId?.message}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="scorecardFormId"
+              render={({ field }) => (
+                <Select
+                  label="Interview scorecard"
+                  description={
+                    <>
+                      What interviewers answer after meeting someone.{' '}
+                      <Anchor component={Link} href={NEW_SCORECARD_FORM_ROUTE} size="xs">
+                        Build a new one
+                      </Anchor>
+                    </>
+                  }
+                  placeholder={
+                    scorecards.isPending ? 'Loading…' : 'Only the overall recommendation'
+                  }
+                  clearable
+                  disabled={scorecards.isPending}
+                  data={(scorecards.data ?? []).map((form) => ({
+                    value: form.id,
+                    label: form.name,
+                  }))}
+                  value={field.value || null}
+                  onChange={(value) => field.onChange(value ?? '')}
+                  onBlur={field.onBlur}
+                  error={errors.scorecardFormId?.message}
                 />
               )}
             />

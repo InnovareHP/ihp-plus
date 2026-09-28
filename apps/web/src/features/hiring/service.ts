@@ -5,6 +5,7 @@ import { pageInfoOf, skipTake } from '@/lib/pagination'
 import { requireHiringCaller, type HiringCaller } from './access'
 import {
   DEFAULT_REJECTION_MESSAGE,
+  DEFAULT_TIME_ZONE,
   DEFAULT_STAGES,
   hiringSettingsSchema,
   postingDraftSchema,
@@ -56,6 +57,7 @@ async function settingsOf(caller: HiringCaller): Promise<HiringSettings> {
     defaultStages: stored.success ? stored.data : [...DEFAULT_STAGES],
     rejectionMessage: row?.rejectionMessage || DEFAULT_REJECTION_MESSAGE,
     canEditHrTeam: caller.isAdmin,
+    timeZone: row?.timeZone ?? DEFAULT_TIME_ZONE,
   }
 }
 
@@ -96,6 +98,7 @@ export async function saveSettings(input: HiringSettingsValues): Promise<HiringS
     hrTeamId,
     defaultStages: values.defaultStages,
     rejectionMessage: values.rejectionMessage,
+    timeZone: values.timeZone,
   }
   await db.hiringSettings.upsert({
     where: { organizationId: caller.organizationId },
@@ -108,6 +111,7 @@ export async function saveSettings(input: HiringSettingsValues): Promise<HiringS
 
 const POSTING_INCLUDE = {
   applicationForm: { select: { id: true, name: true, fields: true } },
+  scorecardForm: { select: { id: true, name: true } },
 } satisfies Prisma.JobPostingInclude
 
 type PostingRecord = Prisma.JobPostingGetPayload<{ include: typeof POSTING_INCLUDE }>
@@ -166,6 +170,8 @@ export function postingRowOf(
     applicationFormId: row.applicationForm?.id,
     applicationFormName: row.applicationForm?.name,
     applicationFields: row.applicationForm ? fieldsOf(row.applicationForm.fields) : [],
+    scorecardFormId: row.scorecardForm?.id,
+    scorecardFormName: row.scorecardForm?.name,
     teamId: row.teamId ?? undefined,
     teamName: row.teamId ? (teamNames.get(row.teamId) ?? 'Removed department') : undefined,
     openedAt: row.openedAt?.toISOString(),
@@ -239,13 +245,24 @@ export async function loadPosting(postingId: string): Promise<PostingRow> {
   return rowWithCounts(caller, await findPosting(caller, postingId))
 }
 
-async function validApplicationFormId(organizationId: string, formId: string) {
+async function validFormId(
+  organizationId: string,
+  formId: string,
+  kind: 'application' | 'scorecard',
+) {
   if (!formId) return null
   const form = await db.requestForm.findFirst({
-    where: { id: formId, organizationId, kind: 'application', status: { not: 'archived' } },
+    where: { id: formId, organizationId, kind, status: { not: 'archived' } },
     select: { id: true },
   })
-  if (!form) throw new ConnectError('That application form is not available.', Code.NotFound)
+  if (!form) {
+    throw new ConnectError(
+      kind === 'application'
+        ? 'That application form is not available.'
+        : 'That scorecard is not available.',
+      Code.NotFound,
+    )
+  }
   return form.id
 }
 
@@ -267,8 +284,9 @@ export async function savePosting(input: PostingDraftValues): Promise<PostingRow
   }
   const draft = parsed.data
 
-  const [applicationFormId, teamId] = await Promise.all([
-    validApplicationFormId(caller.organizationId, draft.applicationFormId),
+  const [applicationFormId, scorecardFormId, teamId] = await Promise.all([
+    validFormId(caller.organizationId, draft.applicationFormId, 'application'),
+    validFormId(caller.organizationId, draft.scorecardFormId, 'scorecard'),
     validTeamId(caller.organizationId, draft.teamId),
   ])
 
@@ -286,6 +304,7 @@ export async function savePosting(input: PostingDraftValues): Promise<PostingRow
     resumeRequired: draft.resumeRequired,
     stages: draft.stages,
     applicationFormId,
+    scorecardFormId,
     teamId,
     closesAt: draft.closesAt ? new Date(draft.closesAt) : null,
   }

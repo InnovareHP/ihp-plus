@@ -27,7 +27,8 @@ model RequestForm {
   teams       RequestFormTeam[]
   submissions RequestSubmission[]
   evaluations EvaluationAssignment[]
-  postings    JobPosting[]
+  postings    JobPosting[] @relation("PostingApplicationForm")
+  scorecards  JobPosting[] @relation("PostingScorecardForm")
 
   @@index([organizationId, kind, status])
   @@map("requestForm")

@@ -24,6 +24,7 @@ export const routes = {
   hiring: '/hiring',
   hiringApplicants: '/hiring/applicants',
   hiringForms: '/hiring/forms',
+  hiringScorecards: '/hiring/scorecards',
   hiringSettings: '/hiring/settings',
   careers: '/careers',
   organization: '/organization',
@@ -123,6 +124,16 @@ export function applicationFormRoute(formId: string) {
 }
 
 export const NEW_APPLICATION_FORM_ROUTE = `${routes.hiringForms}/new`
+
+export function scorecardFormRoute(formId: string) {
+  return `${routes.hiringScorecards}/${formId}`
+}
+
+export const NEW_SCORECARD_FORM_ROUTE = `${routes.hiringScorecards}/new`
+
+export function interviewRoute(interviewId: string) {
+  return `${routes.hiring}/interviews/${interviewId}`
+}
 
 export function careersPostingRoute(slug: string) {
   return `${routes.careers}/${slug}`

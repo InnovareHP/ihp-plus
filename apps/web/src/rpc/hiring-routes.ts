@@ -20,10 +20,17 @@ import {
   reopenApplication,
 } from '@/features/hiring/pipeline-service'
 import { hireApplication } from '@/features/hiring/hire-service'
+import {
+  cancelInterview,
+  listInterviewers,
+  offerInterview,
+} from '@/features/hiring/interview-service'
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import {
   applicationFilterFromProto,
   applicationToProto,
+  interviewFormatFromProto,
+  interviewerToProto,
   draftFromProto,
   noteToProto,
   postingFilterFromProto,
@@ -45,6 +52,7 @@ export const hiring: ServiceImpl<typeof HiringService> = {
         hrTeamId: request.hrTeamId ?? '',
         defaultStages: request.defaultStages.map(stageFromProto),
         rejectionMessage: request.rejectionMessage,
+        timeZone: request.timeZone || 'Asia/Manila',
       }),
     ),
   }),
@@ -152,5 +160,30 @@ export const hiring: ServiceImpl<typeof HiringService> = {
         teamId: request.teamId ?? '',
       }),
     ),
+  }),
+
+  listInterviewers: async () => ({
+    people: (await listInterviewers()).map(interviewerToProto),
+  }),
+
+  // Free/busy needs Graph, which the next step wires; until then the dialog is told why it has none.
+  suggestSlots: async () => ({ slots: [], fromCalendar: false }),
+
+  offerInterview: async (request) => ({
+    application: applicationToProto(
+      await offerInterview({
+        applicationId: request.applicationId,
+        format: interviewFormatFromProto(request.format),
+        location: request.location,
+        note: request.note,
+        durationMinutes: request.durationMinutes,
+        interviewerIds: request.interviewerIds,
+        starts: request.slots.map((slot) => slot.start),
+      }),
+    ),
+  }),
+
+  cancelInterview: async (request) => ({
+    application: applicationToProto(await cancelInterview(request.interviewId)),
   }),
 }

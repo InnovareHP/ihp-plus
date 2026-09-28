@@ -8,6 +8,7 @@ import {
   submitApplication as submit,
   withdrawApplication as withdraw,
 } from './public-service'
+import { bookInterviewSlot, requestNewTimes } from './public-interview-service'
 import type { ActionResult } from './schema'
 
 // Server actions rather than RPC: there is no session for the transport's auth to carry, and a
@@ -34,4 +35,12 @@ export async function submitApplication(
 
 export async function withdrawApplication(input: unknown): Promise<ActionResult> {
   return withdraw(input)
+}
+
+export async function bookInterview(input: unknown): Promise<ActionResult> {
+  return bookInterviewSlot(input)
+}
+
+export async function askForOtherTimes(input: unknown): Promise<ActionResult> {
+  return requestNewTimes(input)
 }

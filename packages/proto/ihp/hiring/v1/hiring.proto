@@ -67,6 +67,23 @@ enum ApplicationStatusFilter {
   APPLICATION_STATUS_FILTER_ALL = 5;
 }
 
+enum InterviewFormat {
+  INTERVIEW_FORMAT_UNSPECIFIED = 0;
+  // A Teams meeting when Graph is set up, otherwise whatever link HR puts in the location.
+  INTERVIEW_FORMAT_VIDEO = 1;
+  INTERVIEW_FORMAT_ONSITE = 2;
+  INTERVIEW_FORMAT_PHONE = 3;
+}
+
+// offered until the applicant picks a slot; reschedule_requested when none of them work.
+enum InterviewStatus {
+  INTERVIEW_STATUS_UNSPECIFIED = 0;
+  INTERVIEW_STATUS_OFFERED = 1;
+  INTERVIEW_STATUS_BOOKED = 2;
+  INTERVIEW_STATUS_RESCHEDULE_REQUESTED = 3;
+  INTERVIEW_STATUS_CANCELLED = 4;
+}
+
 // One step of a posting's pipeline. A non-empty message is emailed to the applicant when they
 // are moved into the stage.
 message Stage {
@@ -82,6 +99,8 @@ message HiringSettings {
   string rejection_message = 4;
   // Only an admin decides which department runs hiring; HR edits the rest.
   bool can_edit_hr_team = 5;
+  // IANA zone interviews are offered in, e.g. Asia/Manila.
+  string time_zone = 6;
 }
 
 message Posting {
@@ -114,6 +133,8 @@ message Posting {
   int32 active_count = 25;
   map<string, int32> stage_counts = 26;
   SalaryPeriod salary_period = 27;
+  optional string scorecard_form_id = 28;
+  optional string scorecard_form_name = 29;
 }
 
 message GetSettingsRequest {}
@@ -126,6 +147,7 @@ message SaveSettingsRequest {
   optional string hr_team_id = 1;
   repeated Stage default_stages = 2;
   string rejection_message = 3;
+  string time_zone = 4;
 }
 
 message SaveSettingsResponse {
@@ -172,6 +194,7 @@ message SavePostingRequest {
   // An ISO date; absent means the posting stays open until someone closes it.
   optional string closes_at = 15;
   SalaryPeriod salary_period = 16;
+  optional string scorecard_form_id = 17;
 }
 
 message SavePostingResponse {
@@ -257,6 +280,40 @@ message Application {
   optional string invitation_expires_at = 11;
   // The posting's department, which a hire lands in unless HR picks another.
   optional string posting_team_id = 12;
+  repeated Interview interviews = 13;
+}
+
+message InterviewSlot {
+  string id = 1;
+  string start = 2;
+  string end = 3;
+}
+
+message Interviewer {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message Interview {
+  string id = 1;
+  string application_id = 2;
+  InterviewFormat format = 3;
+  // An address, a phone number, or a video link HR typed; empty for a Teams meeting.
+  string location = 4;
+  string note = 5;
+  int32 duration_minutes = 6;
+  repeated Interviewer interviewers = 7;
+  InterviewStatus status = 8;
+  // Offered times, soonest first; only future ones while it is still being picked.
+  repeated InterviewSlot slots = 9;
+  optional string booked_start = 10;
+  optional string booked_end = 11;
+  optional string applicant_time_zone = 12;
+  optional string join_url = 13;
+  // True when the event lives in Outlook through Graph rather than as emailed .ics files.
+  bool in_calendar = 14;
+  string created_at = 15;
 }
 
 message ListApplicationsRequest {
@@ -350,6 +407,54 @@ message HireApplicationResponse {
   Application application = 1;
 }
 
+message ListInterviewersRequest {}
+
+message ListInterviewersResponse {
+  repeated Interviewer people = 1;
+}
+
+message NewSlot {
+  string start = 1;
+  string end = 2;
+}
+
+message OfferInterviewRequest {
+  string application_id = 1;
+  InterviewFormat format = 2;
+  string location = 3;
+  string note = 4;
+  int32 duration_minutes = 5;
+  repeated string interviewer_ids = 6;
+  repeated NewSlot slots = 7;
+}
+
+message OfferInterviewResponse {
+  Application application = 1;
+}
+
+message CancelInterviewRequest {
+  string interview_id = 1;
+}
+
+message CancelInterviewResponse {
+  Application application = 1;
+}
+
+// Times every interviewer is free, read from their Outlook calendars.
+message SuggestSlotsRequest {
+  repeated string interviewer_ids = 1;
+  int32 duration_minutes = 2;
+  // ISO dates, inclusive, read in the organization's interview time zone.
+  string from_date = 3;
+  string to_date = 4;
+}
+
+message SuggestSlotsResponse {
+  repeated NewSlot slots = 1;
+  // False when Graph is not set up, so the dialog says why it has no suggestions.
+  bool from_calendar = 2;
+}
+
 service HiringService {
   // Which department runs hiring, and the defaults a new posting starts from.
   rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
@@ -372,4 +477,10 @@ service HiringService {
   rpc AddNote(AddNoteRequest) returns (AddNoteResponse);
   rpc DeleteNote(DeleteNoteRequest) returns (DeleteNoteResponse);
   rpc HireApplication(HireApplicationRequest) returns (HireApplicationResponse);
+
+  // Interviews: HR offers times, the applicant picks one on their status page.
+  rpc ListInterviewers(ListInterviewersRequest) returns (ListInterviewersResponse);
+  rpc SuggestSlots(SuggestSlotsRequest) returns (SuggestSlotsResponse);
+  rpc OfferInterview(OfferInterviewRequest) returns (OfferInterviewResponse);
+  rpc CancelInterview(CancelInterviewRequest) returns (CancelInterviewResponse);
 }

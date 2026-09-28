@@ -84,11 +84,11 @@ async function requireAdmin() {
 // HR runs hiring, so beside the admins it builds the application forms a job posting asks.
 async function assertManagesForms(caller: Caller, kind: FormKind) {
   if (caller.isAdmin) return
-  if (kind === 'application' && caller.team) {
+  if ((kind === 'application' || kind === 'scorecard') && caller.team) {
     if (caller.team.id === (await hrTeamIdOf(caller.organizationId))) return
   }
   throw new ConnectError(
-    kind === 'application'
+    kind === 'application' || kind === 'scorecard'
       ? 'Only HR and admins can manage application forms.'
       : 'Only an admin can manage request forms.',
     Code.PermissionDenied,
@@ -123,7 +123,9 @@ function valuesOf(value: Prisma.JsonValue): RequestValues {
 type FormRecord = Prisma.RequestFormGetPayload<{
   include: {
     teams: true
-    _count: { select: { submissions: true; evaluations: true; postings: true } }
+    _count: {
+      select: { submissions: true; evaluations: true; postings: true; scorecards: true }
+    }
   }
 }>
 
@@ -132,6 +134,7 @@ type FormRecord = Prisma.RequestFormGetPayload<{
 function usageOf(form: FormRecord) {
   if (form.kind === 'evaluation') return form._count.evaluations
   if (form.kind === 'application') return form._count.postings
+  if (form.kind === 'scorecard') return form._count.scorecards
   return form._count.submissions
 }
 
@@ -163,7 +166,7 @@ async function teamNameMap(organizationId: string) {
 
 const FORM_INCLUDE = {
   teams: true,
-  _count: { select: { submissions: true, evaluations: true, postings: true } },
+  _count: { select: { submissions: true, evaluations: true, postings: true, scorecards: true } },
 } satisfies Prisma.RequestFormInclude
 
 export async function loadFormsPage(query: FormListQuery): Promise<FormsPage> {
@@ -321,13 +324,18 @@ export async function deleteForm(formId: string): Promise<void> {
   const caller = await requireRequester()
   const form = await db.requestForm.findFirst({
     where: { id: formId, organizationId: caller.organizationId },
-    include: { _count: { select: { submissions: true, evaluations: true, postings: true } } },
+    include: {
+      _count: {
+        select: { submissions: true, evaluations: true, postings: true, scorecards: true },
+      },
+    },
   })
   if (!form) throw new ConnectError('That form no longer exists.', Code.NotFound)
   await assertManagesForms(caller, form.kind as FormKind)
 
   // The requests raised against it stay readable, so a used form is archived, never deleted.
-  if (form._count.submissions > 0 || form._count.evaluations > 0 || form._count.postings > 0) {
+  const used = form._count
+  if (used.submissions > 0 || used.evaluations > 0 || used.postings > 0 || used.scorecards > 0) {
     throw new ConnectError(
       'This form has already been filled in, so it can only be archived.',
       Code.FailedPrecondition,

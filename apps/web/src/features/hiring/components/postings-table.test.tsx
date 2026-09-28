@@ -40,6 +40,8 @@ const DRAFT: PostingRow = {
   applicationFormId: undefined,
   applicationFormName: undefined,
   applicationFields: [],
+  scorecardFormId: undefined,
+  scorecardFormName: undefined,
   teamId: 'team-care',
   teamName: 'Care Management',
   openedAt: undefined,

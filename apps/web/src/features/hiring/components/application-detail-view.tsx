@@ -21,6 +21,7 @@ import {
 } from '../schema'
 import { ApplicantContact } from './applicant-contact'
 import { ApplicationFiles } from './application-files'
+import { ApplicationInterviews } from './application-interviews'
 import { ApplicationNotes } from './application-notes'
 import { DecisionModals } from './decision-modals'
 import { HireApplicationModal } from './hire-application-modal'
@@ -33,6 +34,8 @@ export interface ApplicationDetailViewProps {
   /** The signed-in person, named on a note while it is still being saved. */
   viewerName: string
   organizationName: string
+  /** The organization's interview zone. */
+  timeZone: string
 }
 
 export function ApplicationDetailView({
@@ -40,6 +43,7 @@ export function ApplicationDetailView({
   rejectionMessage,
   viewerName,
   organizationName,
+  timeZone,
 }: ApplicationDetailViewProps) {
   const query = useApplication(initial.summary.id, initial)
   const application = query.data ?? initial
@@ -135,6 +139,11 @@ export function ApplicationDetailView({
       <Grid gap="xl">
         <Grid.Col span={{ base: 12, lg: 7 }}>
           <Stack gap="xl">
+            <ApplicationInterviews
+              application={summary}
+              interviews={application.interviews}
+              timeZone={timeZone}
+            />
             <PageSection title="Contact">
               <ApplicantContact application={summary} />
             </PageSection>

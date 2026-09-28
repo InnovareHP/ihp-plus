@@ -11,6 +11,8 @@ model HiringSettings {
   defaultStages    Json     @default("[]")
   // What a rejected applicant is sent, unless HR rewrites it for that one person.
   rejectionMessage String   @default("")
+  // IANA zone interviews are offered in, and what HR and interviewers read times in.
+  timeZone         String   @default("Asia/Manila")
   updatedAt        DateTime @updatedAt
 
   @@map("hiringSettings")
@@ -49,7 +51,10 @@ model JobPosting {
 
   // Extra questions come from a requests form of kind "application", so one builder serves all.
   applicationFormId String?
-  applicationForm   RequestForm? @relation(fields: [applicationFormId], references: [id], onDelete: Restrict)
+  applicationForm   RequestForm? @relation("PostingApplicationForm", fields: [applicationFormId], references: [id], onDelete: Restrict)
+  // What interviewers answer about each applicant, a requests form of kind "scorecard".
+  scorecardFormId   String?
+  scorecardForm     RequestForm? @relation("PostingScorecardForm", fields: [scorecardFormId], references: [id], onDelete: Restrict)
 
   openedAt  DateTime?
   closesAt  DateTime?
@@ -101,6 +106,7 @@ model JobApplication {
   attachments ApplicationAttachment[]
   events      ApplicationEvent[]
   notes       ApplicationNote[]
+  interviews  Interview[]
 
   @@index([organizationId, status])
   @@index([postingId, status, stageId])
@@ -160,5 +166,76 @@ model ApplicationNote {
 
   @@index([applicationId, createdAt])
   @@map("applicationNote")
+  @@schema("hiring")
+}
+
+// An interview offered to an applicant as a handful of slots; they pick one and it is booked.
+model Interview {
+  id             String         @id @default(uuid())
+  organizationId String
+  applicationId  String
+  application    JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdById    String
+
+  // video (a Teams link when Graph is set up), onsite (an address) or phone (a number).
+  format          String
+  location        String   @default("")
+  note            String   @default("")
+  durationMinutes Int
+  // Portal user ids; plain strings because the user table lives in another schema.
+  interviewerIds  String[]
+
+  // offered until they pick, then booked; reschedule_requested when none of the times work.
+  status            String    @default("offered")
+  bookedStart       DateTime?
+  bookedEnd         DateTime?
+  // The zone the applicant read the times in, so their emails speak it back to them.
+  applicantTimeZone String?
+  // Raised on every change a calendar must see, so an update replaces the invite it has.
+  sequence          Int       @default(0)
+  // Set when the event lives in Outlook through Graph; empty means invites went as .ics files.
+  calendarEventId   String?
+  joinUrl           String?
+  reminderSentAt    DateTime?
+  feedbackAskedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  slots    InterviewSlot[]
+  feedback InterviewFeedback[]
+
+  @@index([applicationId])
+  @@index([organizationId, status, bookedStart])
+  @@map("interview")
+  @@schema("hiring")
+}
+
+model InterviewSlot {
+  id          String    @id @default(uuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  start       DateTime
+  end         DateTime
+
+  @@index([interviewId, start])
+  @@map("interviewSlot")
+  @@schema("hiring")
+}
+
+// One interviewer's scorecard: the posting's questions as they were asked, plus a verdict.
+model InterviewFeedback {
+  id             String    @id @default(uuid())
+  interviewId    String
+  interview      Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewerId  String
+  recommendation String
+  fields         Json      @default("[]")
+  values         Json      @default("{}")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([interviewId, interviewerId])
+  @@map("interviewFeedback")
   @@schema("hiring")
 }

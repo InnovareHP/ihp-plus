@@ -64,6 +64,7 @@ const FORM_KIND_TO_PROTO: Record<Kind, FormKind> = {
   request: FormKind.REQUEST,
   evaluation: FormKind.EVALUATION,
   application: FormKind.APPLICATION,
+  scorecard: FormKind.SCORECARD,
 }
 
 // UNSPECIFIED reads as REQUEST: every form predating evaluations is one.
@@ -72,6 +73,7 @@ const FORM_KIND_FROM_PROTO: Record<FormKind, Kind> = {
   [FormKind.REQUEST]: 'request',
   [FormKind.EVALUATION]: 'evaluation',
   [FormKind.APPLICATION]: 'application',
+  [FormKind.SCORECARD]: 'scorecard',
 }
 
 const REQUEST_STATUS_TO_PROTO: Record<SubmissionStatus, RequestStatus> = {

@@ -39,6 +39,8 @@ const SAVED: PostingRow = {
   applicationFormId: undefined,
   applicationFormName: undefined,
   applicationFields: [],
+  scorecardFormId: undefined,
+  scorecardFormName: undefined,
   teamId: undefined,
   teamName: undefined,
   openedAt: undefined,

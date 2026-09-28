@@ -70,13 +70,16 @@ describe('file questions', () => {
     expect(answerSchemaOf([RECEIPT]).safeParse({ receipt: 'file-1' }).success).toBe(true)
   })
 
-  it('keeps a file question off an evaluation form', () => {
+  it('keeps a file question off the forms answered with no uploader behind them', () => {
     const draft = { name: 'Quarterly review', fields: [RECEIPT], teamIds: [] }
 
     expect(formDraftSchema.safeParse({ ...draft, kind: 'request' }).success).toBe(true)
-    expect(
-      formDraftSchema.safeParse({ ...draft, kind: 'evaluation' }).error?.issues[0]?.message,
-    ).toBe('An evaluation form cannot ask for a file.')
+    expect(formDraftSchema.safeParse({ ...draft, kind: 'application' }).success).toBe(true)
+    for (const kind of ['evaluation', 'scorecard'] as const) {
+      expect(formDraftSchema.safeParse({ ...draft, kind }).error?.issues[0]?.message).toBe(
+        'This kind of form cannot ask for a file.',
+      )
+    }
   })
 })
 

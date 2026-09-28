@@ -82,6 +82,7 @@ const DETAIL: ApplicationDetail = {
   joined: false,
   invitationExpiresAt: undefined,
   postingTeamId: 'team-care',
+  interviews: [],
 }
 
 function renderView(detail: ApplicationDetail = DETAIL) {
@@ -92,6 +93,7 @@ function renderView(detail: ApplicationDetail = DETAIL) {
       rejectionMessage="Thanks."
       viewerName="Rita"
       organizationName="IHP+"
+      timeZone="Asia/Manila"
     />,
   )
 }

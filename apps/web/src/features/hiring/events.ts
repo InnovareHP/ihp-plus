@@ -32,4 +32,11 @@ export const hiringEvents = {
   hireStarted: 'hiring.application.hire_started',
   hired: 'hiring.application.hired',
   hireFailed: 'hiring.application.hire_failed',
+  interviewOffered: 'hiring.interview.offered',
+  interviewOfferFailed: 'hiring.interview.offer_failed',
+  interviewCancelled: 'hiring.interview.cancelled',
+  interviewCancelFailed: 'hiring.interview.cancel_failed',
+  interviewBooked: 'hiring.interview.booked',
+  interviewBookFailed: 'hiring.interview.book_failed',
+  interviewTimesAsked: 'hiring.interview.other_times_asked',
 } as const satisfies Record<string, EventName>

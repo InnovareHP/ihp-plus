@@ -5,6 +5,7 @@ import { pageInfoOf, skipTake } from '@/lib/pagination'
 import { objectUrl } from '@/lib/s3'
 import type { RequestValues } from '@/features/requests/schema'
 import { requireHiringCaller, type HiringCaller } from './access'
+import { interviewsOf } from './interviews'
 import { notifyRejected, notifyStageMessage } from './notifications'
 import {
   moveSchema,
@@ -162,6 +163,10 @@ function eventRowOf(
         ? 'Sent the invitation again'
         : 'Hired and invited to join',
     joined: 'Accepted the invitation and joined',
+    interview_offered: 'Offered interview times',
+    interview_booked: 'Booked an interview time',
+    interview_cancelled: 'Cancelled an interview',
+    interview_reschedule_requested: 'Asked for other interview times',
   }
 
   return {
@@ -191,7 +196,7 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
   const caller = await requireHiringCaller()
   const row = await findApplication(caller, applicationId)
 
-  const [files, notes, events, invitation] = await Promise.all([
+  const [files, notes, events, invitation, interviews] = await Promise.all([
     db.applicationAttachment.findMany({
       where: { applicationId: row.id },
       orderBy: { createdAt: 'asc' },
@@ -211,6 +216,7 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
           select: { expiresAt: true, status: true },
         })
       : null,
+    interviewsOf(row.id),
   ])
   const names = await namesOf([
     ...notes.map((note) => note.authorId),
@@ -241,6 +247,7 @@ export async function loadApplication(applicationId: string): Promise<Applicatio
         ? invitation.expiresAt.toISOString()
         : undefined,
     postingTeamId: row.posting.teamId ?? undefined,
+    interviews,
   }
 }
 

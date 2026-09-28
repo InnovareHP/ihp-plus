@@ -3,6 +3,7 @@ import { pageQueryFields, type Paginated } from '@/lib/pagination'
 // A posting's extra questions are a requests form of kind "application", so the field shape is
 // the one the form builder already speaks.
 import { answerSchemaOf, type FormField, type RequestValues } from '@/features/requests/schema'
+import { isTimeZone } from './utils/interview-time'
 
 export const POSTING_STATUSES = ['draft', 'open', 'closed', 'archived'] as const
 export const POSTING_STATUS_FILTERS = ['current', ...POSTING_STATUSES] as const
@@ -113,6 +114,8 @@ export const DEFAULT_STAGES: readonly Stage[] = [
 export const DEFAULT_REJECTION_MESSAGE =
   'Thank you for your interest and for the time you put into applying. We have decided not to move forward with your application for this role, and we wish you the best in your search.'
 
+export const DEFAULT_TIME_ZONE = 'Asia/Manila'
+
 export const hiringSettingsSchema = z.object({
   hrTeamId: z.string().trim().default(''),
   defaultStages: stagesSchema,
@@ -121,6 +124,11 @@ export const hiringSettingsSchema = z.object({
     .trim()
     .min(1, 'Write the message a rejected applicant receives.')
     .max(2000),
+  timeZone: z
+    .string()
+    .trim()
+    .refine(isTimeZone, 'Pick a time zone from the list.')
+    .default(DEFAULT_TIME_ZONE),
 })
 
 export type HiringSettingsInput = z.input<typeof hiringSettingsSchema>
@@ -132,6 +140,7 @@ export interface HiringSettings {
   defaultStages: Stage[]
   rejectionMessage: string
   canEditHrTeam: boolean
+  timeZone: string
 }
 
 const optionalWhole = z.union([z.number().int().min(0).max(100_000_000), z.literal('')]).default('')
@@ -156,6 +165,7 @@ export const postingDraftSchema = z
     resumeRequired: z.boolean().default(true),
     stages: stagesSchema,
     applicationFormId: z.string().trim().default(''),
+    scorecardFormId: z.string().trim().default(''),
     teamId: z.string().trim().default(''),
     // An ISO date; empty keeps the posting open until someone closes it.
     closesAt: z.string().trim().default(''),
@@ -188,6 +198,8 @@ export interface PostingRow {
   applicationFormId: string | undefined
   applicationFormName: string | undefined
   applicationFields: FormField[]
+  scorecardFormId: string | undefined
+  scorecardFormName: string | undefined
   teamId: string | undefined
   teamName: string | undefined
   openedAt: string | undefined
@@ -410,6 +422,7 @@ export interface ApplicationDetail {
   /** Set only while the invitation is pending and its link still works. */
   invitationExpiresAt: string | undefined
   postingTeamId: string | undefined
+  interviews: InterviewRow[]
 }
 
 export type ApplicationsPage = Paginated<ApplicationSummary>
@@ -472,3 +485,135 @@ export type NoteValues = z.infer<typeof noteSchema>
 export function daysSince(iso: string, now = new Date()) {
   return Math.max(0, Math.floor((now.getTime() - new Date(iso).getTime()) / (24 * 60 * 60 * 1000)))
 }
+
+export const INTERVIEW_FORMATS = ['video', 'onsite', 'phone'] as const
+export const INTERVIEW_STATUSES = [
+  'offered',
+  'booked',
+  'reschedule_requested',
+  'cancelled',
+] as const
+export const INTERVIEW_DURATIONS = [15, 30, 45, 60, 90] as const
+
+export type InterviewFormat = (typeof INTERVIEW_FORMATS)[number]
+export type InterviewStatus = (typeof INTERVIEW_STATUSES)[number]
+
+export const INTERVIEW_FORMAT_LABELS: Record<InterviewFormat, string> = {
+  video: 'Video call',
+  onsite: 'In person',
+  phone: 'Phone call',
+}
+
+export const INTERVIEW_STATUS_LABELS: Record<InterviewStatus, string> = {
+  offered: 'Waiting for them to pick a time',
+  booked: 'Booked',
+  reschedule_requested: 'Needs other times',
+  cancelled: 'Cancelled',
+}
+
+export const INTERVIEW_STATUS_COLORS: Record<InterviewStatus, string> = {
+  offered: 'blue',
+  booked: 'green',
+  reschedule_requested: 'yellow',
+  cancelled: 'gray',
+}
+
+export const MAX_INTERVIEW_SLOTS = 8
+
+export interface InterviewSlot {
+  id: string
+  start: string
+  end: string
+}
+
+export interface Interviewer {
+  userId: string
+  name: string
+  email: string
+}
+
+export interface InterviewRow {
+  id: string
+  applicationId: string
+  format: InterviewFormat
+  location: string
+  note: string
+  durationMinutes: number
+  interviewers: Interviewer[]
+  status: InterviewStatus
+  slots: InterviewSlot[]
+  bookedStart: string | undefined
+  bookedEnd: string | undefined
+  applicantTimeZone: string | undefined
+  joinUrl: string | undefined
+  inCalendar: boolean
+  createdAt: string
+}
+
+/** A time as HR types it: a date and a clock reading in the organization's zone. */
+export const slotInputSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Pick a date.'),
+  time: z.string().regex(/^\d{2}:\d{2}$/, 'Pick a time.'),
+})
+
+export const offerInterviewSchema = z
+  .object({
+    applicationId: z.string().min(1),
+    format: z.enum(INTERVIEW_FORMATS),
+    location: z.string().trim().max(300).default(''),
+    note: z.string().trim().max(1000).default(''),
+    durationMinutes: z.coerce.number().int().min(15).max(240),
+    interviewerIds: z.array(z.string().min(1)).min(1, 'Pick at least one interviewer.').max(10),
+    slots: z
+      .array(slotInputSchema)
+      .min(1, 'Offer at least one time.')
+      .max(MAX_INTERVIEW_SLOTS, `Offer at most ${MAX_INTERVIEW_SLOTS} times.`),
+  })
+  // Without Teams a video call needs a link, and an in-person one an address.
+  .refine((values) => values.format === 'phone' || values.format === 'video' || values.location, {
+    message: 'Say where the interview happens.',
+    path: ['location'],
+  })
+
+export type OfferInterviewInput = z.input<typeof offerInterviewSchema>
+export type OfferInterviewValues = z.infer<typeof offerInterviewSchema>
+
+/** The same offer as it crosses the wire: every time already resolved to an instant. */
+export const offerInterviewRequestSchema = z.object({
+  applicationId: z.string().min(1),
+  format: z.enum(INTERVIEW_FORMATS),
+  location: z.string().trim().max(300).default(''),
+  note: z.string().trim().max(1000).default(''),
+  durationMinutes: z.number().int().min(15).max(240),
+  interviewerIds: z.array(z.string().min(1)).min(1, 'Pick at least one interviewer.').max(10),
+  starts: z
+    .array(z.iso.datetime())
+    .min(1, 'Offer at least one time.')
+    .max(MAX_INTERVIEW_SLOTS, `Offer at most ${MAX_INTERVIEW_SLOTS} times.`),
+})
+
+export type OfferInterviewRequest = z.infer<typeof offerInterviewRequestSchema>
+
+/** What the applicant sees of an interview offer on their status page. */
+export interface InterviewOffer {
+  id: string
+  status: InterviewStatus
+  format: InterviewFormat
+  location: string
+  note: string
+  durationMinutes: number
+  slots: InterviewSlot[]
+  bookedStart: string | undefined
+  bookedEnd: string | undefined
+  joinUrl: string | undefined
+}
+
+export const bookSlotSchema = z.object({
+  applicationId: z.string().min(1).max(100),
+  signature: z.string().min(1).max(200),
+  interviewId: z.string().min(1).max(100),
+  slotId: z.string().min(1).max(100),
+  timeZone: z.string().min(1).max(64),
+})
+
+export type BookSlotValues = z.infer<typeof bookSlotSchema>

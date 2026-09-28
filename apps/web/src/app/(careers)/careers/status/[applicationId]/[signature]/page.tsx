@@ -2,6 +2,8 @@ import { Paper, Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import { LinkAnchor } from '@/components/link-anchor'
 import { ApplicationStatusCard } from '@/features/hiring/components/application-status-card'
+import { InterviewPicker } from '@/features/hiring/components/interview-picker'
+import { loadInterviewOffers } from '@/features/hiring/public-interview-service'
 import { loadApplicationStatus } from '@/features/hiring/public-service'
 import { routes } from '@/lib/routes'
 
@@ -38,8 +40,19 @@ export default async function ApplicationStatusPage({
     )
   }
 
+  // Only a live application has an interview worth acting on.
+  const offers = application.status === 'active' ? await loadInterviewOffers(application.id) : []
+
   return (
     <Stack maw={720} mx="auto">
+      {offers.map((offer) => (
+        <InterviewPicker
+          key={offer.id}
+          offer={offer}
+          applicationId={application.id}
+          signature={signature}
+        />
+      ))}
       <ApplicationStatusCard application={application} signature={signature} />
     </Stack>
   )

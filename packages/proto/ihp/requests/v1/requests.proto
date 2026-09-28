@@ -30,6 +30,8 @@ enum FormKind {
   FORM_KIND_REQUEST = 1;
   FORM_KIND_EVALUATION = 2;
   FORM_KIND_APPLICATION = 3;
+  // What interviewers answer about an applicant after meeting them.
+  FORM_KIND_SCORECARD = 4;
 }
 
 enum RequestStatus {

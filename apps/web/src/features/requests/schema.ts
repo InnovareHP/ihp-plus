@@ -13,8 +13,9 @@ export const FIELD_TYPES = [
 ] as const
 export const FORM_STATUSES = ['draft', 'published', 'archived'] as const
 // A request form runs the approval queue; an evaluation form is assigned to a supervisor; an
-// application form is the extra questions a job posting asks.
-export const FORM_KINDS = ['request', 'evaluation', 'application'] as const
+// application form is the extra questions a job posting asks; a scorecard is what an interviewer
+// answers after meeting an applicant.
+export const FORM_KINDS = ['request', 'evaluation', 'application', 'scorecard'] as const
 export const REQUEST_STATUSES = [
   'pending',
   'approved',
@@ -95,11 +96,13 @@ export const formDraftSchema = z
     teamIds: z.array(z.string().min(1)),
     timeOff: z.boolean().default(false),
   })
-  // An evaluation has no requester to upload anything, so a file question would be unanswerable.
-  .refine((form) => form.kind !== 'evaluation' || form.fields.every((f) => f.type !== 'file'), {
-    message: 'An evaluation form cannot ask for a file.',
-    path: ['fields'],
-  })
+  // Evaluations and scorecards are answered in the portal with no uploader behind them.
+  .refine(
+    (form) =>
+      (form.kind !== 'evaluation' && form.kind !== 'scorecard') ||
+      form.fields.every((f) => f.type !== 'file'),
+    { message: 'This kind of form cannot ask for a file.', path: ['fields'] },
+  )
 
 export const setFormStatusSchema = z.object({
   formId: z.string().min(1),

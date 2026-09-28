@@ -20,7 +20,12 @@ import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { EmptyState } from '@/components/empty-state'
 import { announceSuccess } from '@/lib/announce'
-import { applicationFormRoute, evaluationFormRoute, requestFormRoute } from '@/lib/routes'
+import {
+  applicationFormRoute,
+  evaluationFormRoute,
+  requestFormRoute,
+  scorecardFormRoute,
+} from '@/lib/routes'
 // Departments are organization data; the requests feature is a consumer of them.
 import { useTeams } from '@/features/organization/hooks/use-teams'
 import {
@@ -52,6 +57,7 @@ const EDIT_ROUTE: Record<FormKind, (formId: string) => string> = {
   request: requestFormRoute,
   evaluation: evaluationFormRoute,
   application: applicationFormRoute,
+  scorecard: scorecardFormRoute,
 }
 
 function editRoute(form: FormRow) {
@@ -74,6 +80,12 @@ const COPY: Record<FormKind, { published: string; about: string; questions: stri
     about: 'For HR only — applicants see the job posting, not this name.',
     questions:
       'Asked after the applicant’s name, email, phone and resume, in this order. Ask only what you will use.',
+  },
+  scorecard: {
+    published: 'is ready to add to a job posting.',
+    about: 'For HR and interviewers — applicants never see a scorecard.',
+    questions:
+      'What each interviewer answers after meeting the applicant, in this order. An overall recommendation is always asked as well.',
   },
 }
 
@@ -307,7 +319,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
                     key={field.id}
                     index={index}
                     firstMovableIndex={lockedCount}
-                    allowFile={formKind !== 'evaluation'}
+                    allowFile={formKind === 'request' || formKind === 'application'}
                     total={fields.fields.length}
                     control={control}
                     register={register}

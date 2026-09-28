@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ihp/hiring/v1/hiring.proto.
  */
 export const file_ihp_hiring_v1_hiring: GenFile = /*@__PURE__*/
-  fileDesc("ChppaHAvaGlyaW5nL3YxL2hpcmluZy5wcm90bxINaWhwLmhpcmluZy52MSIyCgVTdGFnZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB21lc3NhZ2UYAyABKAkixwEKDkhpcmluZ1NldHRpbmdzEhcKCmhyX3RlYW1faWQYASABKAlIAIgBARIZCgxocl90ZWFtX25hbWUYAiABKAlIAYgBARIsCg5kZWZhdWx0X3N0YWdlcxgDIAMoCzIULmlocC5oaXJpbmcudjEuU3RhZ2USGQoRcmVqZWN0aW9uX21lc3NhZ2UYBCABKAkSGAoQY2FuX2VkaXRfaHJfdGVhbRgFIAEoCEINCgtfaHJfdGVhbV9pZEIPCg1faHJfdGVhbV9uYW1lIucHCgdQb3N0aW5nEgoKAmlkGAEgASgJEgwKBHNsdWcYAiABKAkSDQoFdGl0bGUYAyABKAkSDwoHc3VtbWFyeRgEIAEoCRITCgtkZXNjcmlwdGlvbhgFIAEoCRIQCghsb2NhdGlvbhgGIAEoCRIrCgl3b3JrcGxhY2UYByABKA4yGC5paHAuaGlyaW5nLnYxLldvcmtwbGFjZRI2Cg9lbXBsb3ltZW50X3R5cGUYCCABKA4yHS5paHAuaGlyaW5nLnYxLkVtcGxveW1lbnRUeXBlEhcKCnNhbGFyeV9taW4YCSABKAVIAIgBARIXCgpzYWxhcnlfbWF4GAogASgFSAGIAQESFwoPc2FsYXJ5X2N1cnJlbmN5GAsgASgJEiwKBnN0YXR1cxgMIAEoDjIcLmlocC5oaXJpbmcudjEuUG9zdGluZ1N0YXR1cxIXCg9yZXN1bWVfcmVxdWlyZWQYDSABKAgSJAoGc3RhZ2VzGA4gAygLMhQuaWhwLmhpcmluZy52MS5TdGFnZRIgChNhcHBsaWNhdGlvbl9mb3JtX2lkGA8gASgJSAKIAQESIgoVYXBwbGljYXRpb25fZm9ybV9uYW1lGBAgASgJSAOIAQESNgoSYXBwbGljYXRpb25fZmllbGRzGBEgAygLMhouaWhwLnJlcXVlc3RzLnYxLkZvcm1GaWVsZBIUCgd0ZWFtX2lkGBIgASgJSASIAQESFgoJdGVhbV9uYW1lGBMgASgJSAWIAQESFgoJb3BlbmVkX2F0GBQgASgJSAaIAQESFgoJY2xvc2VzX2F0GBUgASgJSAeIAQESEgoKY3JlYXRlZF9hdBgWIAEoCRISCgp1cGRhdGVkX2F0GBcgASgJEhcKD2FwcGxpY2FudF9jb3VudBgYIAEoBRIUCgxhY3RpdmVfY291bnQYGSABKAUSPQoMc3RhZ2VfY291bnRzGBogAygLMicuaWhwLmhpcmluZy52MS5Qb3N0aW5nLlN0YWdlQ291bnRzRW50cnkSMgoNc2FsYXJ5X3BlcmlvZBgbIAEoDjIbLmlocC5oaXJpbmcudjEuU2FsYXJ5UGVyaW9kGjIKEFN0YWdlQ291bnRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AUINCgtfc2FsYXJ5X21pbkINCgtfc2FsYXJ5X21heEIWChRfYXBwbGljYXRpb25fZm9ybV9pZEIYChZfYXBwbGljYXRpb25fZm9ybV9uYW1lQgoKCF90ZWFtX2lkQgwKCl90ZWFtX25hbWVCDAoKX29wZW5lZF9hdEIMCgpfY2xvc2VzX2F0IhQKEkdldFNldHRpbmdzUmVxdWVzdCJGChNHZXRTZXR0aW5nc1Jlc3BvbnNlEi8KCHNldHRpbmdzGAEgASgLMh0uaWhwLmhpcmluZy52MS5IaXJpbmdTZXR0aW5ncyKGAQoTU2F2ZVNldHRpbmdzUmVxdWVzdBIXCgpocl90ZWFtX2lkGAEgASgJSACIAQESLAoOZGVmYXVsdF9zdGFnZXMYAiADKAsyFC5paHAuaGlyaW5nLnYxLlN0YWdlEhkKEXJlamVjdGlvbl9tZXNzYWdlGAMgASgJQg0KC19ocl90ZWFtX2lkIkcKFFNhdmVTZXR0aW5nc1Jlc3BvbnNlEi8KCHNldHRpbmdzGAEgASgLMh0uaWhwLmhpcmluZy52MS5IaXJpbmdTZXR0aW5ncyKMAQoTTGlzdFBvc3RpbmdzUmVxdWVzdBIyCgZzdGF0dXMYASABKA4yIi5paHAuaGlyaW5nLnYxLlBvc3RpbmdTdGF0dXNGaWx0ZXISDgoGc2VhcmNoGAIgASgJEhAKCHRlYW1faWRzGAMgAygJEgwKBHBhZ2UYBCABKAUSEQoJcGFnZV9zaXplGAUgASgFImoKFExpc3RQb3N0aW5nc1Jlc3BvbnNlEiQKBHJvd3MYASADKAsyFi5paHAuaGlyaW5nLnYxLlBvc3RpbmcSLAoJcGFnZV9pbmZvGAIgASgLMhkuaWhwLnJlcXVlc3RzLnYxLlBhZ2VJbmZvIicKEUdldFBvc3RpbmdSZXF1ZXN0EhIKCnBvc3RpbmdfaWQYASABKAkiPQoSR2V0UG9zdGluZ1Jlc3BvbnNlEicKB3Bvc3RpbmcYASABKAsyFi5paHAuaGlyaW5nLnYxLlBvc3RpbmcixgQKElNhdmVQb3N0aW5nUmVxdWVzdBIXCgpwb3N0aW5nX2lkGAEgASgJSACIAQESDQoFdGl0bGUYAiABKAkSDwoHc3VtbWFyeRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIQCghsb2NhdGlvbhgFIAEoCRIrCgl3b3JrcGxhY2UYBiABKA4yGC5paHAuaGlyaW5nLnYxLldvcmtwbGFjZRI2Cg9lbXBsb3ltZW50X3R5cGUYByABKA4yHS5paHAuaGlyaW5nLnYxLkVtcGxveW1lbnRUeXBlEhcKCnNhbGFyeV9taW4YCCABKAVIAYgBARIXCgpzYWxhcnlfbWF4GAkgASgFSAKIAQESFwoPc2FsYXJ5X2N1cnJlbmN5GAogASgJEhcKD3Jlc3VtZV9yZXF1aXJlZBgLIAEoCBIkCgZzdGFnZXMYDCADKAsyFC5paHAuaGlyaW5nLnYxLlN0YWdlEiAKE2FwcGxpY2F0aW9uX2Zvcm1faWQYDSABKAlIA4gBARIUCgd0ZWFtX2lkGA4gASgJSASIAQESFgoJY2xvc2VzX2F0GA8gASgJSAWIAQESMgoNc2FsYXJ5X3BlcmlvZBgQIAEoDjIbLmlocC5oaXJpbmcudjEuU2FsYXJ5UGVyaW9kQg0KC19wb3N0aW5nX2lkQg0KC19zYWxhcnlfbWluQg0KC19zYWxhcnlfbWF4QhYKFF9hcHBsaWNhdGlvbl9mb3JtX2lkQgoKCF90ZWFtX2lkQgwKCl9jbG9zZXNfYXQiPgoTU2F2ZVBvc3RpbmdSZXNwb25zZRInCgdwb3N0aW5nGAEgASgLMhYuaWhwLmhpcmluZy52MS5Qb3N0aW5nIlsKF1NldFBvc3RpbmdTdGF0dXNSZXF1ZXN0EhIKCnBvc3RpbmdfaWQYASABKAkSLAoGc3RhdHVzGAIgASgOMhwuaWhwLmhpcmluZy52MS5Qb3N0aW5nU3RhdHVzIkMKGFNldFBvc3RpbmdTdGF0dXNSZXNwb25zZRInCgdwb3N0aW5nGAEgASgLMhYuaWhwLmhpcmluZy52MS5Qb3N0aW5nIioKFERlbGV0ZVBvc3RpbmdSZXF1ZXN0EhIKCnBvc3RpbmdfaWQYASABKAkiFwoVRGVsZXRlUG9zdGluZ1Jlc3BvbnNlIqoCChJBcHBsaWNhdGlvblN1bW1hcnkSCgoCaWQYASABKAkSEgoKcG9zdGluZ19pZBgCIAEoCRIVCg1wb3N0aW5nX3RpdGxlGAMgASgJEhEKCWZ1bGxfbmFtZRgEIAEoCRINCgVlbWFpbBgFIAEoCRINCgVwaG9uZRgGIAEoCRIwCgZzdGF0dXMYByABKA4yIC5paHAuaGlyaW5nLnYxLkFwcGxpY2F0aW9uU3RhdHVzEhAKCHN0YWdlX2lkGAggASgJEhIKCnN0YWdlX25hbWUYCSABKAkSGAoQc3RhZ2VfY2hhbmdlZF9hdBgKIAEoCRISCgpjcmVhdGVkX2F0GAsgASgJEhIKCnVwZGF0ZWRfYXQYDCABKAkSEgoKaGFzX3Jlc3VtZRgNIAEoCCJrCg9BcHBsaWNhdGlvbkZpbGUSCgoCaWQYASABKAkSEAoIZmllbGRfaWQYAiABKAkSEQoJZmlsZV9uYW1lGAMgASgJEhQKDGNvbnRlbnRfdHlwZRgEIAEoCRIRCglmaWxlX3NpemUYBSABKAUieAoPQXBwbGljYXRpb25Ob3RlEgoKAmlkGAEgASgJEhEKCWF1dGhvcl9pZBgCIAEoCRITCgthdXRob3JfbmFtZRgDIAEoCRIMCgRib2R5GAQgASgJEhIKCmNyZWF0ZWRfYXQYBSABKAkSDwoHaXNfbWluZRgGIAEoCCKJAQoQQXBwbGljYXRpb25FdmVudBIKCgJpZBgBIAEoCRINCgVsYWJlbBgCIAEoCRIXCgphY3Rvcl9uYW1lGAMgASgJSACIAQESEwoGZGV0YWlsGAQgASgJSAGIAQESEgoKY3JlYXRlZF9hdBgFIAEoCUINCgtfYWN0b3JfbmFtZUIJCgdfZGV0YWlsIpkECgtBcHBsaWNhdGlvbhIyCgdzdW1tYXJ5GAEgASgLMiEuaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvblN1bW1hcnkSKgoGZmllbGRzGAIgAygLMhouaWhwLnJlcXVlc3RzLnYxLkZvcm1GaWVsZBIrCgZ2YWx1ZXMYAyADKAsyGy5paHAucmVxdWVzdHMudjEuRmllbGRWYWx1ZRItCgVmaWxlcxgEIAMoCzIeLmlocC5oaXJpbmcudjEuQXBwbGljYXRpb25GaWxlEi0KBW5vdGVzGAUgAygLMh4uaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvbk5vdGUSLwoGZXZlbnRzGAYgAygLMh8uaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvbkV2ZW50EiQKBnN0YWdlcxgHIAMoCzIULmlocC5oaXJpbmcudjEuU3RhZ2USHQoQcmVqZWN0aW9uX3JlYXNvbhgIIAEoCUgAiAEBEhQKDHBvc3Rpbmdfc2x1ZxgJIAEoCRIOCgZqb2luZWQYCiABKAgSIgoVaW52aXRhdGlvbl9leHBpcmVzX2F0GAsgASgJSAGIAQESHAoPcG9zdGluZ190ZWFtX2lkGAwgASgJSAKIAQFCEwoRX3JlamVjdGlvbl9yZWFzb25CGAoWX2ludml0YXRpb25fZXhwaXJlc19hdEISChBfcG9zdGluZ190ZWFtX2lkIs4BChdMaXN0QXBwbGljYXRpb25zUmVxdWVzdBIXCgpwb3N0aW5nX2lkGAEgASgJSACIAQESNgoGc3RhdHVzGAIgASgOMiYuaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvblN0YXR1c0ZpbHRlchIVCghzdGFnZV9pZBgDIAEoCUgBiAEBEg4KBnNlYXJjaBgEIAEoCRIMCgRwYWdlGAUgASgFEhEKCXBhZ2Vfc2l6ZRgGIAEoBUINCgtfcG9zdGluZ19pZEILCglfc3RhZ2VfaWQieQoYTGlzdEFwcGxpY2F0aW9uc1Jlc3BvbnNlEi8KBHJvd3MYASADKAsyIS5paHAuaGlyaW5nLnYxLkFwcGxpY2F0aW9uU3VtbWFyeRIsCglwYWdlX2luZm8YAiABKAsyGS5paHAucmVxdWVzdHMudjEuUGFnZUluZm8iKQoTTGlzdFBpcGVsaW5lUmVxdWVzdBISCgpwb3N0aW5nX2lkGAEgASgJIkcKFExpc3RQaXBlbGluZVJlc3BvbnNlEi8KBHJvd3MYASADKAsyIS5paHAuaGlyaW5nLnYxLkFwcGxpY2F0aW9uU3VtbWFyeSIvChVHZXRBcHBsaWNhdGlvblJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkiSQoWR2V0QXBwbGljYXRpb25SZXNwb25zZRIvCgthcHBsaWNhdGlvbhgBIAEoCzIaLmlocC5oaXJpbmcudjEuQXBwbGljYXRpb24ieAoWTW92ZUFwcGxpY2F0aW9uUmVxdWVzdBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIQCghzdGFnZV9pZBgCIAEoCRISCgpzZW5kX2VtYWlsGAMgASgIEhQKB21lc3NhZ2UYBCABKAlIAIgBAUIKCghfbWVzc2FnZSJRChdNb3ZlQXBwbGljYXRpb25SZXNwb25zZRI2CgthcHBsaWNhdGlvbhgBIAEoCzIhLmlocC5oaXJpbmcudjEuQXBwbGljYXRpb25TdW1tYXJ5ImcKGFJlamVjdEFwcGxpY2F0aW9uUmVxdWVzdBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIOCgZyZWFzb24YAiABKAkSEgoKc2VuZF9lbWFpbBgDIAEoCBIPCgdtZXNzYWdlGAQgASgJIlMKGVJlamVjdEFwcGxpY2F0aW9uUmVzcG9uc2USNgoLYXBwbGljYXRpb24YASABKAsyIS5paHAuaGlyaW5nLnYxLkFwcGxpY2F0aW9uU3VtbWFyeSIyChhSZW9wZW5BcHBsaWNhdGlvblJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkiUwoZUmVvcGVuQXBwbGljYXRpb25SZXNwb25zZRI2CgthcHBsaWNhdGlvbhgBIAEoCzIhLmlocC5oaXJpbmcudjEuQXBwbGljYXRpb25TdW1tYXJ5IjYKDkFkZE5vdGVSZXF1ZXN0EhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJEgwKBGJvZHkYAiABKAkiPwoPQWRkTm90ZVJlc3BvbnNlEiwKBG5vdGUYASABKAsyHi5paHAuaGlyaW5nLnYxLkFwcGxpY2F0aW9uTm90ZSIkChFEZWxldGVOb3RlUmVxdWVzdBIPCgdub3RlX2lkGAEgASgJIhQKEkRlbGV0ZU5vdGVSZXNwb25zZSJSChZIaXJlQXBwbGljYXRpb25SZXF1ZXN0EhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJEhQKB3RlYW1faWQYAiABKAlIAIgBAUIKCghfdGVhbV9pZCJKChdIaXJlQXBwbGljYXRpb25SZXNwb25zZRIvCgthcHBsaWNhdGlvbhgBIAEoCzIaLmlocC5oaXJpbmcudjEuQXBwbGljYXRpb24qmgEKDVBvc3RpbmdTdGF0dXMSHgoaUE9TVElOR19TVEFUVVNfVU5TUEVDSUZJRUQQABIYChRQT1NUSU5HX1NUQVRVU19EUkFGVBABEhcKE1BPU1RJTkdfU1RBVFVTX09QRU4QAhIZChVQT1NUSU5HX1NUQVRVU19DTE9TRUQQAxIbChdQT1NUSU5HX1NUQVRVU19BUkNISVZFRBAEKuYBChNQb3N0aW5nU3RhdHVzRmlsdGVyEiUKIVBPU1RJTkdfU1RBVFVTX0ZJTFRFUl9VTlNQRUNJRklFRBAAEiEKHVBPU1RJTkdfU1RBVFVTX0ZJTFRFUl9DVVJSRU5UEAESHwobUE9TVElOR19TVEFUVVNfRklMVEVSX0RSQUZUEAISHgoaUE9TVElOR19TVEFUVVNfRklMVEVSX09QRU4QAxIgChxQT1NUSU5HX1NUQVRVU19GSUxURVJfQ0xPU0VEEAQSIgoeUE9TVElOR19TVEFUVVNfRklMVEVSX0FSQ0hJVkVEEAUqaAoJV29ya3BsYWNlEhkKFVdPUktQTEFDRV9VTlNQRUNJRklFRBAAEhQKEFdPUktQTEFDRV9PTlNJVEUQARIUChBXT1JLUExBQ0VfSFlCUklEEAISFAoQV09SS1BMQUNFX1JFTU9URRADKnYKDFNhbGFyeVBlcmlvZBIdChlTQUxBUllfUEVSSU9EX1VOU1BFQ0lGSUVEEAASFgoSU0FMQVJZX1BFUklPRF9ZRUFSEAESFwoTU0FMQVJZX1BFUklPRF9NT05USBACEhYKElNBTEFSWV9QRVJJT0RfSE9VUhADKswBCg5FbXBsb3ltZW50VHlwZRIfChtFTVBMT1lNRU5UX1RZUEVfVU5TUEVDSUZJRUQQABIdChlFTVBMT1lNRU5UX1RZUEVfRlVMTF9USU1FEAESHQoZRU1QTE9ZTUVOVF9UWVBFX1BBUlRfVElNRRACEhwKGEVNUExPWU1FTlRfVFlQRV9DT05UUkFDVBADEh4KGkVNUExPWU1FTlRfVFlQRV9JTlRFUk5TSElQEAQSHQoZRU1QTE9ZTUVOVF9UWVBFX1RFTVBPUkFSWRAFKrcBChFBcHBsaWNhdGlvblN0YXR1cxIiCh5BUFBMSUNBVElPTl9TVEFUVVNfVU5TUEVDSUZJRUQQABIdChlBUFBMSUNBVElPTl9TVEFUVVNfQUNUSVZFEAESHAoYQVBQTElDQVRJT05fU1RBVFVTX0hJUkVEEAISHwobQVBQTElDQVRJT05fU1RBVFVTX1JFSkVDVEVEEAMSIAocQVBQTElDQVRJT05fU1RBVFVTX1dJVEhEUkFXThAEKoMCChdBcHBsaWNhdGlvblN0YXR1c0ZpbHRlchIpCiVBUFBMSUNBVElPTl9TVEFUVVNfRklMVEVSX1VOU1BFQ0lGSUVEEAASJAogQVBQTElDQVRJT05fU1RBVFVTX0ZJTFRFUl9BQ1RJVkUQARIjCh9BUFBMSUNBVElPTl9TVEFUVVNfRklMVEVSX0hJUkVEEAISJgoiQVBQTElDQVRJT05fU1RBVFVTX0ZJTFRFUl9SRUpFQ1RFRBADEicKI0FQUExJQ0FUSU9OX1NUQVRVU19GSUxURVJfV0lUSERSQVdOEAQSIQodQVBQTElDQVRJT05fU1RBVFVTX0ZJTFRFUl9BTEwQBTLPCwoNSGlyaW5nU2VydmljZRJUCgtHZXRTZXR0aW5ncxIhLmlocC5oaXJpbmcudjEuR2V0U2V0dGluZ3NSZXF1ZXN0GiIuaWhwLmhpcmluZy52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElcKDFNhdmVTZXR0aW5ncxIiLmlocC5oaXJpbmcudjEuU2F2ZVNldHRpbmdzUmVxdWVzdBojLmlocC5oaXJpbmcudjEuU2F2ZVNldHRpbmdzUmVzcG9uc2USVwoMTGlzdFBvc3RpbmdzEiIuaWhwLmhpcmluZy52MS5MaXN0UG9zdGluZ3NSZXF1ZXN0GiMuaWhwLmhpcmluZy52MS5MaXN0UG9zdGluZ3NSZXNwb25zZRJRCgpHZXRQb3N0aW5nEiAuaWhwLmhpcmluZy52MS5HZXRQb3N0aW5nUmVxdWVzdBohLmlocC5oaXJpbmcudjEuR2V0UG9zdGluZ1Jlc3BvbnNlElQKC1NhdmVQb3N0aW5nEiEuaWhwLmhpcmluZy52MS5TYXZlUG9zdGluZ1JlcXVlc3QaIi5paHAuaGlyaW5nLnYxLlNhdmVQb3N0aW5nUmVzcG9uc2USYwoQU2V0UG9zdGluZ1N0YXR1cxImLmlocC5oaXJpbmcudjEuU2V0UG9zdGluZ1N0YXR1c1JlcXVlc3QaJy5paHAuaGlyaW5nLnYxLlNldFBvc3RpbmdTdGF0dXNSZXNwb25zZRJaCg1EZWxldGVQb3N0aW5nEiMuaWhwLmhpcmluZy52MS5EZWxldGVQb3N0aW5nUmVxdWVzdBokLmlocC5oaXJpbmcudjEuRGVsZXRlUG9zdGluZ1Jlc3BvbnNlEmMKEExpc3RBcHBsaWNhdGlvbnMSJi5paHAuaGlyaW5nLnYxLkxpc3RBcHBsaWNhdGlvbnNSZXF1ZXN0GicuaWhwLmhpcmluZy52MS5MaXN0QXBwbGljYXRpb25zUmVzcG9uc2USVwoMTGlzdFBpcGVsaW5lEiIuaWhwLmhpcmluZy52MS5MaXN0UGlwZWxpbmVSZXF1ZXN0GiMuaWhwLmhpcmluZy52MS5MaXN0UGlwZWxpbmVSZXNwb25zZRJdCg5HZXRBcHBsaWNhdGlvbhIkLmlocC5oaXJpbmcudjEuR2V0QXBwbGljYXRpb25SZXF1ZXN0GiUuaWhwLmhpcmluZy52MS5HZXRBcHBsaWNhdGlvblJlc3BvbnNlEmAKD01vdmVBcHBsaWNhdGlvbhIlLmlocC5oaXJpbmcudjEuTW92ZUFwcGxpY2F0aW9uUmVxdWVzdBomLmlocC5oaXJpbmcudjEuTW92ZUFwcGxpY2F0aW9uUmVzcG9uc2USZgoRUmVqZWN0QXBwbGljYXRpb24SJy5paHAuaGlyaW5nLnYxLlJlamVjdEFwcGxpY2F0aW9uUmVxdWVzdBooLmlocC5oaXJpbmcudjEuUmVqZWN0QXBwbGljYXRpb25SZXNwb25zZRJmChFSZW9wZW5BcHBsaWNhdGlvbhInLmlocC5oaXJpbmcudjEuUmVvcGVuQXBwbGljYXRpb25SZXF1ZXN0GiguaWhwLmhpcmluZy52MS5SZW9wZW5BcHBsaWNhdGlvblJlc3BvbnNlEkgKB0FkZE5vdGUSHS5paHAuaGlyaW5nLnYxLkFkZE5vdGVSZXF1ZXN0Gh4uaWhwLmhpcmluZy52MS5BZGROb3RlUmVzcG9uc2USUQoKRGVsZXRlTm90ZRIgLmlocC5oaXJpbmcudjEuRGVsZXRlTm90ZVJlcXVlc3QaIS5paHAuaGlyaW5nLnYxLkRlbGV0ZU5vdGVSZXNwb25zZRJgCg9IaXJlQXBwbGljYXRpb24SJS5paHAuaGlyaW5nLnYxLkhpcmVBcHBsaWNhdGlvblJlcXVlc3QaJi5paHAuaGlyaW5nLnYxLkhpcmVBcHBsaWNhdGlvblJlc3BvbnNlYgZwcm90bzM", [file_ihp_requests_v1_requests]);
+  fileDesc("ChppaHAvaGlyaW5nL3YxL2hpcmluZy5wcm90bxINaWhwLmhpcmluZy52MSIyCgVTdGFnZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB21lc3NhZ2UYAyABKAki2gEKDkhpcmluZ1NldHRpbmdzEhcKCmhyX3RlYW1faWQYASABKAlIAIgBARIZCgxocl90ZWFtX25hbWUYAiABKAlIAYgBARIsCg5kZWZhdWx0X3N0YWdlcxgDIAMoCzIULmlocC5oaXJpbmcudjEuU3RhZ2USGQoRcmVqZWN0aW9uX21lc3NhZ2UYBCABKAkSGAoQY2FuX2VkaXRfaHJfdGVhbRgFIAEoCBIRCgl0aW1lX3pvbmUYBiABKAlCDQoLX2hyX3RlYW1faWRCDwoNX2hyX3RlYW1fbmFtZSLXCAoHUG9zdGluZxIKCgJpZBgBIAEoCRIMCgRzbHVnGAIgASgJEg0KBXRpdGxlGAMgASgJEg8KB3N1bW1hcnkYBCABKAkSEwoLZGVzY3JpcHRpb24YBSABKAkSEAoIbG9jYXRpb24YBiABKAkSKwoJd29ya3BsYWNlGAcgASgOMhguaWhwLmhpcmluZy52MS5Xb3JrcGxhY2USNgoPZW1wbG95bWVudF90eXBlGAggASgOMh0uaWhwLmhpcmluZy52MS5FbXBsb3ltZW50VHlwZRIXCgpzYWxhcnlfbWluGAkgASgFSACIAQESFwoKc2FsYXJ5X21heBgKIAEoBUgBiAEBEhcKD3NhbGFyeV9jdXJyZW5jeRgLIAEoCRIsCgZzdGF0dXMYDCABKA4yHC5paHAuaGlyaW5nLnYxLlBvc3RpbmdTdGF0dXMSFwoPcmVzdW1lX3JlcXVpcmVkGA0gASgIEiQKBnN0YWdlcxgOIAMoCzIULmlocC5oaXJpbmcudjEuU3RhZ2USIAoTYXBwbGljYXRpb25fZm9ybV9pZBgPIAEoCUgCiAEBEiIKFWFwcGxpY2F0aW9uX2Zvcm1fbmFtZRgQIAEoCUgDiAEBEjYKEmFwcGxpY2F0aW9uX2ZpZWxkcxgRIAMoCzIaLmlocC5yZXF1ZXN0cy52MS5Gb3JtRmllbGQSFAoHdGVhbV9pZBgSIAEoCUgEiAEBEhYKCXRlYW1fbmFtZRgTIAEoCUgFiAEBEhYKCW9wZW5lZF9hdBgUIAEoCUgGiAEBEhYKCWNsb3Nlc19hdBgVIAEoCUgHiAEBEhIKCmNyZWF0ZWRfYXQYFiABKAkSEgoKdXBkYXRlZF9hdBgXIAEoCRIXCg9hcHBsaWNhbnRfY291bnQYGCABKAUSFAoMYWN0aXZlX2NvdW50GBkgASgFEj0KDHN0YWdlX2NvdW50cxgaIAMoCzInLmlocC5oaXJpbmcudjEuUG9zdGluZy5TdGFnZUNvdW50c0VudHJ5EjIKDXNhbGFyeV9wZXJpb2QYGyABKA4yGy5paHAuaGlyaW5nLnYxLlNhbGFyeVBlcmlvZBIeChFzY29yZWNhcmRfZm9ybV9pZBgcIAEoCUgIiAEBEiAKE3Njb3JlY2FyZF9mb3JtX25hbWUYHSABKAlICYgBARoyChBTdGFnZUNvdW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoBToCOAFCDQoLX3NhbGFyeV9taW5CDQoLX3NhbGFyeV9tYXhCFgoUX2FwcGxpY2F0aW9uX2Zvcm1faWRCGAoWX2FwcGxpY2F0aW9uX2Zvcm1fbmFtZUIKCghfdGVhbV9pZEIMCgpfdGVhbV9uYW1lQgwKCl9vcGVuZWRfYXRCDAoKX2Nsb3Nlc19hdEIUChJfc2NvcmVjYXJkX2Zvcm1faWRCFgoUX3Njb3JlY2FyZF9mb3JtX25hbWUiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IkYKE0dldFNldHRpbmdzUmVzcG9uc2USLwoIc2V0dGluZ3MYASABKAsyHS5paHAuaGlyaW5nLnYxLkhpcmluZ1NldHRpbmdzIpkBChNTYXZlU2V0dGluZ3NSZXF1ZXN0EhcKCmhyX3RlYW1faWQYASABKAlIAIgBARIsCg5kZWZhdWx0X3N0YWdlcxgCIAMoCzIULmlocC5oaXJpbmcudjEuU3RhZ2USGQoRcmVqZWN0aW9uX21lc3NhZ2UYAyABKAkSEQoJdGltZV96b25lGAQgASgJQg0KC19ocl90ZWFtX2lkIkcKFFNhdmVTZXR0aW5nc1Jlc3BvbnNlEi8KCHNldHRpbmdzGAEgASgLMh0uaWhwLmhpcmluZy52MS5IaXJpbmdTZXR0aW5ncyKMAQoTTGlzdFBvc3RpbmdzUmVxdWVzdBIyCgZzdGF0dXMYASABKA4yIi5paHAuaGlyaW5nLnYxLlBvc3RpbmdTdGF0dXNGaWx0ZXISDgoGc2VhcmNoGAIgASgJEhAKCHRlYW1faWRzGAMgAygJEgwKBHBhZ2UYBCABKAUSEQoJcGFnZV9zaXplGAUgASgFImoKFExpc3RQb3N0aW5nc1Jlc3BvbnNlEiQKBHJvd3MYASADKAsyFi5paHAuaGlyaW5nLnYxLlBvc3RpbmcSLAoJcGFnZV9pbmZvGAIgASgLMhkuaWhwLnJlcXVlc3RzLnYxLlBhZ2VJbmZvIicKEUdldFBvc3RpbmdSZXF1ZXN0EhIKCnBvc3RpbmdfaWQYASABKAkiPQoSR2V0UG9zdGluZ1Jlc3BvbnNlEicKB3Bvc3RpbmcYASABKAsyFi5paHAuaGlyaW5nLnYxLlBvc3Rpbmci/AQKElNhdmVQb3N0aW5nUmVxdWVzdBIXCgpwb3N0aW5nX2lkGAEgASgJSACIAQESDQoFdGl0bGUYAiABKAkSDwoHc3VtbWFyeRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIQCghsb2NhdGlvbhgFIAEoCRIrCgl3b3JrcGxhY2UYBiABKA4yGC5paHAuaGlyaW5nLnYxLldvcmtwbGFjZRI2Cg9lbXBsb3ltZW50X3R5cGUYByABKA4yHS5paHAuaGlyaW5nLnYxLkVtcGxveW1lbnRUeXBlEhcKCnNhbGFyeV9taW4YCCABKAVIAYgBARIXCgpzYWxhcnlfbWF4GAkgASgFSAKIAQESFwoPc2FsYXJ5X2N1cnJlbmN5GAogASgJEhcKD3Jlc3VtZV9yZXF1aXJlZBgLIAEoCBIkCgZzdGFnZXMYDCADKAsyFC5paHAuaGlyaW5nLnYxLlN0YWdlEiAKE2FwcGxpY2F0aW9uX2Zvcm1faWQYDSABKAlIA4gBARIUCgd0ZWFtX2lkGA4gASgJSASIAQESFgoJY2xvc2VzX2F0GA8gASgJSAWIAQESMgoNc2FsYXJ5X3BlcmlvZBgQIAEoDjIbLmlocC5oaXJpbmcudjEuU2FsYXJ5UGVyaW9kEh4KEXNjb3JlY2FyZF9mb3JtX2lkGBEgASgJSAaIAQFCDQoLX3Bvc3RpbmdfaWRCDQoLX3NhbGFyeV9taW5CDQoLX3NhbGFyeV9tYXhCFgoUX2FwcGxpY2F0aW9uX2Zvcm1faWRCCgoIX3RlYW1faWRCDAoKX2Nsb3Nlc19hdEIUChJfc2NvcmVjYXJkX2Zvcm1faWQiPgoTU2F2ZVBvc3RpbmdSZXNwb25zZRInCgdwb3N0aW5nGAEgASgLMhYuaWhwLmhpcmluZy52MS5Qb3N0aW5nIlsKF1NldFBvc3RpbmdTdGF0dXNSZXF1ZXN0EhIKCnBvc3RpbmdfaWQYASABKAkSLAoGc3RhdHVzGAIgASgOMhwuaWhwLmhpcmluZy52MS5Qb3N0aW5nU3RhdHVzIkMKGFNldFBvc3RpbmdTdGF0dXNSZXNwb25zZRInCgdwb3N0aW5nGAEgASgLMhYuaWhwLmhpcmluZy52MS5Qb3N0aW5nIioKFERlbGV0ZVBvc3RpbmdSZXF1ZXN0EhIKCnBvc3RpbmdfaWQYASABKAkiFwoVRGVsZXRlUG9zdGluZ1Jlc3BvbnNlIqoCChJBcHBsaWNhdGlvblN1bW1hcnkSCgoCaWQYASABKAkSEgoKcG9zdGluZ19pZBgCIAEoCRIVCg1wb3N0aW5nX3RpdGxlGAMgASgJEhEKCWZ1bGxfbmFtZRgEIAEoCRINCgVlbWFpbBgFIAEoCRINCgVwaG9uZRgGIAEoCRIwCgZzdGF0dXMYByABKA4yIC5paHAuaGlyaW5nLnYxLkFwcGxpY2F0aW9uU3RhdHVzEhAKCHN0YWdlX2lkGAggASgJEhIKCnN0YWdlX25hbWUYCSABKAkSGAoQc3RhZ2VfY2hhbmdlZF9hdBgKIAEoCRISCgpjcmVhdGVkX2F0GAsgASgJEhIKCnVwZGF0ZWRfYXQYDCABKAkSEgoKaGFzX3Jlc3VtZRgNIAEoCCJrCg9BcHBsaWNhdGlvbkZpbGUSCgoCaWQYASABKAkSEAoIZmllbGRfaWQYAiABKAkSEQoJZmlsZV9uYW1lGAMgASgJEhQKDGNvbnRlbnRfdHlwZRgEIAEoCRIRCglmaWxlX3NpemUYBSABKAUieAoPQXBwbGljYXRpb25Ob3RlEgoKAmlkGAEgASgJEhEKCWF1dGhvcl9pZBgCIAEoCRITCgthdXRob3JfbmFtZRgDIAEoCRIMCgRib2R5GAQgASgJEhIKCmNyZWF0ZWRfYXQYBSABKAkSDwoHaXNfbWluZRgGIAEoCCKJAQoQQXBwbGljYXRpb25FdmVudBIKCgJpZBgBIAEoCRINCgVsYWJlbBgCIAEoCRIXCgphY3Rvcl9uYW1lGAMgASgJSACIAQESEwoGZGV0YWlsGAQgASgJSAGIAQESEgoKY3JlYXRlZF9hdBgFIAEoCUINCgtfYWN0b3JfbmFtZUIJCgdfZGV0YWlsIscECgtBcHBsaWNhdGlvbhIyCgdzdW1tYXJ5GAEgASgLMiEuaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvblN1bW1hcnkSKgoGZmllbGRzGAIgAygLMhouaWhwLnJlcXVlc3RzLnYxLkZvcm1GaWVsZBIrCgZ2YWx1ZXMYAyADKAsyGy5paHAucmVxdWVzdHMudjEuRmllbGRWYWx1ZRItCgVmaWxlcxgEIAMoCzIeLmlocC5oaXJpbmcudjEuQXBwbGljYXRpb25GaWxlEi0KBW5vdGVzGAUgAygLMh4uaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvbk5vdGUSLwoGZXZlbnRzGAYgAygLMh8uaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvbkV2ZW50EiQKBnN0YWdlcxgHIAMoCzIULmlocC5oaXJpbmcudjEuU3RhZ2USHQoQcmVqZWN0aW9uX3JlYXNvbhgIIAEoCUgAiAEBEhQKDHBvc3Rpbmdfc2x1ZxgJIAEoCRIOCgZqb2luZWQYCiABKAgSIgoVaW52aXRhdGlvbl9leHBpcmVzX2F0GAsgASgJSAGIAQESHAoPcG9zdGluZ190ZWFtX2lkGAwgASgJSAKIAQESLAoKaW50ZXJ2aWV3cxgNIAMoCzIYLmlocC5oaXJpbmcudjEuSW50ZXJ2aWV3QhMKEV9yZWplY3Rpb25fcmVhc29uQhgKFl9pbnZpdGF0aW9uX2V4cGlyZXNfYXRCEgoQX3Bvc3RpbmdfdGVhbV9pZCI3Cg1JbnRlcnZpZXdTbG90EgoKAmlkGAEgASgJEg0KBXN0YXJ0GAIgASgJEgsKA2VuZBgDIAEoCSI7CgtJbnRlcnZpZXdlchIPCgd1c2VyX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFZW1haWwYAyABKAkigwQKCUludGVydmlldxIKCgJpZBgBIAEoCRIWCg5hcHBsaWNhdGlvbl9pZBgCIAEoCRIuCgZmb3JtYXQYAyABKA4yHi5paHAuaGlyaW5nLnYxLkludGVydmlld0Zvcm1hdBIQCghsb2NhdGlvbhgEIAEoCRIMCgRub3RlGAUgASgJEhgKEGR1cmF0aW9uX21pbnV0ZXMYBiABKAUSMAoMaW50ZXJ2aWV3ZXJzGAcgAygLMhouaWhwLmhpcmluZy52MS5JbnRlcnZpZXdlchIuCgZzdGF0dXMYCCABKA4yHi5paHAuaGlyaW5nLnYxLkludGVydmlld1N0YXR1cxIrCgVzbG90cxgJIAMoCzIcLmlocC5oaXJpbmcudjEuSW50ZXJ2aWV3U2xvdBIZCgxib29rZWRfc3RhcnQYCiABKAlIAIgBARIXCgpib29rZWRfZW5kGAsgASgJSAGIAQESIAoTYXBwbGljYW50X3RpbWVfem9uZRgMIAEoCUgCiAEBEhUKCGpvaW5fdXJsGA0gASgJSAOIAQESEwoLaW5fY2FsZW5kYXIYDiABKAgSEgoKY3JlYXRlZF9hdBgPIAEoCUIPCg1fYm9va2VkX3N0YXJ0Qg0KC19ib29rZWRfZW5kQhYKFF9hcHBsaWNhbnRfdGltZV96b25lQgsKCV9qb2luX3VybCLOAQoXTGlzdEFwcGxpY2F0aW9uc1JlcXVlc3QSFwoKcG9zdGluZ19pZBgBIAEoCUgAiAEBEjYKBnN0YXR1cxgCIAEoDjImLmlocC5oaXJpbmcudjEuQXBwbGljYXRpb25TdGF0dXNGaWx0ZXISFQoIc3RhZ2VfaWQYAyABKAlIAYgBARIOCgZzZWFyY2gYBCABKAkSDAoEcGFnZRgFIAEoBRIRCglwYWdlX3NpemUYBiABKAVCDQoLX3Bvc3RpbmdfaWRCCwoJX3N0YWdlX2lkInkKGExpc3RBcHBsaWNhdGlvbnNSZXNwb25zZRIvCgRyb3dzGAEgAygLMiEuaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvblN1bW1hcnkSLAoJcGFnZV9pbmZvGAIgASgLMhkuaWhwLnJlcXVlc3RzLnYxLlBhZ2VJbmZvIikKE0xpc3RQaXBlbGluZVJlcXVlc3QSEgoKcG9zdGluZ19pZBgBIAEoCSJHChRMaXN0UGlwZWxpbmVSZXNwb25zZRIvCgRyb3dzGAEgAygLMiEuaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvblN1bW1hcnkiLwoVR2V0QXBwbGljYXRpb25SZXF1ZXN0EhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJIkkKFkdldEFwcGxpY2F0aW9uUmVzcG9uc2USLwoLYXBwbGljYXRpb24YASABKAsyGi5paHAuaGlyaW5nLnYxLkFwcGxpY2F0aW9uIngKFk1vdmVBcHBsaWNhdGlvblJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkSEAoIc3RhZ2VfaWQYAiABKAkSEgoKc2VuZF9lbWFpbBgDIAEoCBIUCgdtZXNzYWdlGAQgASgJSACIAQFCCgoIX21lc3NhZ2UiUQoXTW92ZUFwcGxpY2F0aW9uUmVzcG9uc2USNgoLYXBwbGljYXRpb24YASABKAsyIS5paHAuaGlyaW5nLnYxLkFwcGxpY2F0aW9uU3VtbWFyeSJnChhSZWplY3RBcHBsaWNhdGlvblJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkSDgoGcmVhc29uGAIgASgJEhIKCnNlbmRfZW1haWwYAyABKAgSDwoHbWVzc2FnZRgEIAEoCSJTChlSZWplY3RBcHBsaWNhdGlvblJlc3BvbnNlEjYKC2FwcGxpY2F0aW9uGAEgASgLMiEuaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvblN1bW1hcnkiMgoYUmVvcGVuQXBwbGljYXRpb25SZXF1ZXN0EhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJIlMKGVJlb3BlbkFwcGxpY2F0aW9uUmVzcG9uc2USNgoLYXBwbGljYXRpb24YASABKAsyIS5paHAuaGlyaW5nLnYxLkFwcGxpY2F0aW9uU3VtbWFyeSI2Cg5BZGROb3RlUmVxdWVzdBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIMCgRib2R5GAIgASgJIj8KD0FkZE5vdGVSZXNwb25zZRIsCgRub3RlGAEgASgLMh4uaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvbk5vdGUiJAoRRGVsZXRlTm90ZVJlcXVlc3QSDwoHbm90ZV9pZBgBIAEoCSIUChJEZWxldGVOb3RlUmVzcG9uc2UiUgoWSGlyZUFwcGxpY2F0aW9uUmVxdWVzdBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIUCgd0ZWFtX2lkGAIgASgJSACIAQFCCgoIX3RlYW1faWQiSgoXSGlyZUFwcGxpY2F0aW9uUmVzcG9uc2USLwoLYXBwbGljYXRpb24YASABKAsyGi5paHAuaGlyaW5nLnYxLkFwcGxpY2F0aW9uIhkKF0xpc3RJbnRlcnZpZXdlcnNSZXF1ZXN0IkYKGExpc3RJbnRlcnZpZXdlcnNSZXNwb25zZRIqCgZwZW9wbGUYASADKAsyGi5paHAuaGlyaW5nLnYxLkludGVydmlld2VyIiUKB05ld1Nsb3QSDQoFc3RhcnQYASABKAkSCwoDZW5kGAIgASgJItkBChVPZmZlckludGVydmlld1JlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkSLgoGZm9ybWF0GAIgASgOMh4uaWhwLmhpcmluZy52MS5JbnRlcnZpZXdGb3JtYXQSEAoIbG9jYXRpb24YAyABKAkSDAoEbm90ZRgEIAEoCRIYChBkdXJhdGlvbl9taW51dGVzGAUgASgFEhcKD2ludGVydmlld2VyX2lkcxgGIAMoCRIlCgVzbG90cxgHIAMoCzIWLmlocC5oaXJpbmcudjEuTmV3U2xvdCJJChZPZmZlckludGVydmlld1Jlc3BvbnNlEi8KC2FwcGxpY2F0aW9uGAEgASgLMhouaWhwLmhpcmluZy52MS5BcHBsaWNhdGlvbiIuChZDYW5jZWxJbnRlcnZpZXdSZXF1ZXN0EhQKDGludGVydmlld19pZBgBIAEoCSJKChdDYW5jZWxJbnRlcnZpZXdSZXNwb25zZRIvCgthcHBsaWNhdGlvbhgBIAEoCzIaLmlocC5oaXJpbmcudjEuQXBwbGljYXRpb24ibAoTU3VnZ2VzdFNsb3RzUmVxdWVzdBIXCg9pbnRlcnZpZXdlcl9pZHMYASADKAkSGAoQZHVyYXRpb25fbWludXRlcxgCIAEoBRIRCglmcm9tX2RhdGUYAyABKAkSDwoHdG9fZGF0ZRgEIAEoCSJUChRTdWdnZXN0U2xvdHNSZXNwb25zZRIlCgVzbG90cxgBIAMoCzIWLmlocC5oaXJpbmcudjEuTmV3U2xvdBIVCg1mcm9tX2NhbGVuZGFyGAIgASgIKpoBCg1Qb3N0aW5nU3RhdHVzEh4KGlBPU1RJTkdfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGAoUUE9TVElOR19TVEFUVVNfRFJBRlQQARIXChNQT1NUSU5HX1NUQVRVU19PUEVOEAISGQoVUE9TVElOR19TVEFUVVNfQ0xPU0VEEAMSGwoXUE9TVElOR19TVEFUVVNfQVJDSElWRUQQBCrmAQoTUG9zdGluZ1N0YXR1c0ZpbHRlchIlCiFQT1NUSU5HX1NUQVRVU19GSUxURVJfVU5TUEVDSUZJRUQQABIhCh1QT1NUSU5HX1NUQVRVU19GSUxURVJfQ1VSUkVOVBABEh8KG1BPU1RJTkdfU1RBVFVTX0ZJTFRFUl9EUkFGVBACEh4KGlBPU1RJTkdfU1RBVFVTX0ZJTFRFUl9PUEVOEAMSIAocUE9TVElOR19TVEFUVVNfRklMVEVSX0NMT1NFRBAEEiIKHlBPU1RJTkdfU1RBVFVTX0ZJTFRFUl9BUkNISVZFRBAFKmgKCVdvcmtwbGFjZRIZChVXT1JLUExBQ0VfVU5TUEVDSUZJRUQQABIUChBXT1JLUExBQ0VfT05TSVRFEAESFAoQV09SS1BMQUNFX0hZQlJJRBACEhQKEFdPUktQTEFDRV9SRU1PVEUQAyp2CgxTYWxhcnlQZXJpb2QSHQoZU0FMQVJZX1BFUklPRF9VTlNQRUNJRklFRBAAEhYKElNBTEFSWV9QRVJJT0RfWUVBUhABEhcKE1NBTEFSWV9QRVJJT0RfTU9OVEgQAhIWChJTQUxBUllfUEVSSU9EX0hPVVIQAyrMAQoORW1wbG95bWVudFR5cGUSHwobRU1QTE9ZTUVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASHQoZRU1QTE9ZTUVOVF9UWVBFX0ZVTExfVElNRRABEh0KGUVNUExPWU1FTlRfVFlQRV9QQVJUX1RJTUUQAhIcChhFTVBMT1lNRU5UX1RZUEVfQ09OVFJBQ1QQAxIeChpFTVBMT1lNRU5UX1RZUEVfSU5URVJOU0hJUBAEEh0KGUVNUExPWU1FTlRfVFlQRV9URU1QT1JBUlkQBSq3AQoRQXBwbGljYXRpb25TdGF0dXMSIgoeQVBQTElDQVRJT05fU1RBVFVTX1VOU1BFQ0lGSUVEEAASHQoZQVBQTElDQVRJT05fU1RBVFVTX0FDVElWRRABEhwKGEFQUExJQ0FUSU9OX1NUQVRVU19ISVJFRBACEh8KG0FQUExJQ0FUSU9OX1NUQVRVU19SRUpFQ1RFRBADEiAKHEFQUExJQ0FUSU9OX1NUQVRVU19XSVRIRFJBV04QBCqDAgoXQXBwbGljYXRpb25TdGF0dXNGaWx0ZXISKQolQVBQTElDQVRJT05fU1RBVFVTX0ZJTFRFUl9VTlNQRUNJRklFRBAAEiQKIEFQUExJQ0FUSU9OX1NUQVRVU19GSUxURVJfQUNUSVZFEAESIwofQVBQTElDQVRJT05fU1RBVFVTX0ZJTFRFUl9ISVJFRBACEiYKIkFQUExJQ0FUSU9OX1NUQVRVU19GSUxURVJfUkVKRUNURUQQAxInCiNBUFBMSUNBVElPTl9TVEFUVVNfRklMVEVSX1dJVEhEUkFXThAEEiEKHUFQUExJQ0FUSU9OX1NUQVRVU19GSUxURVJfQUxMEAUqiAEKD0ludGVydmlld0Zvcm1hdBIgChxJTlRFUlZJRVdfRk9STUFUX1VOU1BFQ0lGSUVEEAASGgoWSU5URVJWSUVXX0ZPUk1BVF9WSURFTxABEhsKF0lOVEVSVklFV19GT1JNQVRfT05TSVRFEAISGgoWSU5URVJWSUVXX0ZPUk1BVF9QSE9ORRADKrkBCg9JbnRlcnZpZXdTdGF0dXMSIAocSU5URVJWSUVXX1NUQVRVU19VTlNQRUNJRklFRBAAEhwKGElOVEVSVklFV19TVEFUVVNfT0ZGRVJFRBABEhsKF0lOVEVSVklFV19TVEFUVVNfQk9PS0VEEAISKQolSU5URVJWSUVXX1NUQVRVU19SRVNDSEVEVUxFX1JFUVVFU1RFRBADEh4KGklOVEVSVklFV19TVEFUVVNfQ0FOQ0VMTEVEEAQyzg4KDUhpcmluZ1NlcnZpY2USVAoLR2V0U2V0dGluZ3MSIS5paHAuaGlyaW5nLnYxLkdldFNldHRpbmdzUmVxdWVzdBoiLmlocC5oaXJpbmcudjEuR2V0U2V0dGluZ3NSZXNwb25zZRJXCgxTYXZlU2V0dGluZ3MSIi5paHAuaGlyaW5nLnYxLlNhdmVTZXR0aW5nc1JlcXVlc3QaIy5paHAuaGlyaW5nLnYxLlNhdmVTZXR0aW5nc1Jlc3BvbnNlElcKDExpc3RQb3N0aW5ncxIiLmlocC5oaXJpbmcudjEuTGlzdFBvc3RpbmdzUmVxdWVzdBojLmlocC5oaXJpbmcudjEuTGlzdFBvc3RpbmdzUmVzcG9uc2USUQoKR2V0UG9zdGluZxIgLmlocC5oaXJpbmcudjEuR2V0UG9zdGluZ1JlcXVlc3QaIS5paHAuaGlyaW5nLnYxLkdldFBvc3RpbmdSZXNwb25zZRJUCgtTYXZlUG9zdGluZxIhLmlocC5oaXJpbmcudjEuU2F2ZVBvc3RpbmdSZXF1ZXN0GiIuaWhwLmhpcmluZy52MS5TYXZlUG9zdGluZ1Jlc3BvbnNlEmMKEFNldFBvc3RpbmdTdGF0dXMSJi5paHAuaGlyaW5nLnYxLlNldFBvc3RpbmdTdGF0dXNSZXF1ZXN0GicuaWhwLmhpcmluZy52MS5TZXRQb3N0aW5nU3RhdHVzUmVzcG9uc2USWgoNRGVsZXRlUG9zdGluZxIjLmlocC5oaXJpbmcudjEuRGVsZXRlUG9zdGluZ1JlcXVlc3QaJC5paHAuaGlyaW5nLnYxLkRlbGV0ZVBvc3RpbmdSZXNwb25zZRJjChBMaXN0QXBwbGljYXRpb25zEiYuaWhwLmhpcmluZy52MS5MaXN0QXBwbGljYXRpb25zUmVxdWVzdBonLmlocC5oaXJpbmcudjEuTGlzdEFwcGxpY2F0aW9uc1Jlc3BvbnNlElcKDExpc3RQaXBlbGluZRIiLmlocC5oaXJpbmcudjEuTGlzdFBpcGVsaW5lUmVxdWVzdBojLmlocC5oaXJpbmcudjEuTGlzdFBpcGVsaW5lUmVzcG9uc2USXQoOR2V0QXBwbGljYXRpb24SJC5paHAuaGlyaW5nLnYxLkdldEFwcGxpY2F0aW9uUmVxdWVzdBolLmlocC5oaXJpbmcudjEuR2V0QXBwbGljYXRpb25SZXNwb25zZRJgCg9Nb3ZlQXBwbGljYXRpb24SJS5paHAuaGlyaW5nLnYxLk1vdmVBcHBsaWNhdGlvblJlcXVlc3QaJi5paHAuaGlyaW5nLnYxLk1vdmVBcHBsaWNhdGlvblJlc3BvbnNlEmYKEVJlamVjdEFwcGxpY2F0aW9uEicuaWhwLmhpcmluZy52MS5SZWplY3RBcHBsaWNhdGlvblJlcXVlc3QaKC5paHAuaGlyaW5nLnYxLlJlamVjdEFwcGxpY2F0aW9uUmVzcG9uc2USZgoRUmVvcGVuQXBwbGljYXRpb24SJy5paHAuaGlyaW5nLnYxLlJlb3BlbkFwcGxpY2F0aW9uUmVxdWVzdBooLmlocC5oaXJpbmcudjEuUmVvcGVuQXBwbGljYXRpb25SZXNwb25zZRJICgdBZGROb3RlEh0uaWhwLmhpcmluZy52MS5BZGROb3RlUmVxdWVzdBoeLmlocC5oaXJpbmcudjEuQWRkTm90ZVJlc3BvbnNlElEKCkRlbGV0ZU5vdGUSIC5paHAuaGlyaW5nLnYxLkRlbGV0ZU5vdGVSZXF1ZXN0GiEuaWhwLmhpcmluZy52MS5EZWxldGVOb3RlUmVzcG9uc2USYAoPSGlyZUFwcGxpY2F0aW9uEiUuaWhwLmhpcmluZy52MS5IaXJlQXBwbGljYXRpb25SZXF1ZXN0GiYuaWhwLmhpcmluZy52MS5IaXJlQXBwbGljYXRpb25SZXNwb25zZRJjChBMaXN0SW50ZXJ2aWV3ZXJzEiYuaWhwLmhpcmluZy52MS5MaXN0SW50ZXJ2aWV3ZXJzUmVxdWVzdBonLmlocC5oaXJpbmcudjEuTGlzdEludGVydmlld2Vyc1Jlc3BvbnNlElcKDFN1Z2dlc3RTbG90cxIiLmlocC5oaXJpbmcudjEuU3VnZ2VzdFNsb3RzUmVxdWVzdBojLmlocC5oaXJpbmcudjEuU3VnZ2VzdFNsb3RzUmVzcG9uc2USXQoOT2ZmZXJJbnRlcnZpZXcSJC5paHAuaGlyaW5nLnYxLk9mZmVySW50ZXJ2aWV3UmVxdWVzdBolLmlocC5oaXJpbmcudjEuT2ZmZXJJbnRlcnZpZXdSZXNwb25zZRJgCg9DYW5jZWxJbnRlcnZpZXcSJS5paHAuaGlyaW5nLnYxLkNhbmNlbEludGVydmlld1JlcXVlc3QaJi5paHAuaGlyaW5nLnYxLkNhbmNlbEludGVydmlld1Jlc3BvbnNlYgZwcm90bzM", [file_ihp_requests_v1_requests]);
 
 /**
  * One step of a posting's pipeline. A non-empty message is emailed to the applicant when they
@@ -74,6 +74,13 @@ export type HiringSettings = Message<"ihp.hiring.v1.HiringSettings"> & {
    * @generated from field: bool can_edit_hr_team = 5;
    */
   canEditHrTeam: boolean;
+
+  /**
+   * IANA zone interviews are offered in, e.g. Asia/Manila.
+   *
+   * @generated from field: string time_zone = 6;
+   */
+  timeZone: string;
 };
 
 /**
@@ -225,6 +232,16 @@ export type Posting = Message<"ihp.hiring.v1.Posting"> & {
    * @generated from field: ihp.hiring.v1.SalaryPeriod salary_period = 27;
    */
   salaryPeriod: SalaryPeriod;
+
+  /**
+   * @generated from field: optional string scorecard_form_id = 28;
+   */
+  scorecardFormId?: string | undefined;
+
+  /**
+   * @generated from field: optional string scorecard_form_name = 29;
+   */
+  scorecardFormName?: string | undefined;
 };
 
 /**
@@ -282,6 +299,11 @@ export type SaveSettingsRequest = Message<"ihp.hiring.v1.SaveSettingsRequest"> &
    * @generated from field: string rejection_message = 3;
    */
   rejectionMessage: string;
+
+  /**
+   * @generated from field: string time_zone = 4;
+   */
+  timeZone: string;
 };
 
 /**
@@ -488,6 +510,11 @@ export type SavePostingRequest = Message<"ihp.hiring.v1.SavePostingRequest"> & {
    * @generated from field: ihp.hiring.v1.SalaryPeriod salary_period = 16;
    */
   salaryPeriod: SalaryPeriod;
+
+  /**
+   * @generated from field: optional string scorecard_form_id = 17;
+   */
+  scorecardFormId?: string | undefined;
 };
 
 /**
@@ -859,6 +886,11 @@ export type Application = Message<"ihp.hiring.v1.Application"> & {
    * @generated from field: optional string posting_team_id = 12;
    */
   postingTeamId?: string | undefined;
+
+  /**
+   * @generated from field: repeated ihp.hiring.v1.Interview interviews = 13;
+   */
+  interviews: Interview[];
 };
 
 /**
@@ -867,6 +899,153 @@ export type Application = Message<"ihp.hiring.v1.Application"> & {
  */
 export const ApplicationSchema: GenMessage<Application> = /*@__PURE__*/
   messageDesc(file_ihp_hiring_v1_hiring, 21);
+
+/**
+ * @generated from message ihp.hiring.v1.InterviewSlot
+ */
+export type InterviewSlot = Message<"ihp.hiring.v1.InterviewSlot"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string start = 2;
+   */
+  start: string;
+
+  /**
+   * @generated from field: string end = 3;
+   */
+  end: string;
+};
+
+/**
+ * Describes the message ihp.hiring.v1.InterviewSlot.
+ * Use `create(InterviewSlotSchema)` to create a new message.
+ */
+export const InterviewSlotSchema: GenMessage<InterviewSlot> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 22);
+
+/**
+ * @generated from message ihp.hiring.v1.Interviewer
+ */
+export type Interviewer = Message<"ihp.hiring.v1.Interviewer"> & {
+  /**
+   * @generated from field: string user_id = 1;
+   */
+  userId: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string email = 3;
+   */
+  email: string;
+};
+
+/**
+ * Describes the message ihp.hiring.v1.Interviewer.
+ * Use `create(InterviewerSchema)` to create a new message.
+ */
+export const InterviewerSchema: GenMessage<Interviewer> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 23);
+
+/**
+ * @generated from message ihp.hiring.v1.Interview
+ */
+export type Interview = Message<"ihp.hiring.v1.Interview"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string application_id = 2;
+   */
+  applicationId: string;
+
+  /**
+   * @generated from field: ihp.hiring.v1.InterviewFormat format = 3;
+   */
+  format: InterviewFormat;
+
+  /**
+   * An address, a phone number, or a video link HR typed; empty for a Teams meeting.
+   *
+   * @generated from field: string location = 4;
+   */
+  location: string;
+
+  /**
+   * @generated from field: string note = 5;
+   */
+  note: string;
+
+  /**
+   * @generated from field: int32 duration_minutes = 6;
+   */
+  durationMinutes: number;
+
+  /**
+   * @generated from field: repeated ihp.hiring.v1.Interviewer interviewers = 7;
+   */
+  interviewers: Interviewer[];
+
+  /**
+   * @generated from field: ihp.hiring.v1.InterviewStatus status = 8;
+   */
+  status: InterviewStatus;
+
+  /**
+   * Offered times, soonest first; only future ones while it is still being picked.
+   *
+   * @generated from field: repeated ihp.hiring.v1.InterviewSlot slots = 9;
+   */
+  slots: InterviewSlot[];
+
+  /**
+   * @generated from field: optional string booked_start = 10;
+   */
+  bookedStart?: string | undefined;
+
+  /**
+   * @generated from field: optional string booked_end = 11;
+   */
+  bookedEnd?: string | undefined;
+
+  /**
+   * @generated from field: optional string applicant_time_zone = 12;
+   */
+  applicantTimeZone?: string | undefined;
+
+  /**
+   * @generated from field: optional string join_url = 13;
+   */
+  joinUrl?: string | undefined;
+
+  /**
+   * True when the event lives in Outlook through Graph rather than as emailed .ics files.
+   *
+   * @generated from field: bool in_calendar = 14;
+   */
+  inCalendar: boolean;
+
+  /**
+   * @generated from field: string created_at = 15;
+   */
+  createdAt: string;
+};
+
+/**
+ * Describes the message ihp.hiring.v1.Interview.
+ * Use `create(InterviewSchema)` to create a new message.
+ */
+export const InterviewSchema: GenMessage<Interview> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 24);
 
 /**
  * @generated from message ihp.hiring.v1.ListApplicationsRequest
@@ -908,7 +1087,7 @@ export type ListApplicationsRequest = Message<"ihp.hiring.v1.ListApplicationsReq
  * Use `create(ListApplicationsRequestSchema)` to create a new message.
  */
 export const ListApplicationsRequestSchema: GenMessage<ListApplicationsRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 22);
+  messageDesc(file_ihp_hiring_v1_hiring, 25);
 
 /**
  * @generated from message ihp.hiring.v1.ListApplicationsResponse
@@ -930,7 +1109,7 @@ export type ListApplicationsResponse = Message<"ihp.hiring.v1.ListApplicationsRe
  * Use `create(ListApplicationsResponseSchema)` to create a new message.
  */
 export const ListApplicationsResponseSchema: GenMessage<ListApplicationsResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 23);
+  messageDesc(file_ihp_hiring_v1_hiring, 26);
 
 /**
  * Every applicant still in progress on one posting, for its board.
@@ -949,7 +1128,7 @@ export type ListPipelineRequest = Message<"ihp.hiring.v1.ListPipelineRequest"> &
  * Use `create(ListPipelineRequestSchema)` to create a new message.
  */
 export const ListPipelineRequestSchema: GenMessage<ListPipelineRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 24);
+  messageDesc(file_ihp_hiring_v1_hiring, 27);
 
 /**
  * @generated from message ihp.hiring.v1.ListPipelineResponse
@@ -966,7 +1145,7 @@ export type ListPipelineResponse = Message<"ihp.hiring.v1.ListPipelineResponse">
  * Use `create(ListPipelineResponseSchema)` to create a new message.
  */
 export const ListPipelineResponseSchema: GenMessage<ListPipelineResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 25);
+  messageDesc(file_ihp_hiring_v1_hiring, 28);
 
 /**
  * @generated from message ihp.hiring.v1.GetApplicationRequest
@@ -983,7 +1162,7 @@ export type GetApplicationRequest = Message<"ihp.hiring.v1.GetApplicationRequest
  * Use `create(GetApplicationRequestSchema)` to create a new message.
  */
 export const GetApplicationRequestSchema: GenMessage<GetApplicationRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 26);
+  messageDesc(file_ihp_hiring_v1_hiring, 29);
 
 /**
  * @generated from message ihp.hiring.v1.GetApplicationResponse
@@ -1000,7 +1179,7 @@ export type GetApplicationResponse = Message<"ihp.hiring.v1.GetApplicationRespon
  * Use `create(GetApplicationResponseSchema)` to create a new message.
  */
 export const GetApplicationResponseSchema: GenMessage<GetApplicationResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 27);
+  messageDesc(file_ihp_hiring_v1_hiring, 30);
 
 /**
  * @generated from message ihp.hiring.v1.MoveApplicationRequest
@@ -1034,7 +1213,7 @@ export type MoveApplicationRequest = Message<"ihp.hiring.v1.MoveApplicationReque
  * Use `create(MoveApplicationRequestSchema)` to create a new message.
  */
 export const MoveApplicationRequestSchema: GenMessage<MoveApplicationRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 28);
+  messageDesc(file_ihp_hiring_v1_hiring, 31);
 
 /**
  * @generated from message ihp.hiring.v1.MoveApplicationResponse
@@ -1051,7 +1230,7 @@ export type MoveApplicationResponse = Message<"ihp.hiring.v1.MoveApplicationResp
  * Use `create(MoveApplicationResponseSchema)` to create a new message.
  */
 export const MoveApplicationResponseSchema: GenMessage<MoveApplicationResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 29);
+  messageDesc(file_ihp_hiring_v1_hiring, 32);
 
 /**
  * @generated from message ihp.hiring.v1.RejectApplicationRequest
@@ -1085,7 +1264,7 @@ export type RejectApplicationRequest = Message<"ihp.hiring.v1.RejectApplicationR
  * Use `create(RejectApplicationRequestSchema)` to create a new message.
  */
 export const RejectApplicationRequestSchema: GenMessage<RejectApplicationRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 30);
+  messageDesc(file_ihp_hiring_v1_hiring, 33);
 
 /**
  * @generated from message ihp.hiring.v1.RejectApplicationResponse
@@ -1102,7 +1281,7 @@ export type RejectApplicationResponse = Message<"ihp.hiring.v1.RejectApplication
  * Use `create(RejectApplicationResponseSchema)` to create a new message.
  */
 export const RejectApplicationResponseSchema: GenMessage<RejectApplicationResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 31);
+  messageDesc(file_ihp_hiring_v1_hiring, 34);
 
 /**
  * Takes a rejection back, returning the applicant to the stage they were in.
@@ -1121,7 +1300,7 @@ export type ReopenApplicationRequest = Message<"ihp.hiring.v1.ReopenApplicationR
  * Use `create(ReopenApplicationRequestSchema)` to create a new message.
  */
 export const ReopenApplicationRequestSchema: GenMessage<ReopenApplicationRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 32);
+  messageDesc(file_ihp_hiring_v1_hiring, 35);
 
 /**
  * @generated from message ihp.hiring.v1.ReopenApplicationResponse
@@ -1138,7 +1317,7 @@ export type ReopenApplicationResponse = Message<"ihp.hiring.v1.ReopenApplication
  * Use `create(ReopenApplicationResponseSchema)` to create a new message.
  */
 export const ReopenApplicationResponseSchema: GenMessage<ReopenApplicationResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 33);
+  messageDesc(file_ihp_hiring_v1_hiring, 36);
 
 /**
  * @generated from message ihp.hiring.v1.AddNoteRequest
@@ -1160,7 +1339,7 @@ export type AddNoteRequest = Message<"ihp.hiring.v1.AddNoteRequest"> & {
  * Use `create(AddNoteRequestSchema)` to create a new message.
  */
 export const AddNoteRequestSchema: GenMessage<AddNoteRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 34);
+  messageDesc(file_ihp_hiring_v1_hiring, 37);
 
 /**
  * @generated from message ihp.hiring.v1.AddNoteResponse
@@ -1177,7 +1356,7 @@ export type AddNoteResponse = Message<"ihp.hiring.v1.AddNoteResponse"> & {
  * Use `create(AddNoteResponseSchema)` to create a new message.
  */
 export const AddNoteResponseSchema: GenMessage<AddNoteResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 35);
+  messageDesc(file_ihp_hiring_v1_hiring, 38);
 
 /**
  * @generated from message ihp.hiring.v1.DeleteNoteRequest
@@ -1194,7 +1373,7 @@ export type DeleteNoteRequest = Message<"ihp.hiring.v1.DeleteNoteRequest"> & {
  * Use `create(DeleteNoteRequestSchema)` to create a new message.
  */
 export const DeleteNoteRequestSchema: GenMessage<DeleteNoteRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 36);
+  messageDesc(file_ihp_hiring_v1_hiring, 39);
 
 /**
  * @generated from message ihp.hiring.v1.DeleteNoteResponse
@@ -1207,7 +1386,7 @@ export type DeleteNoteResponse = Message<"ihp.hiring.v1.DeleteNoteResponse"> & {
  * Use `create(DeleteNoteResponseSchema)` to create a new message.
  */
 export const DeleteNoteResponseSchema: GenMessage<DeleteNoteResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 37);
+  messageDesc(file_ihp_hiring_v1_hiring, 40);
 
 /**
  * Hires the applicant: an invitation to join goes to their email, or, for someone already in the
@@ -1234,7 +1413,7 @@ export type HireApplicationRequest = Message<"ihp.hiring.v1.HireApplicationReque
  * Use `create(HireApplicationRequestSchema)` to create a new message.
  */
 export const HireApplicationRequestSchema: GenMessage<HireApplicationRequest> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 38);
+  messageDesc(file_ihp_hiring_v1_hiring, 41);
 
 /**
  * @generated from message ihp.hiring.v1.HireApplicationResponse
@@ -1251,7 +1430,217 @@ export type HireApplicationResponse = Message<"ihp.hiring.v1.HireApplicationResp
  * Use `create(HireApplicationResponseSchema)` to create a new message.
  */
 export const HireApplicationResponseSchema: GenMessage<HireApplicationResponse> = /*@__PURE__*/
-  messageDesc(file_ihp_hiring_v1_hiring, 39);
+  messageDesc(file_ihp_hiring_v1_hiring, 42);
+
+/**
+ * @generated from message ihp.hiring.v1.ListInterviewersRequest
+ */
+export type ListInterviewersRequest = Message<"ihp.hiring.v1.ListInterviewersRequest"> & {
+};
+
+/**
+ * Describes the message ihp.hiring.v1.ListInterviewersRequest.
+ * Use `create(ListInterviewersRequestSchema)` to create a new message.
+ */
+export const ListInterviewersRequestSchema: GenMessage<ListInterviewersRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 43);
+
+/**
+ * @generated from message ihp.hiring.v1.ListInterviewersResponse
+ */
+export type ListInterviewersResponse = Message<"ihp.hiring.v1.ListInterviewersResponse"> & {
+  /**
+   * @generated from field: repeated ihp.hiring.v1.Interviewer people = 1;
+   */
+  people: Interviewer[];
+};
+
+/**
+ * Describes the message ihp.hiring.v1.ListInterviewersResponse.
+ * Use `create(ListInterviewersResponseSchema)` to create a new message.
+ */
+export const ListInterviewersResponseSchema: GenMessage<ListInterviewersResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 44);
+
+/**
+ * @generated from message ihp.hiring.v1.NewSlot
+ */
+export type NewSlot = Message<"ihp.hiring.v1.NewSlot"> & {
+  /**
+   * @generated from field: string start = 1;
+   */
+  start: string;
+
+  /**
+   * @generated from field: string end = 2;
+   */
+  end: string;
+};
+
+/**
+ * Describes the message ihp.hiring.v1.NewSlot.
+ * Use `create(NewSlotSchema)` to create a new message.
+ */
+export const NewSlotSchema: GenMessage<NewSlot> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 45);
+
+/**
+ * @generated from message ihp.hiring.v1.OfferInterviewRequest
+ */
+export type OfferInterviewRequest = Message<"ihp.hiring.v1.OfferInterviewRequest"> & {
+  /**
+   * @generated from field: string application_id = 1;
+   */
+  applicationId: string;
+
+  /**
+   * @generated from field: ihp.hiring.v1.InterviewFormat format = 2;
+   */
+  format: InterviewFormat;
+
+  /**
+   * @generated from field: string location = 3;
+   */
+  location: string;
+
+  /**
+   * @generated from field: string note = 4;
+   */
+  note: string;
+
+  /**
+   * @generated from field: int32 duration_minutes = 5;
+   */
+  durationMinutes: number;
+
+  /**
+   * @generated from field: repeated string interviewer_ids = 6;
+   */
+  interviewerIds: string[];
+
+  /**
+   * @generated from field: repeated ihp.hiring.v1.NewSlot slots = 7;
+   */
+  slots: NewSlot[];
+};
+
+/**
+ * Describes the message ihp.hiring.v1.OfferInterviewRequest.
+ * Use `create(OfferInterviewRequestSchema)` to create a new message.
+ */
+export const OfferInterviewRequestSchema: GenMessage<OfferInterviewRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 46);
+
+/**
+ * @generated from message ihp.hiring.v1.OfferInterviewResponse
+ */
+export type OfferInterviewResponse = Message<"ihp.hiring.v1.OfferInterviewResponse"> & {
+  /**
+   * @generated from field: ihp.hiring.v1.Application application = 1;
+   */
+  application?: Application | undefined;
+};
+
+/**
+ * Describes the message ihp.hiring.v1.OfferInterviewResponse.
+ * Use `create(OfferInterviewResponseSchema)` to create a new message.
+ */
+export const OfferInterviewResponseSchema: GenMessage<OfferInterviewResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 47);
+
+/**
+ * @generated from message ihp.hiring.v1.CancelInterviewRequest
+ */
+export type CancelInterviewRequest = Message<"ihp.hiring.v1.CancelInterviewRequest"> & {
+  /**
+   * @generated from field: string interview_id = 1;
+   */
+  interviewId: string;
+};
+
+/**
+ * Describes the message ihp.hiring.v1.CancelInterviewRequest.
+ * Use `create(CancelInterviewRequestSchema)` to create a new message.
+ */
+export const CancelInterviewRequestSchema: GenMessage<CancelInterviewRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 48);
+
+/**
+ * @generated from message ihp.hiring.v1.CancelInterviewResponse
+ */
+export type CancelInterviewResponse = Message<"ihp.hiring.v1.CancelInterviewResponse"> & {
+  /**
+   * @generated from field: ihp.hiring.v1.Application application = 1;
+   */
+  application?: Application | undefined;
+};
+
+/**
+ * Describes the message ihp.hiring.v1.CancelInterviewResponse.
+ * Use `create(CancelInterviewResponseSchema)` to create a new message.
+ */
+export const CancelInterviewResponseSchema: GenMessage<CancelInterviewResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 49);
+
+/**
+ * Times every interviewer is free, read from their Outlook calendars.
+ *
+ * @generated from message ihp.hiring.v1.SuggestSlotsRequest
+ */
+export type SuggestSlotsRequest = Message<"ihp.hiring.v1.SuggestSlotsRequest"> & {
+  /**
+   * @generated from field: repeated string interviewer_ids = 1;
+   */
+  interviewerIds: string[];
+
+  /**
+   * @generated from field: int32 duration_minutes = 2;
+   */
+  durationMinutes: number;
+
+  /**
+   * ISO dates, inclusive, read in the organization's interview time zone.
+   *
+   * @generated from field: string from_date = 3;
+   */
+  fromDate: string;
+
+  /**
+   * @generated from field: string to_date = 4;
+   */
+  toDate: string;
+};
+
+/**
+ * Describes the message ihp.hiring.v1.SuggestSlotsRequest.
+ * Use `create(SuggestSlotsRequestSchema)` to create a new message.
+ */
+export const SuggestSlotsRequestSchema: GenMessage<SuggestSlotsRequest> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 50);
+
+/**
+ * @generated from message ihp.hiring.v1.SuggestSlotsResponse
+ */
+export type SuggestSlotsResponse = Message<"ihp.hiring.v1.SuggestSlotsResponse"> & {
+  /**
+   * @generated from field: repeated ihp.hiring.v1.NewSlot slots = 1;
+   */
+  slots: NewSlot[];
+
+  /**
+   * False when Graph is not set up, so the dialog says why it has no suggestions.
+   *
+   * @generated from field: bool from_calendar = 2;
+   */
+  fromCalendar: boolean;
+};
+
+/**
+ * Describes the message ihp.hiring.v1.SuggestSlotsResponse.
+ * Use `create(SuggestSlotsResponseSchema)` to create a new message.
+ */
+export const SuggestSlotsResponseSchema: GenMessage<SuggestSlotsResponse> = /*@__PURE__*/
+  messageDesc(file_ihp_hiring_v1_hiring, 51);
 
 /**
  * draft is invisible to the public, open takes applications, closed stops them while the
@@ -1522,6 +1911,77 @@ export const ApplicationStatusFilterSchema: GenEnum<ApplicationStatusFilter> = /
   enumDesc(file_ihp_hiring_v1_hiring, 6);
 
 /**
+ * @generated from enum ihp.hiring.v1.InterviewFormat
+ */
+export enum InterviewFormat {
+  /**
+   * @generated from enum value: INTERVIEW_FORMAT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * A Teams meeting when Graph is set up, otherwise whatever link HR puts in the location.
+   *
+   * @generated from enum value: INTERVIEW_FORMAT_VIDEO = 1;
+   */
+  VIDEO = 1,
+
+  /**
+   * @generated from enum value: INTERVIEW_FORMAT_ONSITE = 2;
+   */
+  ONSITE = 2,
+
+  /**
+   * @generated from enum value: INTERVIEW_FORMAT_PHONE = 3;
+   */
+  PHONE = 3,
+}
+
+/**
+ * Describes the enum ihp.hiring.v1.InterviewFormat.
+ */
+export const InterviewFormatSchema: GenEnum<InterviewFormat> = /*@__PURE__*/
+  enumDesc(file_ihp_hiring_v1_hiring, 7);
+
+/**
+ * offered until the applicant picks a slot; reschedule_requested when none of them work.
+ *
+ * @generated from enum ihp.hiring.v1.InterviewStatus
+ */
+export enum InterviewStatus {
+  /**
+   * @generated from enum value: INTERVIEW_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: INTERVIEW_STATUS_OFFERED = 1;
+   */
+  OFFERED = 1,
+
+  /**
+   * @generated from enum value: INTERVIEW_STATUS_BOOKED = 2;
+   */
+  BOOKED = 2,
+
+  /**
+   * @generated from enum value: INTERVIEW_STATUS_RESCHEDULE_REQUESTED = 3;
+   */
+  RESCHEDULE_REQUESTED = 3,
+
+  /**
+   * @generated from enum value: INTERVIEW_STATUS_CANCELLED = 4;
+   */
+  CANCELLED = 4,
+}
+
+/**
+ * Describes the enum ihp.hiring.v1.InterviewStatus.
+ */
+export const InterviewStatusSchema: GenEnum<InterviewStatus> = /*@__PURE__*/
+  enumDesc(file_ihp_hiring_v1_hiring, 8);
+
+/**
  * @generated from service ihp.hiring.v1.HiringService
  */
 export const HiringService: GenService<{
@@ -1658,6 +2118,40 @@ export const HiringService: GenService<{
     methodKind: "unary";
     input: typeof HireApplicationRequestSchema;
     output: typeof HireApplicationResponseSchema;
+  },
+  /**
+   * Interviews: HR offers times, the applicant picks one on their status page.
+   *
+   * @generated from rpc ihp.hiring.v1.HiringService.ListInterviewers
+   */
+  listInterviewers: {
+    methodKind: "unary";
+    input: typeof ListInterviewersRequestSchema;
+    output: typeof ListInterviewersResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.hiring.v1.HiringService.SuggestSlots
+   */
+  suggestSlots: {
+    methodKind: "unary";
+    input: typeof SuggestSlotsRequestSchema;
+    output: typeof SuggestSlotsResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.hiring.v1.HiringService.OfferInterview
+   */
+  offerInterview: {
+    methodKind: "unary";
+    input: typeof OfferInterviewRequestSchema;
+    output: typeof OfferInterviewResponseSchema;
+  },
+  /**
+   * @generated from rpc ihp.hiring.v1.HiringService.CancelInterview
+   */
+  cancelInterview: {
+    methodKind: "unary";
+    input: typeof CancelInterviewRequestSchema;
+    output: typeof CancelInterviewResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_ihp_hiring_v1_hiring, 0);
