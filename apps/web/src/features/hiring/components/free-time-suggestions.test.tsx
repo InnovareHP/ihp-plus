@@ -7,7 +7,12 @@ const rpc = vi.hoisted(() => ({ suggestSlots: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
 
-function renderSuggestions(onPick = vi.fn(), interviewerIds = ['user-hr'], chosen: string[] = []) {
+function renderSuggestions(
+  onPick = vi.fn(),
+  interviewerIds = ['user-hr'],
+  chosen: string[] = [],
+  onFillAll = vi.fn(),
+) {
   const { container } = render(
     <FreeTimeSuggestions
       interviewerIds={interviewerIds}
@@ -15,9 +20,10 @@ function renderSuggestions(onPick = vi.fn(), interviewerIds = ['user-hr'], chose
       timeZone="Asia/Manila"
       chosen={chosen}
       onPick={onPick}
+      onFillAll={onFillAll}
     />,
   )
-  return { onPick, container }
+  return { onPick, onFillAll, container }
 }
 
 beforeEach(() => vi.clearAllMocks())
@@ -56,6 +62,17 @@ describe('FreeTimeSuggestions', () => {
     renderSuggestions(vi.fn(), ['user-hr'], ['2030-10-14 10:00'])
 
     expect(await screen.findByRole('checkbox', { name: 'Mon, Oct 14, 10:00 AM' })).toBeDisabled()
+  })
+
+  it('hands every free time over at once to fill the days', async () => {
+    const starts = ['2030-10-14T02:00:00.000Z', '2030-10-15T06:30:00.000Z']
+    rpc.suggestSlots.mockResolvedValue({ starts, fromCalendar: true })
+    const user = userEvent.setup()
+    const { onFillAll } = renderSuggestions()
+
+    await user.click(await screen.findByRole('button', { name: 'Fill in free days' }))
+
+    expect(onFillAll).toHaveBeenCalledWith(starts)
   })
 
   it('says when calendars are not connected, so HR types the times in', async () => {

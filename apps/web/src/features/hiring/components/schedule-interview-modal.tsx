@@ -114,8 +114,19 @@ export function ScheduleInterviewModal({
     const request = { interviewerIds: ids, durationMinutes: minutes, ...suggestionWindow(timeZone) }
     // A failed read is already on screen through FreeTimeSuggestions, which shares this query.
     const result = await queryClient.fetchQuery(suggestionsQuery(request)).catch(() => undefined)
-    const picks = result ? spreadAcrossDays(result.starts, timeZone, AUTO_SLOTS) : []
-    if (picks.length === 0 || !untouched()) return
+    // A reply for an older pick of interviewers can land after the newer one.
+    const current = getValues(['interviewerIds', 'durationMinutes'])
+    const stale =
+      JSON.stringify([...(current[0] ?? [])].sort()) !== JSON.stringify([...ids].sort()) ||
+      Number(current[1]) !== minutes
+    if (!result || stale || !untouched()) return
+    fillAll(result.starts)
+  }
+
+  // Overwrites whatever rows are there, because HR asked for it with the button.
+  function fillAll(starts: readonly string[]) {
+    const picks = spreadAcrossDays(starts, timeZone, AUTO_SLOTS)
+    if (picks.length === 0) return
     slots.replace(picks)
     autoFilled.current = JSON.stringify(picks)
   }
@@ -239,6 +250,7 @@ export function ScheduleInterviewModal({
                   timeZone={timeZone}
                   chosen={chosen}
                   onPick={addSuggested}
+                  onFillAll={fillAll}
                 />
               ) : (
                 <Text size="xs" c="dimmed">

@@ -87,6 +87,20 @@ describe('ScheduleInterviewModal with Outlook connected', () => {
     expect(screen.queryByLabelText(/Day, option 2/)).not.toBeInTheDocument()
   })
 
+  it('fills every day over typed times when HR asks for it', async () => {
+    const user = userEvent.setup()
+    renderModal(vi.fn(), true)
+
+    await user.type(screen.getByLabelText(/Day, option 1/), '2030-11-02')
+    await user.type(screen.getByLabelText(/Time, option 1/), '15:30')
+    await pickRita(user)
+    await user.click(await screen.findByRole('button', { name: 'Fill in free days' }))
+
+    expect(screen.getByLabelText(/Day, option 1/)).toHaveValue('2030-10-14')
+    expect(screen.getByLabelText(/Day, option 2/)).toHaveValue('2030-10-15')
+    expect(screen.getByLabelText(/Day, option 3/)).toHaveValue('2030-10-16')
+  })
+
   it('says a video call gets its Teams link by itself', () => {
     renderModal(vi.fn(), true)
 

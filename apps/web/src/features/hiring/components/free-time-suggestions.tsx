@@ -1,6 +1,7 @@
 'use client'
 
-import { Chip, Group, Loader, Stack, Text } from '@mantine/core'
+import { Button, Chip, Group, Loader, Stack, Text } from '@mantine/core'
+import { IconCalendarBolt } from '@tabler/icons-react'
 import { useSlotSuggestions } from '../hooks/use-interviews'
 import { formatInterviewTime, slotOf, suggestionWindow } from '../utils/interview-time'
 
@@ -12,6 +13,8 @@ export interface FreeTimeSuggestionsProps {
   chosen: readonly string[]
   /** Wall clock in the organization's zone, the same shape the time rows take. */
   onPick: (slot: { date: string; time: string }) => void
+  /** Replaces every row with free times on different days, in one click. */
+  onFillAll: (starts: readonly string[]) => void
 }
 
 // Reads the interviewers' Outlook calendars as soon as they are picked.
@@ -21,6 +24,7 @@ export function FreeTimeSuggestions({
   timeZone,
   chosen,
   onPick,
+  onFillAll,
 }: FreeTimeSuggestionsProps) {
   const suggestions = useSlotSuggestions(
     { interviewerIds, durationMinutes, ...suggestionWindow(timeZone) },
@@ -70,9 +74,19 @@ export function FreeTimeSuggestions({
 
   return (
     <Stack gap={4}>
-      <Text size="xs" c="dimmed" aria-live="polite">
-        Everyone is free at these times. Pick one to add it below.
-      </Text>
+      <Group justify="space-between" gap="xs">
+        <Text size="xs" c="dimmed" aria-live="polite">
+          Everyone is free at these times. Pick one to add it below.
+        </Text>
+        <Button
+          variant="light"
+          size="compact-sm"
+          leftSection={<IconCalendarBolt size={14} aria-hidden />}
+          onClick={() => onFillAll(suggestions.data.starts)}
+        >
+          Fill in free days
+        </Button>
+      </Group>
       <Group gap="xs">
         {suggestions.data.starts.map((start) => {
           const slot = slotOf(start, timeZone)
