@@ -189,6 +189,14 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    // Not manageOnly as a whole: HR runs hiring without being admins, so they see this section
+    // with Hiring alone in it, while the rest stays admin-only item by item.
+    id: 'admin',
+    label: 'Admin',
+    items: [
       {
         href: routes.hiring,
         label: 'Hiring',
@@ -228,24 +236,19 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           },
         ],
       },
-    ],
-  },
-  {
-    id: 'admin',
-    label: 'Admin',
-    manageOnly: true,
-    items: [
       {
         href: routes.organization,
         label: 'Organization',
         description: 'People, departments and invites',
         icon: IconBuilding,
+        manageOnly: true,
       },
       {
         href: routes.folderAccess,
         label: 'Folder access',
         description: 'Who outside the company can open a client folder',
         icon: IconFolders,
+        manageOnly: true,
       },
     ],
   },

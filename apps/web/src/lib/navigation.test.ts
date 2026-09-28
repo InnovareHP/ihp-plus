@@ -51,18 +51,24 @@ describe('navigation', () => {
     ])
   })
 
-  it('shows hiring to HR and admins only, without handing HR the admin section', () => {
-    expect(itemIn(NOBODY, 'work', 'Hiring')).toBeUndefined()
-    expect(itemIn(APPROVER, 'work', 'Hiring')).toBeUndefined()
-    expect(itemIn(HR, 'work', 'Hiring')?.children?.map((child) => child.href)).toEqual([
+  it('shows hiring under Admin to owners, admins and HR, and to nobody else', () => {
+    expect(itemIn(NOBODY, 'admin', 'Hiring')).toBeUndefined()
+    expect(itemIn(APPROVER, 'admin', 'Hiring')).toBeUndefined()
+    expect(itemIn(ADMIN, 'admin', 'Hiring')).toBeDefined()
+    expect(itemIn(HR, 'admin', 'Hiring')?.children?.map((child) => child.href)).toEqual([
       routes.hiring,
       routes.hiringApplicants,
       routes.hiringForms,
       routes.hiringScorecards,
       routes.hiringSettings,
     ])
-    expect(visibleSections(HR).map((section) => section.id)).toEqual(['workspace', 'work'])
-    expect(itemIn(ADMIN, 'work', 'Hiring')).toBeDefined()
+    // HR gets an Admin section holding Hiring alone: the organization pages stay admin-only.
+    expect(hrefsIn(HR, 'admin')).toEqual([routes.hiring])
+    expect(hrefsIn(ADMIN, 'admin')).toEqual([
+      routes.hiring,
+      routes.organization,
+      routes.folderAccess,
+    ])
   })
 
   it('collapses a group down to a plain row when only one page inside it is reachable', () => {
@@ -92,10 +98,14 @@ describe('navigation', () => {
     ])
   })
 
-  it('shows a manager the organization page and folder access, nothing more', () => {
+  it('shows a manager hiring, the organization page and folder access, nothing more', () => {
     // Overview, members, departments, invitations and approvers are tabs on one page, so they
     // are one link; folder access is a page of its own and earns the second.
-    expect(hrefsIn(ADMIN, 'admin')).toEqual([routes.organization, routes.folderAccess])
+    expect(hrefsIn(ADMIN, 'admin')).toEqual([
+      routes.hiring,
+      routes.organization,
+      routes.folderAccess,
+    ])
   })
 
   it('leaves settings out of the sidebar, where the account menu already reaches it', () => {
