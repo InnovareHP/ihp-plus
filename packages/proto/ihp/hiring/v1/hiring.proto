@@ -48,6 +48,25 @@ enum EmploymentType {
   EMPLOYMENT_TYPE_TEMPORARY = 5;
 }
 
+// active moves through a posting's stages; hired, rejected and withdrawn end it.
+enum ApplicationStatus {
+  APPLICATION_STATUS_UNSPECIFIED = 0;
+  APPLICATION_STATUS_ACTIVE = 1;
+  APPLICATION_STATUS_HIRED = 2;
+  APPLICATION_STATUS_REJECTED = 3;
+  APPLICATION_STATUS_WITHDRAWN = 4;
+}
+
+// Filter value: ACTIVE is a list's default, and ALL has no stored counterpart.
+enum ApplicationStatusFilter {
+  APPLICATION_STATUS_FILTER_UNSPECIFIED = 0;
+  APPLICATION_STATUS_FILTER_ACTIVE = 1;
+  APPLICATION_STATUS_FILTER_HIRED = 2;
+  APPLICATION_STATUS_FILTER_REJECTED = 3;
+  APPLICATION_STATUS_FILTER_WITHDRAWN = 4;
+  APPLICATION_STATUS_FILTER_ALL = 5;
+}
+
 // One step of a posting's pipeline. A non-empty message is emailed to the applicant when they
 // are moved into the stage.
 message Stage {
@@ -174,6 +193,145 @@ message DeletePostingRequest {
 
 message DeletePostingResponse {}
 
+// One applicant as a list row or a board card.
+message ApplicationSummary {
+  string id = 1;
+  string posting_id = 2;
+  string posting_title = 3;
+  string full_name = 4;
+  string email = 5;
+  string phone = 6;
+  ApplicationStatus status = 7;
+  string stage_id = 8;
+  // Resolved against the posting's current stages; a renamed stage shows its new name.
+  string stage_name = 9;
+  string stage_changed_at = 10;
+  string created_at = 11;
+  string updated_at = 12;
+  bool has_resume = 13;
+}
+
+message ApplicationFile {
+  string id = 1;
+  // "resume", or the id of a file question on the application form.
+  string field_id = 2;
+  string file_name = 3;
+  string content_type = 4;
+  int32 file_size = 5;
+}
+
+message ApplicationNote {
+  string id = 1;
+  string author_id = 2;
+  string author_name = 3;
+  string body = 4;
+  string created_at = 5;
+  // The caller wrote it, so they may delete it.
+  bool is_mine = 6;
+}
+
+message ApplicationEvent {
+  string id = 1;
+  // A sentence written on the server, e.g. "Moved to Interview".
+  string label = 2;
+  optional string actor_name = 3;
+  optional string detail = 4;
+  string created_at = 5;
+}
+
+message Application {
+  ApplicationSummary summary = 1;
+  // Snapshots taken when they applied: the posting's form may have moved on since.
+  repeated ihp.requests.v1.FormField fields = 2;
+  repeated ihp.requests.v1.FieldValue values = 3;
+  repeated ApplicationFile files = 4;
+  repeated ApplicationNote notes = 5;
+  repeated ApplicationEvent events = 6;
+  // The posting's stages now, which is what a move picks from.
+  repeated Stage stages = 7;
+  optional string rejection_reason = 8;
+  string posting_slug = 9;
+}
+
+message ListApplicationsRequest {
+  optional string posting_id = 1;
+  ApplicationStatusFilter status = 2;
+  optional string stage_id = 3;
+  string search = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+}
+
+message ListApplicationsResponse {
+  repeated ApplicationSummary rows = 1;
+  ihp.requests.v1.PageInfo page_info = 2;
+}
+
+// Every applicant still in progress on one posting, for its board.
+message ListPipelineRequest {
+  string posting_id = 1;
+}
+
+message ListPipelineResponse {
+  repeated ApplicationSummary rows = 1;
+}
+
+message GetApplicationRequest {
+  string application_id = 1;
+}
+
+message GetApplicationResponse {
+  Application application = 1;
+}
+
+message MoveApplicationRequest {
+  string application_id = 1;
+  string stage_id = 2;
+  // Sends the stage's message, or the text below when HR rewrote it for this person.
+  bool send_email = 3;
+  optional string message = 4;
+}
+
+message MoveApplicationResponse {
+  ApplicationSummary application = 1;
+}
+
+message RejectApplicationRequest {
+  string application_id = 1;
+  // For HR's eyes only; the applicant only ever sees the email message.
+  string reason = 2;
+  bool send_email = 3;
+  string message = 4;
+}
+
+message RejectApplicationResponse {
+  ApplicationSummary application = 1;
+}
+
+// Takes a rejection back, returning the applicant to the stage they were in.
+message ReopenApplicationRequest {
+  string application_id = 1;
+}
+
+message ReopenApplicationResponse {
+  ApplicationSummary application = 1;
+}
+
+message AddNoteRequest {
+  string application_id = 1;
+  string body = 2;
+}
+
+message AddNoteResponse {
+  ApplicationNote note = 1;
+}
+
+message DeleteNoteRequest {
+  string note_id = 1;
+}
+
+message DeleteNoteResponse {}
+
 service HiringService {
   // Which department runs hiring, and the defaults a new posting starts from.
   rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
@@ -185,4 +343,14 @@ service HiringService {
   rpc SetPostingStatus(SetPostingStatusRequest) returns (SetPostingStatusResponse);
   // Only a draft nobody has applied to; anything else is archived instead.
   rpc DeletePosting(DeletePostingRequest) returns (DeletePostingResponse);
+
+  // The pipeline: who applied, where each person stands, and moving them along.
+  rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse);
+  rpc ListPipeline(ListPipelineRequest) returns (ListPipelineResponse);
+  rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
+  rpc MoveApplication(MoveApplicationRequest) returns (MoveApplicationResponse);
+  rpc RejectApplication(RejectApplicationRequest) returns (RejectApplicationResponse);
+  rpc ReopenApplication(ReopenApplicationRequest) returns (ReopenApplicationResponse);
+  rpc AddNote(AddNoteRequest) returns (AddNoteResponse);
+  rpc DeleteNote(DeleteNoteRequest) returns (DeleteNoteResponse);
 }

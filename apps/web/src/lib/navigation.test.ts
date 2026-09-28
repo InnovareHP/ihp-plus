@@ -56,6 +56,7 @@ describe('navigation', () => {
     expect(itemIn(APPROVER, 'work', 'Hiring')).toBeUndefined()
     expect(itemIn(HR, 'work', 'Hiring')?.children?.map((child) => child.href)).toEqual([
       routes.hiring,
+      routes.hiringApplicants,
       routes.hiringForms,
       routes.hiringSettings,
     ])

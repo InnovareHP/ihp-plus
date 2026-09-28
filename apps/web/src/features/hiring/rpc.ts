@@ -3,16 +3,28 @@
 import { ConnectError } from '@ihp/rpc'
 import { browserClients } from '@/rpc/browser'
 import {
+  applicationFilterToProto,
+  applicationFromProto,
   draftToProto,
+  noteFromProto,
   postingFilterToProto,
   postingFromProto,
   postingStatusToProto,
   settingsFromProto,
   stageToProto,
+  summaryFromProto,
 } from '@/rpc/hiring-codec'
 import { pageInfoFromProto } from '@/rpc/page-info'
 import type {
+  ApplicationDetail,
+  ApplicationNote,
+  ApplicationQuery,
+  ApplicationsPage,
+  ApplicationSummary,
   HiringSettings,
+  MoveValues,
+  NoteValues,
+  RejectValues,
   HiringSettingsValues,
   PostingDraftValues,
   PostingQuery,
@@ -103,4 +115,71 @@ export async function setPostingStatus(values: {
 
 export async function deletePosting(postingId: string): Promise<void> {
   await call(() => browserClients.hiring.deletePosting({ postingId }))
+}
+
+function requiredSummary(
+  summary: Parameters<typeof summaryFromProto>[0] | undefined,
+): ApplicationSummary {
+  if (!summary) throw new Error('The server did not return the application.')
+  return summaryFromProto(summary)
+}
+
+export async function listApplications(query: ApplicationQuery): Promise<ApplicationsPage> {
+  const response = await call(() =>
+    browserClients.hiring.listApplications({
+      postingId: query.postingId || undefined,
+      status: applicationFilterToProto(query.status),
+      stageId: query.stageId || undefined,
+      search: query.search,
+      page: query.page,
+      pageSize: query.pageSize,
+    }),
+  )
+  return {
+    rows: response.rows.map(summaryFromProto),
+    pageInfo: pageInfoFromProto(response.pageInfo),
+  }
+}
+
+export async function listPipeline(postingId: string): Promise<ApplicationSummary[]> {
+  const response = await call(() => browserClients.hiring.listPipeline({ postingId }))
+  return response.rows.map(summaryFromProto)
+}
+
+export async function getApplication(applicationId: string): Promise<ApplicationDetail> {
+  const response = await call(() => browserClients.hiring.getApplication({ applicationId }))
+  if (!response.application) throw new Error('The server did not return the application.')
+  return applicationFromProto(response.application)
+}
+
+export async function moveApplication(values: MoveValues): Promise<ApplicationSummary> {
+  const response = await call(() =>
+    browserClients.hiring.moveApplication({
+      applicationId: values.applicationId,
+      stageId: values.stageId,
+      sendEmail: values.sendEmail,
+      message: values.message || undefined,
+    }),
+  )
+  return requiredSummary(response.application)
+}
+
+export async function rejectApplication(values: RejectValues): Promise<ApplicationSummary> {
+  const response = await call(() => browserClients.hiring.rejectApplication(values))
+  return requiredSummary(response.application)
+}
+
+export async function reopenApplication(applicationId: string): Promise<ApplicationSummary> {
+  const response = await call(() => browserClients.hiring.reopenApplication({ applicationId }))
+  return requiredSummary(response.application)
+}
+
+export async function addNote(values: NoteValues): Promise<ApplicationNote> {
+  const response = await call(() => browserClients.hiring.addNote(values))
+  if (!response.note) throw new Error('The server did not return the note.')
+  return noteFromProto(response.note)
+}
+
+export async function deleteNote(noteId: string): Promise<void> {
+  await call(() => browserClients.hiring.deleteNote({ noteId }))
 }

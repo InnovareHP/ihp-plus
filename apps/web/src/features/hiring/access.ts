@@ -37,6 +37,7 @@ export const hiringAccess = cache(async () => {
   const membership = membershipOf(session.profile)
   return {
     user: session.user,
+    name: session.profile.preferredName ?? session.user.name,
     membership,
     isAdmin: canManageOrganization(membership),
     canManage: await canManageHiring(membership),

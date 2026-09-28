@@ -203,6 +203,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
             hiringOnly: true,
           },
           {
+            href: routes.hiringApplicants,
+            label: 'Applicants',
+            description: 'Everyone who applied, across postings',
+            hiringOnly: true,
+          },
+          {
             href: routes.hiringForms,
             label: 'Application forms',
             description: 'The questions a posting asks',

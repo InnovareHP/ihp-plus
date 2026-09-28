@@ -1,15 +1,29 @@
 import {
+  ApplicationStatus,
+  ApplicationStatusFilter,
   EmploymentType,
   PostingStatus,
   PostingStatusFilter,
   SalaryPeriod,
   Workplace,
+  type Application as ApplicationMessage,
+  type ApplicationEvent as EventMessage,
+  type ApplicationFile as FileMessage,
+  type ApplicationNote as NoteMessage,
+  type ApplicationSummary as SummaryMessage,
   type HiringSettings as SettingsMessage,
   type Posting as PostingMessage,
   type SavePostingRequest,
   type Stage as StageMessage,
 } from '@ihp/rpc/hiring'
 import type {
+  ApplicationDetail,
+  ApplicationEventRow,
+  ApplicationFile,
+  ApplicationNote,
+  ApplicationStatus as AppStatus,
+  ApplicationStatusFilter as AppStatusFilter,
+  ApplicationSummary,
   EmploymentType as Employment,
   HiringSettings,
   PostingDraftValues,
@@ -20,7 +34,7 @@ import type {
   Stage,
   Workplace as Place,
 } from '@/features/hiring/schema'
-import { fieldFromProto, fieldToProto } from './requests-codec'
+import { fieldFromProto, fieldToProto, valuesFromProto, valuesToProto } from './requests-codec'
 
 // The UI keeps its string unions and the wire keeps its enums; every crossing goes through
 // these maps, so an UNSPECIFIED value from an older client falls back rather than throwing.
@@ -255,5 +269,155 @@ export function draftFromProto(request: SavePostingRequest): PostingDraftValues 
     applicationFormId: request.applicationFormId ?? '',
     teamId: request.teamId ?? '',
     closesAt: request.closesAt ?? '',
+  }
+}
+
+const APP_STATUS_TO_PROTO: Record<AppStatus, ApplicationStatus> = {
+  active: ApplicationStatus.ACTIVE,
+  hired: ApplicationStatus.HIRED,
+  rejected: ApplicationStatus.REJECTED,
+  withdrawn: ApplicationStatus.WITHDRAWN,
+}
+
+const APP_STATUS_FROM_PROTO: Record<ApplicationStatus, AppStatus> = {
+  [ApplicationStatus.UNSPECIFIED]: 'active',
+  [ApplicationStatus.ACTIVE]: 'active',
+  [ApplicationStatus.HIRED]: 'hired',
+  [ApplicationStatus.REJECTED]: 'rejected',
+  [ApplicationStatus.WITHDRAWN]: 'withdrawn',
+}
+
+const APP_FILTER_TO_PROTO: Record<AppStatusFilter, ApplicationStatusFilter> = {
+  active: ApplicationStatusFilter.ACTIVE,
+  hired: ApplicationStatusFilter.HIRED,
+  rejected: ApplicationStatusFilter.REJECTED,
+  withdrawn: ApplicationStatusFilter.WITHDRAWN,
+  all: ApplicationStatusFilter.ALL,
+}
+
+const APP_FILTER_FROM_PROTO: Record<ApplicationStatusFilter, AppStatusFilter> = {
+  [ApplicationStatusFilter.UNSPECIFIED]: 'active',
+  [ApplicationStatusFilter.ACTIVE]: 'active',
+  [ApplicationStatusFilter.HIRED]: 'hired',
+  [ApplicationStatusFilter.REJECTED]: 'rejected',
+  [ApplicationStatusFilter.WITHDRAWN]: 'withdrawn',
+  [ApplicationStatusFilter.ALL]: 'all',
+}
+
+export function applicationFilterToProto(status: AppStatusFilter) {
+  return APP_FILTER_TO_PROTO[status]
+}
+
+export function applicationFilterFromProto(status: ApplicationStatusFilter) {
+  return APP_FILTER_FROM_PROTO[status]
+}
+
+export function summaryToProto(row: ApplicationSummary): SummaryMessage {
+  return {
+    $typeName: 'ihp.hiring.v1.ApplicationSummary',
+    id: row.id,
+    postingId: row.postingId,
+    postingTitle: row.postingTitle,
+    fullName: row.fullName,
+    email: row.email,
+    phone: row.phone,
+    status: APP_STATUS_TO_PROTO[row.status],
+    stageId: row.stageId,
+    stageName: row.stageName,
+    stageChangedAt: row.stageChangedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    hasResume: row.hasResume,
+  }
+}
+
+export function summaryFromProto(message: SummaryMessage): ApplicationSummary {
+  return {
+    id: message.id,
+    postingId: message.postingId,
+    postingTitle: message.postingTitle,
+    fullName: message.fullName,
+    email: message.email,
+    phone: message.phone,
+    status: APP_STATUS_FROM_PROTO[message.status],
+    stageId: message.stageId,
+    stageName: message.stageName,
+    stageChangedAt: message.stageChangedAt,
+    createdAt: message.createdAt,
+    updatedAt: message.updatedAt,
+    hasResume: message.hasResume,
+  }
+}
+
+function fileToProto(file: ApplicationFile): FileMessage {
+  return { $typeName: 'ihp.hiring.v1.ApplicationFile', ...file }
+}
+
+function fileFromProto(message: FileMessage): ApplicationFile {
+  return {
+    id: message.id,
+    fieldId: message.fieldId,
+    fileName: message.fileName,
+    contentType: message.contentType,
+    fileSize: message.fileSize,
+  }
+}
+
+export function noteToProto(note: ApplicationNote): NoteMessage {
+  return { $typeName: 'ihp.hiring.v1.ApplicationNote', ...note }
+}
+
+export function noteFromProto(message: NoteMessage): ApplicationNote {
+  return {
+    id: message.id,
+    authorId: message.authorId,
+    authorName: message.authorName,
+    body: message.body,
+    createdAt: message.createdAt,
+    isMine: message.isMine,
+  }
+}
+
+function eventToProto(event: ApplicationEventRow): EventMessage {
+  return { $typeName: 'ihp.hiring.v1.ApplicationEvent', ...event }
+}
+
+function eventFromProto(message: EventMessage): ApplicationEventRow {
+  return {
+    id: message.id,
+    label: message.label,
+    actorName: message.actorName,
+    detail: message.detail,
+    createdAt: message.createdAt,
+  }
+}
+
+export function applicationToProto(detail: ApplicationDetail): ApplicationMessage {
+  return {
+    $typeName: 'ihp.hiring.v1.Application',
+    summary: summaryToProto(detail.summary),
+    fields: detail.fields.map(fieldToProto),
+    values: valuesToProto(detail.fields, detail.values),
+    files: detail.files.map(fileToProto),
+    notes: detail.notes.map(noteToProto),
+    events: detail.events.map(eventToProto),
+    stages: detail.stages.map(stageToProto),
+    rejectionReason: detail.rejectionReason,
+    postingSlug: detail.postingSlug,
+  }
+}
+
+export function applicationFromProto(message: ApplicationMessage): ApplicationDetail {
+  if (!message.summary) throw new Error('The server did not return the application.')
+  return {
+    summary: summaryFromProto(message.summary),
+    fields: message.fields.map(fieldFromProto),
+    values: valuesFromProto(message.values),
+    files: message.files.map(fileFromProto),
+    notes: message.notes.map(noteFromProto),
+    events: message.events.map(eventFromProto),
+    stages: message.stages.map(stageFromProto),
+    rejectionReason: message.rejectionReason,
+    postingSlug: message.postingSlug,
   }
 }

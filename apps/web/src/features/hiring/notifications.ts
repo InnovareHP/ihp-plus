@@ -1,6 +1,8 @@
 import { db } from '@ihp/db'
 import {
   applicationReceivedTemplate,
+  applicationRejectedTemplate,
+  applicationStageTemplate,
   newApplicantTemplate,
   portalUrl,
   sendEmail,
@@ -66,5 +68,48 @@ export async function notifyApplicationReceived(application: ReceivedApplication
     for (const to of team) void sendEmail({ to, ...email })
   } catch (error) {
     console.error(`[hiring] could not notify about ${application.applicationId}`, error)
+  }
+}
+
+export interface ApplicantMessage {
+  applicationId: string
+  organizationName: string
+  fullName: string
+  email: string
+  postingTitle: string
+  message: string
+}
+
+/** A stage's message, carrying the status link so the applicant can see where they stand. */
+export function notifyStageMessage(application: ApplicantMessage & { statusUrl: string }) {
+  try {
+    void sendEmail({
+      to: application.email,
+      ...applicationStageTemplate({
+        organizationName: application.organizationName,
+        firstName: firstNameOf(application.fullName),
+        postingTitle: application.postingTitle,
+        message: application.message,
+        url: application.statusUrl,
+      }),
+    })
+  } catch (error) {
+    console.error(`[hiring] could not email ${application.applicationId}`, error)
+  }
+}
+
+export function notifyRejected(application: ApplicantMessage) {
+  try {
+    void sendEmail({
+      to: application.email,
+      ...applicationRejectedTemplate({
+        organizationName: application.organizationName,
+        firstName: firstNameOf(application.fullName),
+        postingTitle: application.postingTitle,
+        message: application.message,
+      }),
+    })
+  } catch (error) {
+    console.error(`[hiring] could not email ${application.applicationId}`, error)
   }
 }

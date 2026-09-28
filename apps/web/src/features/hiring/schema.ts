@@ -343,3 +343,128 @@ export interface ApplicationStatusView {
 }
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; message: string }
+
+export const APPLICATION_STATUS_FILTERS = [...APPLICATION_STATUSES, 'all'] as const
+export type ApplicationStatusFilter = (typeof APPLICATION_STATUS_FILTERS)[number]
+
+export const APPLICATION_STATUS_FILTER_OPTIONS = [
+  { value: 'active', label: 'In progress' },
+  { value: 'hired', label: 'Hired' },
+  { value: 'rejected', label: 'Not moving forward' },
+  { value: 'withdrawn', label: 'Withdrawn' },
+  { value: 'all', label: 'Everyone' },
+] as const satisfies readonly { value: ApplicationStatusFilter; label: string }[]
+
+export interface ApplicationSummary {
+  id: string
+  postingId: string
+  postingTitle: string
+  fullName: string
+  email: string
+  phone: string
+  status: ApplicationStatus
+  stageId: string
+  stageName: string
+  stageChangedAt: string
+  createdAt: string
+  updatedAt: string
+  hasResume: boolean
+}
+
+export interface ApplicationFile {
+  id: string
+  fieldId: string
+  fileName: string
+  contentType: string
+  fileSize: number
+}
+
+export interface ApplicationNote {
+  id: string
+  authorId: string
+  authorName: string
+  body: string
+  createdAt: string
+  isMine: boolean
+}
+
+export interface ApplicationEventRow {
+  id: string
+  label: string
+  actorName: string | undefined
+  detail: string | undefined
+  createdAt: string
+}
+
+export interface ApplicationDetail {
+  summary: ApplicationSummary
+  fields: FormField[]
+  values: RequestValues
+  files: ApplicationFile[]
+  notes: ApplicationNote[]
+  events: ApplicationEventRow[]
+  stages: Stage[]
+  rejectionReason: string | undefined
+  postingSlug: string
+}
+
+export type ApplicationsPage = Paginated<ApplicationSummary>
+
+export const applicationQuerySchema = z.object({
+  search: z.string().trim().max(100).catch('').default(''),
+  status: z.enum(APPLICATION_STATUS_FILTERS).catch('active').default('active'),
+  stageId: z.string().trim().max(60).catch('').default(''),
+  postingId: z.string().trim().max(60).catch('').default(''),
+  ...pageQueryFields,
+})
+
+export type ApplicationQuery = z.infer<typeof applicationQuerySchema>
+
+export const DEFAULT_APPLICATION_QUERY: ApplicationQuery = applicationQuerySchema.parse({})
+
+export function isFilteredApplicationQuery(query: ApplicationQuery) {
+  return (
+    query.search.length > 0 ||
+    query.status !== 'active' ||
+    query.stageId.length > 0 ||
+    query.postingId.length > 0
+  )
+}
+
+export const moveSchema = z.object({
+  applicationId: z.string().min(1),
+  stageId: z.string().trim().min(1, 'Pick a stage.'),
+  sendEmail: z.boolean().default(false),
+  message: z.string().trim().max(2000).default(''),
+})
+
+export type MoveValues = z.infer<typeof moveSchema>
+export type MoveInput = z.input<typeof moveSchema>
+
+export const rejectSchema = z
+  .object({
+    applicationId: z.string().min(1),
+    reason: z.string().trim().max(1000).default(''),
+    sendEmail: z.boolean().default(true),
+    message: z.string().trim().max(2000).default(''),
+  })
+  // An email with nothing in it would read as a mistake, so it is refused on both sides.
+  .refine((values) => !values.sendEmail || values.message.length > 0, {
+    message: 'Write the message they will receive, or choose not to email them.',
+    path: ['message'],
+  })
+
+export type RejectValues = z.infer<typeof rejectSchema>
+export type RejectInput = z.input<typeof rejectSchema>
+
+export const noteSchema = z.object({
+  applicationId: z.string().min(1),
+  body: z.string().trim().min(1, 'Write the note first.').max(4000),
+})
+
+export type NoteValues = z.infer<typeof noteSchema>
+
+// How long someone has sat where they are, which is what a stuck pipeline shows up as.
+export function daysSince(iso: string, now = new Date()) {
+  return Math.max(0, Math.floor((now.getTime() - new Date(iso).getTime()) / (24 * 60 * 60 * 1000)))
+}

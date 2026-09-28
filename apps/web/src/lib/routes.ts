@@ -22,6 +22,7 @@ export const routes = {
   evaluationTracker: '/evaluations/assigned',
   evaluationForms: '/evaluations/forms',
   hiring: '/hiring',
+  hiringApplicants: '/hiring/applicants',
   hiringForms: '/hiring/forms',
   hiringSettings: '/hiring/settings',
   careers: '/careers',
@@ -194,4 +195,9 @@ export function requestFileHref(submissionId: string, fieldId: string) {
   return withBasePath(
     `/api/requests/${encodeURIComponent(submissionId)}/files/${encodeURIComponent(fieldId)}`,
   )
+}
+
+/** A file sent with an application; the route signs a short-lived storage link per click. */
+export function applicationFileHref(attachmentId: string) {
+  return withBasePath(`/api/hiring/attachments/${encodeURIComponent(attachmentId)}`)
 }

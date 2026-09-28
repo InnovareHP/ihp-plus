@@ -9,14 +9,28 @@ import {
   saveSettings,
   setPostingStatus,
 } from '@/features/hiring/service'
+import {
+  addNote,
+  deleteNote,
+  loadApplication,
+  loadApplicationsPage,
+  loadPipeline,
+  moveApplication,
+  rejectApplication,
+  reopenApplication,
+} from '@/features/hiring/pipeline-service'
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import {
+  applicationFilterFromProto,
+  applicationToProto,
   draftFromProto,
+  noteToProto,
   postingFilterFromProto,
   postingStatusFromProto,
   postingToProto,
   settingsToProto,
   stageFromProto,
+  summaryToProto,
 } from './hiring-codec'
 
 // Thin by design: every implementation converts at the wire boundary and delegates to the
@@ -68,6 +82,65 @@ export const hiring: ServiceImpl<typeof HiringService> = {
 
   deletePosting: async (request) => {
     await deletePosting(request.postingId)
+    return {}
+  },
+
+  listApplications: async (request) => {
+    const page = await loadApplicationsPage({
+      postingId: request.postingId ?? '',
+      status: applicationFilterFromProto(request.status),
+      stageId: request.stageId ?? '',
+      search: request.search,
+      page: request.page || 1,
+      pageSize: request.pageSize || DEFAULT_PAGE_SIZE,
+    })
+
+    return {
+      rows: page.rows.map(summaryToProto),
+      pageInfo: { $typeName: 'ihp.requests.v1.PageInfo', ...page.pageInfo },
+    }
+  },
+
+  listPipeline: async (request) => ({
+    rows: (await loadPipeline(request.postingId)).map(summaryToProto),
+  }),
+
+  getApplication: async (request) => ({
+    application: applicationToProto(await loadApplication(request.applicationId)),
+  }),
+
+  moveApplication: async (request) => ({
+    application: summaryToProto(
+      await moveApplication({
+        applicationId: request.applicationId,
+        stageId: request.stageId,
+        sendEmail: request.sendEmail,
+        message: request.message ?? '',
+      }),
+    ),
+  }),
+
+  rejectApplication: async (request) => ({
+    application: summaryToProto(
+      await rejectApplication({
+        applicationId: request.applicationId,
+        reason: request.reason,
+        sendEmail: request.sendEmail,
+        message: request.message,
+      }),
+    ),
+  }),
+
+  reopenApplication: async (request) => ({
+    application: summaryToProto(await reopenApplication(request.applicationId)),
+  }),
+
+  addNote: async (request) => ({
+    note: noteToProto(await addNote({ applicationId: request.applicationId, body: request.body })),
+  }),
+
+  deleteNote: async (request) => {
+    await deleteNote(request.noteId)
     return {}
   },
 }
