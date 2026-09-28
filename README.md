@@ -46,7 +46,8 @@ pnpm db:seed           # the org and its department teams
 pnpm dev               # both apps via turbo
 ```
 
-Redis only holds the sign-in rate limiter's counters and fails open without them, so
+Redis only holds rate-limit counters (sign-in and the public careers form) and fails open
+without them, so
 `pnpm infra:pg` plus `pnpm infra:s3` is enough for
 day-to-day work — Postgres for everything, MinIO for the onboarding photo upload.
 `pnpm infra:redis` starts Redis alone; `pnpm infra:pg:stop` /
@@ -194,5 +195,5 @@ Outlook.com accounts.
 ## Not yet wired
 
 No transactional email provider: password-reset and verification links are written
-to the server log instead of sent. Redis holds only the sign-in rate limiter's
+to the server log instead of sent. Redis holds only rate-limit
 counters.

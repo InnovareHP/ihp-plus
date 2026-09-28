@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { pageQueryFields, type Paginated } from '@/lib/pagination'
 // A posting's extra questions are a requests form of kind "application", so the field shape is
 // the one the form builder already speaks.
-import type { FormField } from '@/features/requests/schema'
+import { answerSchemaOf, type FormField, type RequestValues } from '@/features/requests/schema'
 
 export const POSTING_STATUSES = ['draft', 'open', 'closed', 'archived'] as const
 export const POSTING_STATUS_FILTERS = ['current', ...POSTING_STATUSES] as const
@@ -19,6 +19,15 @@ export type PostingStatus = (typeof POSTING_STATUSES)[number]
 export type PostingStatusFilter = (typeof POSTING_STATUS_FILTERS)[number]
 export type Workplace = (typeof WORKPLACES)[number]
 export type EmploymentType = (typeof EMPLOYMENT_TYPES)[number]
+
+export const SALARY_PERIODS = ['year', 'month', 'hour'] as const
+export type SalaryPeriod = (typeof SALARY_PERIODS)[number]
+
+export const SALARY_PERIOD_LABELS: Record<SalaryPeriod, string> = {
+  year: 'a year',
+  month: 'a month',
+  hour: 'an hour',
+}
 
 export const POSTING_STATUS_LABELS: Record<PostingStatus, string> = {
   draft: 'Draft',
@@ -143,6 +152,7 @@ export const postingDraftSchema = z
     salaryMin: optionalWhole,
     salaryMax: optionalWhole,
     salaryCurrency: z.string().trim().length(3, 'Use a three-letter currency code.').default('USD'),
+    salaryPeriod: z.enum(SALARY_PERIODS).default('year'),
     resumeRequired: z.boolean().default(true),
     stages: stagesSchema,
     applicationFormId: z.string().trim().default(''),
@@ -171,6 +181,7 @@ export interface PostingRow {
   salaryMin: number | undefined
   salaryMax: number | undefined
   salaryCurrency: string
+  salaryPeriod: SalaryPeriod
   status: PostingStatus
   resumeRequired: boolean
   stages: Stage[]
@@ -217,6 +228,7 @@ export function salaryLabel(posting: {
   salaryMin: number | undefined
   salaryMax: number | undefined
   salaryCurrency: string
+  salaryPeriod: SalaryPeriod
 }) {
   const money = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -224,10 +236,110 @@ export function salaryLabel(posting: {
     maximumFractionDigits: 0,
   })
   const { salaryMin: min, salaryMax: max } = posting
+  const per = SALARY_PERIOD_LABELS[posting.salaryPeriod]
   if (min !== undefined && max !== undefined) {
-    return min === max ? money.format(min) : `${money.format(min)} – ${money.format(max)}`
+    const range = min === max ? money.format(min) : `${money.format(min)} – ${money.format(max)}`
+    return `${range} ${per}`
   }
-  if (min !== undefined) return `From ${money.format(min)}`
-  if (max !== undefined) return `Up to ${money.format(max)}`
+  if (min !== undefined) return `From ${money.format(min)} ${per}`
+  if (max !== undefined) return `Up to ${money.format(max)} ${per}`
   return undefined
 }
+
+export const APPLICATION_STATUSES = ['active', 'hired', 'rejected', 'withdrawn'] as const
+export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number]
+
+export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
+  active: 'In progress',
+  hired: 'Hired',
+  rejected: 'Not moving forward',
+  withdrawn: 'Withdrawn',
+}
+
+export const APPLICATION_STATUS_COLORS: Record<ApplicationStatus, string> = {
+  active: 'blue',
+  hired: 'green',
+  rejected: 'gray',
+  withdrawn: 'gray',
+}
+
+// The resume sits beside the form's own file questions, under a name no generated id can take.
+export const RESUME_FIELD_ID = 'resume'
+
+export const CONSENT_REQUIRED =
+  'Tick the box so we can keep your details while we review your application.'
+
+export function contactSchemaOf(resumeRequired: boolean) {
+  return z.object({
+    fullName: z.string().trim().min(2, 'Enter your full name.').max(120),
+    email: z.email('Enter an email address we can reach you at.').max(200),
+    phone: z.string().trim().max(40, 'Keep the phone number under 40 characters.').default(''),
+    // The id of a resume already uploaded; the server checks it belongs to this posting.
+    resumeId: resumeRequired
+      ? z.string().trim().min(1, 'Attach your resume.').max(200)
+      : z.string().trim().max(200).default(''),
+    consent: z.boolean().refine((value) => value, { message: CONSENT_REQUIRED }),
+    // A field people never see; anything typed into it came from a bot filling every input.
+    website: z.string().max(200).default(''),
+  })
+}
+
+/** The whole application: the contact block plus the posting's own questions, keyed by id. */
+export function applicationSchemaOf(posting: {
+  resumeRequired: boolean
+  applicationFields: readonly FormField[]
+}) {
+  return answerSchemaOf(posting.applicationFields).extend({
+    contact: contactSchemaOf(posting.resumeRequired),
+  })
+}
+
+export type ContactValues = z.infer<ReturnType<typeof contactSchemaOf>>
+
+export interface ApplicationSubmission {
+  slug: string
+  contact: ContactValues
+  answers: RequestValues
+}
+
+/** A posting as the public sees it: nothing about the pipeline or who applied. */
+export interface PublicPosting {
+  slug: string
+  title: string
+  summary: string
+  description: string
+  location: string
+  workplace: Workplace
+  employmentType: EmploymentType
+  salaryMin: number | undefined
+  salaryMax: number | undefined
+  salaryCurrency: string
+  salaryPeriod: SalaryPeriod
+  teamName: string | undefined
+  openedAt: string | undefined
+  closesAt: string | undefined
+  resumeRequired: boolean
+  applicationFields: FormField[]
+  /** False once it is closed or past its closing date; the page still renders so links do not 404. */
+  isOpen: boolean
+}
+
+export interface CareersPage {
+  organizationName: string
+  postings: PublicPosting[]
+}
+
+/** What an applicant reads through their status link. */
+export interface ApplicationStatusView {
+  id: string
+  firstName: string
+  postingTitle: string
+  postingSlug: string
+  organizationName: string
+  status: ApplicationStatus
+  stageName: string
+  appliedAt: string
+  updatedAt: string
+}
+
+export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; message: string }

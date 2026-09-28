@@ -604,3 +604,87 @@ export function correctionDecidedTemplate(options: {
     }),
   }
 }
+
+// HR writes these messages as free text; a blank line is where they meant a new paragraph.
+function paragraphsOf(message: string) {
+  return message
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.replace(/\s*\n\s*/g, ' ').trim())
+    .filter(Boolean)
+}
+
+export function applicationReceivedTemplate(options: {
+  organizationName: string
+  firstName: string
+  postingTitle: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `We received your application for ${options.postingTitle}`,
+    ...renderEmail({
+      preheader: `Thanks for applying to ${options.organizationName}. Here is where to follow it.`,
+      heading: `Thanks for applying, ${options.firstName}`,
+      body: [
+        `Your application for ${options.postingTitle} at ${options.organizationName} is in, and our team will review it.`,
+        'You can check where it stands at any time from the link below, and withdraw it there if your plans change.',
+      ],
+      action: { label: 'Check your application', url: options.url },
+      footnote: 'Keep this email: the link is how you get back to your application.',
+    }),
+  }
+}
+
+export function newApplicantTemplate(options: {
+  applicantName: string
+  postingTitle: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.applicantName} applied for ${options.postingTitle}`,
+    ...renderEmail({
+      preheader: `A new application is waiting in ${options.postingTitle}.`,
+      heading: `New applicant for ${options.postingTitle}`,
+      body: [
+        `${options.applicantName} applied for ${options.postingTitle}. Their answers and resume are in the portal.`,
+      ],
+      action: { label: 'Review the application', url: options.url },
+      footnote: 'You get this because you run hiring for your organization.',
+    }),
+  }
+}
+
+export function applicationStageTemplate(options: {
+  organizationName: string
+  firstName: string
+  postingTitle: string
+  message: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `An update on your application for ${options.postingTitle}`,
+    ...renderEmail({
+      preheader: `${options.organizationName} has an update on your application.`,
+      heading: `Hi ${options.firstName}`,
+      body: paragraphsOf(options.message),
+      action: { label: 'Check your application', url: options.url },
+      footnote: `Sent by ${options.organizationName} about your application for ${options.postingTitle}.`,
+    }),
+  }
+}
+
+export function applicationRejectedTemplate(options: {
+  organizationName: string
+  firstName: string
+  postingTitle: string
+  message: string
+}): PreparedEmail {
+  return {
+    subject: `Your application for ${options.postingTitle}`,
+    ...renderEmail({
+      preheader: `An update from ${options.organizationName} on your application.`,
+      heading: `Hi ${options.firstName}`,
+      body: paragraphsOf(options.message),
+      footnote: `Sent by ${options.organizationName} about your application for ${options.postingTitle}.`,
+    }),
+  }
+}

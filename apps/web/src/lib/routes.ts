@@ -127,6 +127,14 @@ export function careersPostingRoute(slug: string) {
   return `${routes.careers}/${slug}`
 }
 
+export function applicationStatusRoute(applicationId: string, signature: string) {
+  return `${routes.careers}/status/${applicationId}/${signature}`
+}
+
+export function applicationRoute(applicationId: string) {
+  return `${routes.hiring}/applications/${applicationId}`
+}
+
 export function invitationRoute(invitationId: string) {
   return `${routes.acceptInvitation}/${invitationId}`
 }

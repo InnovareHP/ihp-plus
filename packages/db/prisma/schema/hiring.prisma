@@ -37,6 +37,8 @@ model JobPosting {
   salaryMin      Int?
   salaryMax      Int?
   salaryCurrency String  @default("USD")
+  // year, month or hour: what the range above is paid per.
+  salaryPeriod   String  @default("year")
 
   // draft is invisible to the public, open takes applications, closed stops them while the
   // pipeline carries on, archived hides it from the staff list too.

@@ -294,6 +294,18 @@ function fieldSchemaOf(field: FormField): z.ZodType {
   }
 }
 
+// An untouched optional field is absent rather than an empty string in the record.
+export function pruneAnswers(fields: readonly FormField[], answers: RequestValues): RequestValues {
+  const kept: RequestValues = {}
+  for (const field of fields) {
+    const value = answers[field.id]
+    if (value === undefined || value === '') continue
+    if (field.type === 'checkbox' && value === false && !field.required) continue
+    kept[field.id] = value
+  }
+  return kept
+}
+
 // Empty answers to optional fields are dropped rather than stored as blanks.
 export function defaultAnswersOf(fields: readonly FormField[]): Record<string, FieldValue> {
   const answers: Record<string, FieldValue> = {}

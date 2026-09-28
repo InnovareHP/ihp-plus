@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_STAGES, postingDraftSchema, salaryLabel, stagesSchema } from './schema'
-import { slugOf } from './slug'
+import { slugOf } from './utils/slug'
 
 describe('stages', () => {
   it('accepts the defaults', () => {
@@ -58,10 +58,16 @@ describe('posting draft', () => {
 
 describe('salaryLabel', () => {
   it('reads a range, a floor, a ceiling, or nothing', () => {
-    const base = { salaryCurrency: 'USD' }
-    expect(salaryLabel({ ...base, salaryMin: 50000, salaryMax: 60000 })).toBe('$50,000 – $60,000')
-    expect(salaryLabel({ ...base, salaryMin: 50000, salaryMax: undefined })).toBe('From $50,000')
-    expect(salaryLabel({ ...base, salaryMin: undefined, salaryMax: 60000 })).toBe('Up to $60,000')
+    const base = { salaryCurrency: 'USD', salaryPeriod: 'year' as const }
+    expect(salaryLabel({ ...base, salaryMin: 50000, salaryMax: 60000 })).toBe(
+      '$50,000 – $60,000 a year',
+    )
+    expect(salaryLabel({ ...base, salaryMin: 50000, salaryMax: undefined })).toBe(
+      'From $50,000 a year',
+    )
+    expect(
+      salaryLabel({ ...base, salaryPeriod: 'hour', salaryMin: undefined, salaryMax: 25 }),
+    ).toBe('Up to $25 an hour')
     expect(salaryLabel({ ...base, salaryMin: undefined, salaryMax: undefined })).toBeUndefined()
   })
 })

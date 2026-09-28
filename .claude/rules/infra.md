@@ -4,12 +4,12 @@ Two compose files, two Dockerfiles, one nginx proxy. Know which one you are in.
 
 ## Which stack
 
-| Command | Runs | Use when |
-| --- | --- | --- |
-| `pnpm infra:up` | `infra/compose.dev.yml` — postgres + redis, ports published | normal development; apps run on the host via `pnpm dev` |
-| `pnpm infra:pg` | the same file, postgres only | the usual case — Redis only backs the sign-in rate limiter, which fails open without it |
-| `pnpm infra:redis` | the same file, redis only | working on something that needs Redis and not the DB |
-| `pnpm stack:up` | `infra/compose.yml` — postgres, redis, web, landing, proxy, built from source | verifying the production shape, Dockerfiles, or nginx routing |
+| Command            | Runs                                                                          | Use when                                                                                             |
+| ------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `pnpm infra:up`    | `infra/compose.dev.yml` — postgres + redis, ports published                   | normal development; apps run on the host via `pnpm dev`                                              |
+| `pnpm infra:pg`    | the same file, postgres only                                                  | the usual case — Redis only backs rate limiting (sign-in, careers form), which fails open without it |
+| `pnpm infra:redis` | the same file, redis only                                                     | working on something that needs Redis and not the DB                                                 |
+| `pnpm stack:up`    | `infra/compose.yml` — postgres, redis, web, landing, proxy, built from source | verifying the production shape, Dockerfiles, or nginx routing                                        |
 
 The per-service scripts are **additive, not exclusive**: `up -d <service>` starts
 what is named and leaves everything else alone, so `infra:pg` followed by
@@ -33,7 +33,7 @@ Both Dockerfiles declare `context: ..` and require it: `pnpm-lock.yaml`,
 `docker build -f infra/docker/web.Dockerfile .` from the repo root — never from
 `infra/`.
 
-Layer order is deliberate: every workspace `package.json` is copied *before* the
+Layer order is deliberate: every workspace `package.json` is copied _before_ the
 source so the `pnpm install --frozen-lockfile` layer stays cached. Do not collapse
 that into a single `COPY . .`.
 
@@ -91,8 +91,9 @@ Prisma Client is **generated, not committed** — `pnpm --filter @ihp/db build` 
 output is coupled to the installed `@prisma/client` version. `prisma` and
 `@prisma/engines` are therefore in `onlyBuiltDependencies`.
 
-Redis backs only Better Auth's rate limiter (`apps/web/src/lib/redis.ts`), which fails open
-when Redis is down — propose any other use before assuming it.
+Redis backs only rate limiting: Better Auth's sign-in limiter (`apps/web/src/lib/redis.ts`) and the
+public careers form throttle (`apps/web/src/lib/rate-limit.ts`), both failing open when Redis is
+down — propose any other use before assuming it.
 
 Turbo 2 does not read `.env` files, so the root `dev`/`build`/`test` scripts run
 through `dotenv-cli` to load the repo-root `.env`. Inside compose, env comes from

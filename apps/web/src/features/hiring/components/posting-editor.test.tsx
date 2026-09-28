@@ -32,6 +32,7 @@ const SAVED: PostingRow = {
   salaryMin: undefined,
   salaryMax: undefined,
   salaryCurrency: 'USD',
+  salaryPeriod: 'year',
   status: 'draft',
   resumeRequired: true,
   stages: [...DEFAULT_STAGES],

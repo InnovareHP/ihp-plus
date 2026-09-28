@@ -1,9 +1,7 @@
 import { db } from '@ihp/db'
 import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
-import { z } from 'zod'
 import { pageInfoOf, skipTake } from '@/lib/pagination'
-import { formFieldSchema, type FormField } from '@/features/requests/schema'
 import { requireHiringCaller, type HiringCaller } from './access'
 import {
   DEFAULT_REJECTION_MESSAGE,
@@ -20,23 +18,12 @@ import {
   type PostingRow,
   type PostingsPage,
   type PostingStatus,
+  type SalaryPeriod,
   type Stage,
   type Workplace,
 } from './schema'
-import { slugOf } from './slug'
-
-const fieldsSchema = z.array(formFieldSchema)
-
-// Stored JSON is data the app wrote, but a hand-edited row must not crash a whole list.
-export function fieldsOf(value: Prisma.JsonValue): FormField[] {
-  const parsed = fieldsSchema.safeParse(value)
-  return parsed.success ? parsed.data : []
-}
-
-export function stagesOf(value: Prisma.JsonValue): Stage[] {
-  const parsed = stagesSchema.safeParse(value)
-  return parsed.success ? parsed.data : [...DEFAULT_STAGES]
-}
+import { fieldsOf, stagesOf } from './utils/records'
+import { slugOf } from './utils/slug'
 
 async function teamNameMap(organizationId: string) {
   const teams = await db.team.findMany({
@@ -172,6 +159,7 @@ export function postingRowOf(
     salaryMin: row.salaryMin ?? undefined,
     salaryMax: row.salaryMax ?? undefined,
     salaryCurrency: row.salaryCurrency,
+    salaryPeriod: row.salaryPeriod as SalaryPeriod,
     status: row.status as PostingStatus,
     resumeRequired: row.resumeRequired,
     stages: stagesOf(row.stages),
@@ -294,6 +282,7 @@ export async function savePosting(input: PostingDraftValues): Promise<PostingRow
     salaryMin: draft.salaryMin === '' ? null : draft.salaryMin,
     salaryMax: draft.salaryMax === '' ? null : draft.salaryMax,
     salaryCurrency: draft.salaryCurrency.toUpperCase(),
+    salaryPeriod: draft.salaryPeriod,
     resumeRequired: draft.resumeRequired,
     stages: draft.stages,
     applicationFormId,

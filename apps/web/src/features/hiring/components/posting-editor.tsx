@@ -33,6 +33,8 @@ import {
   EMPLOYMENT_TYPES,
   POSTING_STATUS_COLORS,
   POSTING_STATUS_LABELS,
+  SALARY_PERIOD_LABELS,
+  SALARY_PERIODS,
   postingDraftSchema,
   publishBlockers,
   WORKPLACE_LABELS,
@@ -48,6 +50,10 @@ import { StageListEditor } from './stage-list-editor'
 const EMPLOYMENT_OPTIONS = EMPLOYMENT_TYPES.map((value) => ({
   value,
   label: EMPLOYMENT_TYPE_LABELS[value],
+}))
+const PERIOD_OPTIONS = SALARY_PERIODS.map((value) => ({
+  value,
+  label: `Per ${SALARY_PERIOD_LABELS[value].replace(/^an? /, '')}`,
 }))
 const WORKPLACE_OPTIONS = WORKPLACES.map((value) => ({ value, label: WORKPLACE_LABELS[value] }))
 
@@ -66,6 +72,7 @@ function draftOf(
     salaryMin: posting?.salaryMin ?? '',
     salaryMax: posting?.salaryMax ?? '',
     salaryCurrency: posting?.salaryCurrency ?? 'USD',
+    salaryPeriod: posting?.salaryPeriod ?? 'year',
     resumeRequired: posting?.resumeRequired ?? true,
     stages: posting?.stages ?? [...defaultStages],
     applicationFormId: posting?.applicationFormId ?? '',
@@ -254,7 +261,7 @@ export function PostingEditor({ posting, defaultStages }: PostingEditorProps) {
           title="Pay"
           description="Optional. Postings that show a range tend to draw more applicants."
         >
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
             <Controller
               control={control}
               name="salaryMin"
@@ -294,6 +301,20 @@ export function PostingEditor({ posting, defaultStages }: PostingEditorProps) {
               autoCapitalize="characters"
               error={errors.salaryCurrency?.message}
               errorProps={{ role: 'alert' }}
+            />
+            <Controller
+              control={control}
+              name="salaryPeriod"
+              render={({ field }) => (
+                <Select
+                  label="Paid"
+                  allowDeselect={false}
+                  data={PERIOD_OPTIONS}
+                  value={field.value ?? 'year'}
+                  onChange={(value) => field.onChange(value ?? 'year')}
+                  onBlur={field.onBlur}
+                />
+              )}
             />
           </SimpleGrid>
         </PageSection>

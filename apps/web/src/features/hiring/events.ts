@@ -12,4 +12,11 @@ export const hiringEvents = {
   postingStatusFailed: 'hiring.posting.status_failed',
   postingDeleted: 'hiring.posting.deleted',
   postingDeleteFailed: 'hiring.posting.delete_failed',
+  applyStarted: 'hiring.application.started',
+  applied: 'hiring.application.submitted',
+  applyFailed: 'hiring.application.submit_failed',
+  fileUploaded: 'hiring.application.file_uploaded',
+  fileUploadFailed: 'hiring.application.file_upload_failed',
+  withdrawn: 'hiring.application.withdrawn',
+  withdrawFailed: 'hiring.application.withdraw_failed',
 } as const satisfies Record<string, EventName>

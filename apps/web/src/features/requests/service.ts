@@ -22,10 +22,10 @@ import {
   formDraftSchema,
   formFieldSchema,
   publishBlockers,
+  pruneAnswers,
   type CancelRequestValues,
   type DecisionValues,
   type DepartmentApproversRow,
-  type FieldValue,
   type FormDraftValues,
   type FormField,
   type FormKind,
@@ -484,18 +484,6 @@ async function claimFiles(
   }
 
   return { values, attachmentIds: attachments.map((attachment) => attachment.id) }
-}
-
-// An untouched optional field is absent rather than an empty string in the record.
-function pruneAnswers(fields: readonly FormField[], answers: RequestValues): RequestValues {
-  const kept: RequestValues = {}
-  for (const field of fields) {
-    const value = answers[field.id]
-    if (value === undefined || value === '') continue
-    if (field.type === 'checkbox' && value === false && !field.required) continue
-    kept[field.id] = value as FieldValue
-  }
-  return kept
 }
 
 type SubmissionRecord = Prisma.RequestSubmissionGetPayload<object>

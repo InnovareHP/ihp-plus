@@ -2,6 +2,7 @@ import {
   EmploymentType,
   PostingStatus,
   PostingStatusFilter,
+  SalaryPeriod,
   Workplace,
   type HiringSettings as SettingsMessage,
   type Posting as PostingMessage,
@@ -15,6 +16,7 @@ import type {
   PostingRow,
   PostingStatus as Status,
   PostingStatusFilter as StatusFilter,
+  SalaryPeriod as Period,
   Stage,
   Workplace as Place,
 } from '@/features/hiring/schema'
@@ -84,6 +86,19 @@ const EMPLOYMENT_FROM_PROTO: Record<EmploymentType, Employment> = {
   [EmploymentType.TEMPORARY]: 'temporary',
 }
 
+const PERIOD_TO_PROTO: Record<Period, SalaryPeriod> = {
+  year: SalaryPeriod.YEAR,
+  month: SalaryPeriod.MONTH,
+  hour: SalaryPeriod.HOUR,
+}
+
+const PERIOD_FROM_PROTO: Record<SalaryPeriod, Period> = {
+  [SalaryPeriod.UNSPECIFIED]: 'year',
+  [SalaryPeriod.YEAR]: 'year',
+  [SalaryPeriod.MONTH]: 'month',
+  [SalaryPeriod.HOUR]: 'hour',
+}
+
 export function postingStatusToProto(status: Status) {
   return STATUS_TO_PROTO[status]
 }
@@ -148,6 +163,7 @@ export function postingToProto(row: PostingRow): PostingMessage {
     salaryMin: row.salaryMin,
     salaryMax: row.salaryMax,
     salaryCurrency: row.salaryCurrency,
+    salaryPeriod: PERIOD_TO_PROTO[row.salaryPeriod],
     status: STATUS_TO_PROTO[row.status],
     resumeRequired: row.resumeRequired,
     stages: row.stages.map(stageToProto),
@@ -179,6 +195,7 @@ export function postingFromProto(message: PostingMessage): PostingRow {
     salaryMin: message.salaryMin,
     salaryMax: message.salaryMax,
     salaryCurrency: message.salaryCurrency,
+    salaryPeriod: PERIOD_FROM_PROTO[message.salaryPeriod],
     status: STATUS_FROM_PROTO[message.status],
     resumeRequired: message.resumeRequired,
     stages: message.stages.map(stageFromProto),
@@ -211,6 +228,7 @@ export function draftToProto(draft: PostingDraftValues): SavePostingFields {
     salaryMin: draft.salaryMin === '' ? undefined : draft.salaryMin,
     salaryMax: draft.salaryMax === '' ? undefined : draft.salaryMax,
     salaryCurrency: draft.salaryCurrency,
+    salaryPeriod: PERIOD_TO_PROTO[draft.salaryPeriod],
     resumeRequired: draft.resumeRequired,
     stages: draft.stages.map(stageToProto),
     applicationFormId: draft.applicationFormId || undefined,
@@ -231,6 +249,7 @@ export function draftFromProto(request: SavePostingRequest): PostingDraftValues 
     salaryMin: request.salaryMin ?? '',
     salaryMax: request.salaryMax ?? '',
     salaryCurrency: request.salaryCurrency || 'USD',
+    salaryPeriod: PERIOD_FROM_PROTO[request.salaryPeriod],
     resumeRequired: request.resumeRequired,
     stages: request.stages.map(stageFromProto),
     applicationFormId: request.applicationFormId ?? '',

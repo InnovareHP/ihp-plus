@@ -31,6 +31,14 @@ enum Workplace {
   WORKPLACE_REMOTE = 3;
 }
 
+// What a posting's pay range is paid per.
+enum SalaryPeriod {
+  SALARY_PERIOD_UNSPECIFIED = 0;
+  SALARY_PERIOD_YEAR = 1;
+  SALARY_PERIOD_MONTH = 2;
+  SALARY_PERIOD_HOUR = 3;
+}
+
 enum EmploymentType {
   EMPLOYMENT_TYPE_UNSPECIFIED = 0;
   EMPLOYMENT_TYPE_FULL_TIME = 1;
@@ -86,6 +94,7 @@ message Posting {
   // Applicants still moving through the pipeline, and how many sit in each stage.
   int32 active_count = 25;
   map<string, int32> stage_counts = 26;
+  SalaryPeriod salary_period = 27;
 }
 
 message GetSettingsRequest {}
@@ -143,6 +152,7 @@ message SavePostingRequest {
   optional string team_id = 14;
   // An ISO date; absent means the posting stays open until someone closes it.
   optional string closes_at = 15;
+  SalaryPeriod salary_period = 16;
 }
 
 message SavePostingResponse {

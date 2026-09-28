@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
 import {
+  applicationReceivedTemplate,
+  applicationRejectedTemplate,
+  applicationStageTemplate,
   bulletinMentionTemplate,
   clientFolderSharedTemplate,
   correctionDecidedTemplate,
@@ -422,5 +425,44 @@ describe('bulletin emails', () => {
     expect(email.text).toContain('a reply on the bulletin board')
     expect(email.text).toContain('Can you bring the projector?')
     expect(email.text).toContain('https://ihp.test/app/bulletin?post=post-1')
+  })
+})
+
+describe('hiring emails', () => {
+  it('gives an applicant the link back to their application', () => {
+    const email = applicationReceivedTemplate({
+      organizationName: 'IHP+',
+      firstName: 'Grace',
+      postingTitle: 'Registered nurse',
+      url: 'https://ihp.test/app/careers/status/app-1/sig',
+    })
+
+    expect(email.subject).toBe('We received your application for Registered nurse')
+    expect(email.text).toContain('https://ihp.test/app/careers/status/app-1/sig')
+  })
+
+  it('keeps the paragraphs HR wrote, and joins lines inside one', () => {
+    const email = applicationStageTemplate({
+      organizationName: 'IHP+',
+      firstName: 'Grace',
+      postingTitle: 'Registered nurse',
+      message: 'We would like to meet you.\nPick a time below.\n\nSee you soon.',
+      url: 'https://ihp.test/app/careers/status/app-1/sig',
+    })
+
+    expect(email.text).toContain('We would like to meet you. Pick a time below.')
+    expect(email.html).toContain('See you soon.')
+  })
+
+  it('sends a rejection with no button to click', () => {
+    const email = applicationRejectedTemplate({
+      organizationName: 'IHP+',
+      firstName: 'Grace',
+      postingTitle: 'Registered nurse',
+      message: 'Thank you for applying.',
+    })
+
+    expect(email.html).not.toContain('If the button does not work')
+    expect(email.text).toContain('Thank you for applying.')
   })
 })
