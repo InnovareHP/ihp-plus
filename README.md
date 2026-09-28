@@ -87,6 +87,7 @@ Change the entry port with `PROXY_PORT` in `.env`.
 | `pnpm db:seed`          | create the org + one team per department                 |
 | `pnpm db:seed:clients`  | the real client roster (`--replace` drops the demo rows) |
 | `pnpm db:seed newhires` | first-day tasks, required reading, shifts for new hires  |
+| `pnpm db:seed hiring`   | demo postings, applicants, interviews (`--wipe` resets)  |
 | `pnpm rpc:generate`     | regenerate TS clients from the `.proto` files            |
 | `pnpm graph:check`      | prove the SharePoint setup end to end                    |
 | `pnpm graph:grant`      | grant the app write on both SharePoint sites             |

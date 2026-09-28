@@ -6,6 +6,7 @@ import { DEMO_CLIENTS } from './client-seed-data'
 import { LOOKUP_OPTION_SEED } from './lookup-seed-data'
 import { NEW_HIRE_TASK_SEED, REQUIRED_READING_CATEGORIES, SHIFT_SEED } from './new-hire-seed-data'
 import { EVALUATION_FORM_SEED, REQUEST_FORM_SEED } from './request-seed-data'
+import { seedHiring, wipeHiring } from './seed-hiring'
 
 // The company's own departments. Team membership is the single source of truth for them,
 // so this list exists here and nowhere else.
@@ -41,12 +42,21 @@ const STEPS = [
   'contract',
   'owner',
   'newhires',
+  'hiring',
 ] as const
 type Step = (typeof STEPS)[number]
 
 // Membership, approvers and submissions hang off a department, and the owner step only edits
 // rows Better Auth owns, so neither has a delete this file is allowed to make.
-const WIPEABLE = ['lookups', 'forms', 'clients', 'catalog', 'contract', 'newhires'] as const
+const WIPEABLE = [
+  'lookups',
+  'forms',
+  'clients',
+  'catalog',
+  'contract',
+  'newhires',
+  'hiring',
+] as const
 type Wipeable = (typeof WIPEABLE)[number]
 
 function requestedSteps(): Set<Step> {
@@ -105,6 +115,11 @@ async function wipe(step: Wipeable, organizationId: string) {
     const tasks = await db.newHireTask.deleteMany({ where: { organizationId } })
     const reading = await db.newHireDocument.deleteMany({ where: { organizationId } })
     console.log(`  - ${tasks.count} first-day tasks, ${reading.count} required documents`)
+    return
+  }
+
+  if (step === 'hiring') {
+    await wipeHiring(organizationId)
     return
   }
 
@@ -169,6 +184,7 @@ async function main() {
   if (steps.has('contract')) await seedContractTemplate(organization.id)
   if (steps.has('owner')) await seedOwner(organization.id)
   if (steps.has('newhires')) await seedNewHireChecklist(organization.id)
+  if (steps.has('hiring')) await seedHiring(organization.id)
 }
 
 /**
