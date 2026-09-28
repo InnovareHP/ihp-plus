@@ -1,4 +1,5 @@
-export { isEmailConfigured, sendEmail, type OutboundEmail } from './send'
+export { isEmailConfigured, sendEmail, type EmailAttachment, type OutboundEmail } from './send'
+export { calendarAttachment, calendarInvite, type CalendarInvite } from './calendar-invite'
 export * from './templates'
 export { renderEmail, type EmailLayout } from './layout'
 

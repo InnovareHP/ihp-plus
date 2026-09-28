@@ -2,8 +2,16 @@ import { SendEmailCommand, SESv2Client } from '@aws-sdk/client-sesv2'
 import { LOGO_CONTENT_ID, LOGO_PNG_BASE64 } from './logo'
 import type { PreparedEmail } from './templates'
 
+export interface EmailAttachment {
+  fileName: string
+  contentType: string
+  /** Text content, such as an iCalendar invite; sent as UTF-8. */
+  content: string
+}
+
 export interface OutboundEmail extends PreparedEmail {
   to: string
+  attachments?: readonly EmailAttachment[]
 }
 
 interface SesConfig {
@@ -60,7 +68,7 @@ export function isEmailConfigured() {
  * account. Never throws: a caller is mid-signup or mid-invite, and a mail provider having a
  * bad minute must not fail the thing the user actually asked for.
  */
-export async function sendEmail({ to, subject, html, text }: OutboundEmail) {
+export async function sendEmail({ to, subject, html, text, attachments = [] }: OutboundEmail) {
   const config = readConfig()
 
   if (!config) {
@@ -92,6 +100,13 @@ export async function sendEmail({ to, subject, html, text }: OutboundEmail) {
                 ContentTransferEncoding: 'BASE64',
                 RawContent: logoBytes(),
               },
+              ...attachments.map((attachment) => ({
+                FileName: attachment.fileName,
+                ContentType: attachment.contentType,
+                ContentDisposition: 'ATTACHMENT' as const,
+                ContentTransferEncoding: 'BASE64' as const,
+                RawContent: new TextEncoder().encode(attachment.content),
+              })),
             ],
           },
         },

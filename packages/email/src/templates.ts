@@ -688,3 +688,151 @@ export function applicationRejectedTemplate(options: {
     }),
   }
 }
+
+export function interviewOfferedTemplate(options: {
+  organizationName: string
+  firstName: string
+  postingTitle: string
+  /** A note HR added to the offer, if any. */
+  note: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `Pick a time for your interview: ${options.postingTitle}`,
+    ...renderEmail({
+      preheader: `${options.organizationName} would like to interview you.`,
+      heading: `Pick a time, ${options.firstName}`,
+      body: [
+        `${options.organizationName} would like to interview you for ${options.postingTitle}.`,
+        ...paragraphsOf(options.note),
+        'Choose the time that suits you from the ones offered. Times show in your own time zone.',
+      ],
+      action: { label: 'Choose a time', url: options.url },
+      footnote: 'If none of the times work, say so on the same page and we will offer others.',
+    }),
+  }
+}
+
+export function interviewBookedTemplate(options: {
+  organizationName: string
+  firstName: string
+  postingTitle: string
+  /** Already written in the applicant's own time zone, zone name included. */
+  when: string
+  where: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `Interview booked: ${options.postingTitle}, ${options.when}`,
+    ...renderEmail({
+      preheader: `Your interview with ${options.organizationName} is confirmed.`,
+      heading: `See you ${options.when}`,
+      body: [
+        `Your interview for ${options.postingTitle} is booked for ${options.when}.`,
+        options.where,
+        'The calendar invite is attached, or in your inbox from our calendar.',
+      ],
+      action: { label: 'See or change your interview', url: options.url },
+    }),
+  }
+}
+
+export function interviewScheduledTemplate(options: {
+  applicantName: string
+  postingTitle: string
+  when: string
+  where: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `Interview: ${options.applicantName}, ${options.when}`,
+    ...renderEmail({
+      preheader: `${options.applicantName} booked an interview for ${options.postingTitle}.`,
+      heading: `Interview with ${options.applicantName}`,
+      body: [
+        `${options.applicantName} booked ${options.when} for their ${options.postingTitle} interview.`,
+        options.where,
+        'Their resume and answers are in the portal, and so is the scorecard to fill in afterwards.',
+      ],
+      action: { label: 'Open the interview', url: options.url },
+    }),
+  }
+}
+
+export function interviewCancelledTemplate(options: {
+  organizationName: string
+  firstName: string
+  postingTitle: string
+  when: string
+}): PreparedEmail {
+  return {
+    subject: `Cancelled: interview for ${options.postingTitle}`,
+    ...renderEmail({
+      preheader: `The interview on ${options.when} will not go ahead.`,
+      heading: `Hi ${options.firstName}`,
+      body: [
+        `The interview for ${options.postingTitle} on ${options.when} has been cancelled.`,
+        `${options.organizationName} will be in touch if a new time is needed.`,
+      ],
+    }),
+  }
+}
+
+export function interviewReminderTemplate(options: {
+  firstName: string
+  postingTitle: string
+  when: string
+  where: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `Tomorrow: your interview for ${options.postingTitle}`,
+    ...renderEmail({
+      preheader: `A reminder about your interview, ${options.when}.`,
+      heading: `See you soon, ${options.firstName}`,
+      body: [
+        `A reminder that your interview for ${options.postingTitle} is ${options.when}.`,
+        options.where,
+      ],
+      action: { label: 'See or change your interview', url: options.url },
+    }),
+  }
+}
+
+export function rescheduleRequestedTemplate(options: {
+  applicantName: string
+  postingTitle: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `${options.applicantName} needs other interview times`,
+    ...renderEmail({
+      preheader: `None of the offered times work for ${options.applicantName}.`,
+      heading: 'New times needed',
+      body: [
+        `${options.applicantName} could not make any of the times offered for their ${options.postingTitle} interview.`,
+        'Offer a few more from their application.',
+      ],
+      action: { label: 'Offer new times', url: options.url },
+    }),
+  }
+}
+
+export function scorecardRequestTemplate(options: {
+  applicantName: string
+  postingTitle: string
+  url: string
+}): PreparedEmail {
+  return {
+    subject: `Scorecard: ${options.applicantName}`,
+    ...renderEmail({
+      preheader: `How did the interview with ${options.applicantName} go?`,
+      heading: 'Fill in your scorecard',
+      body: [
+        `Your interview with ${options.applicantName} for ${options.postingTitle} has ended.`,
+        'Record your view while it is fresh; HR decides with every interviewer’s scorecard in front of them.',
+      ],
+      action: { label: 'Fill in the scorecard', url: options.url },
+    }),
+  }
+}

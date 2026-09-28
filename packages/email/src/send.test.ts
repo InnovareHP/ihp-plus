@@ -47,4 +47,25 @@ describe('sendEmail', () => {
     await expect(sendEmail(MESSAGE)).resolves.toMatchObject({ delivered: false })
     expect(ses.send).not.toHaveBeenCalled()
   })
+
+  it('sends a calendar invite as an attachment beside the logo', async () => {
+    await sendEmail({
+      ...MESSAGE,
+      attachments: [
+        {
+          fileName: 'invite.ics',
+          contentType: 'text/calendar; method=REQUEST',
+          content: 'BEGIN:VCALENDAR',
+        },
+      ],
+    })
+
+    const [, invite] = ses.send.mock.calls[0]?.[0].input.Content.Simple.Attachments
+    expect(invite).toMatchObject({
+      FileName: 'invite.ics',
+      ContentType: 'text/calendar; method=REQUEST',
+      ContentDisposition: 'ATTACHMENT',
+    })
+    expect(new TextDecoder().decode(invite.RawContent)).toBe('BEGIN:VCALENDAR')
+  })
 })
