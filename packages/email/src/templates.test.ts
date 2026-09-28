@@ -103,7 +103,7 @@ describe('renderEmail', () => {
     expect(email.html).toContain('display:none')
   })
 
-  it('offers the raw link as well as the button, for a client that strips the button', () => {
+  it('offers a text link as well as the button, without printing the raw URL', () => {
     const email = renderEmail({
       preheader: 'p',
       heading: 'h',
@@ -111,14 +111,16 @@ describe('renderEmail', () => {
       action: { label: 'Go', url: 'https://ihp.test/x' },
     })
 
-    expect(email.html).toContain('paste this into your browser')
+    expect(email.html).toContain('Button not working?')
+    expect(email.html.match(/href="https:\/\/ihp\.test\/x"/g)).toHaveLength(2)
+    expect(email.html).not.toContain('paste this into your browser')
     expect(email.text).toContain('Go: https://ihp.test/x')
   })
 
   it('leaves out the action block entirely when there is nothing to click', () => {
     const email = renderEmail({ preheader: 'p', heading: 'h', body: ['Just telling you.'] })
 
-    expect(email.html).not.toContain('paste this into your browser')
+    expect(email.html).not.toContain('Button not working?')
   })
 })
 
@@ -462,7 +464,7 @@ describe('hiring emails', () => {
       message: 'Thank you for applying.',
     })
 
-    expect(email.html).not.toContain('If the button does not work')
+    expect(email.html).not.toContain('Button not working?')
     expect(email.text).toContain('Thank you for applying.')
   })
 })

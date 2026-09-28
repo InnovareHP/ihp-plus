@@ -42,10 +42,7 @@ function escapeHtml(value: string) {
     .replace(/"/g, '&quot;')
 }
 
-/**
- * A link's text is the URL itself, so the escaping has to hold in an attribute too — a raw
- * ampersand in a query string would otherwise close it.
- */
+// The URL lands in href attributes, so a raw ampersand in a query string must be escaped.
 function button(label: string, url: string) {
   const href = escapeHtml(url)
   return `
@@ -56,11 +53,8 @@ function button(label: string, url: string) {
       </td>
     </tr>
   </table>
-  <p style="margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:${MUTED};">
-    If the button does not work, paste this into your browser:
-  </p>
-  <p style="margin:0 0 8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:${BRAND_DARK};word-break:break-all;">
-    ${href}
+  <p style="margin:0 0 8px;font-family:${FONT};font-size:13px;line-height:20px;color:${MUTED};">
+    Button not working? <a href="${href}" style="color:${BRAND_DARK};font-weight:600;text-decoration:underline;">Open the link here</a>.
   </p>`
 }
 
