@@ -1,8 +1,9 @@
 'use client'
 
-import { Button, Card, Group, Stack, Text, Title } from '@mantine/core'
+import { Button, Card, Group, Menu, Stack, Text, Title } from '@mantine/core'
 import { formatTimeOfDay, minutesToClock, workDateKey } from '@ihp/clock'
 import { useState } from 'react'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { useMyCorrections, useWithdrawCorrection } from '../hooks/use-corrections'
 import { useAttendanceRange } from '../hooks/use-attendance-range'
 import { useAttendanceLog, useTimeClock } from '../hooks/use-time-clock'
@@ -100,14 +101,9 @@ export function MyAttendancePanel() {
           // A running day is still the member's to clock out of, so only a finished one is asked about.
           actions={(day) =>
             day.isOpen ? null : (
-              <Button
-                variant="subtle"
-                size="compact-sm"
-                onClick={() => askAbout(day)}
-                aria-label={`Ask to correct ${day.workDate}`}
-              >
-                Ask to correct
-              </Button>
+              <RowActionsMenu name={day.workDate}>
+                <Menu.Item onClick={() => askAbout(day)}>Ask to correct</Menu.Item>
+              </RowActionsMenu>
             )
           }
           emptyHint="Clock in on the card above and today will show up here."

@@ -63,7 +63,8 @@ describe('BillingStatementsPanel', () => {
     const user = userEvent.setup()
     render(<BillingStatementsPanel />)
 
-    await user.click(await screen.findByRole('button', { name: 'Print INV-20260930' }))
+    await user.click(await screen.findByRole('button', { name: 'Actions for INV-20260930' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Print' }))
 
     await waitFor(() => expect(print.printHtml).toHaveBeenCalledOnce())
     const html = String(print.printHtml.mock.calls[0]?.[0])
@@ -76,7 +77,8 @@ describe('BillingStatementsPanel', () => {
     const user = userEvent.setup()
     render(<BillingStatementsPanel />)
 
-    await user.click(await screen.findByRole('button', { name: 'Delete INV-20260930' }))
+    await user.click(await screen.findByRole('button', { name: 'Actions for INV-20260930' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }))
 
     await waitFor(() => expect(screen.queryByText('INV-20260930')).not.toBeInTheDocument())
     expect(rpc.deleteBillingStatement).not.toHaveBeenCalled()
@@ -89,7 +91,8 @@ describe('BillingStatementsPanel', () => {
     const user = userEvent.setup()
     render(<BillingStatementsPanel />)
 
-    await user.click(await screen.findByRole('button', { name: 'Delete INV-20260930' }))
+    await user.click(await screen.findByRole('button', { name: 'Actions for INV-20260930' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }))
     undo.offerUndo.mock.calls[0]?.[0]?.onUndo()
 
     expect(await screen.findByText('INV-20260930')).toBeInTheDocument()
@@ -101,7 +104,8 @@ describe('BillingStatementsPanel', () => {
     const user = userEvent.setup()
     render(<BillingStatementsPanel />)
 
-    await user.click(await screen.findByRole('button', { name: 'Delete INV-20260930' }))
+    await user.click(await screen.findByRole('button', { name: 'Actions for INV-20260930' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete' }))
     undo.offerUndo.mock.calls[0]?.[0]?.onCommit()
 
     await waitFor(() =>

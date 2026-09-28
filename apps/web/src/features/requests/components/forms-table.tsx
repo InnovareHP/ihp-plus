@@ -1,12 +1,13 @@
 'use client'
 
-import { ActionIcon, Badge, Button, Group, Menu, Modal, Stack, Text } from '@mantine/core'
-import { IconDotsVertical, IconPlus } from '@tabler/icons-react'
+import { Badge, Button, Group, Menu, Modal, Stack, Text } from '@mantine/core'
+import { IconPlus } from '@tabler/icons-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LinkButton } from '@/components/link-button'
 import { EmptyState } from '@/components/empty-state'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import {
   evaluationFormRoute,
@@ -136,35 +137,28 @@ export function FormsTable({ kind = 'request' }: FormsTableProps) {
       width: 80,
       align: 'right',
       render: (form) => (
-        <Menu position="bottom-end" withinPortal>
-          <Menu.Target>
-            <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${form.name}`}>
-              <IconDotsVertical size={16} aria-hidden />
-            </ActionIcon>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Item component={Link} href={editRoute(form.id)}>
-              Edit
+        <RowActionsMenu name={form.name}>
+          <Menu.Item component={Link} href={editRoute(form.id)}>
+            Edit
+          </Menu.Item>
+          {form.status === 'published' ? (
+            <Menu.Item onClick={() => setStatus.mutate({ formId: form.id, status: 'archived' })}>
+              Archive
             </Menu.Item>
-            {form.status === 'published' ? (
-              <Menu.Item onClick={() => setStatus.mutate({ formId: form.id, status: 'archived' })}>
-                Archive
-              </Menu.Item>
-            ) : (
-              <Menu.Item onClick={() => setStatus.mutate({ formId: form.id, status: 'published' })}>
-                Publish
-              </Menu.Item>
-            )}
-            {form.status !== 'draft' ? (
-              <Menu.Item onClick={() => setStatus.mutate({ formId: form.id, status: 'draft' })}>
-                Move to draft
-              </Menu.Item>
-            ) : null}
-            <Menu.Item color="red" onClick={() => setDeleting(form)}>
-              Delete
+          ) : (
+            <Menu.Item onClick={() => setStatus.mutate({ formId: form.id, status: 'published' })}>
+              Publish
             </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
+          )}
+          {form.status !== 'draft' ? (
+            <Menu.Item onClick={() => setStatus.mutate({ formId: form.id, status: 'draft' })}>
+              Move to draft
+            </Menu.Item>
+          ) : null}
+          <Menu.Item color="red" onClick={() => setDeleting(form)}>
+            Delete
+          </Menu.Item>
+        </RowActionsMenu>
       ),
     },
   ]

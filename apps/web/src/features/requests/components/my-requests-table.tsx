@@ -1,9 +1,10 @@
 'use client'
 
-import { Badge, Button, Stack, Text } from '@mantine/core'
+import { Badge, Button, Menu, Stack, Text } from '@mantine/core'
 import Link from 'next/link'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { requestRoute } from '@/lib/routes'
 import { useMyRequests, useWithdrawRequest } from '../hooks/use-requests'
 import {
@@ -65,19 +66,15 @@ export function MyRequestsTable({
     {
       key: 'actions',
       header: 'Actions',
-      width: 130,
+      width: 90,
       align: 'right',
       render: (row) =>
         row.status === 'pending' ? (
-          <Button
-            variant="subtle"
-            color="red"
-            size="compact-sm"
-            aria-label={`Withdraw your ${row.formName} request`}
-            onClick={() => withdraw.mutate({ submissionId: row.id })}
-          >
-            Withdraw
-          </Button>
+          <RowActionsMenu name={`your ${row.formName} request`}>
+            <Menu.Item color="red" onClick={() => withdraw.mutate({ submissionId: row.id })}>
+              Withdraw
+            </Menu.Item>
+          </RowActionsMenu>
         ) : null,
     },
   ]

@@ -69,8 +69,9 @@ describe('CorrectionsQueue', () => {
     render(<CorrectionsQueue />)
 
     await user.click(
-      await screen.findByRole('button', { name: /Approve Ada Lovelace's correction/ }),
+      await screen.findByRole('button', { name: /^Actions for Ada Lovelace's correction/ }),
     )
+    await user.click(await screen.findByRole('menuitem', { name: 'Approve' }))
 
     await waitFor(() => expect(screen.queryByText('Forgot to clock out.')).not.toBeInTheDocument())
     expect(rpc.decideCorrection).toHaveBeenCalledWith({
@@ -88,8 +89,9 @@ describe('CorrectionsQueue', () => {
     render(<CorrectionsQueue />)
 
     await user.click(
-      await screen.findByRole('button', { name: /Approve Ada Lovelace's correction/ }),
+      await screen.findByRole('button', { name: /^Actions for Ada Lovelace's correction/ }),
     )
+    await user.click(await screen.findByRole('menuitem', { name: 'Approve' }))
 
     expect(await screen.findByText('Forgot to clock out.')).toBeInTheDocument()
     await waitFor(() =>
@@ -104,8 +106,9 @@ describe('CorrectionsQueue', () => {
     render(<CorrectionsQueue />)
 
     await user.click(
-      await screen.findByRole('button', { name: /Turn down Ada Lovelace's correction/ }),
+      await screen.findByRole('button', { name: /^Actions for Ada Lovelace's correction/ }),
     )
+    await user.click(await screen.findByRole('menuitem', { name: 'Turn down' }))
     const dialog = await screen.findByRole('dialog', { name: "Turn down Ada Lovelace's request" })
     await user.click(within(dialog).getByRole('button', { name: 'Turn down request' }))
 

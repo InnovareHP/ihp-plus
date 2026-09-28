@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { render, screen } from '@/test/render'
 import type { EvaluationRow, MyEvaluationQuery } from '../schema'
@@ -59,13 +60,18 @@ describe('MyEvaluationsTable', () => {
   })
 
   it('shows who is being evaluated, where they stand, and the way in', async () => {
+    const user = userEvent.setup()
     render(<MyEvaluationsTable query={QUERY} setQuery={vi.fn()} clearFilters={vi.fn()} />)
 
     expect(await screen.findByText('Grace Hopper')).toBeInTheDocument()
     expect(screen.getByText('Care Management · Probationary')).toBeInTheDocument()
-    expect(
-      screen.getByRole('link', { name: 'Fill in the Probationary review for Grace Hopper' }),
-    ).toHaveAttribute('href', '/evaluations/fill/eval-1')
+    await user.click(
+      screen.getByRole('button', { name: 'Actions for the Probationary review for Grace Hopper' }),
+    )
+    expect(await screen.findByRole('menuitem', { name: 'Fill it in' })).toHaveAttribute(
+      'href',
+      '/evaluations/fill/eval-1',
+    )
   })
 
   it('says overdue in words, not only in colour', async () => {
@@ -80,11 +86,19 @@ describe('MyEvaluationsTable', () => {
         { ...ROW, status: 'submitted', canFill: false, submittedAt: '2026-01-10T00:00:00.000Z' },
       ]),
     )
+    const user = userEvent.setup()
     render(<MyEvaluationsTable query={QUERY} setQuery={vi.fn()} clearFilters={vi.fn()} />)
 
-    expect(
-      await screen.findByRole('link', { name: 'Read your Probationary review for Grace Hopper' }),
-    ).toHaveAttribute('href', '/evaluations/view/eval-1')
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Actions for the Probationary review for Grace Hopper',
+      }),
+    )
+    expect(screen.queryByRole('menuitem', { name: 'Fill it in' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('menuitem', { name: 'Read it' })).toHaveAttribute(
+      'href',
+      '/evaluations/view/eval-1',
+    )
   })
 
   it('says what fills the list when there is nothing to evaluate', async () => {

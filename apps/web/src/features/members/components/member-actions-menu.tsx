@@ -1,7 +1,8 @@
 'use client'
 
-import { ActionIcon, Menu } from '@mantine/core'
-import { IconDotsVertical, IconLogin2, IconUserCheck, IconUserOff } from '@tabler/icons-react'
+import { Menu } from '@mantine/core'
+import { IconLogin2, IconUserCheck, IconUserOff } from '@tabler/icons-react'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 
 export interface MemberActionsMenuProps {
   name: string
@@ -25,38 +26,27 @@ export function MemberActionsMenu({
   if (!canSuspend && !canSignInAs) return null
 
   return (
-    <Menu position="bottom-end" withinPortal>
-      <Menu.Target>
-        <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${name}`}>
-          <IconDotsVertical size={16} aria-hidden />
-        </ActionIcon>
-      </Menu.Target>
-      <Menu.Dropdown>
-        {canSignInAs ? (
-          <Menu.Item
-            leftSection={<IconLogin2 size={14} aria-hidden />}
-            disabled={isSigningIn}
-            onClick={onSignInAs}
-          >
-            {isSigningIn ? 'Signing in…' : 'Sign in as'}
-          </Menu.Item>
-        ) : null}
-        {canSuspend ? (
-          <Menu.Item
-            leftSection={
-              banned ? (
-                <IconUserCheck size={14} aria-hidden />
-              ) : (
-                <IconUserOff size={14} aria-hidden />
-              )
-            }
-            color={banned ? undefined : 'red'}
-            onClick={onToggleBanned}
-          >
-            {banned ? 'Restore access' : 'Suspend'}
-          </Menu.Item>
-        ) : null}
-      </Menu.Dropdown>
-    </Menu>
+    <RowActionsMenu name={name}>
+      {canSignInAs ? (
+        <Menu.Item
+          leftSection={<IconLogin2 size={14} aria-hidden />}
+          disabled={isSigningIn}
+          onClick={onSignInAs}
+        >
+          {isSigningIn ? 'Signing in…' : 'Sign in as'}
+        </Menu.Item>
+      ) : null}
+      {canSuspend ? (
+        <Menu.Item
+          leftSection={
+            banned ? <IconUserCheck size={14} aria-hidden /> : <IconUserOff size={14} aria-hidden />
+          }
+          color={banned ? undefined : 'red'}
+          onClick={onToggleBanned}
+        >
+          {banned ? 'Restore access' : 'Suspend'}
+        </Menu.Item>
+      ) : null}
+    </RowActionsMenu>
   )
 }

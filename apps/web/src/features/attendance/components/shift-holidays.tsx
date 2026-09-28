@@ -1,9 +1,10 @@
 'use client'
 
-import { Badge, Button, Group, Select, Stack, Text } from '@mantine/core'
+import { Badge, Button, Group, Menu, Select, Stack, Text } from '@mantine/core'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { offerUndo } from '@/lib/undo'
 import {
   useAddHoliday,
@@ -87,19 +88,18 @@ export function ShiftHolidays({ country, countries }: ShiftHolidaysProps) {
       key: 'actions',
       header: 'Actions',
       align: 'right',
-      width: 100,
+      width: 90,
       render: (row) => (
-        <Button
-          variant="subtle"
-          color="red"
-          size="compact-sm"
-          // A pending row has no server id to delete yet.
-          disabled={row.id.startsWith('pending-')}
-          onClick={() => drop(row)}
-          aria-label={`Remove ${row.name}`}
-        >
-          Remove
-        </Button>
+        <RowActionsMenu name={row.name}>
+          <Menu.Item
+            color="red"
+            // A pending row has no server id to delete yet.
+            disabled={row.id.startsWith('pending-')}
+            onClick={() => drop(row)}
+          >
+            Remove
+          </Menu.Item>
+        </RowActionsMenu>
       ),
     },
   ]

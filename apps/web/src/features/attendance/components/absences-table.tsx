@@ -78,6 +78,7 @@ export function AbsencesTable({
             key: 'actions',
             header: 'Actions',
             align: 'right' as const,
+            width: 90,
             render: (row: AttendanceAbsenceRow) => actions(row),
           },
         ]

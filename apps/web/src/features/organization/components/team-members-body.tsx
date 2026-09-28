@@ -1,9 +1,10 @@
 'use client'
 
-import { Button, Divider, Group, Select, Stack, Text } from '@mantine/core'
+import { Button, Divider, Group, Menu, Select, Stack, Text } from '@mantine/core'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { useClientPagination } from '@/lib/use-client-pagination'
 // Approvers belong to requests, but they are set per department, so they are set here.
 import { DepartmentApprovers } from '@/features/requests/components/department-approvers'
@@ -44,18 +45,17 @@ export function TeamMembersBody({ team }: { team: TeamRow }) {
     {
       key: 'actions',
       header: 'Actions',
-      width: 110,
+      width: 90,
       align: 'right',
       render: (person) => (
-        <Button
-          variant="subtle"
-          color="red"
-          size="compact-sm"
-          aria-label={`Remove ${person.name} from ${team.name}`}
-          onClick={() => remove.mutate({ userId: person.userId, teamId: team.id })}
-        >
-          Remove
-        </Button>
+        <RowActionsMenu name={person.name}>
+          <Menu.Item
+            color="red"
+            onClick={() => remove.mutate({ userId: person.userId, teamId: team.id })}
+          >
+            Remove from {team.name}
+          </Menu.Item>
+        </RowActionsMenu>
       ),
     },
   ]

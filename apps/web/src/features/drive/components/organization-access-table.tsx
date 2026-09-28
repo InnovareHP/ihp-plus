@@ -1,8 +1,9 @@
 'use client'
 
-import { Anchor, Badge, Button, Group, SegmentedControl, Stack, Text } from '@mantine/core'
+import { Anchor, Badge, Button, Group, Menu, SegmentedControl, Stack, Text } from '@mantine/core'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { SearchField } from '@/components/search-field'
 import {
   useOrganizationAccess,
@@ -72,20 +73,20 @@ export function OrganizationAccessTable() {
       key: 'actions',
       header: 'Actions',
       align: 'right',
-      width: 150,
+      width: 90,
       render: (row) =>
         row.revokedAt ? null : (
-          <Button
-            variant="subtle"
-            color="red"
-            size="compact-sm"
-            disabled={revoke.isPending}
-            onClick={() =>
-              revoke.mutate({ id: row.id, email: row.email, clientName: row.clientName })
-            }
-          >
-            Remove access
-          </Button>
+          <RowActionsMenu name={`${row.email} on ${row.clientName}`}>
+            <Menu.Item
+              color="red"
+              disabled={revoke.isPending}
+              onClick={() =>
+                revoke.mutate({ id: row.id, email: row.email, clientName: row.clientName })
+              }
+            >
+              Remove access
+            </Menu.Item>
+          </RowActionsMenu>
         ),
     },
   ]

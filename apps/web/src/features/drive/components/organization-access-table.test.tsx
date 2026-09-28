@@ -109,7 +109,8 @@ describe('OrganizationAccessTable', () => {
     actions.revokeClientFolderAccess.mockReturnValue(new Promise(() => {}))
     render(<OrganizationAccessTable />)
 
-    await user.click(await screen.findByRole('button', { name: 'Remove access' }))
+    await user.click(await screen.findByRole('button', { name: /^Actions for buyer@acme.test/ }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove access' }))
 
     // Scoped to the row: the view switcher carries a "Removed" label of its own.
     const row = await screen.findByRole('row', { name: /buyer@acme.test/ })
@@ -124,10 +125,13 @@ describe('OrganizationAccessTable', () => {
     })
     render(<OrganizationAccessTable />)
 
-    await user.click(await screen.findByRole('button', { name: 'Remove access' }))
+    await user.click(await screen.findByRole('button', { name: /^Actions for buyer@acme.test/ }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove access' }))
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Remove access' })).toBeInTheDocument(),
+      expect(
+        screen.getByRole('button', { name: /^Actions for buyer@acme.test/ }),
+      ).toBeInTheDocument(),
     )
     expect(announce.announceFailure).toHaveBeenCalledWith(
       'Could not remove that access — try again.',

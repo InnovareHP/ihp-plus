@@ -148,7 +148,8 @@ describe('ShiftHolidays', () => {
     const user = userEvent.setup()
     renderFor('PH')
 
-    await user.click(await screen.findByRole('button', { name: 'Remove Rizal Day' }))
+    await user.click(await screen.findByRole('button', { name: 'Actions for Rizal Day' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove' }))
 
     await waitFor(() => expect(screen.queryByText('Rizal Day')).not.toBeInTheDocument())
     expect(rpc.deleteHoliday).not.toHaveBeenCalled()
@@ -161,7 +162,8 @@ describe('ShiftHolidays', () => {
     const user = userEvent.setup()
     renderFor('PH')
 
-    await user.click(await screen.findByRole('button', { name: 'Remove Rizal Day' }))
+    await user.click(await screen.findByRole('button', { name: 'Actions for Rizal Day' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove' }))
     await waitFor(() => expect(screen.queryByText('Rizal Day')).not.toBeInTheDocument())
 
     undo.offerUndo.mock.calls[0]?.[0]?.onUndo()

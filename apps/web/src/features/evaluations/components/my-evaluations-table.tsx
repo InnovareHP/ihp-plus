@@ -1,9 +1,10 @@
 'use client'
 
-import { Badge, Button, Group, Stack, Text } from '@mantine/core'
+import { Badge, Button, Group, Menu, Stack, Text } from '@mantine/core'
 import Link from 'next/link'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { evaluationRoute, fillEvaluationRoute } from '@/lib/routes'
 import { useMyEvaluations } from '../hooks/use-evaluations'
 import {
@@ -85,29 +86,21 @@ export function MyEvaluationsTable({
     {
       key: 'actions',
       header: 'Actions',
-      width: 150,
+      width: 90,
       align: 'right',
       render: (row) =>
-        row.canFill ? (
-          <Button
-            component={Link}
-            href={fillEvaluationRoute(row.id)}
-            variant="light"
-            size="compact-sm"
-            aria-label={`Fill in the ${row.formName} for ${row.employeeName}`}
-          >
-            Fill it in
-          </Button>
-        ) : row.status === 'submitted' ? (
-          <Button
-            component={Link}
-            href={evaluationRoute(row.id)}
-            variant="subtle"
-            size="compact-sm"
-            aria-label={`Read your ${row.formName} for ${row.employeeName}`}
-          >
-            Read it
-          </Button>
+        row.canFill || row.status === 'submitted' ? (
+          <RowActionsMenu name={`the ${row.formName} for ${row.employeeName}`}>
+            {row.canFill ? (
+              <Menu.Item component={Link} href={fillEvaluationRoute(row.id)}>
+                Fill it in
+              </Menu.Item>
+            ) : (
+              <Menu.Item component={Link} href={evaluationRoute(row.id)}>
+                Read it
+              </Menu.Item>
+            )}
+          </RowActionsMenu>
         ) : null,
     },
   ]

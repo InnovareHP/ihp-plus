@@ -1,7 +1,8 @@
 'use client'
 
-import { ActionIcon, Menu } from '@mantine/core'
-import { IconArchive, IconArrowBackUp, IconDotsVertical, IconPencil } from '@tabler/icons-react'
+import { Menu } from '@mantine/core'
+import { IconArchive, IconArrowBackUp, IconPencil } from '@tabler/icons-react'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import type { CatalogItemRow } from '../schema'
 
 export interface CatalogItemActionsProps {
@@ -19,33 +20,26 @@ export function CatalogItemActions({
   onRestore,
 }: CatalogItemActionsProps) {
   return (
-    <Menu position="bottom-end" withinPortal>
-      <Menu.Target>
-        <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${item.name}`}>
-          <IconDotsVertical size={16} aria-hidden />
-        </ActionIcon>
-      </Menu.Target>
-      <Menu.Dropdown>
-        <Menu.Item leftSection={<IconPencil size={14} aria-hidden />} onClick={() => onEdit(item)}>
-          Edit
+    <RowActionsMenu name={item.name}>
+      <Menu.Item leftSection={<IconPencil size={14} aria-hidden />} onClick={() => onEdit(item)}>
+        Edit
+      </Menu.Item>
+      {item.archived ? (
+        <Menu.Item
+          leftSection={<IconArrowBackUp size={14} aria-hidden />}
+          onClick={() => onRestore(item)}
+        >
+          Restore to the rate card
         </Menu.Item>
-        {item.archived ? (
-          <Menu.Item
-            leftSection={<IconArrowBackUp size={14} aria-hidden />}
-            onClick={() => onRestore(item)}
-          >
-            Restore to the rate card
-          </Menu.Item>
-        ) : (
-          <Menu.Item
-            leftSection={<IconArchive size={14} aria-hidden />}
-            color="red"
-            onClick={() => onArchive(item)}
-          >
-            Archive
-          </Menu.Item>
-        )}
-      </Menu.Dropdown>
-    </Menu>
+      ) : (
+        <Menu.Item
+          leftSection={<IconArchive size={14} aria-hidden />}
+          color="red"
+          onClick={() => onArchive(item)}
+        >
+          Archive
+        </Menu.Item>
+      )}
+    </RowActionsMenu>
   )
 }

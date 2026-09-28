@@ -200,7 +200,7 @@ describe('TeamTimesheetPanel', () => {
       const table = await screen.findByRole('table', { name: 'Days not clocked' })
       await user.click(
         within(table).getByRole('button', {
-          name: 'Grant day off to Ada Lovelace on 2026-09-21',
+          name: 'Actions for Ada Lovelace on 2026-09-21',
         }),
       )
       await user.click(await screen.findByRole('menuitem', { name: 'Paid day off' }))
@@ -223,7 +223,7 @@ describe('TeamTimesheetPanel', () => {
 
       const table = await screen.findByRole('table', { name: 'Days not clocked' })
       within(table)
-        .getByRole('button', { name: /^Grant day off/ })
+        .getByRole('button', { name: /^Actions for Ada Lovelace/ })
         .focus()
       await user.keyboard('{Enter}')
       const unpaid = await screen.findByRole('menuitem', { name: 'Unpaid day off' })
@@ -245,7 +245,7 @@ describe('TeamTimesheetPanel', () => {
       render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
 
       const table = await screen.findByRole('table', { name: 'Days not clocked' })
-      await user.click(within(table).getByRole('button', { name: /^Grant day off/ }))
+      await user.click(within(table).getByRole('button', { name: /^Actions for Ada Lovelace/ }))
       await user.click(await screen.findByRole('menuitem', { name: 'Paid day off' }))
 
       await waitFor(() =>
@@ -263,7 +263,8 @@ describe('TeamTimesheetPanel', () => {
       render(<TeamTimesheetPanel timeZone="Asia/Manila" />)
 
       const table = await screen.findByRole('table', { name: 'Days not clocked' })
-      await user.click(within(table).getByRole('button', { name: /^Take back the day off/ }))
+      await user.click(within(table).getByRole('button', { name: /^Actions for Ada Lovelace/ }))
+      await user.click(await screen.findByRole('menuitem', { name: 'Take back day off' }))
 
       expect(await within(table).findByText('Absent')).toBeInTheDocument()
       expect(rpc.revokeDayOff).not.toHaveBeenCalled()

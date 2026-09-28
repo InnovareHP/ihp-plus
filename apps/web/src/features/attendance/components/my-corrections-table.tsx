@@ -1,8 +1,9 @@
 'use client'
 
-import { Button, Stack, Text, Title } from '@mantine/core'
+import { Menu, Stack, Text, Title } from '@mantine/core'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import type { AttendanceCorrectionRow } from '../schema'
 import { CorrectionStatusBadge } from './correction-status-badge'
 
@@ -69,19 +70,19 @@ export function MyCorrectionsTable({
       key: 'actions',
       header: 'Actions',
       align: 'right',
+      width: 90,
       render: (row) =>
         row.status === 'pending' ? (
-          <Button
-            variant="subtle"
-            color="gray"
-            size="compact-sm"
-            // A row still being saved has no server id to withdraw yet.
-            disabled={row.id.startsWith('pending-')}
-            onClick={() => onWithdraw(row)}
-            aria-label={`Withdraw the request for ${dayLabel(row.workDate)}`}
-          >
-            Withdraw
-          </Button>
+          <RowActionsMenu name={`the request for ${dayLabel(row.workDate)}`}>
+            <Menu.Item
+              color="red"
+              // A row still being saved has no server id to withdraw yet.
+              disabled={row.id.startsWith('pending-')}
+              onClick={() => onWithdraw(row)}
+            >
+              Withdraw
+            </Menu.Item>
+          </RowActionsMenu>
         ) : null,
     },
   ]

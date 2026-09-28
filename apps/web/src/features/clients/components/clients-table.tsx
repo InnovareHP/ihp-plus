@@ -1,7 +1,6 @@
 'use client'
 
 import {
-  ActionIcon,
   Badge,
   Button,
   Group,
@@ -13,12 +12,13 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { IconAdjustments, IconDotsVertical, IconPlus } from '@tabler/icons-react'
+import { IconAdjustments, IconPlus } from '@tabler/icons-react'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LookupOptionsModal } from '@/components/lookup-options-modal'
 import { ClientAccessModal } from '@/features/drive/components/client-access-modal'
 import { EmptyState } from '@/components/empty-state'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { SearchField } from '@/components/search-field'
 import {
   CLIENT_LOOKUP_KINDS,
@@ -200,22 +200,15 @@ export function ClientsTable() {
       width: 90,
       align: 'right',
       render: (row) => (
-        <Menu position="bottom-end" withinPortal>
-          <Menu.Target>
-            <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${row.name}`}>
-              <IconDotsVertical size={16} aria-hidden />
-            </ActionIcon>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Item onClick={() => setEditing(row)}>Edit</Menu.Item>
-            <Menu.Item onClick={() => setSharing(row)}>Folder access</Menu.Item>
-            {row.archivedAt ? (
-              <Menu.Item onClick={() => restore.mutate({ id: row.id })}>Restore</Menu.Item>
-            ) : (
-              <Menu.Item onClick={() => archiveWithUndo(row)}>Archive</Menu.Item>
-            )}
-          </Menu.Dropdown>
-        </Menu>
+        <RowActionsMenu name={row.name}>
+          <Menu.Item onClick={() => setEditing(row)}>Edit</Menu.Item>
+          <Menu.Item onClick={() => setSharing(row)}>Folder access</Menu.Item>
+          {row.archivedAt ? (
+            <Menu.Item onClick={() => restore.mutate({ id: row.id })}>Restore</Menu.Item>
+          ) : (
+            <Menu.Item onClick={() => archiveWithUndo(row)}>Archive</Menu.Item>
+          )}
+        </RowActionsMenu>
       ),
     },
   ]

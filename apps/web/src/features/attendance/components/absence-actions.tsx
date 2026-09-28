@@ -1,8 +1,8 @@
 'use client'
 
-import { Button, Menu } from '@mantine/core'
-import { IconChevronDown } from '@tabler/icons-react'
+import { Menu } from '@mantine/core'
 import { useQueryClient } from '@tanstack/react-query'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { offerUndo } from '@/lib/undo'
 import { editAbsences, restoreLogs } from '../hooks/use-attendance-cache'
 import { useGrantDayOff, useRevokeDayOff } from '../hooks/use-day-off'
@@ -40,38 +40,23 @@ export function AbsenceActions({ absence }: AbsenceActionsProps) {
 
   if (absence.kind === 'absent') {
     return (
-      <Menu position="bottom-end" withinPortal>
-        <Menu.Target>
-          <Button
-            variant="light"
-            rightSection={<IconChevronDown size={16} aria-hidden />}
-            aria-label={`Grant day off to ${name}`}
-          >
-            Grant day off
-          </Button>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <Menu.Item onClick={() => grant.mutate({ ...target, paid: true })}>
-            Paid day off
-          </Menu.Item>
-          <Menu.Item onClick={() => grant.mutate({ ...target, paid: false })}>
-            Unpaid day off
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+      <RowActionsMenu name={name}>
+        <Menu.Label>Grant day off</Menu.Label>
+        <Menu.Item onClick={() => grant.mutate({ ...target, paid: true })}>Paid day off</Menu.Item>
+        <Menu.Item onClick={() => grant.mutate({ ...target, paid: false })}>
+          Unpaid day off
+        </Menu.Item>
+      </RowActionsMenu>
     )
   }
 
   if (!absence.granted) return null
 
   return (
-    <Button
-      variant="subtle"
-      color="gray"
-      onClick={() => void takeBack()}
-      aria-label={`Take back the day off for ${name}`}
-    >
-      Take back
-    </Button>
+    <RowActionsMenu name={name}>
+      <Menu.Item color="red" onClick={() => void takeBack()}>
+        Take back day off
+      </Menu.Item>
+    </RowActionsMenu>
   )
 }

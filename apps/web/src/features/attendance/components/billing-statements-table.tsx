@@ -1,8 +1,9 @@
 'use client'
 
-import { Button, Group, Stack, Text, Title } from '@mantine/core'
+import { Menu, Stack, Text, Title } from '@mantine/core'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import type { BillingStatementRow } from '../schema'
 import { formatStatementDate, formatUsd } from '../utils/billing-statement'
 
@@ -73,34 +74,22 @@ export function BillingStatementsTable({
       key: 'actions',
       header: 'Actions',
       align: 'right',
-      render: (row) => {
-        // A row still being saved has no server id to act on yet.
-        const saving = row.id.startsWith('pending-')
-        return (
-          <Group gap="xs" justify="flex-end" wrap="nowrap">
-            <Button
-              variant="subtle"
-              size="compact-sm"
-              onClick={() => onPrint(row)}
-              aria-label={`Print ${row.invoiceNumber}`}
+      width: 90,
+      render: (row) => (
+        <RowActionsMenu name={row.invoiceNumber}>
+          <Menu.Item onClick={() => onPrint(row)}>Print</Menu.Item>
+          {onDelete ? (
+            <Menu.Item
+              color="red"
+              // A row still being saved has no server id to act on yet.
+              disabled={row.id.startsWith('pending-')}
+              onClick={() => onDelete(row)}
             >
-              Print
-            </Button>
-            {onDelete ? (
-              <Button
-                variant="subtle"
-                color="gray"
-                size="compact-sm"
-                disabled={saving}
-                onClick={() => onDelete(row)}
-                aria-label={`Delete ${row.invoiceNumber}`}
-              >
-                Delete
-              </Button>
-            ) : null}
-          </Group>
-        )
-      },
+              Delete
+            </Menu.Item>
+          ) : null}
+        </RowActionsMenu>
+      ),
     },
   ]
 

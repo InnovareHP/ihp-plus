@@ -1,8 +1,9 @@
 'use client'
 
-import { Badge, Button, Card, Group, Stack, Text, Title } from '@mantine/core'
+import { Badge, Card, Group, Menu, Stack, Text, Title } from '@mantine/core'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { useCorrectionQueue, useDecideCorrection } from '../hooks/use-corrections'
 import type { AttendanceCorrectionRow } from '../schema'
 import { RejectCorrectionModal } from './reject-correction-modal'
@@ -56,28 +57,21 @@ export function CorrectionsQueue() {
       key: 'actions',
       header: 'Actions',
       align: 'right',
+      width: 90,
       render: (row) =>
         row.canDecide ? (
-          <Group gap="xs" justify="flex-end" wrap="nowrap">
-            <Button
-              size="compact-sm"
+          <RowActionsMenu name={`${row.userName}'s correction for ${dayLabel(row.workDate)}`}>
+            <Menu.Item
               onClick={() =>
                 decide.mutate({ correctionId: row.id, decision: 'approved', note: '' })
               }
-              aria-label={`Approve ${row.userName}'s correction for ${dayLabel(row.workDate)}`}
             >
               Approve
-            </Button>
-            <Button
-              size="compact-sm"
-              variant="subtle"
-              color="red"
-              onClick={() => setRejecting(row)}
-              aria-label={`Turn down ${row.userName}'s correction for ${dayLabel(row.workDate)}`}
-            >
+            </Menu.Item>
+            <Menu.Item color="red" onClick={() => setRejecting(row)}>
               Turn down
-            </Button>
-          </Group>
+            </Menu.Item>
+          </RowActionsMenu>
         ) : null,
     },
   ]

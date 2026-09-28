@@ -1,11 +1,12 @@
 'use client'
 
-import { ActionIcon, Badge, Button, Group, Menu, Stack, Text } from '@mantine/core'
+import { Badge, Button, Group, Menu, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { IconDotsVertical, IconPlus } from '@tabler/icons-react'
+import { IconPlus } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
+import { RowActionsMenu } from '@/components/row-actions-menu'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { useClientPagination } from '@/lib/use-client-pagination'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
@@ -191,22 +192,15 @@ export function TeamsPanel() {
       width: 80,
       align: 'right',
       render: (team) => (
-        <Menu position="bottom-end" withinPortal>
-          <Menu.Target>
-            <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${team.name}`}>
-              <IconDotsVertical size={16} aria-hidden />
-            </ActionIcon>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Item onClick={() => setQuery({ team: team.id })}>
-              Manage people, leads and approvers
-            </Menu.Item>
-            <Menu.Item onClick={() => setRenaming(team)}>Rename</Menu.Item>
-            <Menu.Item color="red" onClick={() => setDeleting(team)}>
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
+        <RowActionsMenu name={team.name}>
+          <Menu.Item onClick={() => setQuery({ team: team.id })}>
+            Manage people, leads and approvers
+          </Menu.Item>
+          <Menu.Item onClick={() => setRenaming(team)}>Rename</Menu.Item>
+          <Menu.Item color="red" onClick={() => setDeleting(team)}>
+            Delete
+          </Menu.Item>
+        </RowActionsMenu>
       ),
     },
   ]
