@@ -3,6 +3,7 @@ import type { Prisma } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { pageInfoOf, skipTake } from '@/lib/pagination'
 import { requireHiringCaller, type HiringCaller } from './access'
+import { requestLandingRebuild } from './landing-rebuild'
 import {
   DEFAULT_REJECTION_MESSAGE,
   DEFAULT_TIME_ZONE,
@@ -330,6 +331,8 @@ export async function savePosting(input: PostingDraftValues): Promise<PostingRow
     data,
     include: POSTING_INCLUDE,
   })
+  // An open posting is on the marketing site, so an edit to it has to reach the list there.
+  if (updated.status === 'open') requestLandingRebuild('posting edited')
   return rowWithCounts(caller, updated)
 }
 
@@ -378,6 +381,10 @@ export async function setPostingStatus(input: {
     },
     include: POSTING_INCLUDE,
   })
+  // Only a move onto or off the open list changes what the marketing site shows.
+  if ((existing.status === 'open') !== (input.status === 'open')) {
+    requestLandingRebuild(`posting ${input.status}`)
+  }
   return rowWithCounts(caller, updated)
 }
 

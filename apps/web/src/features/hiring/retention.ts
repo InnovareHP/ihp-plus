@@ -1,5 +1,6 @@
 import { db } from '@ihp/db'
 import { deleteObject } from '@/lib/s3'
+import { requestLandingRebuild } from './landing-rebuild'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 // What the consent line on the careers form promises: kept 12 months after the decision.
@@ -57,6 +58,15 @@ export async function sweepHiringData(now = new Date()) {
       where: { id: { in: strays.map((file) => file.id) } },
     })
   }
+
+  // A posting past its closing date drops off the marketing site only when that site rebuilds.
+  const closedByDate = await db.jobPosting.count({
+    where: {
+      status: 'open',
+      closesAt: { gte: new Date(now.getTime() - 2 * DAY_MS), lt: now },
+    },
+  })
+  if (closedByDate > 0) requestLandingRebuild('closing date passed')
 
   return {
     applications: expiredFailures === 0 ? expired.length : 0,

@@ -3,11 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const prisma = vi.hoisted(() => ({
   jobApplication: { findMany: vi.fn(), deleteMany: vi.fn() },
   applicationAttachment: { findMany: vi.fn(), deleteMany: vi.fn() },
+  jobPosting: { count: vi.fn() },
 }))
+const rebuild = vi.hoisted(() => ({ requestLandingRebuild: vi.fn() }))
 const s3 = vi.hoisted(() => ({ deleteObject: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/s3', () => s3)
+vi.mock('./landing-rebuild', () => rebuild)
 
 const { RETENTION_MS, STRAY_UPLOAD_MS, sweepHiringData } = await import('./retention')
 
@@ -22,6 +25,7 @@ beforeEach(() => {
     { id: 'file-stray', fileKey: 'hiring/org-1/post-1/stray.pdf' },
   ])
   s3.deleteObject.mockResolvedValue(undefined)
+  prisma.jobPosting.count.mockResolvedValue(0)
 })
 
 describe('sweepHiringData', () => {
@@ -58,5 +62,19 @@ describe('sweepHiringData', () => {
 
     expect(await sweepHiringData(NOW)).toEqual({ applications: 0, strayFiles: 0 })
     expect(prisma.jobApplication.deleteMany).not.toHaveBeenCalled()
+  })
+
+  it('rebuilds the marketing site when a posting has just passed its closing date', async () => {
+    prisma.jobPosting.count.mockResolvedValue(1)
+
+    await sweepHiringData(NOW)
+
+    expect(rebuild.requestLandingRebuild).toHaveBeenCalledWith('closing date passed')
+  })
+
+  it('leaves the marketing site alone when no posting closed', async () => {
+    await sweepHiringData(NOW)
+
+    expect(rebuild.requestLandingRebuild).not.toHaveBeenCalled()
   })
 })

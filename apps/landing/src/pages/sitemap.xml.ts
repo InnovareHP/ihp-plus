@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro'
 import { SERVICES, servicePath } from '../data/services'
 
 /** Every indexable page; the site is small enough that a list beats a sitemap integration. */
-const PAGES = ['/', ...SERVICES.map((service) => servicePath(service.slug))]
+const PAGES = ['/', '/careers', ...SERVICES.map((service) => servicePath(service.slug))]
 
 export const GET: APIRoute = ({ site }) => {
   const origin = site ?? new URL('https://www.ihpplusglobal.com')

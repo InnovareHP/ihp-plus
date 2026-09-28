@@ -27,7 +27,9 @@
         "S3_*",
         "GRAPH_*",
         "CRON_SECRET",
-        "ORG_*"
+        "ORG_*",
+        "LANDING_DEPLOY_HOOK_URL",
+        "PORTAL_URL"
       ]
     },
     "dev": {
@@ -53,7 +55,9 @@
         "S3_*",
         "GRAPH_*",
         "CRON_SECRET",
-        "ORG_*"
+        "ORG_*",
+        "LANDING_DEPLOY_HOOK_URL",
+        "PORTAL_URL"
       ]
     },
     "lint": {
@@ -81,7 +85,9 @@
         "S3_*",
         "GRAPH_*",
         "CRON_SECRET",
-        "ORG_*"
+        "ORG_*",
+        "LANDING_DEPLOY_HOOK_URL",
+        "PORTAL_URL"
       ]
     },
     "typecheck": {
@@ -92,6 +98,12 @@
     },
     "@ihp/db#typecheck": {
       "dependsOn": ["build"]
+    },
+    "@ihp/landing#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      "env": ["PORTAL_URL"],
+      "cache": false
     }
   }
 }

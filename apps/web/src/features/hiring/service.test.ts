@@ -22,6 +22,8 @@ const guard = vi.hoisted(() => ({
 }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
+const rebuild = vi.hoisted(() => ({ requestLandingRebuild: vi.fn() }))
+vi.mock('./landing-rebuild', () => rebuild)
 // membershipOf and canManageOrganization are pure, so the real ones decide who is an admin.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/auth-guard')>()),
@@ -299,5 +301,17 @@ describe('postings', () => {
     })
     // "Not archived" is the default view.
     expect(prisma.jobPosting.count.mock.calls[0]?.[0].where.status).toEqual({ not: 'archived' })
+  })
+
+  it('rebuilds the marketing site only when a posting joins or leaves the open list', async () => {
+    prisma.jobPosting.update.mockResolvedValue({ ...POSTING, status: 'open' })
+    await setPostingStatus({ postingId: 'post-1', status: 'open' })
+    expect(rebuild.requestLandingRebuild).toHaveBeenCalledWith('posting open')
+
+    rebuild.requestLandingRebuild.mockClear()
+    prisma.jobPosting.findFirst.mockResolvedValue({ ...POSTING, status: 'closed' })
+    prisma.jobPosting.update.mockResolvedValue({ ...POSTING, status: 'archived' })
+    await setPostingStatus({ postingId: 'post-1', status: 'archived' })
+    expect(rebuild.requestLandingRebuild).not.toHaveBeenCalled()
   })
 })
