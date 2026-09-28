@@ -4,11 +4,33 @@ import { betterAuth } from 'better-auth/minimal'
 import { nextCookies } from 'better-auth/next-js'
 import { admin, organization } from 'better-auth/plugins'
 import { invitationTemplate, resetPasswordTemplate, sendEmail, verifyEmailTemplate } from './email'
+import { invitationGuard, organizationAccess } from './invitation-policy'
 import { isRedisConfigured, redisRateLimitStorage } from './redis'
 import { AUTH_BASE_PATH, invitationRoute, withBasePath } from './routes'
 
 // The invitation link is a real browser URL, so it needs the origin as well as the basePath.
 const BASE_URL = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
+
+// Read straight from the tables: the hiring feature's own helpers import this module.
+async function inviterOf(userId: string, organizationId: string) {
+  const member = await db.member.findFirst({
+    where: { userId, organizationId },
+    select: { role: true },
+  })
+  if (!member) return null
+
+  const settings = await db.hiringSettings.findUnique({
+    where: { organizationId },
+    select: { hrTeamId: true },
+  })
+  const inHr = settings?.hrTeamId
+    ? await db.teamMember.findFirst({
+        where: { userId, teamId: settings.hrTeamId },
+        select: { id: true },
+      })
+    : null
+  return { role: member.role, isHr: Boolean(inHr) }
+}
 
 export const auth = betterAuth({
   appName: 'IHP Plus',
@@ -96,11 +118,14 @@ export const auth = betterAuth({
     database: { joins: true },
   },
 
+  hooks: { before: invitationGuard(inviterOf) },
+
   plugins: [
     // One organization is the company; each department is a team inside it.
     organization({
       allowUserToCreateOrganization: false,
       creatorRole: 'owner',
+      ...organizationAccess,
       // Not awaited: a slow mail provider would hold up the invitation response.
       sendInvitationEmail: async (data) => {
         const link = `${BASE_URL}${withBasePath(invitationRoute(data.id))}`

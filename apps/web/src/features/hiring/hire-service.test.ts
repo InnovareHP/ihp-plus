@@ -4,23 +4,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const prisma = vi.hoisted(() => ({
   jobApplication: { findFirst: vi.fn(), update: vi.fn() },
   applicationEvent: { create: vi.fn() },
-  invitation: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+  invitation: { findFirst: vi.fn() },
   member: { findFirst: vi.fn() },
   team: { findFirst: vi.fn() },
-  organization: { findUnique: vi.fn() },
   $transaction: vi.fn(),
 }))
 const access = vi.hoisted(() => ({ requireHiringCaller: vi.fn() }))
-const email = vi.hoisted(() => ({ sendEmail: vi.fn() }))
+const auth = vi.hoisted(() => ({ api: { createInvitation: vi.fn() } }))
 const pipeline = vi.hoisted(() => ({ loadApplication: vi.fn() }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./access', () => access)
 vi.mock('./pipeline-service', () => pipeline)
-vi.mock('@/lib/email', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/lib/email')>()),
-  sendEmail: email.sendEmail,
-}))
+vi.mock('@/lib/auth', () => ({ auth }))
+vi.mock('next/headers', () => ({ headers: async () => new Headers({ cookie: 'session=hr' }) }))
 
 const { hireApplication, linkHiredApplicant } = await import('./hire-service')
 
@@ -33,10 +30,10 @@ const APPLICATION = {
   posting: { teamId: 'team-care' },
 }
 
-async function codeOf(operation: () => Promise<unknown>) {
+async function errorOf(operation: () => Promise<unknown>) {
   return operation().then(
     () => undefined,
-    (thrown: unknown) => ConnectError.from(thrown).code,
+    (thrown: unknown) => ConnectError.from(thrown),
   )
 }
 
@@ -52,12 +49,7 @@ beforeEach(() => {
   prisma.team.findFirst.mockResolvedValue({ id: 'team-care' })
   prisma.member.findFirst.mockResolvedValue(null)
   prisma.invitation.findFirst.mockResolvedValue(null)
-  prisma.invitation.create.mockImplementation(async ({ data }) => data)
-  prisma.invitation.update.mockImplementation(async ({ where, data }) => ({
-    id: where.id,
-    ...data,
-  }))
-  prisma.organization.findUnique.mockResolvedValue({ name: 'IHP+' })
+  auth.api.createInvitation.mockResolvedValue({ id: 'inv-1' })
   prisma.$transaction.mockImplementation((operations: Promise<unknown>[]) =>
     Promise.all(operations),
   )
@@ -65,30 +57,33 @@ beforeEach(() => {
 })
 
 describe('hiring', () => {
-  it('invites them as a member of the posting’s department and emails the link', async () => {
+  it('invites them through Better Auth, as HR, into the posting’s department', async () => {
     await hireApplication({ applicationId: 'app-1', teamId: '' })
 
-    const invitation = prisma.invitation.create.mock.calls[0]?.[0].data
-    expect(invitation).toMatchObject({
-      organizationId: 'org-1',
+    const call = auth.api.createInvitation.mock.calls[0]?.[0]
+    expect(call.body).toEqual({
       email: 'grace@example.com',
       role: 'member',
+      organizationId: 'org-1',
+      resend: true,
       teamId: 'team-care',
-      status: 'pending',
-      inviterId: 'user-hr',
     })
-    expect(invitation.expiresAt.getTime() - Date.now()).toBeGreaterThan(47 * 60 * 60 * 1000)
+    // The HR person's own session, so Better Auth's checks and the invite guard apply to them.
+    expect(call.headers.get('cookie')).toBe('session=hr')
     expect(prisma.jobApplication.update.mock.calls[0]?.[0].data).toMatchObject({
       status: 'hired',
-      invitationId: invitation.id,
+      invitationId: 'inv-1',
       decidedById: 'user-hr',
     })
-    expect(email.sendEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: 'grace@example.com',
-        text: expect.stringContaining(`/accept-invitation/${invitation.id}`),
-      }),
-    )
+  })
+
+  it('shows Better Auth’s refusal and leaves the application as it was', async () => {
+    auth.api.createInvitation.mockRejectedValue(new Error('HR can invite people as members only.'))
+
+    const error = await errorOf(() => hireApplication({ applicationId: 'app-1', teamId: '' }))
+
+    expect(error?.rawMessage).toBe('HR can invite people as members only.')
+    expect(prisma.jobApplication.update).not.toHaveBeenCalled()
   })
 
   it('marks someone already in the organization hired without inviting them', async () => {
@@ -96,22 +91,19 @@ describe('hiring', () => {
 
     await hireApplication({ applicationId: 'app-1', teamId: '' })
 
-    expect(prisma.invitation.create).not.toHaveBeenCalled()
-    expect(email.sendEmail).not.toHaveBeenCalled()
+    expect(auth.api.createInvitation).not.toHaveBeenCalled()
     expect(prisma.jobApplication.update.mock.calls[0]?.[0].data).toMatchObject({
       status: 'hired',
       hiredUserId: 'user-9',
     })
   })
 
-  it('sends the same invitation again rather than a second one', async () => {
+  it('records a second hire of someone already invited as a resend', async () => {
     prisma.jobApplication.findFirst.mockResolvedValue({ ...APPLICATION, status: 'hired' })
     prisma.invitation.findFirst.mockResolvedValue({ id: 'inv-1' })
 
     await hireApplication({ applicationId: 'app-1', teamId: '' })
 
-    expect(prisma.invitation.create).not.toHaveBeenCalled()
-    expect(prisma.invitation.update.mock.calls[0]?.[0].where).toEqual({ id: 'inv-1' })
     expect(prisma.applicationEvent.create.mock.calls[0]?.[0].data.detail).toEqual({
       invited: true,
       resent: true,
@@ -120,26 +112,27 @@ describe('hiring', () => {
 
   it('refuses a closed application and a hire who already joined', async () => {
     prisma.jobApplication.findFirst.mockResolvedValue({ ...APPLICATION, status: 'rejected' })
-    expect(await codeOf(() => hireApplication({ applicationId: 'app-1', teamId: '' }))).toBe(
-      Code.FailedPrecondition,
-    )
+    expect(
+      (await errorOf(() => hireApplication({ applicationId: 'app-1', teamId: '' })))?.code,
+    ).toBe(Code.FailedPrecondition)
 
     prisma.jobApplication.findFirst.mockResolvedValue({
       ...APPLICATION,
       status: 'hired',
       hiredUserId: 'user-9',
     })
-    expect(await codeOf(() => hireApplication({ applicationId: 'app-1', teamId: '' }))).toBe(
-      Code.FailedPrecondition,
-    )
-    expect(prisma.invitation.create).not.toHaveBeenCalled()
+    expect(
+      (await errorOf(() => hireApplication({ applicationId: 'app-1', teamId: '' })))?.code,
+    ).toBe(Code.FailedPrecondition)
+    expect(auth.api.createInvitation).not.toHaveBeenCalled()
   })
 
   it('refuses a department from another organization', async () => {
     prisma.team.findFirst.mockResolvedValue(null)
 
     expect(
-      await codeOf(() => hireApplication({ applicationId: 'app-1', teamId: 'team-elsewhere' })),
+      (await errorOf(() => hireApplication({ applicationId: 'app-1', teamId: 'team-elsewhere' })))
+        ?.code,
     ).toBe(Code.NotFound)
   })
 })

@@ -1,18 +1,14 @@
 import { db } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
-import { invitationTemplate, portalUrl, sendEmail } from '@/lib/email'
-import { invitationRoute } from '@/lib/routes'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
 import { requireHiringCaller } from './access'
 import { loadApplication } from './pipeline-service'
 import type { ApplicationDetail } from './schema'
 
-// Better Auth's own default for invitationExpiresIn, so a hire's invitation lasts like any other.
-const INVITATION_TTL_MS = 48 * 60 * 60 * 1000
-
 /**
- * The invitation row is written here rather than through Better Auth's createInvitation, which
- * only lets owners and admins invite; HR hires as ordinary members. Accepting it is still Better
- * Auth's own flow, which reads this same row.
+ * The invitation goes through Better Auth as the HR person themselves, so it is created, resent,
+ * emailed and accepted exactly like one an admin sends; lib/invitation-policy decides who may.
  */
 export async function hireApplication(input: {
   applicationId: string
@@ -69,28 +65,32 @@ export async function hireApplication(input: {
     return loadApplication(row.id)
   }
 
-  const expiresAt = new Date(now.getTime() + INVITATION_TTL_MS)
   const pending = await db.invitation.findFirst({
     where: { organizationId: caller.organizationId, email: row.email, status: 'pending' },
     select: { id: true },
   })
-  const invitation = pending
-    ? await db.invitation.update({
-        where: { id: pending.id },
-        data: { expiresAt, teamId, inviterId: caller.userId },
-      })
-    : await db.invitation.create({
-        data: {
-          id: crypto.randomUUID(),
-          organizationId: caller.organizationId,
-          email: row.email,
-          role: 'member',
-          teamId,
-          status: 'pending',
-          expiresAt,
-          inviterId: caller.userId,
-        },
-      })
+
+  let invitation: { id: string }
+  try {
+    // resend: a second hire of the same person refreshes the one invitation instead of refusing.
+    invitation = await auth.api.createInvitation({
+      body: {
+        email: row.email,
+        role: 'member',
+        organizationId: caller.organizationId,
+        resend: true,
+        ...(teamId ? { teamId } : {}),
+      },
+      headers: await headers(),
+    })
+  } catch (error) {
+    throw new ConnectError(
+      error instanceof Error && error.message
+        ? error.message
+        : 'Could not send the invitation — try again.',
+      Code.FailedPrecondition,
+    )
+  }
 
   await db.$transaction([
     db.jobApplication.update({
@@ -102,23 +102,10 @@ export async function hireApplication(input: {
         applicationId: row.id,
         actorId: caller.userId,
         kind: 'hired',
-        detail: { invited: true, resent: row.status === 'hired' },
+        detail: { invited: true, resent: Boolean(pending) },
       },
     }),
   ])
-
-  const organization = await db.organization.findUnique({
-    where: { id: caller.organizationId },
-    select: { name: true },
-  })
-  void sendEmail({
-    to: row.email,
-    ...invitationTemplate({
-      organizationName: organization?.name ?? 'IHP+',
-      inviterName: caller.name,
-      url: portalUrl(invitationRoute(invitation.id)),
-    }),
-  })
 
   return loadApplication(row.id)
 }
