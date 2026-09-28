@@ -1,5 +1,9 @@
 ---
 const year = new Date().getFullYear()
+// The portal answers on its own host; open roles and applying live there under /app/careers.
+const PORTAL = 'https://portal.ihpplusglobal.com'
+const linkClass =
+  'w-fit rounded-sm text-white underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none'
 ---
 
 <footer class="bg-ink text-white">
@@ -27,12 +31,10 @@ const year = new Date().getFullYear()
       class="mt-10 flex flex-col-reverse gap-3 border-t border-white/15 pt-6 text-xs text-white/70 sm:flex-row sm:items-center sm:justify-between"
     >
       <p>© {year} IHP+</p>
-      <a
-        href="https://portal.ihpplusglobal.com"
-        class="w-fit rounded-sm text-white underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:outline-none"
-      >
-        Sign in to IHP+
-      </a>
+      <nav aria-label="Portal" class="flex flex-col gap-3 sm:flex-row sm:gap-6">
+        <a href={`${PORTAL}/app/careers`} class={linkClass}>Careers</a>
+        <a href={PORTAL} class={linkClass}>Sign in to IHP+</a>
+      </nav>
     </div>
   </div>
 </footer>
