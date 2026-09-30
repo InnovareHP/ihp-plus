@@ -60,7 +60,7 @@ export function EvaluationForm({ evaluation }: { evaluation: EvaluationRow }) {
 
   return (
     <PageSection
-      title="Your answers"
+      title={`Your evaluation of ${evaluation.employeeName}`}
       description={
         evaluation.dueAt
           ? `Due by ${dateOnly.format(new Date(evaluation.dueAt))}.`
@@ -83,8 +83,8 @@ export function EvaluationForm({ evaluation }: { evaluation: EvaluationRow }) {
           </Stack>
 
           <Text size="sm" c="dimmed">
-            Nobody approves this. Once submitted, it is the record of your evaluation of{' '}
-            {evaluation.employeeName}.
+            Nobody approves this. Once submitted, it is the record, and the Executive department
+            reads it without your name on it.
           </Text>
 
           <Group>

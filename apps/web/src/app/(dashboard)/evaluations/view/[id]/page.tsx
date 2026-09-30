@@ -20,12 +20,10 @@ export default async function EvaluationPage({ params }: { params: Promise<{ id:
   return (
     <PageShell>
       <PageHeader
-        title={`${evaluation.formName} · ${evaluation.employeeName}`}
-        description="What the supervisor recorded, as it was answered."
-        breadcrumbs={[
-          { label: 'Evaluations', href: routes.evaluations },
-          { label: evaluation.employeeName },
-        ]}
+        // The heading names no one: it is what a passer-by or a screen share sees first.
+        title={evaluation.formName}
+        description="What was recorded, as it was answered."
+        breadcrumbs={[{ label: 'Evaluations', href: routes.evaluations }, { label: 'Evaluation' }]}
       />
       <EvaluationDetail initial={evaluation} />
     </PageShell>

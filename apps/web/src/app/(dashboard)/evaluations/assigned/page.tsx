@@ -17,7 +17,7 @@ export default async function AssignedEvaluationsPage() {
     <PageShell>
       <PageHeader
         title="Assigned evaluations"
-        description="Who is being evaluated, by whom, and who has not answered yet."
+        description="Who is being evaluated and who has not answered yet. Once submitted, an evaluation no longer shows who wrote it."
         breadcrumbs={breadcrumbsFor(routes.evaluationTracker)}
       />
       {/* The status tab, search and page all live in the URL, which needs a boundary. */}

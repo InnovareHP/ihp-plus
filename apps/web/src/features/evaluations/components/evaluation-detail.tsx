@@ -23,7 +23,11 @@ export function EvaluationDetail({ initial }: { initial: EvaluationRow }) {
               {row.employeeEmploymentStatus ? ` · ${row.employeeEmploymentStatus}` : ''}
             </Text>
             <Text size="sm" c="dimmed">
-              Filled in by {row.evaluatorName}
+              {row.status === 'submitted'
+                ? row.isMine
+                  ? 'Filled in by you'
+                  : 'Filled in anonymously'
+                : `Assigned to ${row.evaluatorName}`}
               {row.submittedAt ? ` · ${stamp.format(new Date(row.submittedAt))}` : ''}
             </Text>
           </Stack>

@@ -46,16 +46,13 @@ export interface SubmittedEvaluation {
   evaluationId: string
   organizationId: string
   evaluatorId: string
-  evaluatorName: string
   employeeId: string
   formName: string
 }
 
 export interface CancelledEvaluation {
   evaluatorId: string
-  employeeId: string
   formName: string
-  cancelledByName: string
 }
 
 /**
@@ -75,14 +72,12 @@ export async function notifyExecutives(evaluation: SubmittedEvaluation) {
       return
     }
 
-    const [people, employee] = await Promise.all([
-      db.user.findMany({ where: { id: { in: recipients } }, select: { email: true } }),
-      nameOf(evaluation.employeeId),
-    ])
+    const people = await db.user.findMany({
+      where: { id: { in: recipients } },
+      select: { email: true },
+    })
 
     const message = evaluationSubmittedTemplate({
-      evaluatorName: evaluation.evaluatorName,
-      employeeName: employee,
       formName: evaluation.formName,
       url: portalUrl(evaluationRoute(evaluation.evaluationId)),
     })
@@ -99,30 +94,20 @@ export async function notifyExecutives(evaluation: SubmittedEvaluation) {
 /** Tells the evaluator to stop: a cancelled evaluation keeps nothing they typed. */
 export async function notifyEvaluatorCancelled(evaluation: CancelledEvaluation) {
   try {
-    const [evaluator, employee] = await Promise.all([
-      db.user.findUnique({ where: { id: evaluation.evaluatorId }, select: { email: true } }),
-      nameOf(evaluation.employeeId),
-    ])
+    const evaluator = await db.user.findUnique({
+      where: { id: evaluation.evaluatorId },
+      select: { email: true },
+    })
     if (!evaluator) return
 
     void sendEmail({
       to: evaluator.email,
       ...evaluationCancelledTemplate({
         formName: evaluation.formName,
-        employeeName: employee,
-        cancelledByName: evaluation.cancelledByName,
         url: portalUrl(routes.evaluations),
       }),
     })
   } catch (error) {
     console.error(`[evaluations] could not tell ${evaluation.evaluatorId} it was cancelled`, error)
   }
-}
-
-async function nameOf(userId: string) {
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { name: true, preferredName: true },
-  })
-  return user?.preferredName ?? user?.name ?? 'a colleague'
 }

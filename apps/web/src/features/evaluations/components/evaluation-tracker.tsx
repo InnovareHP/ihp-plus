@@ -82,7 +82,11 @@ export function EvaluationTracker() {
     {
       key: 'evaluator',
       header: 'Supervisor',
-      render: (row) => <Text size="sm">{row.evaluatorName}</Text>,
+      render: (row) => (
+        <Text size="sm" c={row.status === 'submitted' ? 'dimmed' : undefined}>
+          {row.evaluatorName}
+        </Text>
+      ),
     },
     {
       key: 'due',

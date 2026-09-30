@@ -238,28 +238,26 @@ describe('request receipts', () => {
 })
 
 describe('evaluation emails', () => {
-  it('reports a submitted evaluation to whoever asked for it', () => {
+  it('reports a submitted evaluation without naming who wrote it or who it is about', () => {
     const email = evaluationSubmittedTemplate({
-      evaluatorName: 'Ada Lovelace',
-      employeeName: 'Grace Hopper',
       formName: 'Annual review',
       url: 'https://ihp.test/app/evaluations/view/ev-1',
     })
 
-    expect(email.subject).toBe('Ada Lovelace submitted the Annual review for Grace Hopper')
+    expect(email.subject).toBe('An evaluation came back')
+    expect(email.text).toContain('Annual review')
     expect(email.text).toContain('https://ihp.test/app/evaluations/view/ev-1')
   })
 
-  it('tells the evaluator a cancelled evaluation kept nothing they typed', () => {
+  it('tells the evaluator a cancelled evaluation kept nothing, without naming anyone', () => {
     const email = evaluationCancelledTemplate({
       formName: 'Annual review',
-      employeeName: 'Grace Hopper',
-      cancelledByName: 'Ada Lovelace',
       url: 'https://ihp.test/app/evaluations',
     })
 
-    expect(email.subject).toBe('The Annual review for Grace Hopper was cancelled')
+    expect(email.subject).toBe('An evaluation was cancelled')
     expect(email.text).toContain('was not kept')
+    expect(email.text).toContain('People & Culture cancelled')
   })
 })
 

@@ -335,20 +335,19 @@ export function requestWithdrawnTemplate(options: {
   }
 }
 
+// Evaluation mail names nobody: a subject line shows on lock screens and in shared inboxes.
 export function evaluationSubmittedTemplate(options: {
-  evaluatorName: string
-  employeeName: string
   formName: string
   url: string
 }): PreparedEmail {
   return {
-    subject: `${options.evaluatorName} submitted the ${options.formName} for ${options.employeeName}`,
+    subject: 'An evaluation came back',
     ...renderEmail({
-      preheader: `The ${options.formName} for ${options.employeeName} is filled in.`,
+      preheader: `A ${options.formName} is ready to read in the portal.`,
       heading: 'An evaluation came back',
       body: [
-        `${options.evaluatorName} filled in the ${options.formName} form for ${options.employeeName}.`,
-        'What they submitted is the record — nobody has to approve it.',
+        `A ${options.formName} form has been filled in. Who it is about is shown once you open it in the portal.`,
+        'What was submitted is the record — nobody has to approve it.',
       ],
       action: { label: 'Read the evaluation', url: options.url },
     }),
@@ -357,17 +356,15 @@ export function evaluationSubmittedTemplate(options: {
 
 export function evaluationCancelledTemplate(options: {
   formName: string
-  employeeName: string
-  cancelledByName: string
   url: string
 }): PreparedEmail {
   return {
-    subject: `The ${options.formName} for ${options.employeeName} was cancelled`,
+    subject: 'An evaluation was cancelled',
     ...renderEmail({
-      preheader: `You no longer have to fill in the ${options.formName} for ${options.employeeName}.`,
+      preheader: `One of your ${options.formName} evaluations no longer needs filling in.`,
       heading: 'An evaluation was cancelled',
       body: [
-        `${options.cancelledByName} cancelled the ${options.formName} form you were asked to fill in for ${options.employeeName}.`,
+        `People & Culture cancelled one of the ${options.formName} forms you were asked to fill in. Your evaluations list shows which.`,
         'Anything you had typed was not kept, so there is nothing to finish.',
       ],
       action: { label: 'Open your evaluations', url: options.url },

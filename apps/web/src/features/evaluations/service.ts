@@ -4,7 +4,6 @@ import { Code, ConnectError } from '@ihp/rpc'
 import { z } from 'zod'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { pageInfoOf, skipTake } from '@/lib/pagination'
-import { recordActivity } from '@/lib/activity'
 import {
   answerSchemaOf,
   formFieldSchema,
@@ -14,6 +13,7 @@ import {
 import { executiveUserIds } from './executives'
 import { notifyEvaluator, notifyEvaluatorCancelled, notifyExecutives } from './notifications'
 import {
+  ANONYMOUS_EVALUATOR,
   assignEvaluationsSchema,
   type AssignEvaluationsValues,
   type EvaluationCandidate,
@@ -119,6 +119,8 @@ async function peopleOf(rows: readonly EvaluationRecord[]) {
 function rowOf(row: EvaluationRecord, people: Map<string, Person>, caller: Caller): EvaluationRow {
   const employee = people.get(row.employeeId)
   const status = row.status as EvaluationStatus
+  // Once submitted, only the evaluator knows it was theirs: readers see what, never who.
+  const anonymous = status === 'submitted' && row.evaluatorId !== caller.userId
 
   return {
     id: row.id,
@@ -130,8 +132,10 @@ function rowOf(row: EvaluationRecord, people: Map<string, Person>, caller: Calle
     employeeName: employee?.name ?? 'Removed account',
     employeeTeam: employee?.team,
     employeeEmploymentStatus: employee?.employmentStatus,
-    evaluatorId: row.evaluatorId,
-    evaluatorName: people.get(row.evaluatorId)?.name ?? 'Removed account',
+    evaluatorId: anonymous ? '' : row.evaluatorId,
+    evaluatorName: anonymous
+      ? ANONYMOUS_EVALUATOR
+      : (people.get(row.evaluatorId)?.name ?? 'Removed account'),
     status,
     dueAt: row.dueAt?.toISOString(),
     submittedAt: row.submittedAt?.toISOString(),
@@ -246,18 +250,8 @@ export async function submitEvaluation(input: {
     evaluationId: updated.id,
     organizationId: caller.organizationId,
     evaluatorId: updated.evaluatorId,
-    evaluatorName: caller.name,
     employeeId: updated.employeeId,
     formName: updated.formName,
-  })
-
-  await recordActivity({
-    organizationId: caller.organizationId,
-    subjectType: 'evaluation',
-    subjectId: updated.id,
-    action: 'evaluation.submitted',
-    actorId: caller.userId,
-    actorName: caller.name,
   })
 
   const [result] = await rowsOf([updated], caller)
@@ -352,17 +346,6 @@ export async function assignEvaluations(input: AssignEvaluationsValues): Promise
     dueAt,
   })
 
-  for (const row of created) {
-    await recordActivity({
-      organizationId: caller.organizationId,
-      subjectType: 'evaluation',
-      subjectId: row.id,
-      action: 'evaluation.assigned',
-      actorId: caller.userId,
-      actorName: caller.name,
-    })
-  }
-
   return rowsOf(created, caller)
 }
 
@@ -396,18 +379,7 @@ export async function cancelEvaluation(evaluationId: string): Promise<Evaluation
   // Not awaited: whoever was going to fill it in is told, but the cancellation already stands.
   void notifyEvaluatorCancelled({
     evaluatorId: updated.evaluatorId,
-    employeeId: updated.employeeId,
     formName: updated.formName,
-    cancelledByName: caller.name,
-  })
-
-  await recordActivity({
-    organizationId: caller.organizationId,
-    subjectType: 'evaluation',
-    subjectId: updated.id,
-    action: 'evaluation.cancelled',
-    actorId: caller.userId,
-    actorName: caller.name,
   })
 
   const [result] = await rowsOf([updated], caller)

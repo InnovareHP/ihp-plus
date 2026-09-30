@@ -207,10 +207,11 @@ describe('filling one in', () => {
       evaluationId: 'eval-1',
       organizationId: 'org-1',
       evaluatorId: 'user-1',
-      evaluatorName: 'Ada',
       employeeId: 'user-9',
       formName: 'Probationary review',
     })
+    // Evaluations stay out of the activity history, so nobody can trace who wrote about whom.
+    expect(activity.recordActivity).not.toHaveBeenCalled()
 
     const data = prisma.evaluationAssignment.update.mock.calls[0]?.[0].data
     expect(data).toMatchObject({ status: 'submitted', values: { rating: 4 } })
@@ -268,6 +269,26 @@ describe('reading one', () => {
     expect(await loadEvaluation('eval-1')).toMatchObject({ id: 'eval-1', canFill: false })
   })
 
+  it('hides who wrote a submitted one from everyone but its evaluator', async () => {
+    prisma.evaluationAssignment.findFirst.mockResolvedValue({ ...PENDING, status: 'submitted' })
+
+    signedIn({ isAdmin: true, userId: 'user-2' })
+    expect(await loadEvaluation('eval-1')).toMatchObject({
+      evaluatorId: '',
+      evaluatorName: 'Anonymous',
+      isMine: false,
+    })
+
+    signedIn({ userId: 'user-1' })
+    expect(await loadEvaluation('eval-1')).toMatchObject({ evaluatorId: 'user-1', isMine: true })
+  })
+
+  it('still names the evaluator of a pending one, so an admin knows whom to chase', async () => {
+    signedIn({ isAdmin: true, userId: 'user-2' })
+
+    expect(await loadEvaluation('eval-1')).toMatchObject({ evaluatorId: 'user-1' })
+  })
+
   it('keeps an executive out of one still being written, and out of their own', async () => {
     signedIn({ userId: 'user-7' })
     executives.executiveUserIds.mockResolvedValue(['user-7'])
@@ -298,10 +319,9 @@ describe('cancelling and listing', () => {
 
     expect(notifications.notifyEvaluatorCancelled).toHaveBeenCalledWith({
       evaluatorId: 'user-1',
-      employeeId: 'user-9',
       formName: 'Probationary review',
-      cancelledByName: 'Ada',
     })
+    expect(activity.recordActivity).not.toHaveBeenCalled()
   })
 
   it('lists only the evaluations the caller has to fill in', async () => {

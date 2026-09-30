@@ -17,6 +17,9 @@ export const EVALUATION_STATUS_LABELS: Record<EvaluationStatus, string> = {
   cancelled: 'Cancelled',
 }
 
+/** Who a submitted evaluation says wrote it, to everyone but the evaluator. */
+export const ANONYMOUS_EVALUATOR = 'Anonymous'
+
 export const EVALUATION_STATUS_COLORS: Record<EvaluationStatus, string> = {
   pending: 'yellow',
   submitted: 'green',
