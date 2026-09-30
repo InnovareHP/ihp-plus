@@ -14,4 +14,11 @@ export const driveEvents = {
   accessShareFailed: 'drive.client_access.share_failed',
   accessRevoked: 'drive.client_access.revoked',
   accessRevokeFailed: 'drive.client_access.revoke_failed',
+  groupCreated: 'drive.client_group.created',
+  groupCreateFailed: 'drive.client_group.create_failed',
+  groupMemberAdded: 'drive.client_group.member_added',
+  groupMemberRemoved: 'drive.client_group.member_removed',
+  groupMemberFailed: 'drive.client_group.member_failed',
+  groupDeleted: 'drive.client_group.deleted',
+  groupDeleteFailed: 'drive.client_group.delete_failed',
 } as const satisfies Record<string, EventName>

@@ -84,7 +84,9 @@ export type OrganizationAccessQuery = z.infer<typeof organizationAccessQuerySche
 export const DEFAULT_ORGANIZATION_ACCESS_QUERY = organizationAccessQuerySchema.parse({})
 
 export interface OrganizationAccessRow extends ClientAccessRow {
-  clientId: string
+  clientId: string | undefined
+  /** Set on a grant to a group's folder, in which case `clientName` is the group's name. */
+  groupId: string | undefined
   clientName: string
   /** The SharePoint folder this grant is on, when the portal has recorded it. */
   folderUrl: string | undefined
@@ -93,4 +95,42 @@ export interface OrganizationAccessRow extends ClientAccessRow {
 export interface OrganizationAccessPage {
   rows: OrganizationAccessRow[]
   pageInfo: PageInfo
+}
+
+export const clientGroupSchema = z.object({
+  name: z.string().trim().min(1, 'Name the group.').max(120, 'Keep the name under 120 characters.'),
+})
+
+export type ClientGroupValues = z.infer<typeof clientGroupSchema>
+
+export const EMPTY_CLIENT_GROUP: ClientGroupValues = { name: '' }
+
+export const groupIdSchema = z.uuid()
+
+export const groupMemberSchema = z.object({ groupId: z.uuid(), clientId: z.uuid() })
+
+export type GroupMemberInput = z.infer<typeof groupMemberSchema>
+
+export const groupAccessSchema = shareFolderSchema.extend({ groupId: z.uuid() })
+
+export type GroupAccessInput = z.infer<typeof groupAccessSchema>
+
+export interface ClientGroupRow {
+  id: string
+  name: string
+  webUrl: string | undefined
+  /** People who can open the group folder now, which a delete would take away. */
+  activeGrants: number
+  members: { id: string; name: string }[]
+}
+
+export interface GroupableClient {
+  id: string
+  name: string
+  groupId: string | undefined
+}
+
+export interface ClientGroupsView {
+  groups: ClientGroupRow[]
+  clients: GroupableClient[]
 }

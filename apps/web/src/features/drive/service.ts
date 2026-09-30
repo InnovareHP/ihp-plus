@@ -46,12 +46,25 @@ export function saveClientDriveFolder(input: {
   driveId: string
   itemId: string
   webUrl: string | undefined
+  groupId?: string | null
 }) {
-  const { clientId, ...rest } = input
+  const { clientId, groupId, ...rest } = input
+  // Left out means "keep the group it has": the mirror re-saves a folder without knowing it.
+  const group = groupId === undefined ? {} : { groupId }
   return db.clientDriveFolder.upsert({
     where: { clientId },
-    create: { clientId, ...rest, webUrl: rest.webUrl ?? null },
-    update: { itemId: rest.itemId, webUrl: rest.webUrl ?? null },
+    create: { clientId, ...rest, ...group, webUrl: rest.webUrl ?? null },
+    update: { itemId: rest.itemId, ...group, webUrl: rest.webUrl ?? null },
+  })
+}
+
+export function moveClientDriveFolder(
+  clientId: string,
+  input: { groupId: string | null; webUrl: string | undefined },
+) {
+  return db.clientDriveFolder.update({
+    where: { clientId },
+    data: { groupId: input.groupId, webUrl: input.webUrl ?? null },
   })
 }
 
@@ -116,6 +129,113 @@ export function clientForAccess(organizationId: string, clientId: string) {
   })
 }
 
+export function groupFor(organizationId: string, groupId: string) {
+  return db.clientDriveGroup.findFirst({
+    where: { id: groupId, organizationId, archivedAt: null },
+  })
+}
+
+export function groupNamed(organizationId: string, name: string) {
+  return db.clientDriveGroup.findFirst({
+    where: { organizationId, archivedAt: null, name: { equals: name, mode: 'insensitive' } },
+    select: { id: true },
+  })
+}
+
+export function saveGroup(input: {
+  organizationId: string
+  name: string
+  driveId: string
+  itemId: string
+  webUrl: string | undefined
+}) {
+  return db.clientDriveGroup.create({ data: { ...input, webUrl: input.webUrl ?? null } })
+}
+
+export function archiveGroup(groupId: string) {
+  return db.clientDriveGroup.update({ where: { id: groupId }, data: { archivedAt: new Date() } })
+}
+
+export function groupMemberCount(groupId: string) {
+  return db.clientDriveFolder.count({ where: { groupId } })
+}
+
+/** Every live group with its companies, and every company that could join one. */
+export async function clientGroups(organizationId: string) {
+  const [groups, clients] = await Promise.all([
+    db.clientDriveGroup.findMany({
+      where: { organizationId, archivedAt: null },
+      orderBy: { name: 'asc' },
+    }),
+    db.client.findMany({
+      where: { organizationId, archivedAt: null },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+  ])
+
+  const groupIds = groups.map((group) => group.id)
+  const [folders, grants] = await Promise.all([
+    db.clientDriveFolder.findMany({
+      where: { clientId: { in: clients.map((client) => client.id) }, groupId: { not: null } },
+      select: { clientId: true, groupId: true },
+    }),
+    db.clientDriveGuest.groupBy({
+      by: ['groupId'],
+      where: { groupId: { in: groupIds }, revokedAt: null },
+      _count: { _all: true },
+    }),
+  ])
+
+  const groupOfClient = new Map(folders.map((folder) => [folder.clientId, folder.groupId]))
+  const grantsOf = new Map(grants.map((grant) => [grant.groupId, grant._count._all]))
+
+  return {
+    groups: groups.map((group) => ({
+      id: group.id,
+      name: group.name,
+      webUrl: group.webUrl ?? undefined,
+      activeGrants: grantsOf.get(group.id) ?? 0,
+      members: clients
+        .filter((client) => groupOfClient.get(client.id) === group.id)
+        .map((client) => ({ id: client.id, name: client.name })),
+    })),
+    clients: clients.map((client) => ({
+      id: client.id,
+      name: client.name,
+      groupId: groupOfClient.get(client.id) ?? undefined,
+    })),
+  }
+}
+
+export function groupGuestFor(groupId: string, email: string) {
+  return db.clientDriveGuest.findUnique({ where: { groupId_email: { groupId, email } } })
+}
+
+export function groupGuestsFor(groupId: string) {
+  return db.clientDriveGuest.findMany({ where: { groupId }, orderBy: { invitedAt: 'desc' } })
+}
+
+export function saveGroupGuest(input: {
+  groupId: string
+  email: string
+  invitedUserId: string | undefined
+  permissionId: string | undefined
+  role: string
+}) {
+  const { groupId, email, ...rest } = input
+  const data = {
+    invitedUserId: rest.invitedUserId ?? null,
+    permissionId: rest.permissionId ?? null,
+    role: rest.role,
+  }
+  return db.clientDriveGuest.upsert({
+    where: { groupId_email: { groupId, email } },
+    create: { groupId, email, ...data },
+    update: { ...data, revokedAt: null, invitedAt: new Date() },
+  })
+}
+
 export function guestFor(clientId: string, email: string) {
   return db.clientDriveGuest.findUnique({ where: { clientId_email: { clientId, email } } })
 }
@@ -165,37 +285,48 @@ export async function organizationName(organizationId: string) {
 }
 
 /**
- * Guests are keyed by client, not by organization, so the organization's clients are what
- * scopes the list — and what a search by client name resolves against.
+ * Guests are keyed by client or by group, not by organization, so the organization's clients and
+ * groups are what scope the list — and what a search by name resolves against.
  */
 export async function organizationAccess(organizationId: string, query: OrganizationAccessQuery) {
-  const clients = await db.client.findMany({
-    where: { organizationId },
-    select: { id: true, name: true },
-  })
-  if (clients.length === 0) {
+  const [clients, groups] = await Promise.all([
+    db.client.findMany({ where: { organizationId }, select: { id: true, name: true } }),
+    // Archived groups included, so a revoked grant on a deleted group still reads as history.
+    db.clientDriveGroup.findMany({
+      where: { organizationId },
+      select: { id: true, name: true, webUrl: true },
+    }),
+  ])
+  if (clients.length === 0 && groups.length === 0) {
     return { rows: [], pageInfo: pageInfoOf({ ...query, total: 0 }) }
   }
 
   const byId = new Map(clients.map((client) => [client.id, client.name]))
+  const groupById = new Map(groups.map((group) => [group.id, group]))
   const search = query.search.toLowerCase()
-  const matchedClientIds = search
-    ? clients.filter((client) => client.name.toLowerCase().includes(search)).map((c) => c.id)
-    : []
+  const matching = (rows: { id: string; name: string }[]) =>
+    rows.filter((row) => row.name.toLowerCase().includes(search)).map((row) => row.id)
 
-  const where: Prisma.ClientDriveGuestWhereInput = {
-    clientId: { in: clients.map((client) => client.id) },
-    ...(query.view === 'active' ? { revokedAt: null } : {}),
-    ...(query.view === 'removed' ? { revokedAt: { not: null } } : {}),
-    ...(search
-      ? {
-          OR: [
-            { email: { contains: search, mode: 'insensitive' } },
-            { clientId: { in: matchedClientIds } },
-          ],
-        }
-      : {}),
+  const and: Prisma.ClientDriveGuestWhereInput[] = [
+    {
+      OR: [
+        { clientId: { in: clients.map((client) => client.id) } },
+        { groupId: { in: groups.map((group) => group.id) } },
+      ],
+    },
+  ]
+  if (query.view === 'active') and.push({ revokedAt: null })
+  if (query.view === 'removed') and.push({ revokedAt: { not: null } })
+  if (search) {
+    and.push({
+      OR: [
+        { email: { contains: search, mode: 'insensitive' } },
+        { clientId: { in: matching(clients) } },
+        { groupId: { in: matching(groups) } },
+      ],
+    })
   }
+  const where: Prisma.ClientDriveGuestWhereInput = { AND: and }
 
   const total = await db.clientDriveGuest.count({ where })
   // Paged off the clamped page, so a stale ?page= past the end still reads rows.
@@ -206,23 +337,33 @@ export async function organizationAccess(organizationId: string, query: Organiza
     ...skipTake(pageInfo),
   })
 
+  const clientIds = guests.flatMap((guest) => (guest.clientId ? [guest.clientId] : []))
   const folders = await db.clientDriveFolder.findMany({
-    where: { clientId: { in: guests.map((guest) => guest.clientId) } },
+    where: { clientId: { in: clientIds } },
     select: { clientId: true, webUrl: true },
   })
   const folderByClient = new Map(folders.map((folder) => [folder.clientId, folder.webUrl]))
 
   return {
     pageInfo,
-    rows: guests.map((guest) => ({
-      id: guest.id,
-      email: guest.email,
-      role: guest.role,
-      clientId: guest.clientId,
-      clientName: byId.get(guest.clientId) ?? 'Unknown client',
-      folderUrl: folderByClient.get(guest.clientId) ?? undefined,
-      invitedAt: guest.invitedAt.toISOString(),
-      revokedAt: guest.revokedAt?.toISOString(),
-    })),
+    rows: guests.map((guest) => {
+      const group = guest.groupId ? groupById.get(guest.groupId) : undefined
+      const clientId = guest.clientId ?? ''
+      return {
+        id: guest.id,
+        email: guest.email,
+        role: guest.role,
+        clientId: guest.clientId ?? undefined,
+        groupId: guest.groupId ?? undefined,
+        clientName: guest.groupId
+          ? (group?.name ?? 'Deleted group')
+          : (byId.get(clientId) ?? 'Unknown client'),
+        folderUrl: guest.groupId
+          ? (group?.webUrl ?? undefined)
+          : (folderByClient.get(clientId) ?? undefined),
+        invitedAt: guest.invitedAt.toISOString(),
+        revokedAt: guest.revokedAt?.toISOString(),
+      }
+    }),
   }
 }

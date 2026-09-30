@@ -74,19 +74,44 @@ model ClientDriveFolder {
   itemId  String
   /// The SharePoint URL a client opens; stored so the portal need not call Graph to link out.
   webUrl  String?
+  /// Set when the folder sits inside a group's folder, so one share covers every company in it.
+  groupId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([organizationId])
+  @@index([groupId])
   @@map("clientDriveFolder")
   @@schema("drive")
 }
 
-/// A guest who can open one client's folder, and the permission id that revokes it.
+/// Companies with one owner, whose folders sit under one parent that is shared once.
+model ClientDriveGroup {
+  id             String @id @default(uuid())
+  organizationId String
+  name           String
+
+  driveId String
+  itemId  String
+  webUrl  String?
+
+  /// Soft-deleted so the grants it once carried still show in the access history.
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([organizationId, archivedAt])
+  @@map("clientDriveGroup")
+  @@schema("drive")
+}
+
+/// A guest who can open one client's folder, or one group's, and the permission id that revokes it.
 model ClientDriveGuest {
-  id       String @id @default(uuid())
-  clientId String
+  id       String  @id @default(uuid())
+  /// Exactly one of clientId and groupId is set.
+  clientId String?
+  groupId  String?
   email    String
 
   /// The Entra guest object; app-only access can only share with a guest that already exists.
@@ -99,6 +124,7 @@ model ClientDriveGuest {
   revokedAt DateTime?
 
   @@unique([clientId, email])
+  @@unique([groupId, email])
   @@index([email])
   @@map("clientDriveGuest")
   @@schema("drive")

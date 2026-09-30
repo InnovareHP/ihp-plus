@@ -26,6 +26,7 @@ export {
 } from './calendar'
 export {
   copyItem,
+  createFolder,
   createUploadSession,
   deleteItem,
   deltaPage,
@@ -36,6 +37,7 @@ export {
   getItemByPath,
   listAllChildren,
   listChildren,
+  moveItem,
   renameItem,
   rootItem,
   startCopy,

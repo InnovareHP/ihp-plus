@@ -18,6 +18,17 @@ const graph = vi.hoisted(() => ({
     id: 'perm-link-1',
     link: { webUrl: 'https://sharepoint.test/:f:/s/ihp-clients/anon' },
   })),
+  createFolder: vi.fn(async () => ({
+    id: 'group-folder',
+    name: 'Smith Holdings',
+    webUrl: 'https://sharepoint.test/Smith',
+  })),
+  moveItem: vi.fn(async () => ({
+    id: 'folder-1',
+    name: 'Acme',
+    webUrl: 'https://sharepoint.test/Smith/Acme',
+  })),
+  deleteItem: vi.fn(),
   requireClientDriveId: vi.fn(() => 'client-drive'),
   requireInternalDriveId: vi.fn(() => 'internal-drive'),
   rootItem: vi.fn(async (driveId: string) => ({ id: `${driveId}-root`, name: 'root' })),
@@ -34,6 +45,17 @@ const service = vi.hoisted(() => ({
   markGuestRevoked: vi.fn(),
   organizationName: vi.fn(async () => 'IHP+'),
   organizationAccess: vi.fn(),
+  clientByFolderName: vi.fn(async (): Promise<unknown> => null),
+  clientGroups: vi.fn(),
+  groupFor: vi.fn(),
+  groupNamed: vi.fn(async () => null),
+  saveGroup: vi.fn(),
+  archiveGroup: vi.fn(),
+  groupMemberCount: vi.fn(async () => 0),
+  groupGuestFor: vi.fn(async () => null),
+  groupGuestsFor: vi.fn(async () => [] as unknown[]),
+  saveGroupGuest: vi.fn(),
+  moveClientDriveFolder: vi.fn(),
 }))
 
 const guard = vi.hoisted(() => ({
@@ -52,6 +74,12 @@ class TestGraphError extends Error {
     this.status = status
     this.code = code
   }
+  get isConflict() {
+    return this.status === 409
+  }
+  get isNotFound() {
+    return this.status === 404
+  }
 }
 
 vi.mock('@ihp/graph', () => ({
@@ -67,11 +95,31 @@ vi.mock('@/lib/email', async (importOriginal) => ({
   sendEmail: mail.sendEmail,
 }))
 
-const { listClientAccess, listOrganizationAccess, revokeClientFolderAccess, shareClientFolder } =
-  await import('./actions')
+const {
+  addClientToGroup,
+  createClientGroup,
+  deleteClientGroup,
+  listClientAccess,
+  listOrganizationAccess,
+  removeClientFromGroup,
+  revokeClientFolderAccess,
+  shareClientFolder,
+  shareGroupFolder,
+} = await import('./actions')
 
 const CLIENT_ID = '11111111-1111-4111-8111-111111111111'
 const GUEST_ID = '22222222-2222-4222-8222-222222222222'
+const GROUP_ID = '33333333-3333-4333-8333-333333333333'
+
+const GROUP = {
+  id: GROUP_ID,
+  organizationId: 'org-1',
+  name: 'Smith Holdings',
+  driveId: 'client-drive',
+  itemId: 'group-folder',
+  webUrl: 'https://sharepoint.test/Smith',
+  archivedAt: null,
+}
 
 const GUEST_ROW = {
   id: GUEST_ID,
@@ -99,6 +147,10 @@ beforeEach(() => {
   service.saveGuest.mockResolvedValue(GUEST_ROW)
   service.guestById.mockResolvedValue(GUEST_ROW)
   service.markGuestRevoked.mockResolvedValue({ ...GUEST_ROW, revokedAt: new Date() })
+  graph.shareItem.mockResolvedValue({ granted: [{ id: 'perm-1' }], failed: [] })
+  service.groupFor.mockResolvedValue(GROUP)
+  service.saveGroup.mockResolvedValue(GROUP)
+  service.saveGroupGuest.mockResolvedValue({ ...GUEST_ROW, clientId: null, groupId: GROUP_ID })
 })
 
 describe('shareClientFolder', () => {
@@ -393,5 +445,234 @@ describe('shareClientFolder in link mode', () => {
     const sent = mail.sendEmail.mock.calls[0]?.[0] as { html: string }
     expect(sent.html).toContain('https://sharepoint.test/:f:/s/ihp-clients/anon')
     expect(sent.html).toContain('without a sign-in')
+  })
+})
+
+describe('createClientGroup', () => {
+  it('makes the group folder at the library root, refusing to adopt one already there', async () => {
+    const result = await createClientGroup({ name: '  Smith Holdings ' })
+
+    expect(graph.createFolder).toHaveBeenCalledWith(
+      'client-drive',
+      'client-drive-root',
+      'Smith Holdings',
+    )
+    expect(graph.ensureFolder).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ ok: true, data: { id: GROUP_ID, members: [] } })
+  })
+
+  it('refuses a name a client already has, because their folders share the root', async () => {
+    service.clientByFolderName.mockResolvedValueOnce({ id: CLIENT_ID, name: 'Smith Holdings' })
+
+    const result = await createClientGroup({ name: 'Smith Holdings' })
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'A client already has that name — give the group another one.',
+    })
+    expect(graph.createFolder).not.toHaveBeenCalled()
+  })
+
+  it('says the library already has that folder when Graph answers 409', async () => {
+    graph.createFolder.mockRejectedValueOnce(new TestGraphError(409, 'nameAlreadyExists', 'Taken.'))
+
+    const result = await createClientGroup({ name: 'Smith Holdings' })
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'The client library already has a folder with that name — pick another one.',
+    })
+    expect(service.saveGroup).not.toHaveBeenCalled()
+  })
+
+  it('is refused to a member who cannot manage the organization', async () => {
+    guard.canManageOrganization.mockReturnValue(false)
+
+    const result = await createClientGroup({ name: 'Smith Holdings' })
+
+    expect(result).toEqual({ ok: false, message: 'Only an admin can manage client groups.' })
+  })
+})
+
+describe('addClientToGroup', () => {
+  it('moves an existing company folder under the group, keeping its item id', async () => {
+    service.clientDriveFolder.mockResolvedValue({
+      driveId: 'client-drive',
+      itemId: 'folder-1',
+      groupId: null,
+    })
+
+    const result = await addClientToGroup({ groupId: GROUP_ID, clientId: CLIENT_ID })
+
+    expect(graph.moveItem).toHaveBeenCalledWith('client-drive', 'folder-1', 'group-folder')
+    expect(service.moveClientDriveFolder).toHaveBeenCalledWith(CLIENT_ID, {
+      groupId: GROUP_ID,
+      webUrl: 'https://sharepoint.test/Smith/Acme',
+    })
+    expect(result).toEqual({ ok: true, data: null })
+  })
+
+  it('makes the company folder inside the group when it has none yet', async () => {
+    await addClientToGroup({ groupId: GROUP_ID, clientId: CLIENT_ID })
+
+    expect(graph.moveItem).not.toHaveBeenCalled()
+    expect(graph.ensureFolder).toHaveBeenLastCalledWith('client-drive', 'group-folder', 'Acme')
+    expect(service.saveClientDriveFolder).toHaveBeenCalledWith(
+      expect.objectContaining({ clientId: CLIENT_ID, groupId: GROUP_ID, itemId: 'folder-1' }),
+    )
+  })
+
+  it('does nothing when the company is already in that group', async () => {
+    service.clientDriveFolder.mockResolvedValue({
+      driveId: 'client-drive',
+      itemId: 'folder-1',
+      groupId: GROUP_ID,
+    })
+
+    await addClientToGroup({ groupId: GROUP_ID, clientId: CLIENT_ID })
+
+    expect(graph.moveItem).not.toHaveBeenCalled()
+  })
+
+  it('refuses a group from another organization', async () => {
+    service.groupFor.mockResolvedValue(null)
+
+    const result = await addClientToGroup({ groupId: GROUP_ID, clientId: CLIENT_ID })
+
+    expect(result).toEqual({ ok: false, message: 'That group no longer exists.' })
+    expect(graph.moveItem).not.toHaveBeenCalled()
+  })
+
+  it('repeats Microsoft’s reason when the move is refused', async () => {
+    service.clientDriveFolder.mockResolvedValue({
+      driveId: 'client-drive',
+      itemId: 'folder-1',
+      groupId: null,
+    })
+    graph.moveItem.mockRejectedValueOnce(
+      new TestGraphError(409, 'nameAlreadyExists', 'A folder named Acme is already there.'),
+    )
+
+    const result = await addClientToGroup({ groupId: GROUP_ID, clientId: CLIENT_ID })
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Microsoft refused that (nameAlreadyExists) — A folder named Acme is already there.',
+    })
+    expect(service.moveClientDriveFolder).not.toHaveBeenCalled()
+  })
+})
+
+describe('removeClientFromGroup', () => {
+  it('moves the company folder back to the library root', async () => {
+    service.clientDriveFolder.mockResolvedValue({
+      driveId: 'client-drive',
+      itemId: 'folder-1',
+      groupId: GROUP_ID,
+    })
+
+    const result = await removeClientFromGroup({ groupId: GROUP_ID, clientId: CLIENT_ID })
+
+    expect(graph.moveItem).toHaveBeenCalledWith('client-drive', 'folder-1', 'client-drive-root')
+    expect(service.moveClientDriveFolder).toHaveBeenCalledWith(
+      CLIENT_ID,
+      expect.objectContaining({ groupId: null }),
+    )
+    expect(result.ok).toBe(true)
+  })
+
+  it('leaves a folder alone that is not in that group', async () => {
+    service.clientDriveFolder.mockResolvedValue({
+      driveId: 'client-drive',
+      itemId: 'folder-1',
+      groupId: null,
+    })
+
+    await removeClientFromGroup({ groupId: GROUP_ID, clientId: CLIENT_ID })
+
+    expect(graph.moveItem).not.toHaveBeenCalled()
+  })
+})
+
+describe('deleteClientGroup', () => {
+  it('refuses while companies are still in it, so no documents go with it', async () => {
+    service.groupMemberCount.mockResolvedValueOnce(2)
+
+    const result = await deleteClientGroup(GROUP_ID)
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Take every company out of the group before deleting it.',
+    })
+    expect(graph.deleteItem).not.toHaveBeenCalled()
+  })
+
+  it('deletes the empty folder, marks its grants removed and archives the group', async () => {
+    service.groupGuestsFor.mockResolvedValueOnce([
+      { ...GUEST_ROW, groupId: GROUP_ID },
+      { ...GUEST_ROW, id: 'old', groupId: GROUP_ID, revokedAt: new Date() },
+    ])
+
+    const result = await deleteClientGroup(GROUP_ID)
+
+    expect(graph.deleteItem).toHaveBeenCalledWith('client-drive', 'group-folder')
+    expect(service.markGuestRevoked).toHaveBeenCalledTimes(1)
+    expect(service.markGuestRevoked).toHaveBeenCalledWith(GUEST_ID)
+    expect(service.archiveGroup).toHaveBeenCalledWith(GROUP_ID)
+    expect(result.ok).toBe(true)
+  })
+
+  it('still archives when the folder was already deleted in SharePoint', async () => {
+    graph.deleteItem.mockRejectedValueOnce(new TestGraphError(404, 'itemNotFound', 'Gone.'))
+
+    const result = await deleteClientGroup(GROUP_ID)
+
+    expect(service.archiveGroup).toHaveBeenCalledWith(GROUP_ID)
+    expect(result.ok).toBe(true)
+  })
+})
+
+describe('shareGroupFolder', () => {
+  it('shares the group folder once and mails the link under the group’s name', async () => {
+    const result = await shareGroupFolder({ groupId: GROUP_ID, email: 'Owner@Smith.test' })
+
+    expect(graph.shareItem).toHaveBeenCalledWith(
+      'client-drive',
+      'group-folder',
+      ['owner@smith.test'],
+      'read',
+    )
+    expect(service.saveGroupGuest).toHaveBeenCalledWith(
+      expect.objectContaining({ groupId: GROUP_ID, email: 'owner@smith.test' }),
+    )
+    const sent = mail.sendEmail.mock.calls[0]?.[0] as { html: string }
+    expect(sent.html).toContain('Smith Holdings')
+    expect(result.ok).toBe(true)
+  })
+
+  it('grants nothing when Microsoft refuses the address', async () => {
+    graph.shareItem.mockResolvedValueOnce({
+      granted: [],
+      failed: [{ email: 'owner@smith.test', message: 'External sharing is off for this site.' }],
+    })
+
+    const result = await shareGroupFolder({ groupId: GROUP_ID, email: 'owner@smith.test' })
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Microsoft refused that address — External sharing is off for this site.',
+    })
+    expect(service.saveGroupGuest).not.toHaveBeenCalled()
+  })
+})
+
+describe('revokeClientFolderAccess on a group grant', () => {
+  it('deletes the permission from the group folder', async () => {
+    service.guestById.mockResolvedValue({ ...GUEST_ROW, clientId: null, groupId: GROUP_ID })
+
+    const result = await revokeClientFolderAccess(GUEST_ID)
+
+    expect(graph.revokePermission).toHaveBeenCalledWith('client-drive', 'group-folder', 'perm-1')
+    expect(result.ok).toBe(true)
   })
 })

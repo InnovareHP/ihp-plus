@@ -87,13 +87,18 @@ export function getItemByPath(driveId: string, path: string) {
   return graphJson<DriveItem>(`/drives/${driveId}/root:/${encodePath(path)}`)
 }
 
+/** Throws a 409 GraphError when the name is taken, for a caller that must not adopt a stranger. */
+export function createFolder(driveId: string, parentItemId: string, name: string) {
+  return graphJson<DriveItem>(`/drives/${driveId}/items/${parentItemId}/children`, {
+    method: 'POST',
+    body: { name, folder: {}, '@microsoft.graph.conflictBehavior': 'fail' },
+  })
+}
+
 /** Creates the folder, or returns the one already there — a mirror run repeats over the tree. */
 export async function ensureFolder(driveId: string, parentItemId: string, name: string) {
   try {
-    return await graphJson<DriveItem>(`/drives/${driveId}/items/${parentItemId}/children`, {
-      method: 'POST',
-      body: { name, folder: {}, '@microsoft.graph.conflictBehavior': 'fail' },
-    })
+    return await createFolder(driveId, parentItemId, name)
   } catch (error) {
     if (!(error instanceof GraphError) || !error.isConflict) throw error
     const children = await listChildren(driveId, parentItemId)
@@ -158,6 +163,14 @@ export function renameItem(driveId: string, itemId: string, name: string) {
   return graphJson<DriveItem>(`/drives/${driveId}/items/${itemId}`, {
     method: 'PATCH',
     body: { name },
+  })
+}
+
+/** A move inside one drive keeps the item id, so every stored reference to it stays valid. */
+export function moveItem(driveId: string, itemId: string, parentItemId: string) {
+  return graphJson<DriveItem>(`/drives/${driveId}/items/${itemId}`, {
+    method: 'PATCH',
+    body: { parentReference: { id: parentItemId }, '@microsoft.graph.conflictBehavior': 'fail' },
   })
 }
 

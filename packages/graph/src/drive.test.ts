@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  createFolder,
   deltaSweep,
   ensureFolder,
   listAllChildren,
+  moveItem,
   startCopy,
   uploadFile,
   waitForCopy,
@@ -215,5 +217,33 @@ describe('uploadFile', () => {
         'application/pdf',
       ),
     ).rejects.toThrow('HTTP 507')
+  })
+})
+
+describe('createFolder', () => {
+  it('surfaces the clash instead of returning the folder already there', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ error: { code: 'nameAlreadyExists', message: 'Taken.' } }, { status: 409 }),
+    )
+
+    await expect(createFolder('drive-1', 'root', 'Acme')).rejects.toMatchObject({ status: 409 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('moveItem', () => {
+  it('re-parents the item in place and refuses to overwrite a same-named folder', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ id: 'folder-1', name: 'Acme' }))
+
+    const moved = await moveItem('drive-1', 'folder-1', 'group-1')
+
+    expect(moved.id).toBe('folder-1')
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('https://graph.microsoft.com/v1.0/drives/drive-1/items/folder-1')
+    expect(init.method).toBe('PATCH')
+    expect(JSON.parse(String(init.body))).toEqual({
+      parentReference: { id: 'group-1' },
+      '@microsoft.graph.conflictBehavior': 'fail',
+    })
   })
 })
