@@ -7,4 +7,6 @@ export const driveKeys = {
   // Every page and filter combination of the organization-wide view is its own key.
   organization: (query: OrganizationAccessQuery) =>
     [...driveKeys.all, 'organization-access', query] as const,
+  groups: () => [...driveKeys.all, 'groups'] as const,
+  groupAccess: (groupId: string) => [...driveKeys.all, 'group-access', groupId] as const,
 }

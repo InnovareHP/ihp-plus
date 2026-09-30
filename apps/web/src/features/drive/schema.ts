@@ -111,6 +111,11 @@ export const groupMemberSchema = z.object({ groupId: z.uuid(), clientId: z.uuid(
 
 export type GroupMemberInput = z.infer<typeof groupMemberSchema>
 
+/** The card already knows its group, so the form only picks the company. */
+export const addMemberSchema = z.object({ clientId: z.string().min(1, 'Pick a company to add.') })
+
+export type AddMemberValues = z.infer<typeof addMemberSchema>
+
 export const groupAccessSchema = shareFolderSchema.extend({ groupId: z.uuid() })
 
 export type GroupAccessInput = z.infer<typeof groupAccessSchema>

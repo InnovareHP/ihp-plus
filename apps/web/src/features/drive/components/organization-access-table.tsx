@@ -40,14 +40,22 @@ export function OrganizationAccessTable() {
     {
       key: 'clientName',
       header: 'Client folder',
-      render: (row) =>
-        row.folderUrl ? (
-          <Anchor href={row.folderUrl} target="_blank" rel="noreferrer" size="sm">
-            {row.clientName}
-          </Anchor>
-        ) : (
-          <Text size="sm">{row.clientName}</Text>
-        ),
+      render: (row) => (
+        <Group gap="xs" wrap="nowrap">
+          {row.folderUrl ? (
+            <Anchor href={row.folderUrl} target="_blank" rel="noreferrer" size="sm">
+              {row.clientName}
+            </Anchor>
+          ) : (
+            <Text size="sm">{row.clientName}</Text>
+          )}
+          {row.groupId ? (
+            <Badge variant="light" color="brand" size="sm">
+              Group
+            </Badge>
+          ) : null}
+        </Group>
+      ),
     },
     {
       key: 'invitedAt',
