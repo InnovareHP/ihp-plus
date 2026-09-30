@@ -55,10 +55,10 @@ export function BillingStatementsTable({
         `${formatStatementDate(row.periodStart)} – ${formatStatementDate(row.periodEnd)}`,
     },
     {
-      key: 'days',
-      header: 'Days',
+      key: 'hours',
+      header: 'Hours',
       align: 'right',
-      render: (row) => row.daysWorked,
+      render: (row) => row.hoursWorked.toFixed(2),
     },
     {
       key: 'total',

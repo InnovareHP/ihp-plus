@@ -28,8 +28,9 @@ export function BillingStatementButton({
   const defaults = useStatementDefaults()
   // The newest statement carries the rate and link that rarely change between periods.
   const latest = useBillingStatements().data?.[0]
-  // A rate billed on the other basis would be wrong by a factor of the days, so it is not reused.
-  const lastRate = latest && latest.fixedPay === defaults.data?.fixedPay ? latest.dailyRateCents : 0
+  // A rate billed on the other basis would be wrong by a factor of the hours, so it is not reused.
+  const lastRate =
+    latest && latest.fixedPay === defaults.data?.fixedPay ? latest.hourlyRateCents : 0
   // Whether the form is open is a disclosure nothing else reads.
   const [opened, setOpened] = useState(false)
   const { paidDaysOff, ...worked } = timeWorked(days ?? [], absences ?? [])
@@ -55,7 +56,7 @@ export function BillingStatementButton({
             invoiceNumber: defaultInvoiceNumber(to),
             invoiceDate: today,
             ...worked,
-            dailyRateCents: lastRate,
+            hourlyRateCents: lastRate,
             bonusCents: 0,
             expenses: [],
             wiseLink: latest?.wiseLink ?? '',

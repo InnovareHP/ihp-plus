@@ -28,12 +28,12 @@ const STATEMENT: BillingStatementRow = {
   periodEnd: '2026-09-30',
   daysWorked: 20,
   hoursWorked: 160,
-  dailyRateCents: 4_500,
+  hourlyRateCents: 4_500,
   fixedPay: false,
   bonusCents: 5_000,
   expenses: [{ description: 'Internet', amountCents: 2_500 }],
   wiseLink: 'https://wise.com/pay/r/abc',
-  totalCents: 97_500,
+  totalCents: 727_500,
   createdAt: '2026-09-30T08:00:00.000Z',
 }
 
@@ -49,7 +49,8 @@ describe('BillingStatementsPanel', () => {
 
     expect(await screen.findByText('INV-20260930')).toBeInTheDocument()
     expect(screen.getByText('September 1, 2026 – September 30, 2026')).toBeInTheDocument()
-    expect(screen.getByText('$975.00')).toBeInTheDocument()
+    expect(screen.getByText('$7,275.00')).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: '160.00' })).toBeInTheDocument()
   })
 
   it('says how to fill an empty list', async () => {
@@ -69,7 +70,7 @@ describe('BillingStatementsPanel', () => {
     await waitFor(() => expect(print.printHtml).toHaveBeenCalledOnce())
     const html = String(print.printHtml.mock.calls[0]?.[0])
     expect(html).toContain('Internet')
-    expect(html).toContain('$975.00 USD')
+    expect(html).toContain('$7,275.00 USD')
     expect(html).toContain('class="band band-top"')
   })
 

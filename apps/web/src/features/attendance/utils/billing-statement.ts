@@ -37,15 +37,15 @@ export function timeWorked(
   }
 }
 
-/** A fixed rate is billed whole whatever the days; a daily one is days × the rate. */
+/** A fixed rate is billed whole whatever the hours; an hourly one is hours × the rate. */
 export function statementTotals(
   values: Pick<
     BillingStatementValues,
-    'fixedPay' | 'daysWorked' | 'dailyRateCents' | 'bonusCents' | 'expenses'
+    'fixedPay' | 'hoursWorked' | 'hourlyRateCents' | 'bonusCents' | 'expenses'
   >,
 ): StatementTotals {
-  const rate = values.dailyRateCents || 0
-  const regularCents = values.fixedPay ? rate : Math.round((values.daysWorked || 0) * rate)
+  const rate = values.hourlyRateCents || 0
+  const regularCents = values.fixedPay ? rate : Math.round((values.hoursWorked || 0) * rate)
   const expensesCents = values.expenses.reduce((sum, row) => sum + (row.amountCents || 0), 0)
   return {
     regularCents,
@@ -184,7 +184,7 @@ ${
         <tbody>
           ${row('Days Worked', `${values.daysWorked} ${values.daysWorked === 1 ? 'day' : 'days'}`)}
           ${row('Total Hours Worked', `${values.hoursWorked.toFixed(2)} hours`)}
-          ${row(values.fixedPay ? 'Fixed Rate (per statement)' : 'Daily Rate', formatUsd(values.dailyRateCents))}
+          ${row(values.fixedPay ? 'Fixed Rate (per statement)' : 'Hourly Rate', formatUsd(values.hourlyRateCents))}
           ${row('Regular Compensation', formatUsd(totals.regularCents))}
         </tbody>
       </table>

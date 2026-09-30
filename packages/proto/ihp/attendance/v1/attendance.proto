@@ -514,6 +514,10 @@ message BillingExpense {
 
 // A contractor's billing statement as printed: the timesheet's figures and the money they typed.
 message BillingStatement {
+  // Was the daily rate; statements now bill hours, so the rate moved to a field of its own.
+  reserved 11;
+  reserved "daily_rate_cents";
+
   string id = 1;
   string user_id = 2;
   string invoice_number = 3;
@@ -524,15 +528,15 @@ message BillingStatement {
   string position = 8;
   int32 days_worked = 9;
   double hours_worked = 10;
-  int32 daily_rate_cents = 11;
   int32 bonus_cents = 12;
   repeated BillingExpense expenses = 13;
   string wise_link = 14;
   int32 total_cents = 15;
   // RFC 3339.
   string created_at = 16;
-  // Billed as one flat amount (daily_rate_cents) instead of days × a daily rate.
+  // Billed as one flat amount (hourly_rate_cents) instead of hours × an hourly rate.
   bool fixed_pay = 17;
+  int32 hourly_rate_cents = 18;
 }
 
 // Saving an invoice number the member already used replaces that statement.
@@ -566,7 +570,7 @@ message PayTerms {
   bool fixed_pay = 2;
 }
 
-// Every contractor with terms on file; admins only. Anyone missing is on a daily rate.
+// Every contractor with terms on file; admins only. Anyone missing is on an hourly rate.
 message ListPayTermsRequest {}
 
 message ListPayTermsResponse {

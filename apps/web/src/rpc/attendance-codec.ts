@@ -418,7 +418,7 @@ export function statementToProto(
     position: row.position,
     daysWorked: row.daysWorked,
     hoursWorked: row.hoursWorked,
-    dailyRateCents: row.dailyRateCents,
+    hourlyRateCents: row.hourlyRateCents,
     fixedPay: row.fixedPay,
     bonusCents: row.bonusCents,
     expenses: row.expenses.map((expense) => ({
@@ -444,7 +444,7 @@ export function statementFromProto(message: BillingStatementMessage): BillingSta
     position: message.position,
     daysWorked: message.daysWorked,
     hoursWorked: message.hoursWorked,
-    dailyRateCents: message.dailyRateCents,
+    hourlyRateCents: message.hourlyRateCents,
     fixedPay: message.fixedPay,
     bonusCents: message.bonusCents,
     expenses: message.expenses.map((expense) => ({

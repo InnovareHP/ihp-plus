@@ -20,7 +20,7 @@ const VALUES: BillingStatementValues = {
   invoiceDate: '2026-09-30',
   daysWorked: 20,
   hoursWorked: 160,
-  dailyRateCents: 4_500,
+  hourlyRateCents: 4_500,
   bonusCents: 5_000,
   expenses: [{ description: 'Internet', amountCents: 2_500 }],
   wiseLink: 'https://wise.com/pay/r/abc',
@@ -51,16 +51,16 @@ describe('timeWorked', () => {
 })
 
 describe('statementTotals', () => {
-  it('adds days × rate, the bonus and every expense', () => {
+  it('adds hours × rate, the bonus and every expense', () => {
     expect(statementTotals(VALUES)).toEqual({
-      regularCents: 90_000,
+      regularCents: 720_000,
       expensesCents: 2_500,
-      totalCents: 97_500,
+      totalCents: 727_500,
     })
   })
 
-  it('bills a fixed rate once, whatever the days', () => {
-    expect(statementTotals({ ...VALUES, fixedPay: true, dailyRateCents: 150_000 })).toEqual({
+  it('bills a fixed rate once, whatever the hours', () => {
+    expect(statementTotals({ ...VALUES, fixedPay: true, hourlyRateCents: 150_000 })).toEqual({
       regularCents: 150_000,
       expensesCents: 2_500,
       totalCents: 157_500,
@@ -72,7 +72,7 @@ describe('billingStatementSchema', () => {
   it('asks for a rate and an https Wise link', () => {
     const result = billingStatementSchema.safeParse({
       ...VALUES,
-      dailyRateCents: 0,
+      hourlyRateCents: 0,
       wiseLink: 'javascript:alert(1)',
     })
     expect(result.success).toBe(false)
@@ -88,8 +88,8 @@ describe('billingStatementHtml', () => {
 
     expect(html).toContain('September 1, 2026 – September 30, 2026')
     expect(html).toContain('Innovare HP')
-    expect(html).toContain('$900.00')
-    expect(html).toContain('$975.00 USD')
+    expect(html).toContain('$7,200.00')
+    expect(html).toContain('$7,275.00 USD')
     expect(html).toContain('Internet')
     expect(html).toContain('<dt>Payment Reference:</dt><dd>INV-20260930</dd>')
   })

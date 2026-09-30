@@ -249,26 +249,26 @@ model AttendanceCorrection {
 // A contractor's billing statement as it was printed, so it can be printed again and payroll can
 // find it. Figures are copied rather than recomputed: the timesheet may be corrected afterwards.
 model AttendanceStatement {
-  id             String   @id @default(uuid())
-  organizationId String
-  userId         String
+  id              String   @id @default(uuid())
+  organizationId  String
+  userId          String
   // Printing the same invoice number again replaces the statement rather than adding a second.
-  invoiceNumber  String
-  invoiceDate    DateTime @db.Date
-  periodStart    DateTime @db.Date
-  periodEnd      DateTime @db.Date
-  contractorName String
-  position       String
-  daysWorked     Int
-  hoursWorked    Float
-  // The flat amount per statement when fixedPay, otherwise the rate for one day.
-  dailyRateCents Int
-  fixedPay       Boolean  @default(false)
-  bonusCents     Int
+  invoiceNumber   String
+  invoiceDate     DateTime @db.Date
+  periodStart     DateTime @db.Date
+  periodEnd       DateTime @db.Date
+  contractorName  String
+  position        String
+  daysWorked      Int
+  hoursWorked     Float
+  // The flat amount per statement when fixedPay, otherwise the rate for one hour.
+  hourlyRateCents Int
+  fixedPay        Boolean  @default(false)
+  bonusCents      Int
   // [{ description, amountCents }] in the order they were typed.
-  expenses       Json
-  wiseLink       String
-  totalCents     Int
+  expenses        Json
+  wiseLink        String
+  totalCents      Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -279,7 +279,7 @@ model AttendanceStatement {
   @@schema("attendance")
 }
 
-// How a contractor is paid, set by an admin: a flat amount per statement, or days × a daily rate.
+// How a contractor is paid, set by an admin: a flat amount per statement, or hours × an hourly rate.
 model AttendancePayTerms {
   id             String  @id @default(uuid())
   organizationId String

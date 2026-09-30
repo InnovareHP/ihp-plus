@@ -22,10 +22,10 @@ describe('MemberPaySelect', () => {
     rpc.setPayTerms.mockResolvedValue(undefined)
   })
 
-  it('reads a daily rate for somebody with no terms on file', async () => {
+  it('reads an hourly rate for somebody with no terms on file', async () => {
     render(<MemberPaySelect userId="user-1" userName="Grace Reyes" />)
 
-    await waitFor(() => expect(picker()).resolves.toHaveValue('Daily rate'))
+    await waitFor(() => expect(picker()).resolves.toHaveValue('Hourly rate'))
   })
 
   it('shows fixed pay at once and saves it', async () => {
@@ -33,7 +33,7 @@ describe('MemberPaySelect', () => {
     rpc.setPayTerms.mockReturnValue(new Promise(() => {}))
     const user = userEvent.setup()
     render(<MemberPaySelect userId="user-1" userName="Grace Reyes" />)
-    await waitFor(() => expect(picker()).resolves.toHaveValue('Daily rate'))
+    await waitFor(() => expect(picker()).resolves.toHaveValue('Hourly rate'))
 
     await user.click(await picker())
     await user.click(await screen.findByRole('option', { name: 'Fixed pay' }))
@@ -46,7 +46,7 @@ describe('MemberPaySelect', () => {
     rpc.setPayTerms.mockRejectedValue(new Error('Only an admin sets how people are paid.'))
     const user = userEvent.setup()
     render(<MemberPaySelect userId="user-1" userName="Grace Reyes" />)
-    await waitFor(() => expect(picker()).resolves.toHaveValue('Daily rate'))
+    await waitFor(() => expect(picker()).resolves.toHaveValue('Hourly rate'))
 
     await user.click(await picker())
     await user.click(await screen.findByRole('option', { name: 'Fixed pay' }))
@@ -56,7 +56,7 @@ describe('MemberPaySelect', () => {
         expect.objectContaining({ message: 'Only an admin sets how people are paid.' }),
       ),
     )
-    await waitFor(() => expect(picker()).resolves.toHaveValue('Daily rate'))
+    await waitFor(() => expect(picker()).resolves.toHaveValue('Hourly rate'))
   })
 
   it('has no axe violations', async () => {

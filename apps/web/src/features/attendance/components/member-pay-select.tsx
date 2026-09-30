@@ -10,11 +10,11 @@ export interface MemberPaySelectProps {
 }
 
 const OPTIONS = [
-  { value: 'daily', label: 'Daily rate' },
+  { value: 'hourly', label: 'Hourly rate' },
   { value: 'fixed', label: 'Fixed pay' },
 ]
 
-/** How a contractor bills: days × a daily rate, or one flat amount per statement. */
+/** How a contractor bills: hours × an hourly rate, or one flat amount per statement. */
 export function MemberPaySelect({ userId, userName }: MemberPaySelectProps) {
   const terms = usePayTerms()
   const set = useSetPayTerms()
@@ -24,7 +24,7 @@ export function MemberPaySelect({ userId, userName }: MemberPaySelectProps) {
     <Select
       aria-label={`Pay basis for ${userName}`}
       data={OPTIONS}
-      value={fixedPay ? 'fixed' : 'daily'}
+      value={fixedPay ? 'fixed' : 'hourly'}
       allowDeselect={false}
       disabled={terms.isPending}
       size="sm"

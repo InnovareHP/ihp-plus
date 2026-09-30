@@ -26,7 +26,7 @@ export function StatementIdentity({ name, position, fixedPay }: StatementIdentit
       <Group component="dl" gap="xl" m={0} align="flex-start">
         <Detail label="Full name" value={name} />
         <Detail label="Position / role" value={position || 'Not on your profile yet'} />
-        <Detail label="Pay" value={fixedPay ? 'Fixed pay' : 'Daily rate'} />
+        <Detail label="Pay" value={fixedPay ? 'Fixed pay' : 'Hourly rate'} />
       </Group>
       <Text size="xs" c="dimmed">
         From your profile. If any of this is wrong, ask an admin to update it in Members.

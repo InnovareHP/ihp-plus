@@ -1437,7 +1437,7 @@ describe('pay terms', () => {
     })
   })
 
-  it('gives a contractor their own name, job title and a daily rate by default', async () => {
+  it('gives a contractor their own name, job title and an hourly rate by default', async () => {
     prisma.user.findUnique.mockResolvedValue({ name: 'Grace Reyes', jobTitle: null })
     prisma.attendancePayTerms.findUnique.mockResolvedValue(null)
 
@@ -1459,7 +1459,7 @@ describe('billing statements', () => {
     periodEnd: '2026-09-30',
     daysWorked: 20,
     hoursWorked: 160,
-    dailyRateCents: 4_500,
+    hourlyRateCents: 4_500,
     fixedPay: false,
     bonusCents: 5_000,
     expenses: [{ description: 'Internet', amountCents: 2_500 }],
@@ -1473,7 +1473,7 @@ describe('billing statements', () => {
     invoiceDate: new Date('2026-09-30T00:00:00.000Z'),
     periodStart: new Date('2026-09-01T00:00:00.000Z'),
     periodEnd: new Date('2026-09-30T00:00:00.000Z'),
-    totalCents: 97_500,
+    totalCents: 727_500,
     createdAt: new Date('2026-09-30T08:00:00.000Z'),
   }
 
@@ -1494,7 +1494,7 @@ describe('billing statements', () => {
       ...STATEMENT,
       contractorName: 'Someone else',
       position: 'CEO',
-      dailyRateCents: 150_000,
+      hourlyRateCents: 150_000,
     })
 
     const call = prisma.attendanceStatement.upsert.mock.calls[0]?.[0]
@@ -1518,9 +1518,9 @@ describe('billing statements', () => {
       organizationId: 'org-1',
       userId: 'user-1',
       periodStart: new Date('2026-09-01T00:00:00.000Z'),
-      totalCents: 97_500,
+      totalCents: 727_500,
     })
-    expect(call.update.totalCents).toBe(97_500)
+    expect(call.update.totalCents).toBe(727_500)
     expect(saved).toMatchObject({
       id: 'st-1',
       invoiceDate: '2026-09-30',
@@ -1532,8 +1532,8 @@ describe('billing statements', () => {
     )
   })
 
-  it('refuses a statement without a daily rate or with a period that runs backwards', async () => {
-    await expect(saveBillingStatement({ ...STATEMENT, dailyRateCents: 0 })).rejects.toMatchObject({
+  it('refuses a statement without an hourly rate or with a period that runs backwards', async () => {
+    await expect(saveBillingStatement({ ...STATEMENT, hourlyRateCents: 0 })).rejects.toMatchObject({
       code: Code.InvalidArgument,
     })
     await expect(

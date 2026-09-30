@@ -22,7 +22,7 @@ const LAST: BillingStatementRow = {
   periodEnd: '2026-08-31',
   daysWorked: 21,
   hoursWorked: 168,
-  dailyRateCents: 6_000,
+  hourlyRateCents: 6_000,
   fixedPay: false,
   bonusCents: 0,
   expenses: [],
@@ -75,11 +75,11 @@ describe('BillingStatementButton', () => {
     expect(screen.getByLabelText(/Invoice number/)).toHaveValue('INV-20260930')
     // The profile wins over whatever the last statement said.
     expect(screen.getByText('Senior designer')).toBeInTheDocument()
-    expect(screen.getByLabelText(/Daily rate/)).toHaveValue('$60')
+    expect(screen.getByLabelText(/Hourly rate/)).toHaveValue('$60')
     expect(screen.getByLabelText(/Wise payment link/)).toHaveValue('https://wise.com/pay/r/abc')
   })
 
-  it('does not carry a daily rate over to someone now on fixed pay', async () => {
+  it('does not carry an hourly rate over to someone now on fixed pay', async () => {
     rpc.getStatementDefaults.mockResolvedValue({
       contractorName: 'Dana Reyes',
       position: 'Senior designer',

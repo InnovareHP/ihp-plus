@@ -23,7 +23,7 @@ const INITIAL: BillingStatementValues = {
   invoiceDate: '2026-09-30',
   daysWorked: 20,
   hoursWorked: 160,
-  dailyRateCents: 0,
+  hourlyRateCents: 0,
   bonusCents: 0,
   expenses: [],
   wiseLink: '',
@@ -31,7 +31,7 @@ const INITIAL: BillingStatementValues = {
 
 const FILLED: BillingStatementValues = {
   ...INITIAL,
-  dailyRateCents: 6_000,
+  hourlyRateCents: 6_000,
   wiseLink: 'https://wise.com/x',
 }
 
@@ -61,7 +61,7 @@ describe('BillingStatementModal', () => {
 
     expect(screen.getByText('Dana Reyes')).toBeInTheDocument()
     expect(screen.getByText('Virtual assistant')).toBeInTheDocument()
-    expect(screen.getByText('Daily rate', { selector: 'dd' })).toBeInTheDocument()
+    expect(screen.getByText('Hourly rate', { selector: 'dd' })).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: /Full name|Position/ })).not.toBeInTheDocument()
   })
 
@@ -96,21 +96,21 @@ describe('BillingStatementModal', () => {
     const user = userEvent.setup()
     const onClose = open()
 
-    await user.type(screen.getByLabelText(/Daily rate/), '45')
+    await user.type(screen.getByLabelText(/Hourly rate/), '45')
     await user.type(screen.getByLabelText(/^Bonus/), '50')
     await user.click(screen.getByRole('button', { name: 'Add an expense' }))
     await user.type(screen.getByLabelText('Expense 1'), 'Internet')
     await user.type(screen.getByLabelText('Expense 1 amount'), '25')
     await user.type(screen.getByLabelText(/Wise payment link/), 'https://wise.com/pay/r/abc')
 
-    expect(screen.getByText('$975.00 USD')).toBeInTheDocument()
+    expect(screen.getByText('$7,275.00 USD')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Save and print' }))
 
     await waitFor(() =>
       expect(rpc.saveBillingStatement).toHaveBeenCalledWith(
         expect.objectContaining({
-          dailyRateCents: 4_500,
+          hourlyRateCents: 4_500,
           bonusCents: 5_000,
           expenses: [{ description: 'Internet', amountCents: 2_500 }],
           periodStart: '2026-09-01',
@@ -119,7 +119,7 @@ describe('BillingStatementModal', () => {
       ),
     )
     await waitFor(() => expect(print.printHtml).toHaveBeenCalledOnce())
-    expect(String(print.printHtml.mock.calls[0]?.[0])).toContain('$975.00 USD')
+    expect(String(print.printHtml.mock.calls[0]?.[0])).toContain('$7,275.00 USD')
     expect(onClose).toHaveBeenCalled()
   })
 
@@ -135,7 +135,7 @@ describe('BillingStatementModal', () => {
     expect(
       await screen.findAllByText('The billing period ends before it starts.'),
     ).not.toHaveLength(0)
-    expect(screen.getByLabelText(/Daily rate/)).toHaveValue('$60')
+    expect(screen.getByLabelText(/Hourly rate/)).toHaveValue('$60')
     expect(print.printHtml).not.toHaveBeenCalled()
     expect(onClose).not.toHaveBeenCalled()
   })

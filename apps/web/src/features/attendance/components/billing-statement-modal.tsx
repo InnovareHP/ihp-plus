@@ -76,8 +76,8 @@ export function BillingStatementModal({
   const watched = useWatch({ control })
   const totals = statementTotals({
     fixedPay: initial.fixedPay,
-    daysWorked: watched.daysWorked ?? 0,
-    dailyRateCents: watched.dailyRateCents ?? 0,
+    hoursWorked: watched.hoursWorked ?? 0,
+    hourlyRateCents: watched.hourlyRateCents ?? 0,
     bonusCents: watched.bonusCents ?? 0,
     expenses: (watched.expenses ?? []).map((row) => ({
       description: row.description ?? '',
@@ -211,18 +211,18 @@ export function BillingStatementModal({
               />
               <Controller
                 control={control}
-                name="dailyRateCents"
+                name="hourlyRateCents"
                 render={({ field }) => (
                   <NumberInput
                     {...MONEY}
-                    label={initial.fixedPay ? 'Fixed amount' : 'Daily rate'}
+                    label={initial.fixedPay ? 'Fixed amount' : 'Hourly rate'}
                     required
                     aria-required="true"
                     inputMode="decimal"
                     value={field.value ? field.value / 100 : ''}
                     onChange={(value) => field.onChange(toCents(value))}
                     onBlur={field.onBlur}
-                    error={errors.dailyRateCents?.message}
+                    error={errors.hourlyRateCents?.message}
                     errorProps={{ role: 'alert' }}
                   />
                 )}

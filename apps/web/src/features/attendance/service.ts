@@ -1854,7 +1854,7 @@ const statementSelect = {
   position: true,
   daysWorked: true,
   hoursWorked: true,
-  dailyRateCents: true,
+  hourlyRateCents: true,
   fixedPay: true,
   bonusCents: true,
   expenses: true,
@@ -1874,7 +1874,7 @@ interface StatementRecord {
   position: string
   daysWorked: number
   hoursWorked: number
-  dailyRateCents: number
+  hourlyRateCents: number
   fixedPay: boolean
   bonusCents: number
   expenses: unknown
@@ -1930,7 +1930,7 @@ export async function saveBillingStatement(
     position: statement.position,
     daysWorked: statement.daysWorked,
     hoursWorked: statement.hoursWorked,
-    dailyRateCents: statement.dailyRateCents,
+    hourlyRateCents: statement.hourlyRateCents,
     fixedPay: statement.fixedPay,
     bonusCents: statement.bonusCents,
     expenses: statement.expenses,
@@ -1991,7 +1991,7 @@ export async function loadStatementDefaults(): Promise<StatementDefaults> {
   return statementDefaultsOf(await requireMember())
 }
 
-/** Every contractor's pay basis on file; anyone without a row is on a daily rate. */
+/** Every contractor's pay basis on file; anyone without a row is on an hourly rate. */
 export async function loadPayTerms(): Promise<PayTermsRow[]> {
   const caller = await requireMember()
   requireAdmin(caller, 'Only an admin sets how people are paid.')
@@ -2026,7 +2026,7 @@ export async function setPayTerms(values: PayTermsRow): Promise<PayTermsRow> {
     action: 'attendance.pay_terms.set',
     actorId: caller.userId,
     actorName: caller.name,
-    detail: fixedPay ? 'fixed' : 'daily',
+    detail: fixedPay ? 'fixed' : 'hourly',
   })
   return { userId, fixedPay }
 }
