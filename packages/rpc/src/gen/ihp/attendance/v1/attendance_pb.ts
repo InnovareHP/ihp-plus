@@ -2247,7 +2247,7 @@ export type BillingStatement = Message<"ihp.attendance.v1.BillingStatement"> & {
   hourlyRateCents: number;
 
   /**
-   * Who the email draft is addressed to; empty leaves it for the mail app.
+   * Who the statement email is addressed to; empty leaves it for the mail app.
    *
    * @generated from field: string send_to = 19;
    */

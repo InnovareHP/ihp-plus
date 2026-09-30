@@ -8,6 +8,7 @@ const print = vi.hoisted(() => ({ printHtml: vi.fn() }))
 const rpc = vi.hoisted(() => ({ saveBillingStatement: vi.fn(), listBillingStatements: vi.fn() }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 const download = vi.hoisted(() => ({ downloadFile: vi.fn() }))
+const mail = vi.hoisted(() => ({ openMailto: vi.fn() }))
 
 vi.mock('../utils/billing-statement', async (original) => ({
   ...(await original<typeof import('../utils/billing-statement')>()),
@@ -15,6 +16,7 @@ vi.mock('../utils/billing-statement', async (original) => ({
 }))
 vi.mock('../rpc', () => rpc)
 vi.mock('@/lib/download', () => download)
+vi.mock('@/lib/mailto', () => mail)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 
 const INITIAL: BillingStatementValues = {
@@ -176,7 +178,7 @@ describe('BillingStatementModal', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it('saves the recipient, then downloads an email draft with the PDF attached', async () => {
+  it('saves the recipient, downloads the PDF to attach and opens the mail app', async () => {
     const user = userEvent.setup()
     open(FILLED)
 
@@ -188,11 +190,18 @@ describe('BillingStatementModal', () => {
     expect(rpc.saveBillingStatement).toHaveBeenCalledWith(
       expect.objectContaining({ sendTo: 'billing@client.test' }),
     )
-    const draft = download.downloadFile.mock.calls[0]?.[0]
-    expect(draft.fileName).toBe('Billing statement - Dana Reyes - INV-20260930.eml')
-    const eml = new TextDecoder().decode(draft.bytes)
-    expect(eml).toContain('To: billing@client.test')
-    expect(eml).toContain('filename="Billing statement - Dana Reyes - INV-20260930.pdf"')
+    expect(download.downloadFile.mock.calls[0]?.[0].fileName).toBe(
+      'Billing statement - Dana Reyes - INV-20260930.pdf',
+    )
+    expect(mail.openMailto).toHaveBeenCalledOnce()
+    expect(mail.openMailto.mock.calls[0]?.[0]).toMatch(/^mailto:billing%40client\.test\?subject=/)
+    expect(toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining(
+          'your mail app is opening. Attach the downloaded Billing statement - Dana Reyes - INV-20260930.pdf',
+        ),
+      }),
+    )
   })
 
   it('refuses a malformed recipient before saving anything', async () => {
@@ -208,6 +217,7 @@ describe('BillingStatementModal', () => {
     ).toBeInTheDocument()
     expect(rpc.saveBillingStatement).not.toHaveBeenCalled()
     expect(download.downloadFile).not.toHaveBeenCalled()
+    expect(mail.openMailto).not.toHaveBeenCalled()
   })
 
   it('says the statement is saved when only the file could not be made', async () => {

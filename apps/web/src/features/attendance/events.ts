@@ -32,7 +32,7 @@ export const attendanceEvents = {
   statementPrinted: 'attendance.statement.printed',
   statementPrintFailed: 'attendance.statement.print_failed',
   statementPdfDownloaded: 'attendance.statement.pdf_downloaded',
-  statementEmailDrafted: 'attendance.statement.email_drafted',
+  statementEmailOpened: 'attendance.statement.email_opened',
   statementExportFailed: 'attendance.statement.export_failed',
   statementSaved: 'attendance.statement.saved',
   payTermsSet: 'attendance.pay_terms.set',

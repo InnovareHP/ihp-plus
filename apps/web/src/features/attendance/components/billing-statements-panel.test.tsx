@@ -9,6 +9,7 @@ const print = vi.hoisted(() => ({ printHtml: vi.fn() }))
 const undo = vi.hoisted(() => ({ offerUndo: vi.fn(), UNDO_WINDOW_MS: 8000 }))
 const toast = vi.hoisted(() => ({ show: vi.fn(), hide: vi.fn() }))
 const download = vi.hoisted(() => ({ downloadFile: vi.fn() }))
+const mail = vi.hoisted(() => ({ openMailto: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
 vi.mock('../utils/billing-statement', async (original) => ({
@@ -17,6 +18,7 @@ vi.mock('../utils/billing-statement', async (original) => ({
 }))
 vi.mock('@/lib/undo', () => undo)
 vi.mock('@/lib/download', () => download)
+vi.mock('@/lib/mailto', () => mail)
 vi.mock('@mantine/notifications', () => ({ notifications: toast }))
 
 const STATEMENT: BillingStatementRow = {
@@ -88,17 +90,16 @@ describe('BillingStatementsPanel', () => {
     expect(download.downloadFile.mock.calls[0]?.[0].fileName).toMatch(/INV-20260930\.pdf$/)
   })
 
-  it('drafts an email for a saved statement, addressed to its recipient', async () => {
+  it('opens an email for a saved statement, addressed to its recipient, with the PDF to attach', async () => {
     const user = userEvent.setup()
     render(<BillingStatementsPanel />)
 
     await user.click(await screen.findByRole('button', { name: 'Actions for INV-20260930' }))
     await user.click(await screen.findByRole('menuitem', { name: 'Create email' }))
 
-    await waitFor(() => expect(download.downloadFile).toHaveBeenCalledOnce())
-    const draft = download.downloadFile.mock.calls[0]?.[0]
-    expect(draft.fileName).toMatch(/INV-20260930\.eml$/)
-    expect(new TextDecoder().decode(draft.bytes)).toContain('To: payroll@ihp.test')
+    await waitFor(() => expect(mail.openMailto).toHaveBeenCalledOnce())
+    expect(mail.openMailto.mock.calls[0]?.[0]).toMatch(/^mailto:payroll%40ihp\.test\?/)
+    expect(download.downloadFile.mock.calls[0]?.[0].fileName).toMatch(/INV-20260930\.pdf$/)
   })
 
   it('removes a statement at once, and deletes it only when the undo window closes', async () => {

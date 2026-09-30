@@ -50,7 +50,8 @@ function toCents(value: string | number) {
 const SAVED: Record<StatementOutput, (fileName: string) => string> = {
   print: () => 'Billing statement saved — print it or save it as a PDF.',
   pdf: (fileName) => `Billing statement saved and downloaded as ${fileName}.pdf.`,
-  email: () => 'Billing statement saved — open the downloaded email draft to check it and send it.',
+  email: (fileName) =>
+    `Billing statement saved — your mail app is opening. Attach the downloaded ${fileName}.pdf and send it.`,
 }
 
 const NOT_PRODUCED: Record<StatementOutput, string> = {
@@ -58,7 +59,7 @@ const NOT_PRODUCED: Record<StatementOutput, string> = {
     'The statement is saved, but the print view would not open — allow printing for this site and print it from your statements.',
   pdf: 'The statement is saved, but the PDF could not be created — download it again from your statements.',
   email:
-    'The statement is saved, but the email draft could not be created — create it again from your statements.',
+    'The statement is saved, but the email could not be started — create it again from your statements.',
 }
 
 /** A contractor's statement for the range on screen: kept on file, then printed or saved as a PDF. */
@@ -330,7 +331,7 @@ export function BillingStatementModal({
               inputMode="email"
               autoComplete="email"
               label="Send to"
-              description="Who the email draft is addressed to. Leave it blank to choose in your mail app."
+              description="Who the email is addressed to. Leave it blank to choose in your mail app."
               placeholder="payroll@example.com"
               error={errors.sendTo?.message}
               errorProps={{ role: 'alert' }}

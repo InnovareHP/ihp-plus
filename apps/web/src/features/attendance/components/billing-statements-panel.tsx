@@ -13,7 +13,7 @@ import { BillingStatementsTable } from './billing-statements-table'
 const FAILED: Record<StatementOutput, string> = {
   print: 'Could not open the print view — allow printing for this site and try again.',
   pdf: 'Could not create the PDF — try again.',
-  email: 'Could not create the email draft — try again.',
+  email: 'Could not start the email — try again.',
 }
 
 async function reissue(statement: BillingStatementRow, output: StatementOutput) {
@@ -24,8 +24,11 @@ async function reissue(statement: BillingStatementRow, output: StatementOutput) 
   }
   // The print dialog speaks for itself; a download lands silently, so it is announced.
   if (output === 'pdf') announceSuccess(`Downloaded ${statementFileName(statement)}.pdf.`)
-  if (output === 'email')
-    announceSuccess('Email draft downloaded — open it to check it and send it.')
+  if (output === 'email') {
+    announceSuccess(
+      `Your mail app is opening. Attach the downloaded ${statementFileName(statement)}.pdf and send it.`,
+    )
+  }
 }
 
 /** The statements a contractor has issued; they are private, so nobody else can list them. */

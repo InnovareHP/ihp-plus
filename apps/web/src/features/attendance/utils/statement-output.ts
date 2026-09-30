@@ -1,5 +1,6 @@
 import { track } from '@/lib/analytics'
 import { downloadFile } from '@/lib/download'
+import { openMailto } from '@/lib/mailto'
 import { attendanceEvents } from '../events'
 import type { BillingStatementValues } from '../schema'
 import {
@@ -9,15 +10,15 @@ import {
   statementFileName,
   type StatementPeriod,
 } from './billing-statement'
-import { statementEmail, statementEml } from './statement-email'
+import { statementEmail, statementMailto } from './statement-email'
 
-/** What a saved statement turns into: the print dialog, a PDF, or an email draft carrying it. */
+/** What a saved statement turns into: the print dialog, a PDF, or an email in the mail app. */
 export type StatementOutput = 'print' | 'pdf' | 'email'
 
 const DONE = {
   print: attendanceEvents.statementPrinted,
   pdf: attendanceEvents.statementPdfDownloaded,
-  email: attendanceEvents.statementEmailDrafted,
+  email: attendanceEvents.statementEmailOpened,
 } as const
 
 async function produce(
@@ -43,11 +44,8 @@ async function produce(
     return
   }
 
-  downloadFile({
-    fileName: `${name}.eml`,
-    contentType: 'message/rfc822',
-    bytes: new TextEncoder().encode(statementEml(statementEmail(values, period), pdf)),
-  })
+  downloadFile(pdf)
+  openMailto(statementMailto(statementEmail(values, period)))
 }
 
 /** Resolves false instead of throwing, so the caller only chooses what to tell the user. */
