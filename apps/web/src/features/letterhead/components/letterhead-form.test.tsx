@@ -7,7 +7,7 @@ const actions = vi.hoisted(() => ({ applyLetterheadToFile: vi.fn() }))
 const download = vi.hoisted(() => ({ downloadFile: vi.fn() }))
 
 vi.mock('../actions', () => actions)
-vi.mock('../utils/download', () => download)
+vi.mock('@/lib/download', () => download)
 
 const STAMPED = {
   fileName: 'Policy (letterhead).pdf',

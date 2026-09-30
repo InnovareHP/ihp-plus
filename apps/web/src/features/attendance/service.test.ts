@@ -1464,6 +1464,7 @@ describe('billing statements', () => {
     bonusCents: 5_000,
     expenses: [{ description: 'Internet', amountCents: 2_500 }],
     wiseLink: 'https://wise.com/pay/r/abc',
+    sendTo: 'payroll@ihp.test',
   }
 
   const RECORD = {
@@ -1518,6 +1519,7 @@ describe('billing statements', () => {
       organizationId: 'org-1',
       userId: 'user-1',
       periodStart: new Date('2026-09-01T00:00:00.000Z'),
+      sendTo: 'payroll@ihp.test',
       totalCents: 727_500,
     })
     expect(call.update.totalCents).toBe(727_500)

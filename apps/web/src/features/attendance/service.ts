@@ -1859,6 +1859,7 @@ const statementSelect = {
   bonusCents: true,
   expenses: true,
   wiseLink: true,
+  sendTo: true,
   totalCents: true,
   createdAt: true,
 } as const
@@ -1879,6 +1880,7 @@ interface StatementRecord {
   bonusCents: number
   expenses: unknown
   wiseLink: string
+  sendTo: string
   totalCents: number
   createdAt: Date
 }
@@ -1935,6 +1937,7 @@ export async function saveBillingStatement(
     bonusCents: statement.bonusCents,
     expenses: statement.expenses,
     wiseLink: statement.wiseLink,
+    sendTo: statement.sendTo,
     // Worked out here, not trusted from the client, so the list's totals match the printout.
     totalCents: statementTotals(statement).totalCents,
   }

@@ -8,6 +8,7 @@ const rpc = vi.hoisted(() => ({ listBillingStatements: vi.fn(), deleteBillingSta
 const print = vi.hoisted(() => ({ printHtml: vi.fn() }))
 const undo = vi.hoisted(() => ({ offerUndo: vi.fn(), UNDO_WINDOW_MS: 8000 }))
 const toast = vi.hoisted(() => ({ show: vi.fn(), hide: vi.fn() }))
+const download = vi.hoisted(() => ({ downloadFile: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
 vi.mock('../utils/billing-statement', async (original) => ({
@@ -15,6 +16,7 @@ vi.mock('../utils/billing-statement', async (original) => ({
   printHtml: print.printHtml,
 }))
 vi.mock('@/lib/undo', () => undo)
+vi.mock('@/lib/download', () => download)
 vi.mock('@mantine/notifications', () => ({ notifications: toast }))
 
 const STATEMENT: BillingStatementRow = {
@@ -33,6 +35,7 @@ const STATEMENT: BillingStatementRow = {
   bonusCents: 5_000,
   expenses: [{ description: 'Internet', amountCents: 2_500 }],
   wiseLink: 'https://wise.com/pay/r/abc',
+  sendTo: 'payroll@ihp.test',
   totalCents: 727_500,
   createdAt: '2026-09-30T08:00:00.000Z',
 }
@@ -72,6 +75,30 @@ describe('BillingStatementsPanel', () => {
     expect(html).toContain('Internet')
     expect(html).toContain('$7,275.00 USD')
     expect(html).toContain('class="band band-top"')
+  })
+
+  it('downloads a saved statement again as a PDF', async () => {
+    const user = userEvent.setup()
+    render(<BillingStatementsPanel />)
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for INV-20260930' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Download PDF' }))
+
+    await waitFor(() => expect(download.downloadFile).toHaveBeenCalledOnce())
+    expect(download.downloadFile.mock.calls[0]?.[0].fileName).toMatch(/INV-20260930\.pdf$/)
+  })
+
+  it('drafts an email for a saved statement, addressed to its recipient', async () => {
+    const user = userEvent.setup()
+    render(<BillingStatementsPanel />)
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for INV-20260930' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Create email' }))
+
+    await waitFor(() => expect(download.downloadFile).toHaveBeenCalledOnce())
+    const draft = download.downloadFile.mock.calls[0]?.[0]
+    expect(draft.fileName).toMatch(/INV-20260930\.eml$/)
+    expect(new TextDecoder().decode(draft.bytes)).toContain('To: payroll@ihp.test')
   })
 
   it('removes a statement at once, and deletes it only when the undo window closes', async () => {

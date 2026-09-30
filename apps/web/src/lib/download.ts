@@ -1,7 +1,11 @@
-import type { StampedFile } from '../actions'
+export interface DownloadableFile {
+  fileName: string
+  contentType: string
+  bytes: Uint8Array
+}
 
 /** Hands the browser a file to save, through a link that is clicked once and thrown away. */
-export function downloadFile(file: StampedFile) {
+export function downloadFile(file: DownloadableFile) {
   const url = URL.createObjectURL(
     new Blob([new Uint8Array(file.bytes)], { type: file.contentType }),
   )

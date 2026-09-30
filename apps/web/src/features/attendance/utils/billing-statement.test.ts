@@ -4,6 +4,7 @@ import { billingStatementSchema } from '../schema'
 import {
   billingStatementHtml,
   loadStatementLetterhead,
+  statementFileName,
   statementTotals,
   timeWorked,
 } from './billing-statement'
@@ -24,6 +25,7 @@ const VALUES: BillingStatementValues = {
   bonusCents: 5_000,
   expenses: [{ description: 'Internet', amountCents: 2_500 }],
   wiseLink: 'https://wise.com/pay/r/abc',
+  sendTo: 'payroll@ihp.test',
 }
 
 describe('timeWorked', () => {
@@ -79,6 +81,29 @@ describe('billingStatementSchema', () => {
     const messages = result.error?.issues.map((issue) => issue.message)
     expect(messages).toContain('Enter your rate.')
     expect(messages).toContain('Paste your Wise payment link, starting with https://.')
+  })
+
+  it('takes a blank recipient, but not a malformed one', () => {
+    expect(billingStatementSchema.safeParse({ ...VALUES, sendTo: '  ' }).success).toBe(true)
+    const result = billingStatementSchema.safeParse({ ...VALUES, sendTo: 'payroll@' })
+    expect(result.error?.issues[0]?.message).toBe('Enter an email address, or leave it blank.')
+  })
+})
+
+describe('statementFileName', () => {
+  it('names the file after the contractor and the invoice', () => {
+    expect(statementFileName(VALUES)).toBe('Billing statement - Dana Reyes - INV-20260930')
+  })
+
+  it('drops characters a file system refuses', () => {
+    expect(statementFileName({ contractorName: 'Dana / Reyes', invoiceNumber: 'INV:9?' })).toBe(
+      'Billing statement - Dana - Reyes - INV-9-',
+    )
+  })
+
+  it('titles the print page with it, which "Save as PDF" suggests as the file name', () => {
+    const html = billingStatementHtml(VALUES, { from: '2026-09-01', to: '2026-09-30' })
+    expect(html).toContain('<title>Billing statement - Dana Reyes - INV-20260930</title>')
   })
 })
 

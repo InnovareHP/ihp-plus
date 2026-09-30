@@ -512,6 +512,10 @@ export const billingStatementSchema = z.object({
     protocol: /^https$/,
     error: 'Paste your Wise payment link, starting with https://.',
   }),
+  sendTo: z
+    .string()
+    .trim()
+    .pipe(z.union([z.literal(''), z.email('Enter an email address, or leave it blank.')])),
 })
 
 export type BillingStatementValues = z.infer<typeof billingStatementSchema>

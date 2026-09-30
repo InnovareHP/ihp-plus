@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/empty-state'
 import { RowActionsMenu } from '@/components/row-actions-menu'
 import type { BillingStatementRow } from '../schema'
 import { formatStatementDate, formatUsd } from '../utils/billing-statement'
+import type { StatementOutput } from '../utils/statement-output'
 
 export interface BillingStatementsTableProps {
   title: string
@@ -14,7 +15,7 @@ export interface BillingStatementsTableProps {
   isError: boolean
   isFetching: boolean
   onRetry: () => void
-  onPrint: (statement: BillingStatementRow) => void
+  onOutput: (statement: BillingStatementRow, output: StatementOutput) => void
   /** Left out where the viewer is not the statement's author, such as an admin's list. */
   onDelete?: (statement: BillingStatementRow) => void
   emptyHint: string
@@ -28,7 +29,7 @@ export function BillingStatementsTable({
   isError,
   isFetching,
   onRetry,
-  onPrint,
+  onOutput,
   onDelete,
   emptyHint,
 }: BillingStatementsTableProps) {
@@ -77,7 +78,9 @@ export function BillingStatementsTable({
       width: 90,
       render: (row) => (
         <RowActionsMenu name={row.invoiceNumber}>
-          <Menu.Item onClick={() => onPrint(row)}>Print</Menu.Item>
+          <Menu.Item onClick={() => onOutput(row, 'print')}>Print</Menu.Item>
+          <Menu.Item onClick={() => onOutput(row, 'pdf')}>Download PDF</Menu.Item>
+          <Menu.Item onClick={() => onOutput(row, 'email')}>Create email</Menu.Item>
           {onDelete ? (
             <Menu.Item
               color="red"

@@ -60,6 +60,7 @@ export function BillingStatementButton({
             bonusCents: 0,
             expenses: [],
             wiseLink: latest?.wiseLink ?? '',
+            sendTo: latest?.sendTo ?? '',
           }}
         />
       ) : null}

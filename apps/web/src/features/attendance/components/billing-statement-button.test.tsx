@@ -27,6 +27,7 @@ const LAST: BillingStatementRow = {
   bonusCents: 0,
   expenses: [],
   wiseLink: 'https://wise.com/pay/r/abc',
+  sendTo: 'payroll@ihp.test',
   totalCents: 126_000,
   createdAt: '2026-08-31T08:00:00.000Z',
 }

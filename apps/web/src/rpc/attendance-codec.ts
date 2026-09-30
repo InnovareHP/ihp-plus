@@ -427,6 +427,7 @@ export function statementToProto(
       amountCents: expense.amountCents,
     })),
     wiseLink: row.wiseLink,
+    sendTo: row.sendTo,
     totalCents: row.totalCents ?? 0,
     createdAt: row.createdAt ?? '',
   }
@@ -452,6 +453,7 @@ export function statementFromProto(message: BillingStatementMessage): BillingSta
       amountCents: expense.amountCents,
     })),
     wiseLink: message.wiseLink,
+    sendTo: message.sendTo,
     totalCents: message.totalCents,
     createdAt: message.createdAt,
   }

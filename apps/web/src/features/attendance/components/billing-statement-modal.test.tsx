@@ -7,12 +7,14 @@ import { BillingStatementModal } from './billing-statement-modal'
 const print = vi.hoisted(() => ({ printHtml: vi.fn() }))
 const rpc = vi.hoisted(() => ({ saveBillingStatement: vi.fn(), listBillingStatements: vi.fn() }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
+const download = vi.hoisted(() => ({ downloadFile: vi.fn() }))
 
 vi.mock('../utils/billing-statement', async (original) => ({
   ...(await original<typeof import('../utils/billing-statement')>()),
   printHtml: print.printHtml,
 }))
 vi.mock('../rpc', () => rpc)
+vi.mock('@/lib/download', () => download)
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 
 const INITIAL: BillingStatementValues = {
@@ -27,6 +29,7 @@ const INITIAL: BillingStatementValues = {
   bonusCents: 0,
   expenses: [],
   wiseLink: '',
+  sendTo: 'payroll@ihp.test',
 }
 
 const FILLED: BillingStatementValues = {
@@ -151,6 +154,73 @@ describe('BillingStatementModal', () => {
 
     expect(
       await screen.findByText(/The statement is saved, but the print view/),
+    ).toBeInTheDocument()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('saves, then downloads the statement as a PDF named for it', async () => {
+    const user = userEvent.setup()
+    const onClose = open(FILLED)
+
+    await user.click(screen.getByRole('button', { name: 'Save and download PDF' }))
+
+    await waitFor(() => expect(download.downloadFile).toHaveBeenCalledOnce())
+    expect(rpc.saveBillingStatement).toHaveBeenCalled()
+    expect(download.downloadFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileName: 'Billing statement - Dana Reyes - INV-20260930.pdf',
+        contentType: 'application/pdf',
+      }),
+    )
+    expect(print.printHtml).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('saves the recipient, then downloads an email draft with the PDF attached', async () => {
+    const user = userEvent.setup()
+    open(FILLED)
+
+    await user.clear(screen.getByLabelText(/Send to/))
+    await user.type(screen.getByLabelText(/Send to/), 'billing@client.test')
+    await user.click(screen.getByRole('button', { name: 'Save and create email' }))
+
+    await waitFor(() => expect(download.downloadFile).toHaveBeenCalledOnce())
+    expect(rpc.saveBillingStatement).toHaveBeenCalledWith(
+      expect.objectContaining({ sendTo: 'billing@client.test' }),
+    )
+    const draft = download.downloadFile.mock.calls[0]?.[0]
+    expect(draft.fileName).toBe('Billing statement - Dana Reyes - INV-20260930.eml')
+    const eml = new TextDecoder().decode(draft.bytes)
+    expect(eml).toContain('To: billing@client.test')
+    expect(eml).toContain('filename="Billing statement - Dana Reyes - INV-20260930.pdf"')
+  })
+
+  it('refuses a malformed recipient before saving anything', async () => {
+    const user = userEvent.setup()
+    open(FILLED)
+
+    await user.clear(screen.getByLabelText(/Send to/))
+    await user.type(screen.getByLabelText(/Send to/), 'billing@')
+    await user.click(screen.getByRole('button', { name: 'Save and create email' }))
+
+    expect(
+      await screen.findByText('Enter an email address, or leave it blank.'),
+    ).toBeInTheDocument()
+    expect(rpc.saveBillingStatement).not.toHaveBeenCalled()
+    expect(download.downloadFile).not.toHaveBeenCalled()
+  })
+
+  it('says the statement is saved when only the file could not be made', async () => {
+    download.downloadFile.mockImplementationOnce(() => {
+      throw new Error('blocked')
+    })
+    const user = userEvent.setup()
+    const onClose = open(FILLED)
+
+    await user.click(screen.getByRole('button', { name: 'Save and download PDF' }))
+
+    expect(
+      await screen.findByText(/The statement is saved, but the PDF could not be created/),
     ).toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
   })

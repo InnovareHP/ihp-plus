@@ -14,24 +14,22 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { IconPlus, IconTrash } from '@tabler/icons-react'
+import { IconFileTypePdf, IconMail, IconPlus, IconTrash } from '@tabler/icons-react'
+import { useState, type BaseSyntheticEvent } from 'react'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
-import { track } from '@/lib/analytics'
 import { announceSuccess } from '@/lib/announce'
-import { attendanceEvents } from '../events'
 import { useSaveStatement } from '../hooks/use-statements'
 import { StatementIdentity } from './statement-identity'
 import { billingStatementSchema, type BillingStatementValues } from '../schema'
 import {
-  billingStatementHtml,
-  loadStatementLetterhead,
   formatStatementDate,
   formatUsd,
-  printHtml,
+  statementFileName,
   statementTotals,
   type StatementPeriod,
 } from '../utils/billing-statement'
+import { deliverStatement, type StatementOutput } from '../utils/statement-output'
 
 export interface BillingStatementModalProps {
   opened: boolean
@@ -47,6 +45,20 @@ const MONEY = { prefix: '$', thousandSeparator: ',', decimalScale: 2, min: 0 } a
 
 function toCents(value: string | number) {
   return Math.round(Number(value || 0) * 100)
+}
+
+const SAVED: Record<StatementOutput, (fileName: string) => string> = {
+  print: () => 'Billing statement saved — print it or save it as a PDF.',
+  pdf: (fileName) => `Billing statement saved and downloaded as ${fileName}.pdf.`,
+  email: () => 'Billing statement saved — open the downloaded email draft to check it and send it.',
+}
+
+const NOT_PRODUCED: Record<StatementOutput, string> = {
+  print:
+    'The statement is saved, but the print view would not open — allow printing for this site and print it from your statements.',
+  pdf: 'The statement is saved, but the PDF could not be created — download it again from your statements.',
+  email:
+    'The statement is saved, but the email draft could not be created — create it again from your statements.',
 }
 
 /** A contractor's statement for the range on screen: kept on file, then printed or saved as a PDF. */
@@ -71,6 +83,8 @@ export function BillingStatementModal({
     defaultValues: initial,
   })
   const expenses = useFieldArray({ control, name: 'expenses' })
+  // Which save button was pressed, so only that one shows the pending label.
+  const [pending, setPending] = useState<StatementOutput>('print')
 
   // Watched so the total moves as amounts are typed.
   const watched = useWatch({ control })
@@ -85,7 +99,7 @@ export function BillingStatementModal({
     })),
   })
 
-  async function submit(values: BillingStatementValues) {
+  async function submit(values: BillingStatementValues, output: StatementOutput) {
     try {
       await save.mutateAsync({ ...values, periodStart: period.from, periodEnd: period.to })
     } catch (error) {
@@ -95,25 +109,20 @@ export function BillingStatementModal({
       return
     }
 
-    try {
-      printHtml(billingStatementHtml(values, period, await loadStatementLetterhead()))
-    } catch (error) {
-      track(attendanceEvents.statementPrintFailed, {
-        reason: error instanceof Error ? error.message : 'unknown',
-      })
-      setError('root', {
-        message:
-          'The statement is saved, but the print view would not open — allow printing for this site and print it from your statements.',
-      })
+    if (!(await deliverStatement(output, values, period))) {
+      setError('root', { message: NOT_PRODUCED[output] })
       return
     }
 
-    track(attendanceEvents.statementPrinted, {
-      days: values.daysWorked,
-      expenses: values.expenses.length,
-    })
-    announceSuccess('Billing statement saved — print it or save it as a PDF.')
+    announceSuccess(SAVED[output](statementFileName(values)))
     onClose()
+  }
+
+  function run(output: StatementOutput) {
+    return (event?: BaseSyntheticEvent) => {
+      setPending(output)
+      return handleSubmit((values) => submit(values, output))(event)
+    }
   }
 
   return (
@@ -125,7 +134,7 @@ export function BillingStatementModal({
       size="lg"
       centered
     >
-      <form onSubmit={handleSubmit(submit)} noValidate>
+      <form onSubmit={run('print')} noValidate>
         <Stack gap="md">
           <FormError message={errors.root?.message} title="Could not create the statement" />
           <Text size="sm" c="dimmed">
@@ -315,6 +324,20 @@ export function BillingStatementModal({
             />
           </Fieldset>
 
+          <Fieldset legend="Email">
+            <TextInput
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              label="Send to"
+              description="Who the email draft is addressed to. Leave it blank to choose in your mail app."
+              placeholder="payroll@example.com"
+              error={errors.sendTo?.message}
+              errorProps={{ role: 'alert' }}
+              {...register('sendTo')}
+            />
+          </Fieldset>
+
           <Divider />
           <Stack gap={4} aria-live="polite">
             <Group justify="space-between">
@@ -331,8 +354,30 @@ export function BillingStatementModal({
             <Button variant="subtle" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" loading={isSubmitting}>
-              {isSubmitting ? 'Saving…' : 'Save and print'}
+            <Button
+              variant="default"
+              leftSection={<IconMail size={16} />}
+              onClick={run('email')}
+              disabled={isSubmitting && pending !== 'email'}
+              loading={isSubmitting && pending === 'email'}
+            >
+              {isSubmitting && pending === 'email' ? 'Saving…' : 'Save and create email'}
+            </Button>
+            <Button
+              variant="default"
+              leftSection={<IconFileTypePdf size={16} />}
+              onClick={run('pdf')}
+              disabled={isSubmitting && pending !== 'pdf'}
+              loading={isSubmitting && pending === 'pdf'}
+            >
+              {isSubmitting && pending === 'pdf' ? 'Saving…' : 'Save and download PDF'}
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting && pending !== 'print'}
+              loading={isSubmitting && pending === 'print'}
+            >
+              {isSubmitting && pending === 'print' ? 'Saving…' : 'Save and print'}
             </Button>
           </Group>
         </Stack>

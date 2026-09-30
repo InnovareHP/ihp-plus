@@ -537,6 +537,8 @@ message BillingStatement {
   // Billed as one flat amount (hourly_rate_cents) instead of hours × an hourly rate.
   bool fixed_pay = 17;
   int32 hourly_rate_cents = 18;
+  // Who the email draft is addressed to; empty leaves it for the mail app.
+  string send_to = 19;
 }
 
 // Saving an invoice number the member already used replaces that statement.

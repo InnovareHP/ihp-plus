@@ -14,7 +14,7 @@ import {
   type ApplyLetterheadValues,
 } from '../schema'
 import { useApplyLetterhead } from '../use-apply-letterhead'
-import { downloadFile } from '../utils/download'
+import { downloadFile } from '@/lib/download'
 import { LETTERHEAD_OPTIONS } from '../utils/letterhead-templates'
 
 const TEMPLATE_OPTIONS = LETTERHEAD_OPTIONS.filter((option) => option.value !== 'none')

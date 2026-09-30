@@ -1,3 +1,4 @@
+import { safeLibraryName } from '@/lib/library-name'
 import type { AttendanceAbsenceRow, AttendanceDayRow, BillingStatementValues } from '../schema'
 
 export const STATEMENT_COMPANY = 'Innovare HP'
@@ -75,6 +76,16 @@ export function defaultInvoiceNumber(to: string) {
   return `INV-${to.replaceAll('-', '')}`
 }
 
+/** One name for every copy — the PDF, the email attachment and the print dialog's "Save as PDF". */
+export function statementFileName(
+  values: Pick<BillingStatementValues, 'contractorName' | 'invoiceNumber'>,
+) {
+  return safeLibraryName(
+    `Billing statement - ${values.contractorName} - ${values.invoiceNumber}`,
+    'Billing statement',
+  )
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll('&', '&amp;')
@@ -132,7 +143,7 @@ export function billingStatementHtml(
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Billing statement ${escapeHtml(values.invoiceNumber)}</title>
+<title>${escapeHtml(statementFileName(values))}</title>
 <style>
   @page { size: letter; margin: 0; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

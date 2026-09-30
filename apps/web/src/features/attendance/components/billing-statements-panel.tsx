@@ -1,36 +1,31 @@
 'use client'
 
 import { useQueryClient } from '@tanstack/react-query'
-import { track } from '@/lib/analytics'
-import { announceFailure } from '@/lib/announce'
+import { announceFailure, announceSuccess } from '@/lib/announce'
 import { offerUndo } from '@/lib/undo'
-import { attendanceEvents } from '../events'
 import { useBillingStatements, useDeleteStatement } from '../hooks/use-statements'
 import { attendanceKeys } from '../query-keys'
 import type { BillingStatementRow } from '../schema'
-import {
-  billingStatementHtml,
-  loadStatementLetterhead,
-  printHtml,
-} from '../utils/billing-statement'
+import { statementFileName } from '../utils/billing-statement'
+import { deliverStatement, type StatementOutput } from '../utils/statement-output'
 import { BillingStatementsTable } from './billing-statements-table'
 
-async function reprint(statement: BillingStatementRow) {
-  try {
-    printHtml(
-      billingStatementHtml(
-        statement,
-        { from: statement.periodStart, to: statement.periodEnd },
-        await loadStatementLetterhead(),
-      ),
-    )
-    track(attendanceEvents.statementPrinted, { days: statement.daysWorked, reprint: true })
-  } catch (error) {
-    track(attendanceEvents.statementPrintFailed, {
-      reason: error instanceof Error ? error.message : 'unknown',
-    })
-    announceFailure('Could not open the print view — allow printing for this site and try again.')
+const FAILED: Record<StatementOutput, string> = {
+  print: 'Could not open the print view — allow printing for this site and try again.',
+  pdf: 'Could not create the PDF — try again.',
+  email: 'Could not create the email draft — try again.',
+}
+
+async function reissue(statement: BillingStatementRow, output: StatementOutput) {
+  const period = { from: statement.periodStart, to: statement.periodEnd }
+  if (!(await deliverStatement(output, statement, period, true))) {
+    announceFailure(FAILED[output])
+    return
   }
+  // The print dialog speaks for itself; a download lands silently, so it is announced.
+  if (output === 'pdf') announceSuccess(`Downloaded ${statementFileName(statement)}.pdf.`)
+  if (output === 'email')
+    announceSuccess('Email draft downloaded — open it to check it and send it.')
 }
 
 /** The statements a contractor has issued; they are private, so nobody else can list them. */
@@ -62,9 +57,9 @@ export function BillingStatementsPanel() {
       isError={statements.isError}
       isFetching={statements.isFetching}
       onRetry={() => void statements.refetch()}
-      onPrint={(statement) => void reprint(statement)}
+      onOutput={(statement, output) => void reissue(statement, output)}
       onDelete={deleteWithUndo}
-      emptyHint="Print a billing statement above and it is kept here, ready to print again."
+      emptyHint="Save a billing statement above and it is kept here, ready to print, download or email again."
     />
   )
 }
