@@ -27,6 +27,7 @@ import {
   type Workplace,
 } from './schema'
 import { fieldsOf, stagesOf } from './utils/records'
+import { sanitizeDescription } from './utils/sanitize-description'
 import { statusPath, statusUrl, verifyStatusLink } from './status-link'
 
 // Everything here is session-free on purpose: this is the careers site, and the signed status
@@ -84,7 +85,8 @@ function publicPostingOf(row: PostingRecord, names: Map<string, string>): Public
     slug: row.slug,
     title: row.title,
     summary: row.summary,
-    description: row.description,
+    // Older postings were plain text and predate the save-time sanitizer, so clean on the way out too.
+    description: sanitizeDescription(row.description),
     location: row.location,
     workplace: row.workplace as Workplace,
     employmentType: row.employmentType as EmploymentType,

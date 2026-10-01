@@ -3,6 +3,7 @@ import { pageQueryFields, type Paginated } from '@/lib/pagination'
 // A posting's extra questions are a requests form of kind "application", so the field shape is
 // the one the form builder already speaks.
 import { answerSchemaOf, type FormField, type RequestValues } from '@/features/requests/schema'
+import { descriptionText } from './utils/description-html'
 import { isTimeZone } from './utils/interview-time'
 
 export const POSTING_STATUSES = ['draft', 'open', 'closed', 'archived'] as const
@@ -153,8 +154,11 @@ export const postingDraftSchema = z
     description: z
       .string()
       .trim()
-      .min(20, 'Describe the role, so an applicant knows what they are applying for.')
-      .max(20_000),
+      .max(40_000, 'Shorten the description.')
+      .refine(
+        (value) => descriptionText(value).length >= 20,
+        'Describe the role, so an applicant knows what they are applying for.',
+      ),
     location: z.string().trim().max(120).default(''),
     workplace: z.enum(WORKPLACES),
     employmentType: z.enum(EMPLOYMENT_TYPES),
@@ -231,7 +235,7 @@ export function isFilteredPostingQuery(query: PostingQuery) {
 // An open posting is the public face of the company, so it must be complete before it goes up.
 export function publishBlockers(posting: { stages: readonly unknown[]; description: string }) {
   const blockers: string[] = []
-  if (posting.description.trim().length < 20) blockers.push('Describe the role.')
+  if (descriptionText(posting.description).length < 20) blockers.push('Describe the role.')
   if (posting.stages.length === 0) blockers.push('Add at least one stage.')
   return blockers
 }

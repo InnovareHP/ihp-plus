@@ -36,6 +36,13 @@ if (typeof document !== 'undefined') {
   // jsdom has no scrollIntoView, and Mantine's Combobox calls it while highlighting an option.
   Element.prototype.scrollIntoView = vi.fn()
 
+  // jsdom does no layout, and ProseMirror measures the caret to scroll it into view after each edit.
+  const noRects = () => Object.assign([], { item: () => null }) as unknown as DOMRectList
+  Element.prototype.getClientRects = noRects
+  Range.prototype.getClientRects = noRects
+  Range.prototype.getBoundingClientRect = () => new DOMRect()
+  document.elementFromPoint = () => null
+
   // jsdom ships no FontFaceSet, and Mantine's autosizing Textarea listens for font loading.
   Object.defineProperty(document, 'fonts', {
     configurable: true,

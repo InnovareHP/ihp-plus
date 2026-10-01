@@ -13,7 +13,6 @@ import {
   Stack,
   Switch,
   Text,
-  Textarea,
   TextInput,
 } from '@mantine/core'
 import { IconExternalLink } from '@tabler/icons-react'
@@ -50,6 +49,8 @@ import {
   type PostingStatus,
   type Stage,
 } from '../schema'
+import { descriptionToHtml } from '../utils/description-html'
+import { RichTextField } from './rich-text-field'
 import { StageListEditor } from './stage-list-editor'
 
 const EMPLOYMENT_OPTIONS = EMPLOYMENT_TYPES.map((value) => ({
@@ -70,7 +71,7 @@ function draftOf(
     postingId: posting?.id,
     title: posting?.title ?? '',
     summary: posting?.summary ?? '',
-    description: posting?.description ?? '',
+    description: descriptionToHtml(posting?.description ?? ''),
     location: posting?.location ?? '',
     workplace: posting?.workplace ?? 'onsite',
     employmentType: posting?.employmentType ?? 'full_time',
@@ -328,17 +329,21 @@ export function PostingEditor({ posting, defaultStages }: PostingEditorProps) {
 
         <PageSection
           title="Description"
-          description="The role, what the day looks like, and what you are looking for. Blank lines start a new paragraph."
+          description="The role, what the day looks like, and what you are looking for. Use the toolbar for headings, bullets and links."
         >
-          <Textarea
-            {...register('description')}
-            label="Job description"
-            required
-            aria-required="true"
-            autosize
-            minRows={8}
-            error={errors.description?.message}
-            errorProps={{ role: 'alert' }}
+          <Controller
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <RichTextField
+                label="Job description"
+                required
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.description?.message}
+              />
+            )}
           />
         </PageSection>
 

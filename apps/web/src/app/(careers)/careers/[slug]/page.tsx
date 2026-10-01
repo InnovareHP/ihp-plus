@@ -67,7 +67,7 @@ export default async function CareersPostingPage({ params }: Params) {
         ) : null}
       </Stack>
 
-      <PostingDescription text={posting.description} />
+      <PostingDescription html={posting.description} />
 
       <Divider />
 

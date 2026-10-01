@@ -25,6 +25,7 @@ import {
   type Workplace,
 } from './schema'
 import { fieldsOf, stagesOf } from './utils/records'
+import { sanitizeDescription } from './utils/sanitize-description'
 import { slugOf } from './utils/slug'
 
 async function teamNameMap(organizationId: string) {
@@ -294,7 +295,7 @@ export async function savePosting(input: PostingDraftValues): Promise<PostingRow
   const data = {
     title: draft.title,
     summary: draft.summary,
-    description: draft.description,
+    description: sanitizeDescription(draft.description),
     location: draft.location,
     workplace: draft.workplace,
     employmentType: draft.employmentType,

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import { render, screen, userEvent, waitFor } from '@/test/render'
+import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import { DEFAULT_STAGES, type PostingRow } from '../schema'
 import { PostingEditor } from './posting-editor'
 
@@ -123,6 +123,38 @@ describe('PostingEditor', () => {
     await waitFor(() =>
       expect(rpc.setPostingStatus).toHaveBeenCalledWith({ postingId: 'post-1', status: 'open' }),
     )
+  })
+
+  it('saves a bulleted description as HTML', async () => {
+    rpc.savePosting.mockResolvedValue(SAVED)
+    const user = userEvent.setup()
+    render(<PostingEditor defaultStages={DEFAULT_STAGES} />)
+
+    await fillRequired(user)
+    await user.click(await screen.findByRole('button', { name: 'Bullet list' }))
+    await user.click(screen.getByRole('button', { name: 'Save draft' }))
+
+    await waitFor(() =>
+      expect(rpc.savePosting).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description:
+            '<ul><li><p>You will care for patients across our outpatient clinics.</p></li></ul>',
+        }),
+      ),
+    )
+  })
+
+  it('opens an older plain-text description as paragraphs', async () => {
+    render(
+      <PostingEditor
+        posting={{ ...SAVED, description: 'You will care for patients.\n\nNights and weekends.' }}
+        defaultStages={DEFAULT_STAGES}
+      />,
+    )
+
+    const editor = await screen.findByRole('textbox', { name: /Job description/ })
+    expect(within(editor).getByText('You will care for patients.').tagName).toBe('P')
+    expect(within(editor).getByText('Nights and weekends.').tagName).toBe('P')
   })
 
   it('keeps what was typed and says why when the server refuses', async () => {
