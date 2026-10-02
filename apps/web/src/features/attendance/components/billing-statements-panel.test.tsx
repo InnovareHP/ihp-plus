@@ -4,6 +4,13 @@ import { render, screen, userEvent, waitFor } from '@/test/render'
 import type { BillingStatementRow } from '../schema'
 import { BillingStatementsPanel } from './billing-statements-panel'
 
+// DataTable pages its own rows into the URL, so the table reads the router.
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/attendance',
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn() }),
+}))
+
 const rpc = vi.hoisted(() => ({ listBillingStatements: vi.fn(), deleteBillingStatement: vi.fn() }))
 const print = vi.hoisted(() => ({ printHtml: vi.fn() }))
 const undo = vi.hoisted(() => ({ offerUndo: vi.fn(), UNDO_WINDOW_MS: 8000 }))

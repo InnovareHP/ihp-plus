@@ -4,6 +4,13 @@ import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import type { AttendanceCorrectionRow } from '../schema'
 import { CorrectionsQueue } from './corrections-queue'
 
+// DataTable pages its own rows into the URL, so the table reads the router.
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/attendance',
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn() }),
+}))
+
 const rpc = vi.hoisted(() => ({ listCorrections: vi.fn(), decideCorrection: vi.fn() }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 

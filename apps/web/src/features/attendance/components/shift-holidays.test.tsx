@@ -3,6 +3,13 @@ import { axe } from 'vitest-axe'
 import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import { ShiftHolidays } from './shift-holidays'
 
+// DataTable pages its own rows into the URL, so the table reads the router.
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/attendance',
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn() }),
+}))
+
 const rpc = vi.hoisted(() => ({
   listHolidays: vi.fn(),
   saveHoliday: vi.fn(),

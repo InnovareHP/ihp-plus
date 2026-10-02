@@ -3,6 +3,7 @@
 import { Alert, Button, Stack, Table, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 import type { PageInfo } from '@/lib/pagination'
+import { useClientPagination } from '@/lib/use-client-pagination'
 import { DataTableFooter } from './data-table-footer'
 import { DataTableSkeleton } from './data-table-skeleton'
 import { SortControl } from './data-table-sort-control'
@@ -42,7 +43,7 @@ export interface DataTableProps<TRow> {
   /** Shown instead of `empty` when a filter is what emptied the list — keeps a way back. */
   noResults?: ReactNode
   isFiltered?: boolean
-  /** Server-side paging: pass the page the server reported to get the footer and controls. */
+  /** Paging the caller owns; without onPageChange the table pages its rows itself, in the URL. */
   pageInfo?: PageInfo
   onPageChange?: (page: number) => void
   /** Passing it puts the rows-per-page control in the footer. */
@@ -54,11 +55,42 @@ export interface DataTableProps<TRow> {
   skeletonRows?: number
   sort?: DataTableSort
   onSortChange?: (sort: DataTableSort) => void
+  /** URL param for the built-in paging; defaults to one derived from `label`. */
+  pageKey?: string
 }
 
 const ARIA_SORT = { asc: 'ascending', desc: 'descending' } as const
 
-export function DataTable<TRow>({
+// Two self-paged tables on one screen must not share a ?page= param, so each gets its label's.
+function pageKeyOf(label: string) {
+  const slug = label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+  return `${slug || 'table'}-page`
+}
+
+export function DataTable<TRow>(props: DataTableProps<TRow>) {
+  // A caller that pages (on the server or itself) passes onPageChange; every other list is paged here.
+  return props.onPageChange ? <PagedTable {...props} /> : <SelfPagedTable {...props} />
+}
+
+function SelfPagedTable<TRow>({ rows, pageKey, label, ...props }: DataTableProps<TRow>) {
+  const paged = useClientPagination(rows, { key: pageKey ?? pageKeyOf(label) })
+
+  return (
+    <PagedTable
+      {...props}
+      label={label}
+      rows={paged.rows}
+      pageInfo={paged.pageInfo}
+      onPageChange={paged.onPageChange}
+      onPageSizeChange={paged.onPageSizeChange}
+    />
+  )
+}
+
+function PagedTable<TRow>({
   label,
   columns,
   rows,

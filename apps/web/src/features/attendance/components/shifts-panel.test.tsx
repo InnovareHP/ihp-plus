@@ -4,6 +4,13 @@ import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import { DEFAULT_ATTENDANCE_SETTINGS, DEFAULT_SHIFT, type AttendanceShiftRow } from '../schema'
 import { ShiftsPanel } from './shifts-panel'
 
+// DataTable pages its own rows into the URL, so the table reads the router.
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/attendance',
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn() }),
+}))
+
 const rpc = vi.hoisted(() => ({
   listShifts: vi.fn(),
   saveShift: vi.fn(),

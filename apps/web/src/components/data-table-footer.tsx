@@ -39,7 +39,7 @@ export function DataTableFooter({
           />
         ) : null}
       </Group>
-      {pageInfo.pageCount > 1 && onPageChange ? (
+      {onPageChange ? (
         <Box component="nav" aria-label={`${label} pages`}>
           <Pagination
             total={pageInfo.pageCount}

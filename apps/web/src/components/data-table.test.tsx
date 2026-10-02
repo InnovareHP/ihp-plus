@@ -3,6 +3,15 @@ import { axe } from 'vitest-axe'
 import { render, screen, userEvent, within } from '@/test/render'
 import { DataTable, type DataTableColumn } from './data-table'
 
+const router = vi.hoisted(() => ({ replace: vi.fn() }))
+const params = vi.hoisted(() => ({ value: new URLSearchParams() }))
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/leads',
+  useSearchParams: () => params.value,
+  useRouter: () => router,
+}))
+
 interface Lead {
   id: string
   name: string
@@ -139,7 +148,7 @@ describe('DataTable', () => {
     expect(onPageChange).toHaveBeenCalledWith(3)
   })
 
-  it('keeps the count but drops the pager when everything fits on one page', () => {
+  it('keeps the count and the pager when everything fits on one page', () => {
     renderTable({
       pageInfo: {
         page: 1,
@@ -153,7 +162,7 @@ describe('DataTable', () => {
     })
 
     expect(screen.getByText('Showing 1–2 of 2')).toBeInTheDocument()
-    expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Leads pages' })).toBeInTheDocument()
   })
 
   it('changes the rows per page from the footer', async () => {
@@ -193,6 +202,45 @@ describe('DataTable', () => {
     })
 
     expect(screen.queryByRole('combobox', { name: /Rows per page/ })).not.toBeInTheDocument()
+  })
+
+  it('pages a list it is handed whole, in a URL param named after the table', async () => {
+    params.value = new URLSearchParams()
+    const many = Array.from({ length: 30 }, (_, index) => ({
+      id: `lead-${index + 1}`,
+      name: `Lead ${index + 1}`,
+      city: 'Trenton',
+    }))
+    renderTable({ rows: many })
+
+    expect(screen.getByText('Lead 25')).toBeInTheDocument()
+    expect(screen.queryByText('Lead 26')).not.toBeInTheDocument()
+    expect(screen.getByText('Showing 1–25 of 30')).toBeInTheDocument()
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Page 2' }))
+
+    expect(router.replace).toHaveBeenCalledWith('/leads?leads-page=2', { scroll: false })
+  })
+
+  it('reads the page it shows from the URL', () => {
+    params.value = new URLSearchParams('leads-page=2&leads-pageSize=10')
+    const many = Array.from({ length: 12 }, (_, index) => ({
+      id: `lead-${index + 1}`,
+      name: `Lead ${index + 1}`,
+      city: 'Trenton',
+    }))
+    renderTable({ rows: many })
+
+    expect(screen.getByText('Lead 11')).toBeInTheDocument()
+    expect(screen.queryByText('Lead 1')).not.toBeInTheDocument()
+  })
+
+  it('shows the page numbers even when everything fits on one page', () => {
+    params.value = new URLSearchParams()
+    renderTable()
+
+    const pager = screen.getByRole('navigation', { name: 'Leads pages' })
+    expect(within(pager).getByRole('button', { name: 'Page 1' })).toBeInTheDocument()
   })
 
   it('has no axe violations', async () => {
