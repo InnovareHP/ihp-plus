@@ -2,6 +2,8 @@ export const LETTERHEAD_TEMPLATES = [
   'none',
   'official',
   'innovarehp',
+  'eldon',
+  'refidly',
   'classic',
   'minimal',
   'banner',
@@ -38,13 +40,15 @@ export interface ArtworkLayout {
   artwork: ArtworkName
 }
 
-export type ArtworkName = 'official' | 'innovarehp'
+export type ArtworkName = 'official' | 'innovarehp' | 'eldon' | 'refidly'
 
 export type LetterheadLayout = DrawnLayout | ArtworkLayout
 
 export const LETTERHEAD_LAYOUTS = {
   official: { kind: 'artwork', artwork: 'official' },
   innovarehp: { kind: 'artwork', artwork: 'innovarehp' },
+  eldon: { kind: 'artwork', artwork: 'eldon' },
+  refidly: { kind: 'artwork', artwork: 'refidly' },
   classic: {
     kind: 'drawn',
     headerHeight: 84,
@@ -78,6 +82,8 @@ export const LETTERHEAD_OPTIONS: { value: LetterheadTemplate; label: string }[] 
   { value: 'none', label: 'No letterhead' },
   { value: 'official', label: 'IHP+ letterhead — the official design' },
   { value: 'innovarehp', label: 'Innovare HP letterhead — logo, address and contact strip' },
+  { value: 'eldon', label: 'Eldon letterhead � logo, contact column and address' },
+  { value: 'refidly', label: 'Refidly letterhead � logo, contact strip and address' },
   { value: 'classic', label: 'Classic — logo, name and page numbers' },
   { value: 'minimal', label: 'Minimal — centred logo only' },
   { value: 'banner', label: 'Banner — navy band with logo and name' },

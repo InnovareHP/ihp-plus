@@ -12,7 +12,9 @@ import {
 import { describe, expect, it } from 'vitest'
 import { applyLetterhead, LetterheadError } from './letterhead'
 import { LETTERHEAD_ARTWORK } from './letterhead-artwork'
+import { ELDON_ARTWORK } from './letterhead-artwork-eldon'
 import { INNOVARE_ARTWORK } from './letterhead-artwork-innovare'
+import { REFIDLY_ARTWORK } from './letterhead-artwork-refidly'
 import { requiredMargins, withLetterhead } from './letterhead-docx'
 import { fitContent, reserveOf } from './letterhead-pdf'
 import { LETTERHEAD_LAYOUTS } from './letterhead-templates'
@@ -163,6 +165,16 @@ describe('the PDF letterhead', () => {
     expect(reserve).not.toEqual(reserveOf(LETTERHEAD_LAYOUTS.official, 612))
   })
 
+  it.each([
+    ['eldon', ELDON_ARTWORK],
+    ['refidly', REFIDLY_ARTWORK],
+  ] as const)('reserves room for the %s artwork', (template, { header, footer }) => {
+    const reserve = reserveOf(LETTERHEAD_LAYOUTS[template], 612)
+
+    expect(reserve.top).toBeCloseTo((612 * header.height) / header.width + 12)
+    expect(reserve.bottom).toBeCloseTo((612 * footer.height) / footer.width + 6)
+  })
+
   it('stamps a rotated page without losing its rotation', async () => {
     const stamped = await applyLetterhead({
       bytes: await pdfWithLink(90),
@@ -262,6 +274,23 @@ describe('the Word letterhead', () => {
 
     expect(header).toEqual(expected)
     expect(files['word/media/ihp-letterhead-footer.png']?.byteLength).toBeGreaterThan(0)
+  })
+
+  it.each([
+    ['eldon', ELDON_ARTWORK],
+    ['refidly', REFIDLY_ARTWORK],
+  ] as const)('embeds the %s artwork in a Word file', async (template, artwork) => {
+    const stamped = await applyLetterhead({
+      bytes: docx(body),
+      contentType: DOCX,
+      template,
+      organizationName: 'Innovare HP',
+    })
+    const files = unzipSync(stamped)
+    const bytes = (base64: string) => Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
+
+    expect(files['word/media/ihp-letterhead-header.png']).toEqual(bytes(artwork.header.base64))
+    expect(files['word/media/ihp-letterhead-footer.png']).toEqual(bytes(artwork.footer.base64))
   })
 
   it('never shrinks a margin that is already deep enough', () => {
