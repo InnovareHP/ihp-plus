@@ -64,6 +64,18 @@ const structuredData = {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <!-- Google tag (gtag.js); is:inline keeps Astro from bundling it, since GA needs it verbatim. -->
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-WYCYFKCKTB"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || []
+      function gtag() {
+        dataLayer.push(arguments)
+      }
+      gtag('js', new Date())
+      gtag('config', 'G-WYCYFKCKTB')
+    </script>
+
     <title>{title}</title>
     <meta name="description" content={description} />
     {!noindex && <link rel="canonical" href={canonical} />}
