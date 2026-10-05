@@ -61,6 +61,22 @@ describe('LetterheadForm', () => {
     expect(sent.get('template')).toBe('classic')
   })
 
+  it.each([
+    [/Eldon letterhead/, 'eldon'],
+    [/Refidly letterhead/, 'refidly'],
+  ])('offers the %s design', async (name, template) => {
+    const user = userEvent.setup()
+    render(<LetterheadForm />)
+
+    await pickPdf(user)
+    await user.click(screen.getByRole('radio', { name }))
+    await user.click(screen.getByRole('button', { name: 'Add letterhead and download' }))
+
+    await waitFor(() => expect(actions.applyLetterheadToFile).toHaveBeenCalled())
+    const sent = actions.applyLetterheadToFile.mock.calls[0]?.[0] as FormData
+    expect(sent.get('template')).toBe(template)
+  })
+
   it('asks for a file before sending anything', async () => {
     const user = userEvent.setup()
     render(<LetterheadForm />)

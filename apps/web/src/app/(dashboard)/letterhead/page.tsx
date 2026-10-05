@@ -13,7 +13,7 @@ export default async function LetterheadPage() {
     <PageShell>
       <PageHeader
         title="Letterhead"
-        description="Put the IHP+ letterhead on a PDF or Word document and download the finished copy."
+        description="Put an IHP+, Innovare HP, Eldon or Refidly letterhead on a PDF or Word document and download the finished copy."
       />
       <LetterheadForm />
     </PageShell>
