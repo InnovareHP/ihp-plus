@@ -136,6 +136,12 @@ async function balancesFor(
   return result
 }
 
+/** The year a leave page shows: the one asked for, else this year on the organization's clock. */
+export async function leaveYearFor(requestedYear?: number) {
+  const caller = await requireRequester()
+  return requestedYear ?? currentYear(caller.organizationId)
+}
+
 /** The caller's balances on the time off forms offered to their department. */
 export async function loadMyBalances(requestedYear?: number): Promise<MyLeaveBalances> {
   const caller = await requireRequester()

@@ -7,6 +7,7 @@ import { useRequest } from '../hooks/use-requests'
 import { CancelLeavePanel } from './cancel-leave-panel'
 import { DecisionPanel } from './decision-panel'
 import { FormAnswers } from '@/components/form-answers'
+import { ApproverLeavePreview } from '@/features/leave/components/approver-leave-preview'
 import { requestFileHref } from '@/lib/routes'
 
 const stamp = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
@@ -66,6 +67,9 @@ export function RequestDetail({ initial }: { initial: RequestRow }) {
         />
       </PageSection>
 
+      {row.canDecide && row.timeOff ? (
+        <ApproverLeavePreview submissionId={row.id} requesterName={row.requesterName} />
+      ) : null}
       {row.canDecide ? <DecisionPanel row={row} /> : null}
       {row.canCancel ? <CancelLeavePanel row={row} /> : null}
     </Stack>

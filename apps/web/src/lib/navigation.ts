@@ -108,6 +108,11 @@ export const NAV_SECTIONS: readonly NavSection[] = [
             description: 'Holidays, leave and your days by month',
           },
           {
+            href: routes.attendanceLeave,
+            label: 'Leave',
+            description: 'Days left on each kind of leave this year',
+          },
+          {
             href: routes.attendanceTeam,
             label: 'Team attendance',
             description: 'Who is in, timesheets and shifts',

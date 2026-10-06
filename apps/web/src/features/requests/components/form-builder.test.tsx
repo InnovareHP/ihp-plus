@@ -158,6 +158,30 @@ describe('FormBuilder', () => {
     ])
   })
 
+  it('saves a yearly allowance on a time off form, and offers none on another form', async () => {
+    const person = user()
+    render(<FormBuilder />)
+
+    expect(screen.queryByRole('textbox', { name: /Days per year/ })).not.toBeInTheDocument()
+    await person.type(screen.getByLabelText(/Form name/), 'Vacation leave')
+    await person.click(screen.getByRole('switch', { name: /Time off request/ }))
+    await person.type(screen.getByRole('textbox', { name: /Days per year/ }), '15')
+    await person.click(screen.getByRole('button', { name: 'Save draft' }))
+
+    await waitFor(() => expect(rpc.saveForm).toHaveBeenCalled())
+    expect(rpc.saveForm.mock.calls[0]?.[0].leaveAllowance).toBe(15)
+  })
+
+  it('will not let a used form change whether it books time off', async () => {
+    render(
+      <FormBuilder form={{ ...SAVED, submissionCount: 3, timeOff: true, leaveAllowance: 10 }} />,
+    )
+
+    // The allowance, unlike the flag, stays editable once the form is in use.
+    expect(await screen.findByRole('textbox', { name: /Days per year/ })).toHaveValue('10')
+    expect(screen.getByRole('textbox', { name: /Days per year/ })).toBeEnabled()
+  })
+
   it('will not let a used form change whether it books time off', async () => {
     render(<FormBuilder form={{ ...SAVED, submissionCount: 3 }} />)
 

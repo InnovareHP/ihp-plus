@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { useRouter } from 'next/navigation'
-import { Controller, useForm, type Control, type FieldValues } from 'react-hook-form'
+import { Controller, useForm, useWatch, type Control, type FieldValues } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { EmptyState } from '@/components/empty-state'
@@ -12,6 +12,9 @@ import { requestRoute, routes } from '@/lib/routes'
 import { answerSchemaOf, defaultAnswersOf, type FormRow, type RequestValues } from '../schema'
 import { useSubmitRequest } from '../hooks/use-requests'
 import { FieldInput } from '@/components/field-input'
+// Leave owns balances; a time off request only asks it what the dates will cost.
+import { RequestLeavePreview } from '@/features/leave/components/request-leave-preview'
+import { TIME_OFF_FIRST_DAY, TIME_OFF_LAST_DAY } from '../time-off'
 import { RequestFileInput } from './request-file-input'
 
 export function RequestForm({ form }: { form: FormRow }) {
@@ -29,6 +32,7 @@ export function RequestForm({ form }: { form: FormRow }) {
     reValidateMode: 'onChange',
     defaultValues: defaultAnswersOf(form.fields),
   })
+  const [firstDay, lastDay] = useWatch({ control, name: [TIME_OFF_FIRST_DAY, TIME_OFF_LAST_DAY] })
 
   async function onSubmit(values: FieldValues) {
     try {
@@ -91,6 +95,10 @@ export function RequestForm({ form }: { form: FormRow }) {
               ),
             )}
           </Stack>
+
+          {form.timeOff ? (
+            <RequestLeavePreview formId={form.id} firstDay={firstDay} lastDay={lastDay} />
+          ) : null}
 
           <Text size="sm" c="dimmed">
             It goes to the approvers for your department, who decide it from their queue.

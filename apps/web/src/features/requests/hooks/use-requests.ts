@@ -6,6 +6,7 @@ import { announceFailure } from '@/lib/announce'
 import { useOptimisticPagesMutation } from '@/lib/optimistic'
 // Cancelled leave changes the time clock, which this feature does not own.
 import { attendanceKeys } from '@/features/attendance/query-keys'
+import { leaveKeys } from '@/features/leave/query-keys'
 import { requestEvents } from '../events'
 import { requestKeys } from '../query-keys'
 import {
@@ -74,6 +75,8 @@ export function useSubmitRequest() {
       track(requestEvents.requestSubmitted)
       queryClient.setQueryData(requestKeys.detail(row.id), row)
       queryClient.invalidateQueries({ queryKey: requestKeys.all })
+      // A time off request is pending against a leave balance from now on.
+      queryClient.invalidateQueries({ queryKey: leaveKeys.all })
     },
     onError: (error: Error) => {
       track(requestEvents.requestSubmitFailed, { reason: error.message })
@@ -97,7 +100,7 @@ export function useWithdrawRequest() {
     }),
     successEvent: requestEvents.requestWithdrawn,
     failureEvent: requestEvents.requestWithdrawFailed,
-    alsoInvalidate: [requestKeys.queues()],
+    alsoInvalidate: [requestKeys.queues(), leaveKeys.all],
   })
 }
 
@@ -143,6 +146,7 @@ export function useDecideRequest(query: RequestQuery) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: requestKeys.queues() })
+      queryClient.invalidateQueries({ queryKey: leaveKeys.all })
     },
   })
 }
@@ -158,6 +162,7 @@ export function useDecideOne() {
       track(requestEvents.requestDecided, { decision: row.status })
       queryClient.setQueryData(requestKeys.detail(row.id), row)
       queryClient.invalidateQueries({ queryKey: requestKeys.queues() })
+      queryClient.invalidateQueries({ queryKey: leaveKeys.all })
     },
     onError: (error: Error) => {
       track(requestEvents.requestDecideFailed, { reason: error.message })
@@ -180,6 +185,7 @@ export function useCancelRequest() {
       queryClient.invalidateQueries({ queryKey: requestKeys.mines() })
       // The cancelled days are workdays again on every attendance screen.
       queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
+      queryClient.invalidateQueries({ queryKey: leaveKeys.all })
     },
     onError: (error: Error) => {
       track(requestEvents.leaveCancelFailed, { reason: error.message })
