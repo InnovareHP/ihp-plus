@@ -23,7 +23,7 @@ const storage = vi.hoisted(() => ({
   S3NotConfiguredError: class extends Error {},
 }))
 const team = vi.hoisted(() => ({
-  hiringTeamEmails: vi.fn(),
+  hiringAdminEmails: vi.fn(),
   firstNameOf: (name: string) => name.split(' ')[0] ?? name,
 }))
 
@@ -87,7 +87,7 @@ beforeEach(() => {
   pipeline.loadApplication.mockResolvedValue({ offers: [] })
   link.findByLink.mockResolvedValue(APPLICATION)
   prisma.jobOffer.updateMany.mockResolvedValue({ count: 1 })
-  team.hiringTeamEmails.mockResolvedValue(['hr@ihp.test'])
+  team.hiringAdminEmails.mockResolvedValue(['hr@ihp.test'])
 })
 
 describe('sending an offer', () => {

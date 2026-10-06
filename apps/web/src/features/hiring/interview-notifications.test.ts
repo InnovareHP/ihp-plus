@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const email = vi.hoisted(() => ({ sendEmail: vi.fn() }))
-const team = vi.hoisted(() => ({ hiringTeamEmails: vi.fn() }))
+const team = vi.hoisted(() => ({ hiringAdminEmails: vi.fn() }))
 
 vi.mock('@/lib/email', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/email')>()),
@@ -9,7 +9,7 @@ vi.mock('@/lib/email', async (importOriginal) => ({
 }))
 vi.mock('./notifications', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./notifications')>()),
-  hiringTeamEmails: team.hiringTeamEmails,
+  hiringAdminEmails: team.hiringAdminEmails,
 }))
 
 const { notifyInterviewBooked, notifyInterviewCancelled } =

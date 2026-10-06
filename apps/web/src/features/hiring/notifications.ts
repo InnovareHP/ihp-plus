@@ -13,22 +13,8 @@ export function firstNameOf(fullName: string) {
   return fullName.trim().split(/\s+/)[0] ?? fullName
 }
 
-/** The HR department when one is set, otherwise the admins: whoever can act on the applicant. */
-export async function hiringTeamEmails(organizationId: string) {
-  const settings = await db.hiringSettings.findUnique({
-    where: { organizationId },
-    select: { hrTeamId: true },
-  })
-
-  if (settings?.hrTeamId) {
-    const members = await db.teamMember.findMany({
-      where: { teamId: settings.hrTeamId },
-      select: { user: { select: { email: true, banned: true } } },
-    })
-    const emails = members.filter((row) => !row.user.banned).map((row) => row.user.email)
-    if (emails.length > 0) return emails
-  }
-
+/** Owners and admins, never the HR department: hiring alerts go to whoever runs the organization. */
+export async function hiringAdminEmails(organizationId: string) {
   const admins = await db.member.findMany({
     where: { organizationId, role: { in: ['owner', 'admin'] } },
     select: { user: { select: { email: true, banned: true } } },
@@ -59,13 +45,13 @@ export async function notifyApplicationReceived(application: ReceivedApplication
       }),
     })
 
-    const team = await hiringTeamEmails(application.organizationId)
+    const admins = await hiringAdminEmails(application.organizationId)
     const email = newApplicantTemplate({
       applicantName: application.fullName,
       postingTitle: application.postingTitle,
       url: portalUrl(applicationRoute(application.applicationId)),
     })
-    for (const to of team) void sendEmail({ to, ...email })
+    for (const to of admins) void sendEmail({ to, ...email })
   } catch (error) {
     console.error(`[hiring] could not notify about ${application.applicationId}`, error)
   }

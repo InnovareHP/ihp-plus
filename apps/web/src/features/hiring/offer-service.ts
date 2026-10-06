@@ -4,7 +4,7 @@ import { jobOfferTemplate, offerAnsweredTemplate, portalUrl, sendEmail } from '@
 import { applicationRoute } from '@/lib/routes'
 import { objectUrl, putObject, S3NotConfiguredError } from '@/lib/s3'
 import { requireHiringCaller } from './access'
-import { firstNameOf, hiringTeamEmails } from './notifications'
+import { firstNameOf, hiringAdminEmails } from './notifications'
 import { offerRecordsOf, publicOfferOf } from './offers'
 import { loadApplication } from './pipeline-service'
 import { findByLink } from './public-service'
@@ -209,11 +209,11 @@ export async function answerOffer(input: unknown): Promise<ActionResult> {
       reason,
       url: portalUrl(applicationRoute(application.id)),
     })
-    for (const to of await hiringTeamEmails(application.organizationId)) {
+    for (const to of await hiringAdminEmails(application.organizationId)) {
       void sendEmail({ to, ...email })
     }
   } catch (error) {
-    console.error(`[hiring] could not tell HR about the answer on ${application.id}`, error)
+    console.error(`[hiring] could not tell admins about the answer on ${application.id}`, error)
   }
 
   return { ok: true, data: undefined }

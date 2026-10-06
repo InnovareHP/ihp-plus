@@ -10,7 +10,7 @@ import {
   type CalendarInvite,
 } from '@/lib/email'
 import { applicationRoute, interviewRoute } from '@/lib/routes'
-import { firstNameOf, hiringTeamEmails } from './notifications'
+import { firstNameOf, hiringAdminEmails } from './notifications'
 import type { InterviewFormat, Interviewer } from './schema'
 import { formatInterviewTime } from './utils/interview-time'
 
@@ -193,9 +193,9 @@ export async function notifyRescheduleRequested(context: InterviewContext) {
       postingTitle: context.postingTitle,
       url: portalUrl(applicationRoute(context.applicationId)),
     })
-    for (const to of await hiringTeamEmails(context.organizationId))
+    for (const to of await hiringAdminEmails(context.organizationId))
       void sendEmail({ to, ...email })
   } catch (error) {
-    console.error(`[hiring] could not tell HR about ${context.interviewId}`, error)
+    console.error(`[hiring] could not tell admins about ${context.interviewId}`, error)
   }
 }
