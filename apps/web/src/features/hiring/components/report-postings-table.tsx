@@ -1,3 +1,6 @@
+'use client'
+
+// Mantine's dot parts (Table.Thead) are undefined when rendered from a server component.
 import { Table, Text } from '@mantine/core'
 import { LinkAnchor } from '@/components/link-anchor'
 import { postingRoute } from '@/lib/routes'

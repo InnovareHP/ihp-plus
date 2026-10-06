@@ -1,3 +1,6 @@
+'use client'
+
+// Mantine's dot parts (Table.Thead) are undefined when rendered from a server component.
 import { Progress, Table, Text } from '@mantine/core'
 import type { ReportFunnelStep } from '../schema'
 import { formatShare, shareOf } from '../utils/report'
