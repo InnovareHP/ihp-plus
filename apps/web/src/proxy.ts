@@ -30,5 +30,9 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // '/' is listed separately: a matcher group requires one character, so it misses the root.
-  matcher: ['/', '/((?!api/|_next/static|_next/image|favicon.ico).*)'],
+  // The manifest and its icons are fetched without cookies, so guarding them served the login page.
+  matcher: [
+    '/',
+    '/((?!api/|_next/static|_next/image|favicon.ico|manifest.webmanifest|icon.svg|apple-icon.png|icon-).*)',
+  ],
 }

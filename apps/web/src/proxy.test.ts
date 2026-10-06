@@ -1,6 +1,7 @@
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server'
 import { NextRequest } from 'next/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { proxy } from './proxy'
+import { config, proxy } from './proxy'
 
 const mocks = vi.hoisted(() => ({ getSessionCookie: vi.fn() }))
 
@@ -65,5 +66,23 @@ describe('proxy', () => {
     mocks.getSessionCookie.mockReturnValue('a-session-token')
 
     expect(proxy(request('/settings')).headers.get('location')).toBeNull()
+  })
+
+  it('leaves the web manifest and app icons alone, since browsers fetch them without cookies', () => {
+    const matches = (path: string) =>
+      unstable_doesMiddlewareMatch({ config, url: path, nextConfig: { basePath: '/app' } })
+
+    for (const path of [
+      '/app/manifest.webmanifest',
+      '/app/icon.svg',
+      '/app/apple-icon.png',
+      '/app/icon-192.png',
+      '/app/icon-maskable-512.png',
+    ]) {
+      expect(matches(path), path).toBe(false)
+    }
+    for (const path of ['/app', '/app/hiring/reports', '/app/settings']) {
+      expect(matches(path), path).toBe(true)
+    }
   })
 })
