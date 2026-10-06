@@ -64,6 +64,7 @@ export const requests: ServiceImpl<typeof RequestsService> = {
         fields: request.fields.map(fieldFromProto),
         teamIds: request.teamIds,
         timeOff: request.timeOff,
+        leaveAllowance: request.leaveAllowance,
       }),
     ),
   }),

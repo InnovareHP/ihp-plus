@@ -95,6 +95,12 @@ export const formDraftSchema = z
     fields: z.array(formFieldSchema).max(40, 'A form can hold at most 40 questions.'),
     teamIds: z.array(z.string().min(1)),
     timeOff: z.boolean().default(false),
+    leaveAllowance: z
+      .number('Enter a number of days.')
+      .int('Use whole days.')
+      .min(0, 'The allowance cannot be negative.')
+      .max(366, 'A year has at most 366 days.')
+      .optional(),
   })
   // Evaluations and scorecards are answered in the portal with no uploader behind them.
   .refine(
@@ -176,6 +182,8 @@ export interface FormRow {
   updatedAt: string
   /** Approving a request on it books the dates as leave on the time clock. */
   timeOff: boolean
+  /** Working days a person may take on it each year; undefined tracks no balance. */
+  leaveAllowance: number | undefined
 }
 
 export interface RequestRow {

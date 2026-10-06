@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  datesOf,
   MAX_TIME_OFF_DAYS,
   TIME_OFF_FIRST_DAY,
   TIME_OFF_LAST_DAY,
@@ -34,15 +33,6 @@ describe('time off', () => {
     expect(timeOffRangeOf(range('2026-01-01', '2026-03-05'))).toMatchObject({
       problem: `Ask for at most ${MAX_TIME_OFF_DAYS} days at a time.`,
     })
-  })
-
-  it('lists every date across a month end, both ends included', () => {
-    expect(datesOf({ from: '2026-10-30', to: '2026-11-02' })).toEqual([
-      '2026-10-30',
-      '2026-10-31',
-      '2026-11-01',
-      '2026-11-02',
-    ])
   })
 
   it('puts the date questions first once, and restores them if they were edited', () => {

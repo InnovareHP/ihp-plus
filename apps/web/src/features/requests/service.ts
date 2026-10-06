@@ -7,6 +7,7 @@ import { pageInfoOf, skipTake } from '@/lib/pagination'
 import { recordActivity } from '@/lib/activity'
 import { objectUrl } from '@/lib/s3'
 import { bookLeave } from '@/features/attendance/leave'
+import { workingDaysCalendar } from '@/features/attendance/working-days'
 import { hrTeamIdOf } from '@/features/hiring/access'
 import {
   notifyApprovers,
@@ -41,11 +42,11 @@ import {
   type RequestsPage,
   type SetApproverValues,
 } from './schema'
-import { datesOf, timeOffRangeOf, withTimeOffFields } from './time-off'
+import { timeOffRangeOf, withTimeOffFields } from './time-off'
 
 // Deliberately not requireOnboarded(): that redirects, and a redirect thrown inside an RPC
 // surfaces as an opaque 500 rather than a code the caller can act on.
-async function requireRequester() {
+export async function requireRequester() {
   const session = await getSession()
   if (!session) throw new ConnectError('Sign in to continue.', Code.Unauthenticated)
 
@@ -71,7 +72,8 @@ async function requireRequester() {
   }
 }
 
-type Caller = Awaited<ReturnType<typeof requireRequester>>
+export type RequestCaller = Awaited<ReturnType<typeof requireRequester>>
+type Caller = RequestCaller
 
 async function requireAdmin() {
   const caller = await requireRequester()
@@ -109,7 +111,7 @@ function fieldsOf(value: Prisma.JsonValue): FormField[] {
   return parsed.success ? parsed.data : []
 }
 
-function valuesOf(value: Prisma.JsonValue): RequestValues {
+export function valuesOf(value: Prisma.JsonValue): RequestValues {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
   const answers: RequestValues = {}
   for (const [key, entry] of Object.entries(value)) {
@@ -153,6 +155,7 @@ async function toFormRow(form: FormRecord, teamNames: Map<string, string>): Prom
     submissionCount: usageOf(form),
     updatedAt: form.updatedAt.toISOString(),
     timeOff: form.timeOff,
+    leaveAllowance: form.leaveAllowance ?? undefined,
   }
 }
 
@@ -227,6 +230,8 @@ export async function saveForm(input: FormDraftValues): Promise<FormRow> {
   const timeOff = draft.kind === 'request' && draft.timeOff
   // Enforced here too, so an older client cannot save a time off form without its dates.
   const fields = timeOff ? withTimeOffFields(draft.fields) : draft.fields
+  // Unlike the flag, the allowance may change at any time: balances are counted, not stored.
+  const leaveAllowance = timeOff ? (draft.leaveAllowance ?? null) : null
 
   if (draft.formId) {
     const existing = await db.requestForm.findFirst({
@@ -257,7 +262,13 @@ export async function saveForm(input: FormDraftValues): Promise<FormRow> {
           where: { id: draft.formId },
           // The kind is settled when the form is created; changing it later would strand the
           // submissions or evaluations already made against it.
-          data: { name: draft.name, description: draft.description, fields, timeOff },
+          data: {
+            name: draft.name,
+            description: draft.description,
+            fields,
+            timeOff,
+            leaveAllowance,
+          },
         })
       : await tx.requestForm.create({
           data: {
@@ -268,6 +279,7 @@ export async function saveForm(input: FormDraftValues): Promise<FormRow> {
             description: draft.description,
             fields,
             timeOff,
+            leaveAllowance,
           },
         })
 
@@ -667,7 +679,10 @@ export async function loadRequestsPage(query: RequestQuery): Promise<RequestsPag
   }
 }
 
-function canRead(submission: SubmissionRecord, caller: Caller) {
+export function canRead(
+  submission: Pick<SubmissionRecord, 'requesterId' | 'teamId'>,
+  caller: Caller,
+) {
   return (
     submission.requesterId === caller.userId ||
     caller.isAdmin ||
@@ -748,6 +763,14 @@ export async function decideRequest(input: DecisionValues): Promise<RequestRow> 
       Code.FailedPrecondition,
     )
   }
+  // Weekends and holidays on the requester's shift are not leave, so they are never booked.
+  const leaveDates = booking
+    ? (await workingDaysCalendar(caller.organizationId, [submission.requesterId], booking.range))(
+        submission.requesterId,
+        booking.range.from,
+        booking.range.to,
+      )
+    : []
 
   const updated = await db.$transaction(async (tx) => {
     const decided = await tx.requestSubmission.update({
@@ -766,7 +789,7 @@ export async function decideRequest(input: DecisionValues): Promise<RequestRow> 
         userId: decided.requesterId,
         name: decided.formName,
         submissionId: decided.id,
-        dates: datesOf(booking.range),
+        dates: leaveDates,
       })
     }
 

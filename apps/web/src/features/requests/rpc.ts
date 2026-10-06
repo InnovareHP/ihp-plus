@@ -89,6 +89,7 @@ export async function saveForm(values: FormDraftValues): Promise<FormRow> {
       fields: values.fields.map((field: FormField) => fieldToProto(field)),
       teamIds: values.teamIds,
       timeOff: values.timeOff,
+      leaveAllowance: values.leaveAllowance,
     }),
   )
   return requiredForm(response.form)

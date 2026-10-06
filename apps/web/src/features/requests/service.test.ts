@@ -50,6 +50,15 @@ vi.mock('@/lib/activity', () => activity)
 const s3 = vi.hoisted(() => ({ objectUrl: vi.fn() }))
 vi.mock('@/lib/s3', () => s3)
 
+// A Monday-to-Friday shift with no holidays, so a range over a weekend books only its weekdays.
+vi.mock('@/features/attendance/working-days', async () => {
+  const { workingDatesOf } = await import('@/features/attendance/utils/working-days')
+  return {
+    workingDaysCalendar: async () => (_userId: string, from: string, to: string) =>
+      workingDatesOf(from, to, { workdays: '1,2,3,4,5', holidayCountry: '' }, []),
+  }
+})
+
 const activity = vi.hoisted(() => ({ recordActivity: vi.fn() }))
 // membershipOf is pure, so the real one is kept: how a membership resolves has one definition.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({
@@ -474,15 +483,19 @@ describe('the forms catalogue', () => {
 describe('time off', () => {
   const RANGE = { 'time-off-first-day': '2026-10-05', 'time-off-last-day': '2026-10-07' }
 
-  it('books every day of an approved range as leave for the requester', async () => {
+  it('books the working days of an approved range as leave, skipping the weekend', async () => {
     signedIn({ isAdmin: true })
     prisma.requestForm.findUnique.mockResolvedValue({ timeOff: true })
-    prisma.requestSubmission.findFirst.mockResolvedValue({ ...PENDING, values: RANGE })
+    prisma.requestSubmission.findFirst.mockResolvedValue({
+      ...PENDING,
+      // Friday to Monday.
+      values: { 'time-off-first-day': '2026-10-09', 'time-off-last-day': '2026-10-12' },
+    })
 
     await decideRequest({ submissionId: 'sub-1', decision: 'approved', note: '' })
 
     expect(prisma.attendanceLeave.createMany).toHaveBeenCalledWith({
-      data: ['2026-10-05', '2026-10-06', '2026-10-07'].map((date) => ({
+      data: ['2026-10-09', '2026-10-12'].map((date) => ({
         organizationId: 'org-1',
         userId: 'user-9',
         date: new Date(`${date}T00:00:00.000Z`),

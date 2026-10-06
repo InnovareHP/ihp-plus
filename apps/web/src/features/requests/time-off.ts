@@ -75,13 +75,3 @@ export function timeOffRangeOf(
 
   return { range: { from, to } }
 }
-
-/** Every calendar date from the first day to the last, both included. */
-export function datesOf({ from, to }: TimeOffRange): string[] {
-  const dates: string[] = []
-  const last = dayNumber(to)
-  for (let day = dayNumber(from); day <= last; day += 1) {
-    dates.push(new Date(day * 86_400_000).toISOString().slice(0, 10))
-  }
-  return dates
-}

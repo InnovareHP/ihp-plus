@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package ihp.leave.v1;
+
+// Leave balances: each time off request form with a yearly allowance is one kind of leave, and
+// the days it books on the time clock are what it uses. Every count is in working days.
+message LeaveBalance {
+  string form_id = 1;
+  string form_name = 2;
+  int32 allowance = 3;
+  // Approved and still booked this year.
+  int32 used = 4;
+  // Asked for and not decided yet.
+  int32 pending = 5;
+  // allowance minus used, which goes negative when an approver allowed more.
+  int32 remaining = 6;
+  // The allowance is this person's own rather than the form's.
+  bool overridden = 7;
+}
+
+message PersonBalances {
+  string user_id = 1;
+  string name = 2;
+  repeated LeaveBalance balances = 3;
+}
+
+message ListMyBalancesRequest {
+  int32 year = 1;
+}
+
+message ListMyBalancesResponse {
+  int32 year = 1;
+  repeated LeaveBalance balances = 2;
+}
+
+message ListTeamBalancesRequest {
+  int32 year = 1;
+}
+
+message ListTeamBalancesResponse {
+  int32 year = 1;
+  // The tracked forms, so every person's row has the same columns.
+  repeated FormAllowance forms = 2;
+  repeated PersonBalances people = 3;
+}
+
+message FormAllowance {
+  string form_id = 1;
+  string form_name = 2;
+  int32 allowance = 3;
+}
+
+// Either a request already made (for its approver), or dates the caller is about to ask for.
+message PreviewLeaveRequest {
+  optional string submission_id = 1;
+  optional string form_id = 2;
+  optional string first_day = 3;
+  optional string last_day = 4;
+}
+
+message PreviewLeaveResponse {
+  // The working days in the range, with weekends and holidays left out.
+  int32 working_days = 1;
+  // Absent when the form tracks no allowance.
+  optional LeaveBalance balance = 2;
+}
+
+message SetAllowanceRequest {
+  string form_id = 1;
+  string user_id = 2;
+  // Absent puts the person back on the form's allowance.
+  optional int32 days = 3;
+}
+
+message SetAllowanceResponse {
+  PersonBalances person = 1;
+}
+
+service LeaveService {
+  rpc ListMyBalances(ListMyBalancesRequest) returns (ListMyBalancesResponse);
+  rpc PreviewLeave(PreviewLeaveRequest) returns (PreviewLeaveResponse);
+
+  // Admins see everyone's balances and set a person's own allowance.
+  rpc ListTeamBalances(ListTeamBalancesRequest) returns (ListTeamBalancesResponse);
+  rpc SetAllowance(SetAllowanceRequest) returns (SetAllowanceResponse);
+}

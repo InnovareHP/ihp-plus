@@ -7,6 +7,7 @@ import {
   Button,
   Group,
   MultiSelect,
+  NumberInput,
   Stack,
   Switch,
   Text,
@@ -50,6 +51,7 @@ function draftOf(form: FormRow | undefined, kind: FormKind): FormDraftValues {
     fields: form?.fields ?? [],
     teamIds: form?.teams.map((team) => team.id) ?? [],
     timeOff: form?.timeOff ?? false,
+    leaveAllowance: form?.leaveAllowance,
   }
 }
 
@@ -227,6 +229,30 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
                           : current.filter((one) => !isTimeOffField(one.id)),
                       )
                     }}
+                  />
+                )}
+              />
+            )}
+
+            {!isRequest || !timeOff ? null : (
+              <Controller
+                control={control}
+                name="leaveAllowance"
+                render={({ field }) => (
+                  <NumberInput
+                    label="Days per year"
+                    description="Working days each person may take on this form per calendar year. Leave it empty to track no balance."
+                    min={0}
+                    max={366}
+                    allowDecimal={false}
+                    allowNegative={false}
+                    maw={240}
+                    value={field.value ?? ''}
+                    onChange={(value) =>
+                      field.onChange(typeof value === 'number' ? value : undefined)
+                    }
+                    onBlur={field.onBlur}
+                    error={errors.leaveAllowance?.message}
                   />
                 )}
               />

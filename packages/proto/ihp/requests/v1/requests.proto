@@ -90,6 +90,8 @@ message RequestForm {
   FormKind kind = 9;
   // Approving a request on it books the first to last day off as leave on the time clock.
   bool time_off = 10;
+  // Working days a person may take on it each calendar year; absent tracks no balance.
+  optional int32 leave_allowance = 11;
 }
 
 // One answer. The oneof keeps a number a number across the wire rather than making every
@@ -198,6 +200,7 @@ message SaveFormRequest {
   repeated string team_ids = 5;
   FormKind kind = 6;
   bool time_off = 7;
+  optional int32 leave_allowance = 8;
 }
 
 message SaveFormResponse {

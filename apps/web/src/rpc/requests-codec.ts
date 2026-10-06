@@ -251,6 +251,7 @@ export function formToProto(form: FormRow): RequestFormMessage {
     submissionCount: form.submissionCount,
     updatedAt: form.updatedAt,
     timeOff: form.timeOff,
+    leaveAllowance: form.leaveAllowance,
   }
 }
 
@@ -266,6 +267,7 @@ export function formFromProto(form: RequestFormMessage): FormRow {
     submissionCount: form.submissionCount,
     updatedAt: form.updatedAt,
     timeOff: form.timeOff,
+    leaveAllowance: form.leaveAllowance,
   }
 }
 

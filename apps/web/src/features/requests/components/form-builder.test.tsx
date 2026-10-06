@@ -34,6 +34,7 @@ const SAVED: FormRow = {
   submissionCount: 0,
   updatedAt: '2026-09-01T00:00:00Z',
   timeOff: false,
+  leaveAllowance: undefined,
   teams: [],
   fields: [],
 }
