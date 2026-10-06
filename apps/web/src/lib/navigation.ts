@@ -229,6 +229,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
             hiringOnly: true,
           },
           {
+            href: routes.hiringReports,
+            label: 'Reports',
+            description: 'Time to hire, the stage funnel and offers',
+            hiringOnly: true,
+          },
+          {
             href: routes.hiringSettings,
             label: 'Settings',
             description: 'Who runs hiring and the default stages',

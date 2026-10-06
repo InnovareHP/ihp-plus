@@ -784,3 +784,53 @@ export interface PublicOffer {
   createdAt: string
   respondedAt: string | undefined
 }
+
+export const REPORT_PERIODS = ['30d', '90d', '12m', 'all'] as const
+export type ReportPeriod = (typeof REPORT_PERIODS)[number]
+
+export const REPORT_PERIOD_LABELS: Record<ReportPeriod, string> = {
+  '30d': 'Last 30 days',
+  '90d': 'Last 90 days',
+  '12m': 'Last 12 months',
+  all: 'All time',
+}
+
+export const reportQuerySchema = z.object({
+  period: z.enum(REPORT_PERIODS).catch('90d').default('90d'),
+  postingId: z.string().trim().max(60).catch('').default(''),
+})
+
+export type ReportQuery = z.infer<typeof reportQuerySchema>
+
+export const DEFAULT_REPORT_QUERY: ReportQuery = reportQuerySchema.parse({})
+
+export interface ReportOutcomes {
+  applications: number
+  active: number
+  hired: number
+  rejected: number
+  withdrawn: number
+  /** Whole days from applying to being hired; undefined until someone is hired. */
+  medianDaysToHire: number | undefined
+}
+
+export interface ReportFunnelStep {
+  name: string
+  reached: number
+}
+
+export interface ReportPostingRow extends ReportOutcomes {
+  id: string
+  title: string
+}
+
+export interface HiringReport {
+  /** Undefined when the posting filter named a posting that no longer exists. */
+  postingId: string | undefined
+  totals: ReportOutcomes
+  offersAccepted: number
+  offersDeclined: number
+  funnel: ReportFunnelStep[]
+  postings: ReportPostingRow[]
+  postingOptions: { value: string; label: string }[]
+}

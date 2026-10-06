@@ -25,6 +25,7 @@ export const routes = {
   hiringApplicants: '/hiring/applicants',
   hiringForms: '/hiring/forms',
   hiringScorecards: '/hiring/scorecards',
+  hiringReports: '/hiring/reports',
   hiringSettings: '/hiring/settings',
   careers: '/careers',
   organization: '/organization',

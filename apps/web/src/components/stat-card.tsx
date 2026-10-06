@@ -5,7 +5,8 @@ const number = new Intl.NumberFormat('en-US')
 
 export interface StatCardProps {
   label: string
-  value: number
+  /** A number is formatted for the locale; a string is shown as written, e.g. "12 days". */
+  value: number | string
   hint: string
   /** A link that acts on the number, placed under the hint. */
   action?: ReactNode
@@ -18,7 +19,7 @@ export function StatCard({ label, value, hint, action }: StatCardProps) {
         {label}
       </Text>
       <Text fz={32} fw={700} lh={1.2}>
-        {number.format(value)}
+        {typeof value === 'number' ? number.format(value) : value}
       </Text>
       <Text size="xs" c="dimmed">
         {hint}

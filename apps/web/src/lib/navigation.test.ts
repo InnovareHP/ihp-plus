@@ -60,6 +60,7 @@ describe('navigation', () => {
       routes.hiringApplicants,
       routes.hiringForms,
       routes.hiringScorecards,
+      routes.hiringReports,
       routes.hiringSettings,
     ])
     // HR gets an Admin section holding Hiring alone: the organization pages stay admin-only.
