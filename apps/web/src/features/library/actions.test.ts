@@ -20,7 +20,6 @@ const graph = vi.hoisted(() => ({
     folder: {},
   })),
   listAllChildren: vi.fn(async () => [] as unknown[]),
-  downloadUrl: vi.fn(async () => 'https://graph.test/download'),
   uploadFile: vi.fn(async (): Promise<TestItem> => ({ id: 'new-file', name: 'invoice.pdf' })),
   ensureFolder: vi.fn(async (): Promise<TestItem> => ({
     id: 'new-folder',
@@ -71,7 +70,6 @@ vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
 const { GraphNotConfiguredError } = await import('@ihp/graph')
 const {
   addLibraryFolder,
-  libraryFileLink,
   listLibraryFolder,
   removeFromLibraryFolder,
   renameInLibrary,
@@ -102,9 +100,10 @@ beforeEach(() => {
   guard.membershipOf.mockReturnValue({ organizationId: 'org-1' })
 })
 
-function uploadForm(path: string, file: File) {
+function uploadForm(path: string, file: File, folder = '') {
   const form = new FormData()
   form.set('path', path)
+  form.set('folder', folder)
   form.set('file', file)
   return form
 }
@@ -190,30 +189,6 @@ describe('listLibraryFolder', () => {
   })
 })
 
-describe('libraryFileLink', () => {
-  it('mints a download URL for the item', async () => {
-    const result = await libraryFileLink({ itemId: 'file-1' })
-
-    expect(graph.downloadUrl).toHaveBeenCalledWith('internal-drive', 'file-1')
-    expect(result).toEqual({ ok: true, data: { url: 'https://graph.test/download' } })
-  })
-
-  it('reports a deleted item rather than throwing', async () => {
-    graph.downloadUrl.mockRejectedValue(new TestGraphError(404, 'itemNotFound', 'gone'))
-
-    const result = await libraryFileLink({ itemId: 'file-1' })
-
-    expect(result).toMatchObject({ ok: false })
-  })
-
-  it('rejects a request with no item id', async () => {
-    const result = await libraryFileLink({})
-
-    expect(result).toMatchObject({ ok: false })
-    expect(graph.downloadUrl).not.toHaveBeenCalled()
-  })
-})
-
 describe('uploadToLibraryFolder', () => {
   it('files the upload in the open folder and mirrors it at once', async () => {
     const file = new File(['bytes'], 'invoice.pdf', { type: 'application/pdf' })
@@ -239,6 +214,42 @@ describe('uploadToLibraryFolder', () => {
     const result = await uploadToLibraryFolder(uploadForm('', file))
 
     expect(result).toEqual({ ok: false, message: 'Files have to be 25 MB or smaller.' })
+    expect(graph.uploadFile).not.toHaveBeenCalled()
+  })
+
+  it('rebuilds a dropped folder tree that is not in the library yet', async () => {
+    graph.getItemByPath.mockRejectedValueOnce(new TestGraphError(404, 'itemNotFound', 'gone'))
+    graph.ensureFolder
+      .mockResolvedValueOnce({ id: 'photos-item', name: 'Photos', folder: {} })
+      .mockResolvedValueOnce({ id: 'q1-item', name: 'Q1-2026', folder: {} })
+    const file = new File(['bytes'], 'team.jpg', { type: 'image/jpeg' })
+
+    const result = await uploadToLibraryFolder(uploadForm('', file, 'Photos/Q1:2026'))
+
+    expect(graph.ensureFolder).toHaveBeenNthCalledWith(1, 'internal-drive', 'root-item', 'Photos')
+    expect(graph.ensureFolder).toHaveBeenNthCalledWith(
+      2,
+      'internal-drive',
+      'photos-item',
+      'Q1-2026',
+    )
+    expect(graph.uploadFile).toHaveBeenCalledWith(
+      'internal-drive',
+      'q1-item',
+      'team.jpg',
+      expect.any(Uint8Array),
+      'image/jpeg',
+    )
+    expect(result).toMatchObject({ ok: true, data: { path: 'Photos/Q1-2026/invoice.pdf' } })
+  })
+
+  it('refuses a tree nested deeper than the limit', async () => {
+    const file = new File(['bytes'], 'deep.txt', { type: 'text/plain' })
+    const folder = Array.from({ length: 13 }, (_, index) => `level-${index}`).join('/')
+
+    const result = await uploadToLibraryFolder(uploadForm('', file, folder))
+
+    expect(result).toMatchObject({ ok: false })
     expect(graph.uploadFile).not.toHaveBeenCalled()
   })
 

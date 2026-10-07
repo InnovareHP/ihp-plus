@@ -1,11 +1,16 @@
 'use client'
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { track, type EventName } from '@/lib/analytics'
 import { announceFailure } from '@/lib/announce'
 import {
   addLibraryFolder,
-  libraryFileLink,
   listLibraryFolder,
   removeFromLibraryFolder,
   renameInLibrary,
@@ -15,6 +20,7 @@ import { libraryEvents } from '../events'
 import { libraryKeys } from '../query-keys'
 import type { LibraryEntry, LibraryQuery } from '../schema'
 import { joinLibraryPath } from '../utils/library-path'
+import type { LibraryUpload } from '../utils/upload-tree'
 
 interface Listing {
   path: string
@@ -38,28 +44,11 @@ export function useLibraryFolder(query: LibraryQuery) {
   })
 }
 
-export function useOpenLibraryFile() {
-  return useMutation({
-    mutationFn: async (itemId: string) => {
-      const result = await libraryFileLink({ itemId })
-      if (!result.ok) throw new Error(result.message)
-      return result.data.url
-    },
-    onSuccess: (url) => {
-      track(libraryEvents.opened)
-      window.open(url, '_blank', 'noopener,noreferrer')
-    },
-    onError: (error: Error) => {
-      track(libraryEvents.openFailed, { reason: error.message })
-      announceFailure(error.message)
-    },
-  })
-}
-
 /** Every write applies to the open folder first and is put back exactly as it was on failure. */
 function useFolderMutation<TInput, TData>(
   query: LibraryQuery,
   options: {
+    mutationKey?: readonly unknown[]
     run: (input: TInput) => Promise<TData>
     apply: (entries: LibraryEntry[], input: TInput) => LibraryEntry[]
     done: EventName
@@ -70,6 +59,7 @@ function useFolderMutation<TInput, TData>(
   const key = libraryKeys.folder(query)
 
   return useMutation({
+    mutationKey: options.mutationKey,
     mutationFn: options.run,
     onMutate: async (input: TInput) => {
       // An in-flight refetch would land on top of the optimistic folder.
@@ -83,7 +73,9 @@ function useFolderMutation<TInput, TData>(
     onSuccess: () => track(options.done),
     onError: (error: Error, _input, context) => {
       queryClient.setQueryData(key, context?.previous)
-      track(options.failed, { reason: error.message })
+      track(options.failed, {
+        reason: typeof error.cause === 'string' ? error.cause : error.message,
+      })
       announceFailure(error.message)
     },
     onSettled: () => {
@@ -106,17 +98,36 @@ function pendingEntry(name: string, path: string, isFolder: boolean): LibraryEnt
   }
 }
 
+/** A file in a subfolder shows as that subfolder's row, added once however many files it holds. */
+function withUpload(entries: LibraryEntry[], upload: LibraryUpload, path: string) {
+  const top = upload.folder.split('/')[0]
+  if (!top) return [...entries, pendingEntry(upload.file.name, path, false)]
+  if (entries.some((entry) => entry.isFolder && entry.name === top)) return entries
+  return [pendingEntry(top, path, true), ...entries]
+}
+
+const UPLOAD_KEY = [...libraryKeys.all, 'upload'] as const
+
+/** Files still on their way up, so a forty-file drop can say how many are left. */
+export function useUploadsInFlight() {
+  return useIsMutating({ mutationKey: UPLOAD_KEY })
+}
+
 export function useUploadToLibrary(query: LibraryQuery) {
-  return useFolderMutation<File, LibraryEntry>(query, {
-    run: async (file) => {
+  return useFolderMutation<LibraryUpload, LibraryEntry>(query, {
+    mutationKey: UPLOAD_KEY,
+    run: async (upload) => {
       const formData = new FormData()
       formData.set('path', query.path)
-      formData.set('file', file)
+      formData.set('folder', upload.folder)
+      formData.set('file', upload.file)
       const result = await uploadToLibraryFolder(formData)
-      if (!result.ok) throw new Error(result.message)
+      // The name tells the user which file of many failed; analytics only ever sees the cause.
+      if (!result.ok)
+        throw new Error(`${upload.file.name}: ${result.message}`, { cause: result.message })
       return result.data
     },
-    apply: (entries, file) => [...entries, pendingEntry(file.name, query.path, false)],
+    apply: (entries, upload) => withUpload(entries, upload, query.path),
     done: libraryEvents.uploaded,
     failed: libraryEvents.uploadFailed,
   })

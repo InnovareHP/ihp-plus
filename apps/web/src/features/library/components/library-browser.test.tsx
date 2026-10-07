@@ -1,10 +1,10 @@
 import { axe } from 'vitest-axe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent } from '@testing-library/react'
 import { render, screen, userEvent, waitFor, within } from '@/test/render'
 
 const actions = vi.hoisted(() => ({
   listLibraryFolder: vi.fn(),
-  libraryFileLink: vi.fn(),
   uploadToLibraryFolder: vi.fn(),
   addLibraryFolder: vi.fn(),
   renameInLibrary: vi.fn(),
@@ -22,6 +22,8 @@ const urlQuery = vi.hoisted(() => ({
   clearFilters: vi.fn(),
 }))
 
+const nav = vi.hoisted(() => ({ params: new URLSearchParams(), replace: vi.fn() }))
+
 const announce = vi.hoisted(() => ({ announceFailure: vi.fn(), announceSuccess: vi.fn() }))
 
 vi.mock('../actions', () => actions)
@@ -34,8 +36,8 @@ vi.mock('../hooks/use-library-query', async () => {
 // The rows-per-page control reads the URL, so the router hooks it uses are stubbed too.
 vi.mock('next/navigation', () => ({
   usePathname: () => '/library',
-  useSearchParams: () => new URLSearchParams(),
-  useRouter: () => ({ replace: vi.fn() }),
+  useSearchParams: () => nav.params,
+  useRouter: () => ({ replace: nav.replace }),
 }))
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
 vi.mock('@/lib/announce', () => announce)
@@ -64,11 +66,25 @@ const FILE = {
   childCount: undefined,
 }
 
+const IMAGE = {
+  ...FILE,
+  id: 'img-1',
+  name: 'team.jpg',
+  path: 'team.jpg',
+  contentType: 'image/jpeg',
+}
+
+function picked(name: string, relativePath: string) {
+  const file = new File(['x'], name, { type: 'image/png' })
+  Object.defineProperty(file, 'webkitRelativePath', { value: relativePath })
+  return file
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+  nav.params = new URLSearchParams()
   urlQuery.query = { path: '', sortBy: 'name', sortDirection: 'asc' }
   actions.listLibraryFolder.mockResolvedValue({ ok: true, path: '', entries: [FOLDER, FILE] })
-  actions.libraryFileLink.mockResolvedValue({ ok: true, data: { url: 'https://graph.test/d' } })
   actions.uploadToLibraryFolder.mockResolvedValue({ ok: true, data: { ...FILE, id: 'file-2' } })
   actions.addLibraryFolder.mockResolvedValue({ ok: true, data: { ...FOLDER, id: 'folder-2' } })
   actions.renameInLibrary.mockResolvedValue({ ok: true, data: { ...FILE, name: 'guide.pdf' } })
@@ -88,25 +104,55 @@ describe('LibraryBrowser', () => {
     expect(screen.getByText('2.0 KB')).toBeInTheDocument()
   })
 
-  it('opens a file in a new tab with a freshly minted link', async () => {
-    const opener = vi.spyOn(window, 'open').mockReturnValue(null)
+  it('downloads a file through our own origin, never a SharePoint link', async () => {
     render(<LibraryBrowser />)
 
     await userEvent.click(await screen.findByRole('button', { name: `Actions for ${FILE.name}` }))
-    await userEvent.click(await screen.findByRole('menuitem', { name: 'Download' }))
+    const download = await screen.findByRole('menuitem', { name: 'Download' })
 
-    await waitFor(() => expect(actions.libraryFileLink).toHaveBeenCalledWith({ itemId: 'file-1' }))
-    expect(opener).toHaveBeenCalledWith('https://graph.test/d', '_blank', 'noopener,noreferrer')
+    expect(download).toHaveAttribute(
+      'href',
+      `/app/api/library/files/file-1?download=1&v=${encodeURIComponent(FILE.lastModifiedAt)}`,
+    )
   })
 
-  it('announces a failure to open instead of leaving the click unexplained', async () => {
-    actions.libraryFileLink.mockResolvedValue({ ok: false, message: 'That file is gone.' })
+  it('opens an image in the preview from its name, through the URL', async () => {
+    actions.listLibraryFolder.mockResolvedValue({ ok: true, path: '', entries: [IMAGE, FILE] })
     render(<LibraryBrowser />)
 
-    await userEvent.click(await screen.findByRole('button', { name: `Actions for ${FILE.name}` }))
-    await userEvent.click(await screen.findByRole('menuitem', { name: 'Download' }))
+    await userEvent.click(await screen.findByRole('button', { name: IMAGE.name }))
 
-    await waitFor(() => expect(announce.announceFailure).toHaveBeenCalledWith('That file is gone.'))
+    await waitFor(() =>
+      expect(nav.replace).toHaveBeenCalledWith('/library?preview=img-1', { scroll: false }),
+    )
+    expect(screen.queryByRole('button', { name: FILE.name })).not.toBeInTheDocument()
+  })
+
+  it('steps through the folder images in the preview, by button and arrow key', async () => {
+    nav.params = new URLSearchParams('preview=img-1')
+    actions.listLibraryFolder.mockResolvedValue({
+      ok: true,
+      path: '',
+      entries: [IMAGE, { ...IMAGE, id: 'img-2', name: 'office.png' }, FILE],
+    })
+    const { container } = render(<LibraryBrowser />)
+
+    const dialog = await screen.findByRole('dialog', { name: IMAGE.name })
+    expect(await axe(container)).toHaveNoViolations()
+    expect(within(dialog).getByRole('img', { name: IMAGE.name })).toHaveAttribute(
+      'src',
+      expect.stringContaining('/app/api/library/files/img-1?rendition=preview'),
+    )
+    expect(within(dialog).getByText('1 of 2')).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Previous image' })).toBeDisabled()
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Next image' }))
+    await waitFor(() =>
+      expect(nav.replace).toHaveBeenLastCalledWith('/library?preview=img-2', { scroll: false }),
+    )
+
+    await userEvent.keyboard('{ArrowRight}')
+    await waitFor(() => expect(nav.replace).toHaveBeenCalledTimes(2))
   })
 
   it('offers a way out of an empty subfolder', async () => {
@@ -144,6 +190,38 @@ describe('LibraryBrowser', () => {
     settle({ ok: true, data: { ...FILE, id: 'file-2', name: 'invoice.pdf' } })
   })
 
+  it('uploads a picked folder with its tree, showing it as one new folder row', async () => {
+    actions.uploadToLibraryFolder.mockReturnValue(new Promise(() => {}))
+    render(<LibraryBrowser />)
+    await screen.findByText('handbook.pdf')
+
+    await userEvent.upload(screen.getByLabelText('Upload a folder'), [
+      picked('a.png', 'Photos/a.png'),
+      picked('b.png', 'Photos/2026/b.png'),
+    ])
+
+    expect(await screen.findByRole('link', { name: 'Photos' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /uploading… 2 left/i })).toBeInTheDocument()
+    await waitFor(() => expect(actions.uploadToLibraryFolder).toHaveBeenCalled())
+    const first = actions.uploadToLibraryFolder.mock.calls[0]?.[0] as FormData
+    expect(first.get('folder')).toBe('Photos')
+    expect((first.get('file') as File).name).toBe('a.png')
+  })
+
+  it('uploads files dropped onto the table', async () => {
+    render(<LibraryBrowser />)
+    const table = await screen.findByRole('table')
+    const file = new File(['x'], 'dropped.pdf', { type: 'application/pdf' })
+    const dataTransfer = { types: ['Files'], items: [], files: [file], dropEffect: 'none' }
+
+    fireEvent.dragOver(table, { dataTransfer })
+    expect(await screen.findByText(/drop to upload to internal library/i)).toBeInTheDocument()
+    fireEvent.drop(table, { dataTransfer })
+
+    await waitFor(() => expect(actions.uploadToLibraryFolder).toHaveBeenCalledTimes(1))
+    expect(screen.queryByText(/drop to upload/i)).not.toBeInTheDocument()
+  })
+
   it('puts the folder back and says why when an upload fails', async () => {
     actions.uploadToLibraryFolder.mockResolvedValue({
       ok: false,
@@ -156,7 +234,9 @@ describe('LibraryBrowser', () => {
     await userEvent.upload(screen.getByLabelText('Upload files'), file)
 
     await waitFor(() =>
-      expect(announce.announceFailure).toHaveBeenCalledWith('Files have to be 25 MB or smaller.'),
+      expect(announce.announceFailure).toHaveBeenCalledWith(
+        'huge.pdf: Files have to be 25 MB or smaller.',
+      ),
     )
     expect(screen.queryByText('huge.pdf')).not.toBeInTheDocument()
   })

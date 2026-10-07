@@ -4,7 +4,7 @@ export const libraryEvents = {
   browsed: 'library.folder.browsed',
   browseFailed: 'library.folder.browse_failed',
   opened: 'library.file.opened',
-  openFailed: 'library.file.open_failed',
+  previewed: 'library.file.previewed',
   uploaded: 'library.file.uploaded',
   uploadFailed: 'library.file.upload_failed',
   folderCreated: 'library.folder.created',

@@ -21,6 +21,9 @@ export const libraryItemSchema = z.object({ itemId: z.string().min(1).max(200) }
 /** Matches next.config's serverActions bodySizeLimit and nginx's client_max_body_size. */
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
+/** Deep enough for any real project tree, shallow enough that one drop cannot stall the walk. */
+export const MAX_UPLOAD_DEPTH = 12
+
 export function uploadProblem(file: { size: number }) {
   if (file.size === 0) return 'That file is empty.'
   if (file.size > MAX_UPLOAD_BYTES) return 'Files have to be 25 MB or smaller.'

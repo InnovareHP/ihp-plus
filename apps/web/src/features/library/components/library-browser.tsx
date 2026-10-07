@@ -5,21 +5,29 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
+import { announceFailure } from '@/lib/announce'
 import { formatBytes } from '@/lib/file-look'
 import { routes } from '@/lib/routes'
+import { track } from '@/lib/analytics'
 import { useClientPagination } from '@/lib/use-client-pagination'
+import { useUrlQueryParam } from '@/lib/use-url-query-param'
+import { libraryEvents } from '../events'
 import {
   useCreateLibraryFolder,
   useDeleteLibraryItem,
   useLibraryFolder,
-  useOpenLibraryFile,
   useRenameLibraryItem,
+  useUploadsInFlight,
   useUploadToLibrary,
 } from '../hooks/use-library'
 import { libraryHref, useLibraryQuery } from '../hooks/use-library-query'
 import type { LibraryEntry, LibrarySortKey } from '../schema'
+import { isPreviewableImage } from '../utils/library-file'
 import { LIBRARY_ROOT_LABEL, parentLibraryPath } from '../utils/library-path'
+import { uploadsFromDrop, uploadsFromFiles, type LibraryUpload } from '../utils/upload-tree'
 import { DeleteItemModal } from './delete-item-modal'
+import { ImagePreviewModal } from './image-preview-modal'
+import { LibraryDropZone } from './library-drop-zone'
 import { LibraryEntryName } from './library-entry-name'
 import { LibraryRowActions } from './library-row-actions'
 import { LibraryToolbar } from './library-toolbar'
@@ -34,8 +42,10 @@ export function LibraryBrowser() {
   const pathname = usePathname() || routes.library
   const { query, setQuery } = useLibraryQuery()
   const folder = useLibraryFolder(query)
-  const open = useOpenLibraryFile()
   const upload = useUploadToLibrary(query)
+  const uploadsLeft = useUploadsInFlight()
+  // The open picture is a deep link of its own, so a shared URL lands on it.
+  const preview = useUrlQueryParam('preview', 0)
   const createFolder = useCreateLibraryFolder(query)
   const rename = useRenameLibraryItem(query)
   const remove = useDeleteLibraryItem(query)
@@ -47,6 +57,17 @@ export function LibraryBrowser() {
   const [deleting, setDeleting] = useState<LibraryEntry | null>(null)
 
   const folderLabel = query.path || LIBRARY_ROOT_LABEL
+  const images = (folder.data?.entries ?? []).filter((entry) =>
+    isPreviewableImage(entry.contentType),
+  )
+
+  const uploadAll = (uploads: LibraryUpload[]) => uploads.forEach((item) => upload.mutate(item))
+  const openPreview = (entry: LibraryEntry) => {
+    track(libraryEvents.previewed)
+    preview.commit(entry.id)
+  }
+  const previewOf = (entry: LibraryEntry) =>
+    isPreviewableImage(entry.contentType) ? () => openPreview(entry) : undefined
 
   const columns: DataTableColumn<LibraryEntry>[] = [
     {
@@ -58,6 +79,7 @@ export function LibraryBrowser() {
         <LibraryEntryName
           entry={entry}
           href={entry.isFolder ? libraryHref(pathname, { ...query, path: entry.path }) : undefined}
+          onPreview={previewOf(entry)}
         />
       ),
     },
@@ -93,8 +115,8 @@ export function LibraryBrowser() {
       render: (entry) => (
         <LibraryRowActions
           entry={entry}
-          isDownloading={open.isPending && open.variables === entry.id}
-          onDownload={() => open.mutate(entry.id)}
+          onPreview={previewOf(entry)}
+          onDownload={() => track(libraryEvents.opened)}
           onRename={() => setRenaming(entry)}
           onDelete={() => setDeleting(entry)}
         />
@@ -107,48 +129,66 @@ export function LibraryBrowser() {
       <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
         <LibraryTrail pathname={pathname} query={query} />
         <LibraryToolbar
-          isUploading={upload.isPending}
-          onUpload={(files) => files.forEach((file) => upload.mutate(file))}
+          uploadsLeft={uploadsLeft}
+          onUpload={(files) => uploadAll(uploadsFromFiles(files))}
           onNewFolder={() => setNewFolderOpen(true)}
         />
       </Group>
 
-      <DataTable
-        label="Internal library"
-        columns={columns}
-        rows={paged.rows}
-        pageInfo={paged.pageInfo}
-        onPageChange={paged.onPageChange}
-        onPageSizeChange={paged.onPageSizeChange}
-        rowKey={(entry) => entry.id}
-        isPending={folder.isPending}
-        isError={folder.isError}
-        isFetching={folder.isFetching}
-        error={folder.error}
-        errorTitle="Could not open that folder"
-        onRetry={() => folder.refetch()}
-        density="comfortable"
-        empty={
-          <EmptyState
-            title="This folder is empty"
-            description="Upload a file, or add one in SharePoint and it shows up here."
-            action={
-              query.path ? (
-                <Button
-                  variant="default"
-                  onClick={() => setQuery({ path: parentLibraryPath(query.path) })}
-                >
-                  Go up one folder
-                </Button>
-              ) : undefined
-            }
-          />
-        }
-        sort={{ key: query.sortBy, direction: query.sortDirection }}
-        onSortChange={({ key, direction }) =>
-          setQuery({ sortBy: key as LibrarySortKey, sortDirection: direction })
-        }
-      />
+      <LibraryDropZone
+        folderLabel={folderLabel}
+        onDrop={(transfer) => {
+          uploadsFromDrop(transfer).then(uploadAll, () =>
+            announceFailure('Could not read what was dropped — try the Upload folder button.'),
+          )
+        }}
+      >
+        <DataTable
+          label="Internal library"
+          columns={columns}
+          rows={paged.rows}
+          pageInfo={paged.pageInfo}
+          onPageChange={paged.onPageChange}
+          onPageSizeChange={paged.onPageSizeChange}
+          rowKey={(entry) => entry.id}
+          isPending={folder.isPending}
+          isError={folder.isError}
+          isFetching={folder.isFetching}
+          error={folder.error}
+          errorTitle="Could not open that folder"
+          onRetry={() => folder.refetch()}
+          density="comfortable"
+          empty={
+            <EmptyState
+              title="This folder is empty"
+              description="Drop files or a whole folder here, or add them in SharePoint and they show up here."
+              action={
+                query.path ? (
+                  <Button
+                    variant="default"
+                    onClick={() => setQuery({ path: parentLibraryPath(query.path) })}
+                  >
+                    Go up one folder
+                  </Button>
+                ) : undefined
+              }
+            />
+          }
+          sort={{ key: query.sortBy, direction: query.sortDirection }}
+          onSortChange={({ key, direction }) =>
+            setQuery({ sortBy: key as LibrarySortKey, sortDirection: direction })
+          }
+        />
+      </LibraryDropZone>
+
+      {preview.value ? (
+        <ImagePreviewModal
+          images={images}
+          activeId={preview.value}
+          onSelect={preview.commit}
+          onClose={() => preview.commit('')}
+        />
+      ) : null}
 
       <NewFolderModal
         opened={isNewFolderOpen}

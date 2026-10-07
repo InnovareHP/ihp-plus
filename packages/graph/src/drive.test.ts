@@ -5,6 +5,7 @@ import {
   ensureFolder,
   listAllChildren,
   moveItem,
+  openItemContent,
   startCopy,
   uploadFile,
   waitForCopy,
@@ -245,5 +246,21 @@ describe('moveItem', () => {
       parentReference: { id: 'group-1' },
       '@microsoft.graph.conflictBehavior': 'fail',
     })
+  })
+})
+
+describe('openItemContent', () => {
+  it('reads the file itself, or the rendered thumbnail when a size is named', async () => {
+    fetchMock.mockResolvedValue(new Response('bytes'))
+
+    await openItemContent('drive-1', 'item-1')
+    await openItemContent('drive-1', 'item-1', 'medium')
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://graph.microsoft.com/v1.0/drives/drive-1/items/item-1/content',
+    )
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://graph.microsoft.com/v1.0/drives/drive-1/items/item-1/thumbnails/0/medium/content',
+    )
   })
 })

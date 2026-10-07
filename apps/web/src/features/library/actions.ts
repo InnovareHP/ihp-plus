@@ -5,10 +5,12 @@ import { mirrorRemoval, mirrorRename, mirrorWrite } from '@/features/drive/sync'
 import { pathFromRoot } from '@/features/drive/utils/mirror-path'
 import { track } from '@/lib/analytics'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
+import { safeLibraryName } from '@/lib/library-name'
 import { libraryEvents } from './events'
 import {
   createFolderSchema,
   libraryItemSchema,
+  MAX_UPLOAD_DEPTH,
   libraryQuerySchema,
   renameItemSchema,
   uploadProblem,
@@ -19,14 +21,13 @@ import {
   createLibraryFolder,
   deleteLibraryItem,
   entryOf,
-  libraryDownloadUrl,
   NotAFolderError,
   readLibraryFolder,
   readLibraryItem,
   renameLibraryItem,
   uploadToLibrary,
 } from './service'
-import { normalizeLibraryPath } from './utils/library-path'
+import { joinLibraryPath, librarySegments, normalizeLibraryPath } from './utils/library-path'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
 export type LibraryResult = ({ ok: true } & LibraryListing) | { ok: false; message: string }
@@ -63,20 +64,6 @@ export async function listLibraryFolder(input?: unknown): Promise<LibraryResult>
   }
 }
 
-/** Minted per click and opened straight away, so the link never sits in the page's HTML. */
-export async function libraryFileLink(input: unknown): Promise<Result<{ url: string }>> {
-  await requireOnboarded()
-
-  const parsed = libraryItemSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, message: GONE }
-
-  try {
-    return { ok: true, data: { url: await libraryDownloadUrl(parsed.data.itemId) } }
-  } catch (error) {
-    return { ok: false, message: messageFor(error) }
-  }
-}
-
 async function writer() {
   const { profile } = await requireOnboarded()
   return membershipOf(profile).organizationId
@@ -100,6 +87,14 @@ export async function uploadToLibraryFolder(formData: FormData): Promise<Result<
   const organizationId = await writer()
 
   const path = normalizeLibraryPath(String(formData.get('path') ?? ''))
+  // Each segment is cleaned the way a typed folder name is, so a dragged tree lands intact.
+  const folder = librarySegments(String(formData.get('folder') ?? '')).map((segment) =>
+    safeLibraryName(segment, 'folder'),
+  )
+  if (folder.length > MAX_UPLOAD_DEPTH) {
+    return { ok: false, message: `Folders can nest at most ${MAX_UPLOAD_DEPTH} levels deep.` }
+  }
+  const target = joinLibraryPath(path, folder.join('/'))
   const file = formData.get('file')
   if (!(file instanceof File)) return { ok: false, message: 'Choose a file to upload.' }
 
@@ -108,13 +103,13 @@ export async function uploadToLibraryFolder(formData: FormData): Promise<Result<
 
   try {
     const item = await uploadToLibrary({
-      path,
+      path: target,
       name: file.name,
       body: new Uint8Array(await file.arrayBuffer()),
       contentType: file.type || 'application/octet-stream',
     })
     if (organizationId) await mirror(() => mirrorWrite(organizationId, item))
-    return { ok: true, data: entryOf(item, path) }
+    return { ok: true, data: entryOf(item, target) }
   } catch (error) {
     return { ok: false, message: messageFor(error) }
   }

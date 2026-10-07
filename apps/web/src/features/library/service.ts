@@ -1,10 +1,11 @@
 import {
   deleteItem,
-  downloadUrl,
   ensureFolder,
   getItem,
   getItemByPath,
+  GraphError,
   listAllChildren,
+  openItemContent,
   renameItem,
   requireInternalDriveId,
   rootItem,
@@ -13,12 +14,20 @@ import {
 } from '@ihp/graph'
 import { safeLibraryName } from '@/lib/library-name'
 import type { LibraryEntry, LibraryListing, LibraryQuery } from './schema'
-import { joinLibraryPath, normalizeLibraryPath } from './utils/library-path'
+import type { LibraryRendition } from './utils/library-file'
+import { joinLibraryPath, librarySegments, normalizeLibraryPath } from './utils/library-path'
 
 export class NotAFolderError extends Error {
   constructor() {
     super('That is a file, not a folder.')
     this.name = 'NotAFolderError'
+  }
+}
+
+export class NotAFileError extends Error {
+  constructor() {
+    super('That is a folder, not a file.')
+    this.name = 'NotAFileError'
   }
 }
 
@@ -68,8 +77,40 @@ export async function readLibraryFolder(query: LibraryQuery): Promise<LibraryLis
   return { path, entries: entries.sort((a, b) => compare(a, b, query)) }
 }
 
-export function libraryDownloadUrl(itemId: string) {
-  return downloadUrl(requireInternalDriveId(), itemId)
+const THUMBNAIL_SIZE = { thumbnail: 'medium', preview: 'large' } as const
+
+/** Reads the item first: its cTag answers a revalidation without fetching the bytes. */
+export async function readLibraryFile(itemId: string) {
+  const driveId = requireInternalDriveId()
+  const item = await getItem(driveId, itemId)
+  if (item.folder || !item.file) throw new NotAFileError()
+
+  return {
+    item,
+    open: (rendition: LibraryRendition) =>
+      openItemContent(
+        driveId,
+        itemId,
+        rendition === 'original' ? undefined : THUMBNAIL_SIZE[rendition],
+      ),
+  }
+}
+
+/** Walks down from the root creating what is missing, so a dropped folder keeps its tree. */
+async function ensureFolderPath(path: string) {
+  try {
+    return await folderItem(path)
+  } catch (error) {
+    if (!(error instanceof GraphError) || !error.isNotFound) throw error
+  }
+
+  let parent = await folderItem('')
+  for (const segment of librarySegments(path)) {
+    const folder = await ensureFolder(parent.driveId, parent.folder.id, segment)
+    if (!folder.folder) throw new NotAFolderError()
+    parent = { ...parent, path: joinLibraryPath(parent.path, segment), folder }
+  }
+  return parent
 }
 
 export async function uploadToLibrary(input: {
@@ -78,7 +119,7 @@ export async function uploadToLibrary(input: {
   body: Uint8Array
   contentType: string
 }) {
-  const parent = await folderItem(input.path)
+  const parent = await ensureFolderPath(input.path)
   return uploadFile(
     parent.driveId,
     parent.folder.id,

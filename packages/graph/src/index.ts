@@ -38,6 +38,7 @@ export {
   listAllChildren,
   listChildren,
   moveItem,
+  openItemContent,
   renameItem,
   rootItem,
   startCopy,
@@ -47,6 +48,7 @@ export {
   waitForCopy,
   SIMPLE_UPLOAD_LIMIT_BYTES,
   type CopyTarget,
+  type ThumbnailSize,
 } from './drive'
 export {
   createLink,

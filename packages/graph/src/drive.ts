@@ -178,6 +178,17 @@ export function deleteItem(driveId: string, itemId: string) {
   return graphVoid(`/drives/${driveId}/items/${itemId}`, { method: 'DELETE' })
 }
 
+export type ThumbnailSize = 'small' | 'medium' | 'large'
+
+/** The item's bytes, or a rendered thumbnail, for a server that streams them on to the browser. */
+export function openItemContent(driveId: string, itemId: string, thumbnail?: ThumbnailSize) {
+  return graphFetch(
+    thumbnail
+      ? `/drives/${driveId}/items/${itemId}/thumbnails/0/${thumbnail}/content`
+      : `/drives/${driveId}/items/${itemId}/content`,
+  )
+}
+
 /** A short-lived URL the browser follows directly; Graph signs it, so it carries no token. */
 export async function downloadUrl(driveId: string, itemId: string) {
   const item = await graphJson<DriveItem>(
