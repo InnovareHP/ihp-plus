@@ -42,11 +42,13 @@ export {
   renameItem,
   rootItem,
   startCopy,
+  uploadChunk,
   uploadFile,
   uploadInSession,
   uploadSmallFile,
   waitForCopy,
   SIMPLE_UPLOAD_LIMIT_BYTES,
+  UPLOAD_CHUNK_BYTES,
   type CopyTarget,
   type ThumbnailSize,
 } from './drive'

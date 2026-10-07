@@ -9,10 +9,12 @@ import { safeLibraryName } from '@/lib/library-name'
 import { libraryEvents } from './events'
 import {
   createFolderSchema,
+  LIBRARY_CHUNK_BYTES,
   libraryItemSchema,
   MAX_UPLOAD_DEPTH,
   libraryQuerySchema,
   renameItemSchema,
+  startUploadSchema,
   uploadProblem,
   type LibraryEntry,
   type LibraryListing,
@@ -25,8 +27,11 @@ import {
   readLibraryFolder,
   readLibraryItem,
   renameLibraryItem,
+  sendLibraryChunk,
+  startLibraryUploadSession,
   uploadToLibrary,
 } from './service'
+import { openUploadSession, sealUploadSession, UPLOAD_SESSION_MS } from './upload-session'
 import { joinLibraryPath, librarySegments, normalizeLibraryPath } from './utils/library-path'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
@@ -83,18 +88,24 @@ async function mirror(run: () => Promise<unknown>) {
   }
 }
 
+const TOO_DEEP = `Folders can nest at most ${MAX_UPLOAD_DEPTH} levels deep.`
+const UPLOAD_LOST = 'That upload was interrupted — upload the file again.'
+
+/** Each segment is cleaned the way a typed folder name is, so a dragged tree lands intact. */
+function uploadTarget(path: string, folder: string) {
+  const segments = librarySegments(folder).map((segment) => safeLibraryName(segment, 'folder'))
+  if (segments.length > MAX_UPLOAD_DEPTH) return undefined
+  return joinLibraryPath(normalizeLibraryPath(path), segments.join('/'))
+}
+
 export async function uploadToLibraryFolder(formData: FormData): Promise<Result<LibraryEntry>> {
   const organizationId = await writer()
 
-  const path = normalizeLibraryPath(String(formData.get('path') ?? ''))
-  // Each segment is cleaned the way a typed folder name is, so a dragged tree lands intact.
-  const folder = librarySegments(String(formData.get('folder') ?? '')).map((segment) =>
-    safeLibraryName(segment, 'folder'),
+  const target = uploadTarget(
+    String(formData.get('path') ?? ''),
+    String(formData.get('folder') ?? ''),
   )
-  if (folder.length > MAX_UPLOAD_DEPTH) {
-    return { ok: false, message: `Folders can nest at most ${MAX_UPLOAD_DEPTH} levels deep.` }
-  }
-  const target = joinLibraryPath(path, folder.join('/'))
+  if (target === undefined) return { ok: false, message: TOO_DEEP }
   const file = formData.get('file')
   if (!(file instanceof File)) return { ok: false, message: 'Choose a file to upload.' }
 
@@ -112,6 +123,77 @@ export async function uploadToLibraryFolder(formData: FormData): Promise<Result<
     return { ok: true, data: entryOf(item, target) }
   } catch (error) {
     return { ok: false, message: messageFor(error) }
+  }
+}
+
+/** The first step of a chunked upload; the token it returns carries the session, sealed. */
+export async function startLibraryUpload(input: unknown): Promise<Result<{ token: string }>> {
+  const { user } = await requireOnboarded()
+
+  const parsed = startUploadSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, message: INVALID }
+  const problem = uploadProblem(parsed.data)
+  if (problem) return { ok: false, message: problem }
+  const target = uploadTarget(parsed.data.path, parsed.data.folder)
+  if (target === undefined) return { ok: false, message: TOO_DEEP }
+
+  try {
+    const uploadUrl = await startLibraryUploadSession(target, parsed.data.name)
+    const token = sealUploadSession({
+      uploadUrl,
+      userId: user.id,
+      path: target,
+      size: parsed.data.size,
+      expiresAt: Date.now() + UPLOAD_SESSION_MS,
+    })
+    return { ok: true, data: { token } }
+  } catch (error) {
+    return { ok: false, message: messageFor(error) }
+  }
+}
+
+/** One range of a chunked upload; the entry comes back with the last one. */
+export async function sendLibraryUploadChunk(
+  formData: FormData,
+): Promise<Result<{ entry: LibraryEntry | null }>> {
+  const { user, profile } = await requireOnboarded()
+
+  const session = openUploadSession(String(formData.get('token') ?? ''))
+  // Another member's token is refused like a lost one, so it reveals nothing.
+  if (!session || session.userId !== user.id) return { ok: false, message: UPLOAD_LOST }
+
+  const start = Number(formData.get('start'))
+  const chunk = formData.get('chunk')
+  if (
+    !(chunk instanceof Blob) ||
+    !Number.isSafeInteger(start) ||
+    start < 0 ||
+    chunk.size === 0 ||
+    chunk.size > LIBRARY_CHUNK_BYTES ||
+    start + chunk.size > session.size
+  ) {
+    return { ok: false, message: UPLOAD_LOST }
+  }
+
+  try {
+    const item = await sendLibraryChunk(
+      session.uploadUrl,
+      new Uint8Array(await chunk.arrayBuffer()),
+      start,
+      session.size,
+    )
+    if (!item) return { ok: true, data: { entry: null } }
+
+    const organizationId = membershipOf(profile).organizationId
+    if (organizationId) await mirror(() => mirrorWrite(organizationId, item))
+    return { ok: true, data: { entry: entryOf(item, session.path) } }
+  } catch (error) {
+    if (error instanceof GraphError || error instanceof GraphNotConfiguredError) {
+      return { ok: false, message: messageFor(error) }
+    }
+    // A refused range comes back as a plain Error, which means the session is gone, not a bug.
+    if (error instanceof Error) return { ok: false, message: UPLOAD_LOST }
+    throw error
   }
 }
 

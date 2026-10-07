@@ -218,7 +218,7 @@ export async function uploadSmallFile(
 }
 
 /** Graph requires every chunk but the last to be a multiple of 320 KiB. */
-const CHUNK_BYTES = 10 * 320 * 1024
+export const UPLOAD_CHUNK_BYTES = 10 * 320 * 1024
 
 /** The resumable path for anything past 4 MB; the caller PUTs ranges to uploadUrl. */
 export function createUploadSession(driveId: string, parentItemId: string, name: string) {
@@ -228,28 +228,40 @@ export function createUploadSession(driveId: string, parentItemId: string, name:
   )
 }
 
-/** Uploads the bytes to a session, one range at a time; the last response carries the item. */
+/** Sends one range of a session; only the response to the last range carries the item. */
+export async function uploadChunk(
+  uploadUrl: string,
+  chunk: Uint8Array,
+  start: number,
+  total: number,
+): Promise<DriveItem | undefined> {
+  // The session URL is pre-authenticated, so these PUTs carry no Graph token.
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'content-length': String(chunk.byteLength),
+      'content-range': `bytes ${start}-${start + chunk.byteLength - 1}/${total}`,
+    },
+    body: chunk as unknown as BodyInit,
+  })
+
+  if (!response.ok) {
+    throw new Error(`The upload failed at byte ${start} with HTTP ${response.status}.`)
+  }
+  if (response.status === 200 || response.status === 201)
+    return (await response.json()) as DriveItem
+  // 202 is Graph asking for the next range.
+  await response.arrayBuffer()
+  return undefined
+}
+
+/** Uploads the bytes to a session, one range at a time. */
 export async function uploadInSession(uploadUrl: string, body: Uint8Array) {
   let item: DriveItem | undefined
 
-  for (let start = 0; start < body.byteLength; start += CHUNK_BYTES) {
-    const end = Math.min(start + CHUNK_BYTES, body.byteLength)
-    // The session URL is pre-authenticated, so these PUTs carry no Graph token.
-    const response = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'content-length': String(end - start),
-        'content-range': `bytes ${start}-${end - 1}/${body.byteLength}`,
-      },
-      body: body.slice(start, end) as unknown as BodyInit,
-    })
-
-    if (!response.ok) {
-      throw new Error(`The upload failed at byte ${start} with HTTP ${response.status}.`)
-    }
-    if (response.status === 200 || response.status === 201) {
-      item = (await response.json()) as DriveItem
-    }
+  for (let start = 0; start < body.byteLength; start += UPLOAD_CHUNK_BYTES) {
+    const end = Math.min(start + UPLOAD_CHUNK_BYTES, body.byteLength)
+    item = await uploadChunk(uploadUrl, body.slice(start, end), start, body.byteLength)
   }
 
   if (!item) throw new Error('The upload finished without Graph returning the item.')

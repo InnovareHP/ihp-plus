@@ -18,15 +18,18 @@ export const DEFAULT_LIBRARY_QUERY = libraryQuerySchema.parse({})
 
 export const libraryItemSchema = z.object({ itemId: z.string().min(1).max(200) })
 
-/** Matches next.config's serverActions bodySizeLimit and nginx's client_max_body_size. */
-export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+/** Big files travel in chunks, so this is a policy limit, not the 25 MB request cap. */
+export const MAX_UPLOAD_BYTES = 250 * 1024 * 1024
+
+/** A multiple of 320 KiB as Graph requires, and far under the 25 MB request cap. */
+export const LIBRARY_CHUNK_BYTES = 10 * 320 * 1024
 
 /** Deep enough for any real project tree, shallow enough that one drop cannot stall the walk. */
 export const MAX_UPLOAD_DEPTH = 12
 
 export function uploadProblem(file: { size: number }) {
   if (file.size === 0) return 'That file is empty.'
-  if (file.size > MAX_UPLOAD_BYTES) return 'Files have to be 25 MB or smaller.'
+  if (file.size > MAX_UPLOAD_BYTES) return 'Files have to be 250 MB or smaller.'
   return undefined
 }
 
@@ -51,6 +54,13 @@ export const renameItemSchema = z.object({
 })
 
 export type RenameItemValues = z.infer<typeof renameItemSchema>
+
+export const startUploadSchema = z.object({
+  path: z.string().trim().max(400),
+  folder: z.string().max(400),
+  name: z.string().min(1).max(400),
+  size: z.number().int().positive(),
+})
 
 export const createFolderSchema = z.object({
   path: z.string().trim().max(400),

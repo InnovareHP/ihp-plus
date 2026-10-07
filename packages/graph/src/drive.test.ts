@@ -7,6 +7,7 @@ import {
   moveItem,
   openItemContent,
   startCopy,
+  uploadChunk,
   uploadFile,
   waitForCopy,
 } from './drive'
@@ -261,6 +262,29 @@ describe('openItemContent', () => {
     )
     expect(fetchMock.mock.calls[1]?.[0]).toBe(
       'https://graph.microsoft.com/v1.0/drives/drive-1/items/item-1/thumbnails/0/medium/content',
+    )
+  })
+})
+
+describe('uploadChunk', () => {
+  it('sends one range and returns the item only once Graph has the whole file', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 202 }))
+    fetchMock.mockResolvedValueOnce(jsonResponse({ id: 'done', name: 'big.zip' }, { status: 201 }))
+
+    const first = await uploadChunk('https://upload.test/s', new Uint8Array(4), 0, 6)
+    const last = await uploadChunk('https://upload.test/s', new Uint8Array(2), 4, 6)
+
+    expect(first).toBeUndefined()
+    expect(last).toMatchObject({ id: 'done' })
+    const headers = fetchMock.mock.calls[1]?.[1]?.headers as Record<string, string>
+    expect(headers['content-range']).toBe('bytes 4-5/6')
+  })
+
+  it('throws when Graph refuses a range', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 416 }))
+
+    await expect(uploadChunk('https://upload.test/s', new Uint8Array(1), 0, 1)).rejects.toThrow(
+      /HTTP 416/,
     )
   })
 })

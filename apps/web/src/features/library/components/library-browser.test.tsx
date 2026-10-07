@@ -6,6 +6,8 @@ import { render, screen, userEvent, waitFor, within } from '@/test/render'
 const actions = vi.hoisted(() => ({
   listLibraryFolder: vi.fn(),
   uploadToLibraryFolder: vi.fn(),
+  startLibraryUpload: vi.fn(),
+  sendLibraryUploadChunk: vi.fn(),
   addLibraryFolder: vi.fn(),
   renameInLibrary: vi.fn(),
   removeFromLibraryFolder: vi.fn(),
@@ -43,6 +45,7 @@ vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
 vi.mock('@/lib/announce', () => announce)
 
 const { LibraryBrowser } = await import('./library-browser')
+const { LIBRARY_CHUNK_BYTES } = await import('../schema')
 
 const FOLDER = {
   id: 'folder-1',
@@ -220,6 +223,63 @@ describe('LibraryBrowser', () => {
 
     await waitFor(() => expect(actions.uploadToLibraryFolder).toHaveBeenCalledTimes(1))
     expect(screen.queryByText(/drop to upload/i)).not.toBeInTheDocument()
+  })
+
+  it('sends uploads one at a time, so a big drop never becomes one huge request', async () => {
+    actions.uploadToLibraryFolder.mockReturnValue(new Promise(() => {}))
+    render(<LibraryBrowser />)
+    await screen.findByText('handbook.pdf')
+
+    await userEvent.upload(screen.getByLabelText('Upload files'), [
+      new File(['a'], 'a.pdf', { type: 'application/pdf' }),
+      new File(['b'], 'b.pdf', { type: 'application/pdf' }),
+    ])
+
+    expect(await screen.findByText('b.pdf')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /uploading… 2 left/i })).toBeInTheDocument()
+    await waitFor(() => expect(actions.uploadToLibraryFolder).toHaveBeenCalledTimes(1))
+  })
+
+  it('refuses an oversized file in the browser, before sending anything', async () => {
+    render(<LibraryBrowser />)
+    await screen.findByText('handbook.pdf')
+    const file = new File(['x'], 'video.mp4', { type: 'video/mp4' })
+    Object.defineProperty(file, 'size', { value: 251 * 1024 * 1024 })
+
+    await userEvent.upload(screen.getByLabelText('Upload files'), file)
+
+    await waitFor(() =>
+      expect(announce.announceFailure).toHaveBeenCalledWith(
+        'video.mp4: Files have to be 250 MB or smaller.',
+      ),
+    )
+    expect(actions.uploadToLibraryFolder).not.toHaveBeenCalled()
+    expect(actions.startLibraryUpload).not.toHaveBeenCalled()
+  })
+
+  it('sends a large file in chunks under the request size limit', async () => {
+    actions.startLibraryUpload.mockResolvedValue({ ok: true, data: { token: 'sealed' } })
+    actions.sendLibraryUploadChunk
+      .mockResolvedValueOnce({ ok: true, data: { entry: null } })
+      .mockResolvedValueOnce({ ok: true, data: { entry: { ...FILE, id: 'big', name: 'big.zip' } } })
+    render(<LibraryBrowser />)
+    await screen.findByText('handbook.pdf')
+    const size = LIBRARY_CHUNK_BYTES + 10
+    const file = new File([new Uint8Array(size)], 'big.zip', { type: 'application/zip' })
+
+    await userEvent.upload(screen.getByLabelText('Upload files'), file)
+
+    await waitFor(() => expect(actions.sendLibraryUploadChunk).toHaveBeenCalledTimes(2))
+    expect(actions.startLibraryUpload).toHaveBeenCalledWith({
+      path: '',
+      folder: '',
+      name: 'big.zip',
+      size,
+    })
+    const last = actions.sendLibraryUploadChunk.mock.calls[1]?.[0] as FormData
+    expect(last.get('start')).toBe(String(LIBRARY_CHUNK_BYTES))
+    expect((last.get('chunk') as Blob).size).toBe(10)
+    expect(actions.uploadToLibraryFolder).not.toHaveBeenCalled()
   })
 
   it('puts the folder back and says why when an upload fails', async () => {

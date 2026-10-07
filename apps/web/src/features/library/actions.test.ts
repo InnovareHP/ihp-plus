@@ -7,6 +7,8 @@ interface TestItem {
   file?: { mimeType?: string }
 }
 
+process.env.BETTER_AUTH_SECRET = 'test-secret-long-enough-to-derive-a-key'
+
 const graph = vi.hoisted(() => ({
   requireInternalDriveId: vi.fn(() => 'internal-drive'),
   rootItem: vi.fn(async (): Promise<TestItem> => ({
@@ -21,6 +23,8 @@ const graph = vi.hoisted(() => ({
   })),
   listAllChildren: vi.fn(async () => [] as unknown[]),
   uploadFile: vi.fn(async (): Promise<TestItem> => ({ id: 'new-file', name: 'invoice.pdf' })),
+  createUploadSession: vi.fn(async () => ({ uploadUrl: 'https://upload.test/session' })),
+  uploadChunk: vi.fn(async (): Promise<TestItem | undefined> => undefined),
   ensureFolder: vi.fn(async (): Promise<TestItem> => ({
     id: 'new-folder',
     name: 'Invoices',
@@ -73,6 +77,8 @@ const {
   listLibraryFolder,
   removeFromLibraryFolder,
   renameInLibrary,
+  sendLibraryUploadChunk,
+  startLibraryUpload,
   uploadToLibraryFolder,
 } = await import('./actions')
 
@@ -209,11 +215,11 @@ describe('uploadToLibraryFolder', () => {
 
   it('refuses a file past the server action body limit', async () => {
     const file = new File([''], 'huge.pdf', { type: 'application/pdf' })
-    Object.defineProperty(file, 'size', { value: 26 * 1024 * 1024 })
+    Object.defineProperty(file, 'size', { value: 251 * 1024 * 1024 })
 
     const result = await uploadToLibraryFolder(uploadForm('', file))
 
-    expect(result).toEqual({ ok: false, message: 'Files have to be 25 MB or smaller.' })
+    expect(result).toEqual({ ok: false, message: 'Files have to be 250 MB or smaller.' })
     expect(graph.uploadFile).not.toHaveBeenCalled()
   })
 
@@ -260,6 +266,91 @@ describe('uploadToLibraryFolder', () => {
     const result = await uploadToLibraryFolder(uploadForm('Clients/Acme', file))
 
     expect(result).toMatchObject({ ok: true })
+  })
+})
+
+describe('chunked upload', () => {
+  async function started(size = 5_000_000) {
+    const result = await startLibraryUpload({ path: 'Clients', folder: '', name: 'big.zip', size })
+    if (!result.ok) throw new Error(result.message)
+    return result.data.token
+  }
+
+  function chunkForm(token: string, start: number, bytes: number) {
+    const form = new FormData()
+    form.set('token', token)
+    form.set('start', String(start))
+    form.set('chunk', new Blob([new Uint8Array(bytes)]))
+    return form
+  }
+
+  it('opens a session and hands back a token that hides the upload URL', async () => {
+    const token = await started()
+
+    expect(graph.createUploadSession).toHaveBeenCalledWith(
+      'internal-drive',
+      'clients-item',
+      'big.zip',
+    )
+    expect(token).not.toContain('upload.test')
+  })
+
+  it('sends each range on, and mirrors and returns the entry with the last one', async () => {
+    const token = await started(5)
+    graph.uploadChunk.mockResolvedValueOnce(undefined)
+    graph.uploadChunk.mockResolvedValueOnce({ id: 'big', name: 'big.zip' })
+
+    const first = await sendLibraryUploadChunk(chunkForm(token, 0, 3))
+    const last = await sendLibraryUploadChunk(chunkForm(token, 3, 2))
+
+    expect(graph.uploadChunk).toHaveBeenNthCalledWith(
+      1,
+      'https://upload.test/session',
+      expect.any(Uint8Array),
+      0,
+      5,
+    )
+    expect(first).toEqual({ ok: true, data: { entry: null } })
+    expect(last).toMatchObject({
+      ok: true,
+      data: { entry: { name: 'big.zip', path: 'Clients/big.zip' } },
+    })
+    expect(sync.mirrorWrite).toHaveBeenCalledTimes(1)
+  })
+
+  it('refuses a too-large file before opening a session', async () => {
+    const result = await startLibraryUpload({
+      path: '',
+      folder: '',
+      name: 'x',
+      size: 251 * 1024 * 1024,
+    })
+
+    expect(result).toEqual({ ok: false, message: 'Files have to be 250 MB or smaller.' })
+    expect(graph.createUploadSession).not.toHaveBeenCalled()
+  })
+
+  it('refuses a tampered token, a token of another member, and a range past the file', async () => {
+    const token = await started(5)
+    const tampered = `${token.slice(0, 20)}${token[20] === 'A' ? 'B' : 'A'}${token.slice(21)}`
+
+    expect(await sendLibraryUploadChunk(chunkForm(tampered, 0, 1))).toMatchObject({ ok: false })
+    expect(await sendLibraryUploadChunk(chunkForm(token, 4, 2))).toMatchObject({ ok: false })
+    guard.requireOnboarded.mockResolvedValueOnce({ user: { id: 'user-2' }, profile: {} })
+    expect(await sendLibraryUploadChunk(chunkForm(token, 0, 1))).toMatchObject({ ok: false })
+    expect(graph.uploadChunk).not.toHaveBeenCalled()
+  })
+
+  it('reports a range SharePoint refused as an interrupted upload', async () => {
+    const token = await started(5)
+    graph.uploadChunk.mockRejectedValueOnce(new Error('The upload failed at byte 0 with HTTP 416.'))
+
+    const result = await sendLibraryUploadChunk(chunkForm(token, 0, 5))
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'That upload was interrupted — upload the file again.',
+    })
   })
 })
 

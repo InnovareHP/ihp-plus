@@ -14,11 +14,13 @@ import {
   listLibraryFolder,
   removeFromLibraryFolder,
   renameInLibrary,
+  sendLibraryUploadChunk,
+  startLibraryUpload,
   uploadToLibraryFolder,
 } from '../actions'
 import { libraryEvents } from '../events'
 import { libraryKeys } from '../query-keys'
-import type { LibraryEntry, LibraryQuery } from '../schema'
+import { LIBRARY_CHUNK_BYTES, uploadProblem, type LibraryEntry, type LibraryQuery } from '../schema'
 import { joinLibraryPath } from '../utils/library-path'
 import type { LibraryUpload } from '../utils/upload-tree'
 
@@ -49,6 +51,8 @@ function useFolderMutation<TInput, TData>(
   query: LibraryQuery,
   options: {
     mutationKey?: readonly unknown[]
+    /** Mutations sharing a scope run one after another instead of all at once. */
+    scope?: { id: string }
     run: (input: TInput) => Promise<TData>
     apply: (entries: LibraryEntry[], input: TInput) => LibraryEntry[]
     done: EventName
@@ -60,6 +64,7 @@ function useFolderMutation<TInput, TData>(
 
   return useMutation({
     mutationKey: options.mutationKey,
+    scope: options.scope,
     mutationFn: options.run,
     onMutate: async (input: TInput) => {
       // An in-flight refetch would land on top of the optimistic folder.
@@ -106,6 +111,33 @@ function withUpload(entries: LibraryEntry[], upload: LibraryUpload, path: string
   return [pendingEntry(top, path, true), ...entries]
 }
 
+/** One request for a small file; a large one goes up in ranges, each far under the body cap. */
+async function sendUpload(upload: LibraryUpload, path: string) {
+  const { file, folder } = upload
+
+  if (file.size <= LIBRARY_CHUNK_BYTES) {
+    const formData = new FormData()
+    formData.set('path', path)
+    formData.set('folder', folder)
+    formData.set('file', file)
+    return uploadToLibraryFolder(formData)
+  }
+
+  const started = await startLibraryUpload({ path, folder, name: file.name, size: file.size })
+  if (!started.ok) return started
+
+  for (let start = 0; start < file.size; start += LIBRARY_CHUNK_BYTES) {
+    const formData = new FormData()
+    formData.set('token', started.data.token)
+    formData.set('start', String(start))
+    formData.set('chunk', file.slice(start, start + LIBRARY_CHUNK_BYTES))
+    const sent = await sendLibraryUploadChunk(formData)
+    if (!sent.ok) return sent
+    if (sent.data.entry) return { ok: true as const, data: sent.data.entry }
+  }
+  return { ok: false as const, message: 'SharePoint did not confirm the upload — try again.' }
+}
+
 const UPLOAD_KEY = [...libraryKeys.all, 'upload'] as const
 
 /** Files still on their way up, so a forty-file drop can say how many are left. */
@@ -116,15 +148,17 @@ export function useUploadsInFlight() {
 export function useUploadToLibrary(query: LibraryQuery) {
   return useFolderMutation<LibraryUpload, LibraryEntry>(query, {
     mutationKey: UPLOAD_KEY,
+    scope: { id: 'library-upload' },
     run: async (upload) => {
-      const formData = new FormData()
-      formData.set('path', query.path)
-      formData.set('folder', upload.folder)
-      formData.set('file', upload.file)
-      const result = await uploadToLibraryFolder(formData)
+      // Checked here too, so an oversized file fails at once instead of as a 413 from nginx.
+      const problem = uploadProblem(upload.file)
+      const result = problem
+        ? { ok: false as const, message: problem }
+        : await sendUpload(upload, query.path)
       // The name tells the user which file of many failed; analytics only ever sees the cause.
-      if (!result.ok)
+      if (!result.ok) {
         throw new Error(`${upload.file.name}: ${result.message}`, { cause: result.message })
+      }
       return result.data
     },
     apply: (entries, upload) => withUpload(entries, upload, query.path),

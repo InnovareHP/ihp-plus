@@ -1,5 +1,6 @@
 import {
   deleteItem,
+  createUploadSession,
   ensureFolder,
   getItem,
   getItemByPath,
@@ -9,6 +10,7 @@ import {
   renameItem,
   requireInternalDriveId,
   rootItem,
+  uploadChunk,
   uploadFile,
   type DriveItem,
 } from '@ihp/graph'
@@ -127,6 +129,22 @@ export async function uploadToLibrary(input: {
     input.body,
     input.contentType,
   )
+}
+
+/** Opens a Graph upload session in the target folder, building the folder tree if needed. */
+export async function startLibraryUploadSession(path: string, name: string) {
+  const parent = await ensureFolderPath(path)
+  const session = await createUploadSession(parent.driveId, parent.folder.id, safeLibraryName(name))
+  return session.uploadUrl
+}
+
+export function sendLibraryChunk(
+  uploadUrl: string,
+  chunk: Uint8Array,
+  start: number,
+  total: number,
+) {
+  return uploadChunk(uploadUrl, chunk, start, total)
 }
 
 export async function createLibraryFolder(path: string, name: string) {
