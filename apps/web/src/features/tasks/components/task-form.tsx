@@ -15,7 +15,8 @@ import {
 } from '@mantine/core'
 import { IconPaperclip } from '@tabler/icons-react'
 import { useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
+import { useTaskLists } from '../hooks/use-task-projects'
 import {
   attachmentProblem,
   taskFormSchema,
@@ -34,6 +35,13 @@ const PRIORITY_OPTIONS = TASK_PRIORITIES.map((priority) => ({
 
 export interface TaskFormProps {
   lists: readonly TaskListRow[]
+  /**
+   * Given on a board spanning every project: the form then asks which project, and offers that
+   * project's lists in place of `lists`. Editing keeps the task in its project.
+   */
+  projects?: readonly { value: string; label: string }[]
+  /** The task already exists, so its project is shown but cannot change. */
+  projectLocked?: boolean
   people: readonly { value: string; label: string }[]
   defaults: TaskFormValues
   submitLabel: string
@@ -42,7 +50,16 @@ export interface TaskFormProps {
   onClose: () => void
 }
 
-export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose }: TaskFormProps) {
+export function TaskForm({
+  lists,
+  projects,
+  projectLocked = false,
+  people,
+  defaults,
+  submitLabel,
+  onSave,
+  onClose,
+}: TaskFormProps) {
   // Held, not uploaded: a file belongs to its task, so nothing is stored until one exists.
   const [staged, setStaged] = useState<File[]>([])
 
@@ -51,6 +68,7 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
     control,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<TaskFormInput, unknown, TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -58,6 +76,13 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
     reValidateMode: 'onChange',
     defaultValues: defaults,
   })
+
+  const pickedProjectId = useWatch({ control, name: 'projectId' })
+  const pickedLists = useTaskLists(projects ? pickedProjectId || undefined : undefined)
+  const listOptions = projects ? (pickedLists.data ?? []) : lists
+  const noLists = Boolean(
+    projects && pickedProjectId && pickedLists.isSuccess && listOptions.length === 0,
+  )
 
   // The same rule the action enforces, said before the bytes travel rather than after.
   function attach(file: File | null) {
@@ -113,15 +138,51 @@ export function TaskForm({ lists, people, defaults, submitLabel, onSave, onClose
           error={errors.description?.message}
         />
 
+        {projects ? (
+          <Controller
+            control={control}
+            name="projectId"
+            render={({ field }) => (
+              <Select
+                label="Project"
+                placeholder="Choose a project"
+                required
+                data={projects}
+                value={field.value || null}
+                onChange={(value) => {
+                  field.onChange(value ?? '')
+                  // A list belongs to one project, so a new project starts the choice over.
+                  setValue('listId', '')
+                }}
+                onBlur={field.onBlur}
+                error={errors.projectId?.message}
+                allowDeselect={false}
+                searchable={projects.length > 8}
+                disabled={projectLocked}
+              />
+            )}
+          />
+        ) : null}
+
         <Controller
           control={control}
           name="listId"
           render={({ field }) => (
             <Select
               label="List"
-              placeholder="Choose a list"
+              placeholder={
+                projects && !pickedProjectId
+                  ? 'Choose a project first'
+                  : pickedLists.isFetching
+                    ? 'Loading lists…'
+                    : 'Choose a list'
+              }
               required
-              data={lists.map((list) => ({ value: list.id, label: list.name }))}
+              disabled={Boolean(projects && !pickedProjectId)}
+              description={
+                noLists ? 'This project has no lists yet — add one with New list.' : undefined
+              }
+              data={listOptions.map((list) => ({ value: list.id, label: list.name }))}
               value={field.value}
               onChange={(value) => field.onChange(value ?? '')}
               onBlur={field.onBlur}

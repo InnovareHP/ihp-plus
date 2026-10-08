@@ -120,9 +120,12 @@ export function TaskBoard() {
   const [renamingProject, setRenamingProject] = useState<TaskProjectRow | null>(null)
   const [renamingList, setRenamingList] = useState<TaskListRow | null>(null)
   const [deletingList, setDeletingList] = useState<TaskListRow | null>(null)
-  const [composing, setComposing] = useState<{ list: TaskListRow; task: TaskRow | null } | null>(
-    null,
-  )
+  // Which task form is open: a new task may start without a list when the board spans projects.
+  const [composing, setComposing] = useState<{
+    projectId: string
+    listId: string
+    task: TaskRow | null
+  } | null>(null)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
 
   const projects = useTaskProjects()
@@ -283,15 +286,26 @@ export function TaskBoard() {
 
   // Editing needs the task's own project lists, which a board spanning projects does not hold.
   function editTask(task: TaskRow) {
-    const list = listRows.find((row) => row.id === task.listId)
-    if (list && !acrossProjects) setComposing({ list, task })
-    else setQuery({ task: task.id })
+    setComposing({ projectId: task.projectId, listId: task.listId, task })
+  }
+
+  function composeTask(target?: { projectId: string; listId: string }) {
+    setComposing({
+      projectId: target?.projectId ?? projectId,
+      listId: target?.listId ?? listRows[0]?.id ?? '',
+      task: null,
+    })
   }
 
   async function handleSave(values: TaskFormValues, files: readonly File[]) {
     const editing = composing?.task
     if (!editing) {
-      const created = await create.mutateAsync({ values, statuses: statusRows, people: peopleById })
+      const created = await create.mutateAsync({
+        values,
+        statuses: statusRows,
+        people: peopleById,
+        viewerId: viewer.userId,
+      })
       // The files wait for the id: an attachment has nowhere to live until the task does.
       if (files.length > 0) {
         await storeFiles(created.id, files)
@@ -371,7 +385,7 @@ export function TaskBoard() {
 
   const defaults: TaskFormValues = composing?.task
     ? {
-        projectId,
+        projectId: composing.projectId,
         listId: composing.task.listId,
         name: composing.task.name,
         description: composing.task.description,
@@ -382,16 +396,18 @@ export function TaskBoard() {
         parentId: '',
       }
     : {
-        projectId,
-        listId: composing?.list.id ?? listRows[0]?.id ?? '',
+        projectId: composing?.projectId ?? projectId,
+        listId: composing?.listId ?? '',
         name: '',
         description: '',
         priority: 'normal',
         startDate: '',
         dueDate: '',
-        assigneeIds: [],
+        // The board spanning projects shows only your own tasks, so a new one starts as yours.
+        assigneeIds: acrossProjects && viewer.userId ? [viewer.userId] : [],
         parentId: '',
       }
+  const projectOptions = projectRows.map((project) => ({ value: project.id, label: project.name }))
 
   return (
     <Stack gap="lg">
@@ -444,23 +460,17 @@ export function TaskBoard() {
                 <Button variant="default" onClick={columnsModal.open}>
                   Columns
                 </Button>
-                {acrossProjects ? null : (
-                  <>
-                    <Button variant="default" onClick={listModal.open}>
-                      New list
-                    </Button>
-                    <Button
-                      leftSection={<IconPlus size={16} aria-hidden />}
-                      disabled={listRows.length === 0}
-                      onClick={() => {
-                        const list = listRows[0]
-                        if (list) setComposing({ list, task: null })
-                      }}
-                    >
-                      New task
-                    </Button>
-                  </>
-                )}
+                <Button variant="default" onClick={listModal.open}>
+                  New list
+                </Button>
+                <Button
+                  leftSection={<IconPlus size={16} aria-hidden />}
+                  // Across projects the form asks which project, so there is always somewhere to add.
+                  disabled={!acrossProjects && listRows.length === 0}
+                  onClick={() => composeTask()}
+                >
+                  New task
+                </Button>
               </Group>
             }
           />
@@ -540,6 +550,7 @@ export function TaskBoard() {
                   list={section.list}
                   tasks={section.tasks}
                   canReorder={false}
+                  onAdd={(section) => composeTask({ projectId: section.id, listId: '' })}
                   onOpen={(task) => setQuery({ task: task.id })}
                   onToggleComplete={(task, completed) =>
                     complete.mutate({ taskId: task.id, completed, statuses: statusRows })
@@ -559,7 +570,7 @@ export function TaskBoard() {
                   key={list.id}
                   list={list}
                   tasks={tasksByList.get(list.id) ?? []}
-                  onAdd={(target) => setComposing({ list: target, task: null })}
+                  onAdd={(target) => composeTask({ projectId, listId: target.id })}
                   onRenameList={setRenamingList}
                   onDeleteList={setDeletingList}
                   onOpen={(task) => setQuery({ task: task.id })}
@@ -623,6 +634,7 @@ export function TaskBoard() {
           setRenamingList(null)
         }}
         projectId={projectId}
+        projects={acrossProjects ? projectOptions : undefined}
       />
       <StatusManagerModal
         opened={columnsOpened}
@@ -645,6 +657,8 @@ export function TaskBoard() {
         title={composing?.task ? 'Edit task' : 'New task'}
         submitLabel={composing?.task ? 'Save changes' : 'Add task'}
         lists={listRows}
+        projects={acrossProjects ? projectOptions : undefined}
+        projectLocked={Boolean(composing?.task)}
         people={people}
         defaults={defaults}
         onSave={handleSave}

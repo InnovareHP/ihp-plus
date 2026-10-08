@@ -348,11 +348,92 @@ describe('TaskBoard', () => {
     expect(rpc.listTasks).toHaveBeenCalledWith(
       expect.objectContaining({ projectId: '', acrossProjects: true }),
     )
-    // Grouped by project in the list view, and nothing to create without one picked.
+    // Grouped by project in the list view, each with its own way to add to it.
     expect(screen.getByRole('heading', { name: 'Audit prep' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Onboarding revamp' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'New task' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Add task' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Add task' })).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'New task' })).toBeEnabled()
+  })
+
+  it('asks which project a new task goes in, then offers that project’s lists', async () => {
+    nav.search = 'project=mine'
+    rpc.listProjects.mockResolvedValue([
+      PROJECT,
+      { ...PROJECT, id: 'project-2', name: 'Audit prep', taskCount: 0 },
+    ])
+    rpc.listLists.mockImplementation(async (projectId: string) =>
+      projectId === 'project-2'
+        ? [{ id: 'list-9', projectId: 'project-2', name: 'Fieldwork', sortOrder: 1 }]
+        : [LIST],
+    )
+    rpc.createTask.mockResolvedValue({ ...TASK, id: 'task-3', projectId: 'project-2' })
+    const user = userEvent.setup()
+    render(<TaskBoard />)
+
+    await user.click(await screen.findByRole('button', { name: 'New task' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.getByRole('combobox', { name: /^List/ })).toBeDisabled()
+
+    await user.click(dialog.getByRole('combobox', { name: /^Project/ }))
+    await user.click(await screen.findByRole('option', { name: 'Audit prep' }))
+    await user.click(dialog.getByRole('combobox', { name: /^List/ }))
+    await user.click(await screen.findByRole('option', { name: 'Fieldwork' }))
+    await user.type(
+      dialog.getByRole('textbox', { name: /what has to be done/i }),
+      'Book the auditors',
+    )
+    await user.click(dialog.getByRole('button', { name: 'Add task' }))
+
+    // Assigned to whoever made it, so it lands on the board they are looking at.
+    await waitFor(() =>
+      expect(rpc.createTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: 'project-2',
+          listId: 'list-9',
+          name: 'Book the auditors',
+          assigneeIds: ['user-1'],
+        }),
+      ),
+    )
+  })
+
+  it('will not save a task before a project is picked', async () => {
+    nav.search = 'project=mine'
+    const user = userEvent.setup()
+    render(<TaskBoard />)
+
+    await user.click(await screen.findByRole('button', { name: 'New task' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    await user.type(dialog.getByRole('textbox', { name: /what has to be done/i }), 'Anything')
+    await user.click(dialog.getByRole('button', { name: 'Add task' }))
+
+    expect(await dialog.findByText('Pick a project.')).toBeInTheDocument()
+    expect(rpc.createTask).not.toHaveBeenCalled()
+  })
+
+  it('asks which project a new list goes in', async () => {
+    nav.search = 'project=mine'
+    rpc.createList.mockResolvedValue({
+      id: 'list-5',
+      projectId: 'project-1',
+      name: 'Q4',
+      sortOrder: 2,
+    })
+    const user = userEvent.setup()
+    render(<TaskBoard />)
+
+    await user.click(await screen.findByRole('button', { name: 'New list' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    await user.click(dialog.getByRole('combobox', { name: /^Project/ }))
+    await user.click(await screen.findByRole('option', { name: 'Onboarding revamp' }))
+    await user.type(dialog.getByRole('textbox', { name: /list name/i }), 'Q4')
+    await user.click(dialog.getByRole('button', { name: 'Create list' }))
+
+    await waitFor(() =>
+      expect(rpc.createList).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: 'project-1', name: 'Q4' }),
+      ),
+    )
   })
 
   it('offers all projects at the top of the project picker', async () => {

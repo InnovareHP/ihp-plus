@@ -98,16 +98,20 @@ interface CreateTaskContext {
   values: TaskFormValues
   statuses: readonly TaskStatusRow[]
   people: ReadonlyMap<string, string>
+  /** Who is creating it: a board spanning projects lists only that person's tasks. */
+  viewerId?: string
 }
 
 export function useCreateTask() {
   // The created row is returned: whatever the caller does next — files, a redirect — needs its id.
   return useBoardMutation<CreateTaskContext, TaskRow>({
     mutationFn: ({ values }) => createTask(values),
-    apply: (rows, { values, statuses, people }, query) => {
+    apply: (rows, { values, statuses, people, viewerId }, query) => {
       // A board filtered to another project, another list, or to someone else's work would not
       // list this task, so it must not grow a row that vanishes on the next refetch.
-      if (query.projectId !== values.projectId) return [...rows]
+      if (query.acrossProjects) {
+        if (!viewerId || !values.assigneeIds.includes(viewerId)) return [...rows]
+      } else if (query.projectId !== values.projectId) return [...rows]
       if (query.listId && query.listId !== values.listId) return [...rows]
       if (query.assignee === 'mine' && values.assigneeIds.length === 0) return [...rows]
       if (query.assignee === 'unassigned' && values.assigneeIds.length > 0) return [...rows]

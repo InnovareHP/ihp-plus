@@ -1,8 +1,8 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, Stack, TextInput } from '@mantine/core'
-import { useForm } from 'react-hook-form'
+import { Button, Group, Modal, Select, Stack, TextInput } from '@mantine/core'
+import { Controller, useForm } from 'react-hook-form'
 import { useCreateList, useUpdateList } from '../hooks/use-task-projects'
 import { listFormSchema, type ListFormValues, type TaskListRow } from '../schema'
 
@@ -10,14 +10,23 @@ export interface ListFormModalProps {
   opened: boolean
   onClose: () => void
   projectId: string
+  /** Given on a board spanning every project, so a new list asks which project it goes in. */
+  projects?: readonly { value: string; label: string }[]
   /** Set when an existing list is being renamed rather than a new one created. */
   list?: TaskListRow | null
 }
 
-export function ListFormModal({ opened, onClose, projectId, list = null }: ListFormModalProps) {
+export function ListFormModal({
+  opened,
+  onClose,
+  projectId,
+  projects,
+  list = null,
+}: ListFormModalProps) {
   const create = useCreateList()
   const update = useUpdateList()
   const {
+    control,
     register,
     handleSubmit,
     reset,
@@ -51,6 +60,26 @@ export function ListFormModal({ opened, onClose, projectId, list = null }: ListF
     <Modal opened={opened} onClose={onClose} title={list ? 'Rename list' : 'New list'} centered>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Stack gap="md">
+          {projects && !list ? (
+            <Controller
+              control={control}
+              name="projectId"
+              render={({ field }) => (
+                <Select
+                  label="Project"
+                  placeholder="Choose a project"
+                  required
+                  data={projects}
+                  value={field.value || null}
+                  onChange={(value) => field.onChange(value ?? '')}
+                  onBlur={field.onBlur}
+                  error={errors.projectId?.message}
+                  allowDeselect={false}
+                  searchable={projects.length > 8}
+                />
+              )}
+            />
+          ) : null}
           <TextInput
             {...register('name')}
             label="List name"

@@ -15,9 +15,7 @@ export function ItDepartmentSection({ itTeamId }: { itTeamId: string }) {
   return (
     <PageSection
       title="Who sees this page"
-      description="Members of the IT department see the websites. Its lead runs the checks."
-      maw={720}
-    >
+      description="Members of the IT department see the websites. Its lead runs the checks.">
       <ItDepartmentForm
         itTeamId={itTeamId}
         teams={teams.data ?? []}

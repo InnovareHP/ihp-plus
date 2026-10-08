@@ -11,7 +11,7 @@ import { TaskStatusGroup } from './task-status-group'
 export interface TaskListSectionProps {
   list: TaskListRow
   tasks: readonly Task[]
-  /** Absent where the section is not a real list, e.g. a project's share of your tasks. */
+  /** The list menu is absent where the section is not a real list, e.g. a project's share. */
   onAdd?: (list: TaskListRow) => void
   onRenameList?: (list: TaskListRow) => void
   onDeleteList?: (list: TaskListRow) => void
@@ -61,8 +61,8 @@ export function TaskListSection({
             {tasks.length === 1 ? '1 task' : `${tasks.length} tasks`}
           </Text>
         </Group>
-        {onAdd && onRenameList && onDeleteList ? (
-          <Group gap={4} wrap="nowrap">
+        <Group gap={4} wrap="nowrap">
+          {onAdd ? (
             <Button
               variant="subtle"
               size="sm"
@@ -71,6 +71,8 @@ export function TaskListSection({
             >
               Add task
             </Button>
+          ) : null}
+          {onRenameList && onDeleteList ? (
             <Menu position="bottom-end" withinPortal>
               <Menu.Target>
                 <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${list.name}`}>
@@ -93,8 +95,8 @@ export function TaskListSection({
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
-          </Group>
-        ) : null}
+          ) : null}
+        </Group>
       </Group>
 
       {tasks.length === 0 ? (

@@ -10,6 +10,8 @@ export interface TaskFormModalProps {
   title: string
   submitLabel: string
   lists: readonly TaskListRow[]
+  projects?: readonly { value: string; label: string }[]
+  projectLocked?: boolean
   people: readonly { value: string; label: string }[]
   defaults: TaskFormValues
   onSave: (values: TaskFormValues, files: readonly File[]) => Promise<void>
@@ -21,6 +23,8 @@ export function TaskFormModal({
   title,
   submitLabel,
   lists,
+  projects,
+  projectLocked,
   people,
   defaults,
   onSave,
@@ -38,6 +42,8 @@ export function TaskFormModal({
       <TaskForm
         key={defaults.name || 'new'}
         lists={lists}
+        projects={projects}
+        projectLocked={projectLocked}
         people={people}
         defaults={defaults}
         submitLabel={submitLabel}

@@ -64,7 +64,7 @@ export const projectFormSchema = z.object({
 })
 
 export const listFormSchema = z.object({
-  projectId: z.string().min(1),
+  projectId: z.string().min(1, 'Pick a project.'),
   name: z.string().trim().min(1, 'Name the list.').max(80, 'Keep the name under 80 characters.'),
 })
 
@@ -81,7 +81,7 @@ export const statusFormSchema = z.object({
 
 export const taskFormSchema = z
   .object({
-    projectId: z.string().min(1),
+    projectId: z.string().min(1, 'Pick a project.'),
     listId: z.string().min(1, 'Pick a list.'),
     name: z.string().trim().min(1, 'Say what has to be done.').max(200, 'Keep the title shorter.'),
     description: z
