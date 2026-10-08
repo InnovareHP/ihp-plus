@@ -211,6 +211,30 @@ describe('loadTasks', () => {
     )
   })
 
+  it('gathers the caller’s own tasks from every active project at once', async () => {
+    prisma.task.findMany.mockResolvedValue([])
+    prisma.taskProject.findFirst.mockClear()
+
+    await loadTasks({
+      projectId: '',
+      listId: undefined,
+      assignee: 'all',
+      search: '',
+      includeArchived: false,
+      acrossProjects: true,
+    })
+
+    // No one project to check: the organization and the caller bound it instead.
+    expect(prisma.taskProject.findFirst).not.toHaveBeenCalled()
+    const where = prisma.task.findMany.mock.calls.at(-1)?.[0].where
+    expect(where).not.toHaveProperty('projectId')
+    expect(where).toMatchObject({
+      organizationId: 'org-1',
+      project: { isArchived: false },
+      AND: [{ assignees: { some: { userId: 'user-1' } } }],
+    })
+  })
+
   it('counts a task late only while it is still open', async () => {
     prisma.task.findMany.mockResolvedValue([])
 

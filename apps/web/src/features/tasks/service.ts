@@ -577,7 +577,7 @@ async function teamMemberIds(organizationId: string, teamId: string) {
 
 export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
   const caller = await requireMember()
-  await projectOrThrow(caller, query.projectId)
+  if (!query.acrossProjects) await projectOrThrow(caller, query.projectId)
 
   const search = query.search.trim()
   // Assignees are plain user ids, so a department is resolved to its people first.
@@ -585,7 +585,10 @@ export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
   const tasks = await db.task.findMany({
     where: {
       organizationId: caller.organizationId,
-      projectId: query.projectId,
+      // Across projects means the caller's own work in every project still in use.
+      ...(query.acrossProjects
+        ? { project: { isArchived: false } }
+        : { projectId: query.projectId }),
       ...(query.listId ? { listId: query.listId } : {}),
       ...(query.includeArchived ? {} : { isArchived: false }),
       // Work is found by what was said about it as often as by what it was called.
@@ -606,7 +609,10 @@ export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
       ...(query.assignee === 'unassigned' ? { assignees: { none: {} } } : {}),
       ...(query.assigneeUserId ? { assignees: { some: { userId: query.assigneeUserId } } } : {}),
       // In AND so it narrows alongside "mine" or a person rather than replacing their clause.
-      ...(query.teamId ? { AND: [{ assignees: { some: { userId: { in: teamUserIds } } } }] } : {}),
+      AND: [
+        ...(query.teamId ? [{ assignees: { some: { userId: { in: teamUserIds } } } }] : []),
+        ...(query.acrossProjects ? [{ assignees: { some: { userId: caller.userId } } }] : []),
+      ],
       ...(query.statusId ? { statusId: query.statusId } : {}),
       ...(query.priorities && query.priorities.length > 0
         ? { priority: { in: [...query.priorities] } }

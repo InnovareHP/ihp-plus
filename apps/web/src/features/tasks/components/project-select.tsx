@@ -8,7 +8,7 @@ import {
   IconPencil,
   IconPlus,
 } from '@tabler/icons-react'
-import type { TaskProjectRow } from '../schema'
+import { MY_TASKS_PROJECT, type TaskProjectRow } from '../schema'
 
 export interface ProjectSelectProps {
   projects: readonly TaskProjectRow[]
@@ -34,10 +34,13 @@ export function ProjectSelect({
       <Select
         label="Project"
         placeholder="Choose a project"
-        data={projects.map((project) => ({
-          value: project.id,
-          label: `${project.name} (${project.taskCount})`,
-        }))}
+        data={[
+          { value: MY_TASKS_PROJECT, label: 'All projects (my tasks)' },
+          ...projects.map((project) => ({
+            value: project.id,
+            label: `${project.name} (${project.taskCount})`,
+          })),
+        ]}
         value={value || null}
         onChange={(next) => onChange(next ?? '')}
         allowDeselect={false}

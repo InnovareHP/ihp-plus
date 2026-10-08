@@ -152,6 +152,7 @@ export async function listTasks(query: TaskQuery): Promise<TaskRow[]> {
       priorities: (query.priorities ?? []).map(priorityToProto),
       due: dueFilterToProto(query.due ?? 'any'),
       teamId: query.teamId || undefined,
+      acrossProjects: query.acrossProjects ?? false,
     }),
   )
   return response.tasks.map(taskFromProto)

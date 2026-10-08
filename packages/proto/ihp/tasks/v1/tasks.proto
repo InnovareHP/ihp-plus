@@ -252,6 +252,8 @@ message ListTasksRequest {
   TaskDueFilter due = 9;
   // Tasks assigned to anyone in this department.
   optional string team_id = 10;
+  // Every active project at once, narrowed to the caller's own tasks; project_id is then ignored.
+  bool across_projects = 11;
 }
 
 message ListTasksResponse {

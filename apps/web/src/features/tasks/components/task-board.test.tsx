@@ -331,6 +331,51 @@ describe('TaskBoard', () => {
     )
   })
 
+  it('shows my tasks from every project, each saying where it is from', async () => {
+    nav.search = 'view=list&project=mine'
+    rpc.listProjects.mockResolvedValue([
+      PROJECT,
+      { ...PROJECT, id: 'project-2', name: 'Audit prep', taskCount: 1 },
+    ])
+    rpc.listTasks.mockResolvedValue([
+      TASK,
+      { ...TASK, id: 'task-2', taskNumber: 2, name: 'Book the auditors', projectId: 'project-2' },
+    ])
+
+    render(<TaskBoard />)
+
+    expect(await screen.findByText('Book the auditors')).toBeInTheDocument()
+    expect(rpc.listTasks).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: '', acrossProjects: true }),
+    )
+    // Grouped by project in the list view, and nothing to create without one picked.
+    expect(screen.getByRole('heading', { name: 'Audit prep' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Onboarding revamp' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'New task' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Add task' })).not.toBeInTheDocument()
+  })
+
+  it('offers all projects at the top of the project picker', async () => {
+    const user = userEvent.setup()
+    await renderBoard()
+
+    await user.click(screen.getByRole('combobox', { name: 'Project' }))
+    await user.click(await screen.findByRole('option', { name: 'All projects (my tasks)' }))
+
+    expect(nav.replace).toHaveBeenCalledWith(expect.stringContaining('project=mine'), {
+      scroll: false,
+    })
+  })
+
+  it('says so when nothing anywhere is assigned to me', async () => {
+    nav.search = 'project=mine'
+    rpc.listTasks.mockResolvedValue([])
+
+    render(<TaskBoard />)
+
+    expect(await screen.findByText('Nothing is assigned to you')).toBeInTheDocument()
+  })
+
   it('narrows to a department picked from the URL', async () => {
     nav.search = 'view=list&department=team-it'
 

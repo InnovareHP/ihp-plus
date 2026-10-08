@@ -22,6 +22,7 @@ import {
 } from '../schema'
 import { formatDuration } from '../utils/duration'
 import { ParentTaskLine } from './parent-task-line'
+import { ProjectTaskLine } from './project-task-line'
 
 const due = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
@@ -94,6 +95,7 @@ export function TaskRow({
             >
               {task.name}
             </Text>
+            <ProjectTaskLine task={task} />
             <ParentTaskLine task={task} />
             <Group gap="xs" wrap="wrap">
               <Text size="xs" c="dimmed">

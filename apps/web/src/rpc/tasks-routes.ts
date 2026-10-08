@@ -139,6 +139,7 @@ export const tasks: ServiceImpl<typeof TasksService> = {
       priorities: request.priorities.map(priorityFromProto),
       due: dueFilterFromProto(request.due),
       teamId: request.teamId,
+      acrossProjects: request.acrossProjects,
     })
     return { tasks: rows.map(taskToProto) }
   },

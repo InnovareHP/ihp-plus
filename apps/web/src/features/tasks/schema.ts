@@ -211,7 +211,12 @@ export interface TaskRow {
   parentName: string | undefined
   parentNumber: number | undefined
   subtasks: TaskSubtaskRow[]
+  /** Set by the board when it spans projects, so a card can say which one it is from. */
+  projectName?: string
 }
+
+/** The project picker's "all projects, my tasks" entry, kept in ?project= like any project. */
+export const MY_TASKS_PROJECT = 'mine'
 
 export interface TaskQuery {
   projectId: string
@@ -224,6 +229,8 @@ export interface TaskQuery {
   priorities?: readonly TaskPriority[]
   due?: TaskDueFilter
   teamId?: string | undefined
+  /** Every active project at once, only the caller's own tasks. */
+  acrossProjects?: boolean
 }
 
 export interface UpdateTaskValues {

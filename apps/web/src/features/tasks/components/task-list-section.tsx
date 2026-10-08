@@ -11,9 +11,12 @@ import { TaskStatusGroup } from './task-status-group'
 export interface TaskListSectionProps {
   list: TaskListRow
   tasks: readonly Task[]
-  onAdd: (list: TaskListRow) => void
-  onRenameList: (list: TaskListRow) => void
-  onDeleteList: (list: TaskListRow) => void
+  /** Absent where the section is not a real list, e.g. a project's share of your tasks. */
+  onAdd?: (list: TaskListRow) => void
+  onRenameList?: (list: TaskListRow) => void
+  onDeleteList?: (list: TaskListRow) => void
+  /** Off when the section mixes lists, whose orders the arrows could not keep apart. */
+  canReorder?: boolean
   selected: ReadonlySet<string>
   onSelect: (task: Task, selected: boolean) => void
   onOpen: (task: Task) => void
@@ -36,8 +39,16 @@ export function TaskListSection({
   onMove,
   onEdit,
   onDelete,
+  canReorder = true,
 }: TaskListSectionProps) {
-  const groups = useMemo(() => groupTasksByStatus(tasks), [tasks])
+  const groups = useMemo(() => {
+    const grouped = groupTasksByStatus(tasks)
+    if (canReorder) return grouped
+    return grouped.map((group) => ({
+      ...group,
+      items: group.items.map((item) => ({ ...item, canMoveUp: false, canMoveDown: false })),
+    }))
+  }, [tasks, canReorder])
 
   return (
     <Stack gap="sm">
@@ -50,38 +61,40 @@ export function TaskListSection({
             {tasks.length === 1 ? '1 task' : `${tasks.length} tasks`}
           </Text>
         </Group>
-        <Group gap={4} wrap="nowrap">
-          <Button
-            variant="subtle"
-            size="sm"
-            leftSection={<IconPlus size={16} aria-hidden />}
-            onClick={() => onAdd(list)}
-          >
-            Add task
-          </Button>
-          <Menu position="bottom-end" withinPortal>
-            <Menu.Target>
-              <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${list.name}`}>
-                <IconDotsVertical size={16} aria-hidden />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item
-                leftSection={<IconPencil size={16} aria-hidden />}
-                onClick={() => onRenameList(list)}
-              >
-                Rename list
-              </Menu.Item>
-              <Menu.Item
-                color="red"
-                leftSection={<IconTrash size={16} aria-hidden />}
-                onClick={() => onDeleteList(list)}
-              >
-                Delete list
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        </Group>
+        {onAdd && onRenameList && onDeleteList ? (
+          <Group gap={4} wrap="nowrap">
+            <Button
+              variant="subtle"
+              size="sm"
+              leftSection={<IconPlus size={16} aria-hidden />}
+              onClick={() => onAdd(list)}
+            >
+              Add task
+            </Button>
+            <Menu position="bottom-end" withinPortal>
+              <Menu.Target>
+                <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${list.name}`}>
+                  <IconDotsVertical size={16} aria-hidden />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<IconPencil size={16} aria-hidden />}
+                  onClick={() => onRenameList(list)}
+                >
+                  Rename list
+                </Menu.Item>
+                <Menu.Item
+                  color="red"
+                  leftSection={<IconTrash size={16} aria-hidden />}
+                  onClick={() => onDeleteList(list)}
+                >
+                  Delete list
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </Group>
+        ) : null}
       </Group>
 
       {tasks.length === 0 ? (
@@ -89,9 +102,11 @@ export function TaskListSection({
           title={`Nothing in ${list.name} yet`}
           description="Add the first task so the work in this list is visible to everyone."
           action={
-            <Button size="sm" onClick={() => onAdd(list)}>
-              Add task
-            </Button>
+            onAdd ? (
+              <Button size="sm" onClick={() => onAdd(list)}>
+                Add task
+              </Button>
+            ) : undefined
           }
         />
       ) : (

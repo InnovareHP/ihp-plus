@@ -34,6 +34,7 @@ import {
 import {
   boardQuerySchema,
   DEFAULT_BOARD_QUERY,
+  MY_TASKS_PROJECT,
   TASK_ASSIGNEE_FILTERS,
   TASK_ASSIGNEE_FILTER_LABELS,
   TASK_DUE_FILTERS,
@@ -126,7 +127,9 @@ export function TaskBoard() {
 
   const projects = useTaskProjects()
   const projectRows = useMemo(() => projects.data ?? [], [projects.data])
-  const projectId = query.project || projectRows[0]?.id || ''
+  // "All projects (my tasks)" is a picker entry, not a project: no lists, nothing to create in.
+  const acrossProjects = query.project === MY_TASKS_PROJECT
+  const projectId = acrossProjects ? '' : query.project || projectRows[0]?.id || ''
 
   const lists = useTaskLists(projectId || undefined)
   const listRows = useMemo(() => lists.data ?? [], [lists.data])
@@ -147,10 +150,32 @@ export function TaskBoard() {
       priorities: query.priority,
       due: query.due,
       teamId: query.department || undefined,
+      acrossProjects,
     },
-    Boolean(projectId),
+    Boolean(projectId) || acrossProjects,
   )
-  const tasks = useMemo(() => board.data ?? [], [board.data])
+  const projectNames = useMemo(
+    () => new Map(projectRows.map((project) => [project.id, project.name])),
+    [projectRows],
+  )
+  const tasks = useMemo(() => {
+    const rows = board.data ?? []
+    return acrossProjects
+      ? rows.map((task) => ({ ...task, projectName: projectNames.get(task.projectId) }))
+      : rows
+  }, [board.data, acrossProjects, projectNames])
+
+  // Across projects the list view groups by project, as a list belongs to just one of them.
+  const projectSections = useMemo(
+    () =>
+      projectRows
+        .map((project) => ({
+          list: { id: project.id, projectId: project.id, name: project.name, sortOrder: 0 },
+          tasks: tasks.filter((task) => task.projectId === project.id),
+        }))
+        .filter((section) => section.tasks.length > 0),
+    [projectRows, tasks],
+  )
 
   const create = useCreateTask()
   const update = useUpdateTask()
@@ -254,6 +279,13 @@ export function TaskBoard() {
       listId: task.listId,
       beforeTaskId: before?.id,
     })
+  }
+
+  // Editing needs the task's own project lists, which a board spanning projects does not hold.
+  function editTask(task: TaskRow) {
+    const list = listRows.find((row) => row.id === task.listId)
+    if (list && !acrossProjects) setComposing({ list, task })
+    else setQuery({ task: task.id })
   }
 
   async function handleSave(values: TaskFormValues, files: readonly File[]) {
@@ -365,7 +397,7 @@ export function TaskBoard() {
     <Stack gap="lg">
       <ProjectSelect
         projects={projectRows}
-        value={projectId}
+        value={acrossProjects ? MY_TASKS_PROJECT : projectId}
         onChange={(next) => setQuery({ project: next, list: '' })}
         onCreate={projectModal.open}
         onRename={setRenamingProject}
@@ -378,7 +410,11 @@ export function TaskBoard() {
 
       <PageSection
         title="Board"
-        description="Every list in this project, in the order you set."
+        description={
+          acrossProjects
+            ? 'Everything assigned to you, from every project still in use.'
+            : 'Every list in this project, in the order you set.'
+        }
         actions={
           <SegmentedControl
             size="sm"
@@ -408,19 +444,23 @@ export function TaskBoard() {
                 <Button variant="default" onClick={columnsModal.open}>
                   Columns
                 </Button>
-                <Button variant="default" onClick={listModal.open}>
-                  New list
-                </Button>
-                <Button
-                  leftSection={<IconPlus size={16} aria-hidden />}
-                  disabled={listRows.length === 0}
-                  onClick={() => {
-                    const list = listRows[0]
-                    if (list) setComposing({ list, task: null })
-                  }}
-                >
-                  New task
-                </Button>
+                {acrossProjects ? null : (
+                  <>
+                    <Button variant="default" onClick={listModal.open}>
+                      New list
+                    </Button>
+                    <Button
+                      leftSection={<IconPlus size={16} aria-hidden />}
+                      disabled={listRows.length === 0}
+                      onClick={() => {
+                        const list = listRows[0]
+                        if (list) setComposing({ list, task: null })
+                      }}
+                    >
+                      New task
+                    </Button>
+                  </>
+                )}
               </Group>
             }
           />
@@ -456,6 +496,17 @@ export function TaskBoard() {
             />
           ) : null}
 
+          {!board.isPending &&
+          !board.isError &&
+          acrossProjects &&
+          tasks.length === 0 &&
+          !query.search ? (
+            <EmptyState
+              title="Nothing is assigned to you"
+              description="Tasks assigned to you in any project show up here, so this is the one place to check your work."
+            />
+          ) : null}
+
           {!board.isError && query.view === 'board' && !board.isPending ? (
             <TaskKanban
               statuses={statusRows}
@@ -477,15 +528,32 @@ export function TaskBoard() {
                   status: statusRows.find((row) => row.id === statusId),
                 })
               }
-              onEdit={(task) => {
-                const list = listRows.find((row) => row.id === task.listId)
-                if (list) setComposing({ list, task })
-              }}
+              onEdit={editTask}
               onDelete={(task) => void remove.remove([task])}
             />
           ) : null}
 
-          {!board.isError && query.view === 'list'
+          {!board.isError && query.view === 'list' && acrossProjects
+            ? projectSections.map((section) => (
+                <TaskListSection
+                  key={section.list.id}
+                  list={section.list}
+                  tasks={section.tasks}
+                  canReorder={false}
+                  onOpen={(task) => setQuery({ task: task.id })}
+                  onToggleComplete={(task, completed) =>
+                    complete.mutate({ taskId: task.id, completed, statuses: statusRows })
+                  }
+                  onMove={handleMove}
+                  onEdit={editTask}
+                  onDelete={(task) => void remove.remove([task])}
+                  selected={selected}
+                  onSelect={toggleSelected}
+                />
+              ))
+            : null}
+
+          {!board.isError && query.view === 'list' && !acrossProjects
             ? listRows.map((list) => (
                 <TaskListSection
                   key={list.id}
@@ -499,10 +567,7 @@ export function TaskBoard() {
                     complete.mutate({ taskId: task.id, completed, statuses: statusRows })
                   }
                   onMove={handleMove}
-                  onEdit={(task) => {
-                    const list = listRows.find((row) => row.id === task.listId)
-                    if (list) setComposing({ list, task })
-                  }}
+                  onEdit={editTask}
                   onDelete={(task) => void remove.remove([task])}
                   selected={selected}
                   onSelect={toggleSelected}
