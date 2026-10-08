@@ -1,0 +1,67 @@
+// Client websites the IT department watches, and the check its lead runs on each of them at
+// clock-in and again at clock-out. Its own Postgres schema because `pnpm db:auth-schema`
+// rewrites auth.prisma wholesale.
+
+// One row per organization. itTeamId names the department that sees the websites page; unset
+// means only admins do, until one picks it.
+model WebsiteSettings {
+  organizationId String   @id
+  itTeamId       String?
+  updatedAt      DateTime @updatedAt
+
+  @@map("websiteSettings")
+  @@schema("websites")
+}
+
+model Website {
+  id             String  @id @default(uuid())
+  // Plain columns, not relations: the generated auth models and Client own no website fields.
+  organizationId String
+  createdById    String?
+  clientId       String?
+
+  name  String
+  url   String
+  notes String @default("")
+
+  // Archiving keeps the month's history intact for the CSV, and is what undo reverses.
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  checks WebsiteCheck[]
+
+  @@index([organizationId, archivedAt])
+  @@index([clientId])
+  @@map("website")
+  @@schema("websites")
+}
+
+// One website on one working day at one end of the shift: the probe's reading and the lead's
+// verdict, which can differ when a page answers 200 but is visibly broken.
+model WebsiteCheck {
+  id             String @id @default(uuid())
+  organizationId String
+
+  websiteId String
+  website   Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  // The day in the attendance time zone, so the round matches the day the lead clocked.
+  workDate   DateTime @db.Date
+  round      String
+  status     String
+  httpStatus Int?
+  responseMs Int?
+  error      String   @default("")
+  note       String   @default("")
+
+  // Snapshot: the lead can leave, and the month's file must still say who checked.
+  checkedById   String
+  checkedByName String
+  checkedAt     DateTime @default(now())
+
+  @@unique([websiteId, workDate, round])
+  @@index([organizationId, workDate])
+  @@map("websiteCheck")
+  @@schema("websites")
+}

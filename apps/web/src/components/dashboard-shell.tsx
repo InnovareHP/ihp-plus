@@ -41,6 +41,7 @@ export interface DashboardShellProps {
   canManageOrganization?: boolean
   canApproveRequests?: boolean
   canManageHiring?: boolean
+  canViewWebsites?: boolean
   /** True while a portal admin is signed in as this user. */
   impersonating?: boolean
   children: ReactNode
@@ -61,6 +62,7 @@ export function DashboardShell({
   canManageOrganization = false,
   canApproveRequests = false,
   canManageHiring = false,
+  canViewWebsites = false,
   impersonating = false,
   children,
 }: DashboardShellProps) {
@@ -75,6 +77,7 @@ export function DashboardShell({
     canManageOrganization,
     canApproveRequests,
     canManageHiring,
+    canViewWebsites,
   })
 
   useHotkeys([['Escape', closeNav]])

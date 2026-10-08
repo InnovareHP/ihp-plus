@@ -10,6 +10,7 @@ export const routes = {
   bluebook: '/bluebook',
   letterhead: '/letterhead',
   library: '/library',
+  websites: '/websites',
   tasks: '/tasks',
   attendance: '/attendance',
   attendanceTeam: '/attendance/team',

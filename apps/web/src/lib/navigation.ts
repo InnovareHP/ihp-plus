@@ -13,6 +13,7 @@ import {
   IconLayoutDashboard,
   IconListCheck,
   IconSpeakerphone,
+  IconWorldCheck,
   type Icon,
 } from '@tabler/icons-react'
 import { routes } from './routes'
@@ -28,6 +29,8 @@ export interface NavLink {
   approverOnly?: boolean
   /** Only rendered for HR, or an admin, who runs hiring. */
   hiringOnly?: boolean
+  /** Only rendered for the IT department, or an admin who picks which department that is. */
+  itOnly?: boolean
   /** A live count beside the label; the shell decides what renders it. */
   badge?: 'bulletinUnread'
 }
@@ -53,6 +56,7 @@ export interface NavAccess {
   canManageOrganization: boolean
   canApproveRequests: boolean
   canManageHiring: boolean
+  canViewWebsites: boolean
 }
 
 export const NAV_SECTIONS: readonly NavSection[] = [
@@ -137,6 +141,13 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Internal library',
         description: 'Every document the company keeps in SharePoint',
         icon: IconFolderOpen,
+      },
+      {
+        href: routes.websites,
+        label: 'Website checks',
+        description: 'Client websites checked at time in and time out',
+        icon: IconWorldCheck,
+        itOnly: true,
       },
     ],
   },
@@ -297,6 +308,7 @@ function canSee(item: NavLink, access: NavAccess) {
   if (item.manageOnly && !access.canManageOrganization) return false
   if (item.approverOnly && !access.canApproveRequests) return false
   if (item.hiringOnly && !access.canManageHiring) return false
+  if (item.itOnly && !access.canViewWebsites) return false
   return true
 }
 

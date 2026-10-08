@@ -2,10 +2,21 @@ import { describe, expect, it } from 'vitest'
 import { breadcrumbsFor, isGroupOpen, isNavItemActive, visibleSections } from './navigation'
 import { routes } from './routes'
 
-const NOBODY = { canManageOrganization: false, canApproveRequests: false, canManageHiring: false }
-const APPROVER = { canManageOrganization: false, canApproveRequests: true, canManageHiring: false }
-const HR = { canManageOrganization: false, canApproveRequests: false, canManageHiring: true }
-const ADMIN = { canManageOrganization: true, canApproveRequests: true, canManageHiring: true }
+const NOBODY = {
+  canManageOrganization: false,
+  canApproveRequests: false,
+  canManageHiring: false,
+  canViewWebsites: false,
+}
+const APPROVER = { ...NOBODY, canApproveRequests: true }
+const HR = { ...NOBODY, canManageHiring: true }
+const IT = { ...NOBODY, canViewWebsites: true }
+const ADMIN = {
+  canManageOrganization: true,
+  canApproveRequests: true,
+  canManageHiring: true,
+  canViewWebsites: true,
+}
 
 function itemIn(access: typeof NOBODY, sectionId: string, label: string) {
   return visibleSections(access)
@@ -49,6 +60,13 @@ describe('navigation', () => {
       routes.letterhead,
       routes.library,
     ])
+  })
+
+  it('shows website checks to the IT department and admins, and to nobody else', () => {
+    expect(hrefsIn(NOBODY, 'workspace')).not.toContain(routes.websites)
+    expect(hrefsIn(HR, 'workspace')).not.toContain(routes.websites)
+    expect(hrefsIn(IT, 'workspace')).toContain(routes.websites)
+    expect(hrefsIn(ADMIN, 'workspace')).toContain(routes.websites)
   })
 
   it('shows hiring under Admin to owners, admins and HR, and to nobody else', () => {
