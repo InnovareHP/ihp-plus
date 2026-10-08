@@ -57,9 +57,14 @@ async function main() {
 
   const sites = await db.website.findMany({
     where: { organizationId: organization.id, archivedAt: null },
-    select: { id: true, name: true },
+    select: { id: true, name: true, createdAt: true },
     orderBy: { name: 'asc' },
   })
+
+  // A past day lists only sites created by then, so a later createdAt hides its backfilled rows.
+  const startDate = new Date(`${START}T00:00:00Z`)
+  const lateSites = sites.filter((site) => site.createdAt > startDate)
+  console.log(`${lateSites.length} site(s) created after ${START} to move back to it`)
 
   // A round someone already checked keeps its real reading; only gaps are filled.
   const existing = await db.websiteCheck.findMany({
@@ -103,6 +108,11 @@ async function main() {
   }
   const { count } = await db.websiteCheck.createMany({ data: rows, skipDuplicates: true })
   console.log(`wrote ${count} check(s)`)
+  const moved = await db.website.updateMany({
+    where: { id: { in: lateSites.map((site) => site.id) } },
+    data: { createdAt: startDate },
+  })
+  console.log(`moved ${moved.count} site(s) back to ${START}`)
 }
 
 main()
