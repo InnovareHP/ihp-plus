@@ -566,11 +566,22 @@ function dueWindow(due: TaskDueFilter | undefined): Prisma.TaskWhereInput {
   return { dueDate: { not: null, lte: end } }
 }
 
+/** Empty for a department in another organization, which then matches no task. */
+async function teamMemberIds(organizationId: string, teamId: string) {
+  const rows = await db.teamMember.findMany({
+    where: { teamId, team: { organizationId } },
+    select: { userId: true },
+  })
+  return rows.map((row) => row.userId)
+}
+
 export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
   const caller = await requireMember()
   await projectOrThrow(caller, query.projectId)
 
   const search = query.search.trim()
+  // Assignees are plain user ids, so a department is resolved to its people first.
+  const teamUserIds = query.teamId ? await teamMemberIds(caller.organizationId, query.teamId) : []
   const tasks = await db.task.findMany({
     where: {
       organizationId: caller.organizationId,
@@ -594,6 +605,8 @@ export async function loadTasks(query: TaskQuery): Promise<TaskRow[]> {
       ...(query.assignee === 'mine' ? { assignees: { some: { userId: caller.userId } } } : {}),
       ...(query.assignee === 'unassigned' ? { assignees: { none: {} } } : {}),
       ...(query.assigneeUserId ? { assignees: { some: { userId: query.assigneeUserId } } } : {}),
+      // In AND so it narrows alongside "mine" or a person rather than replacing their clause.
+      ...(query.teamId ? { AND: [{ assignees: { some: { userId: { in: teamUserIds } } } }] } : {}),
       ...(query.statusId ? { statusId: query.statusId } : {}),
       ...(query.priorities && query.priorities.length > 0
         ? { priority: { in: [...query.priorities] } }

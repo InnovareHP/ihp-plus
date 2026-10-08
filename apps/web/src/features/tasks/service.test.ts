@@ -46,6 +46,7 @@ const prisma = vi.hoisted(() => ({
   },
   taskTimeSettings: { findUnique: vi.fn(), upsert: vi.fn() },
   taskComment: { findMany: vi.fn(), create: vi.fn() },
+  teamMember: { findMany: vi.fn() },
   taskAttachment: { findMany: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn() },
   member: { findMany: vi.fn() },
   user: { findMany: vi.fn() },
@@ -176,6 +177,35 @@ describe('loadTasks', () => {
           assignees: { some: { userId: 'user-2' } },
           statusId: 'status-todo',
           priority: { in: ['urgent', 'high'] },
+        }),
+      }),
+    )
+  })
+
+  it('narrows to work assigned to anyone in a department, inside this organization', async () => {
+    prisma.task.findMany.mockResolvedValue([])
+    prisma.teamMember.findMany.mockResolvedValue([{ userId: 'user-2' }, { userId: 'user-3' }])
+
+    await loadTasks({
+      projectId: 'project-1',
+      listId: undefined,
+      assignee: 'mine',
+      search: '',
+      includeArchived: false,
+      teamId: 'team-it',
+    })
+
+    expect(prisma.teamMember.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { teamId: 'team-it', team: { organizationId: 'org-1' } },
+      }),
+    )
+    // Beside "mine", not instead of it: both clauses have to hold.
+    expect(prisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          assignees: { some: { userId: expect.any(String) } },
+          AND: [{ assignees: { some: { userId: { in: ['user-2', 'user-3'] } } } }],
         }),
       }),
     )

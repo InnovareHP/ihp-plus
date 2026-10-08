@@ -250,6 +250,8 @@ message ListTasksRequest {
   optional string status_id = 7;
   repeated TaskPriority priorities = 8;
   TaskDueFilter due = 9;
+  // Tasks assigned to anyone in this department.
+  optional string team_id = 10;
 }
 
 message ListTasksResponse {

@@ -8,7 +8,9 @@ import { useMemo, useState } from 'react'
 import { EmptyState } from '@/components/empty-state'
 import { PageSection } from '@/components/page-section'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
-import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
+import { searchParamsParser } from '@/lib/url-query'
+import { useRememberedUrlQuery } from '@/lib/use-remembered-url-query'
+import { useDirectoryDepartments } from '@/features/directory/hooks/use-directory'
 // The people who can be assigned are the same org list evaluations already fetches; a second
 // RPC returning the same rows would only be a second cache to keep warm.
 import { useEvaluationCandidates } from '@/features/evaluations/hooks/use-evaluations'
@@ -63,6 +65,9 @@ import { TaskStats } from './task-stats'
 // `priority` arrives as ?priority=urgent,high, so the parser is told it holds a list.
 const parseBoardQuery = searchParamsParser(boardQuerySchema, ['priority'])
 
+/** Per browser: the board opens on the project and filters it was left on. */
+const BOARD_STORAGE_KEY = 'ihp:tasks:board'
+
 const STATIC_FILTERS: readonly FilterControl[] = [
   {
     kind: 'select',
@@ -100,7 +105,13 @@ const STATIC_FILTERS: readonly FilterControl[] = [
 ]
 
 export function TaskBoard() {
-  const { query, setQuery, clearFilters } = useUrlQuery(parseBoardQuery, DEFAULT_BOARD_QUERY)
+  // The open task and its tab are one link's business, not something to reopen next visit.
+  const { query, setQuery, clearFilters } = useRememberedUrlQuery(
+    BOARD_STORAGE_KEY,
+    parseBoardQuery,
+    DEFAULT_BOARD_QUERY,
+    ['task', 'tab'],
+  )
   const [projectOpened, projectModal] = useDisclosure(false)
   const [listOpened, listModal] = useDisclosure(false)
   const [columnsOpened, columnsModal] = useDisclosure(false)
@@ -122,6 +133,7 @@ export function TaskBoard() {
   const statuses = useTaskStatuses()
   const statusRows = useMemo(() => statuses.data ?? [], [statuses.data])
   const candidates = useEvaluationCandidates()
+  const departments = useDirectoryDepartments()
 
   const board = useTaskBoard(
     {
@@ -134,6 +146,7 @@ export function TaskBoard() {
       statusId: query.status || undefined,
       priorities: query.priority,
       due: query.due,
+      teamId: query.department || undefined,
     },
     Boolean(projectId),
   )
@@ -152,7 +165,7 @@ export function TaskBoard() {
     [candidates.data],
   )
 
-  // Person and column are the organization's own rows, so those two filters are built from data.
+  // Person, department and column are the organization's own rows, so they are built from data.
   const filters = useMemo<readonly FilterControl[]>(
     () => [
       ...STATIC_FILTERS,
@@ -164,12 +177,21 @@ export function TaskBoard() {
       },
       {
         kind: 'select',
+        key: 'department',
+        label: 'Department',
+        options: (departments.data?.departments ?? []).map((department) => ({
+          value: department.teamId,
+          label: department.name,
+        })),
+      },
+      {
+        kind: 'select',
         key: 'status',
         label: 'Column',
         options: statusRows.map((status) => ({ value: status.id, label: status.name })),
       },
     ],
-    [people, statusRows],
+    [people, departments.data, statusRows],
   )
 
   const peopleById = useMemo(

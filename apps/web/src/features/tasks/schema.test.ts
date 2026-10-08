@@ -109,6 +109,7 @@ describe('boardQuerySchema', () => {
       project: 'project-1',
       view: 'board',
       person: '',
+      department: '',
       status: '',
       priority: [],
       due: 'any',

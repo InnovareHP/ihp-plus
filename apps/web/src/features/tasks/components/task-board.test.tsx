@@ -35,6 +35,7 @@ const actions = vi.hoisted(() => ({ uploadTaskAttachment: vi.fn() }))
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 const nav = vi.hoisted(() => ({ search: '', replace: vi.fn() }))
 const candidates = vi.hoisted(() => ({ useEvaluationCandidates: vi.fn() }))
+const directory = vi.hoisted(() => ({ listDepartments: vi.fn(), listPeople: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
 vi.mock('../actions', () => actions)
@@ -43,6 +44,7 @@ vi.mock('@/lib/auth-client', () => ({
 }))
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
 vi.mock('@/features/evaluations/hooks/use-evaluations', () => candidates)
+vi.mock('@/features/directory/rpc', () => directory)
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: nav.replace }),
   usePathname: () => '/tasks',
@@ -111,6 +113,13 @@ beforeEach(() => {
   rpc.listStatuses.mockResolvedValue(STATUSES)
   rpc.listTasks.mockResolvedValue([TASK])
   rpc.listConversation.mockResolvedValue({ comments: [], attachments: [] })
+  directory.listDepartments.mockResolvedValue({
+    departments: [{ teamId: 'team-it', name: 'Information Technology', memberCount: 3 }],
+    unassignedCount: 0,
+  })
+  // The board remembers its filters per browser; each case starts from a clean slate.
+  window.localStorage.clear()
+  nav.replace.mockClear()
   candidates.useEvaluationCandidates.mockReturnValue({
     data: [{ userId: 'user-2', name: 'Grace Hopper', email: 'grace@example.com' }],
   })
@@ -318,6 +327,35 @@ describe('TaskBoard', () => {
         due: 'overdue',
         assigneeUserId: 'user-2',
         statusId: 'status-todo',
+      }),
+    )
+  })
+
+  it('narrows to a department picked from the URL', async () => {
+    nav.search = 'view=list&department=team-it'
+
+    await renderBoard()
+
+    expect(rpc.listTasks).toHaveBeenCalledWith(expect.objectContaining({ teamId: 'team-it' }))
+  })
+
+  it('remembers its filters, but not the open task, for the next visit', async () => {
+    nav.search = 'view=list&department=team-it&task=task-1'
+
+    await renderBoard()
+
+    expect(window.localStorage.getItem('ihp:tasks:board')).toBe('view=list&department=team-it')
+  })
+
+  it('opens bare on the filters it was left on', async () => {
+    window.localStorage.setItem('ihp:tasks:board', 'view=list&department=team-it')
+    nav.search = ''
+
+    render(<TaskBoard />)
+
+    await waitFor(() =>
+      expect(nav.replace).toHaveBeenCalledWith('/tasks?view=list&department=team-it', {
+        scroll: false,
       }),
     )
   })

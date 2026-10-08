@@ -129,6 +129,7 @@ export const boardQuerySchema = z.object({
   list: z.string().trim().max(64).catch('').default(''),
   assignee: z.enum(TASK_ASSIGNEE_FILTERS).catch('all').default('all'),
   person: z.string().trim().max(64).catch('').default(''),
+  department: z.string().trim().max(64).catch('').default(''),
   status: z.string().trim().max(64).catch('').default(''),
   priority: z.array(z.enum(TASK_PRIORITIES)).catch([]).default([]),
   due: z.enum(TASK_DUE_FILTERS).catch('any').default('any'),
@@ -222,6 +223,7 @@ export interface TaskQuery {
   statusId?: string | undefined
   priorities?: readonly TaskPriority[]
   due?: TaskDueFilter
+  teamId?: string | undefined
 }
 
 export interface UpdateTaskValues {
