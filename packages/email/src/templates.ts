@@ -896,3 +896,28 @@ export function scorecardRequestTemplate(options: {
     }),
   }
 }
+
+export function websiteProblemsTemplate(options: {
+  roundLabel: string
+  dayLabel: string
+  /** One line per site, e.g. "Riverside site (riverside.example): Down, HTTP 503". */
+  problems: readonly string[]
+  url: string
+}): PreparedEmail {
+  const count = options.problems.length
+  const sites = count === 1 ? '1 website needs' : `${count} websites need`
+  return {
+    subject: `${sites} attention: ${options.roundLabel.toLowerCase()} check, ${options.dayLabel}`,
+    ...renderEmail({
+      preheader: `The automatic ${options.roundLabel.toLowerCase()} check found ${count === 1 ? 'a problem' : 'problems'}.`,
+      heading: `${sites} attention`,
+      body: [
+        `The automatic ${options.roundLabel.toLowerCase()} check on ${options.dayLabel} could not confirm these client websites are running well:`,
+      ],
+      steps: options.problems,
+      action: { label: 'Open website checks', url: options.url },
+      footnote:
+        'You get this because you manage the organization and nobody from IT is on shift at weekends.',
+    }),
+  }
+}

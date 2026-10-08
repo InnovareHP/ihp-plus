@@ -4,4 +4,5 @@ export const websiteKeys = {
   // An empty date is "today", which the server resolves in the attendance time zone.
   checklist: (date: string) => [...websiteKeys.checklists(), date] as const,
   clientOptions: () => [...websiteKeys.all, 'client-options'] as const,
+  websiteOptions: () => [...websiteKeys.all, 'website-options'] as const,
 }

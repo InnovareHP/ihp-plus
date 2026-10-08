@@ -2,12 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const prisma = vi.hoisted(() => ({
   website: {
-    findMany: vi.fn(async (): Promise<unknown[]> => []),
+    findMany: vi.fn<(args: { where: Record<string, unknown> }) => Promise<unknown[]>>(
+      async () => [],
+    ),
     findFirst: vi.fn(),
     create: vi.fn(),
     updateMany: vi.fn(),
   },
-  websiteCheck: { findMany: vi.fn(async (): Promise<unknown[]> => []), upsert: vi.fn() },
+  websiteCheck: {
+    findMany: vi.fn<(args: { where: Record<string, unknown> }) => Promise<unknown[]>>(
+      async () => [],
+    ),
+    upsert: vi.fn(),
+  },
   websiteSettings: { upsert: vi.fn() },
   client: { findMany: vi.fn(async (): Promise<unknown[]> => []), findFirst: vi.fn() },
   team: { findFirst: vi.fn() },
@@ -25,12 +32,14 @@ const LEAD = {
 }
 
 const access = vi.hoisted(() => ({ websitesAccess: vi.fn() }))
-const probe = vi.hoisted(() => ({ probeWebsite: vi.fn() }))
+const service = vi.hoisted(() => ({
+  timeZoneOf: vi.fn(async () => 'UTC'),
+  runRoundFor: vi.fn(async () => ({ today: new Date().toISOString().slice(0, 10), checked: 1 })),
+}))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./access', () => access)
-vi.mock('./probe', () => probe)
-vi.mock('./service', () => ({ timeZoneOf: vi.fn(async () => 'UTC') }))
+vi.mock('./service', () => service)
 
 const { createWebsite, exportMonth, loadChecklist, recordCheck, runRound, saveItTeam } =
   await import('./actions')
@@ -66,7 +75,7 @@ describe('who may do what', () => {
 
     expect((await loadChecklist()).ok).toBe(true)
     expect(await runRound({ round: 'clock_in' })).toMatchObject({ ok: false })
-    expect(probe.probeWebsite).not.toHaveBeenCalled()
+    expect(service.runRoundFor).not.toHaveBeenCalled()
   })
 
   it('leaves picking the IT department to admins', async () => {
@@ -76,27 +85,26 @@ describe('who may do what', () => {
 })
 
 describe('runRound', () => {
-  it('opens every site and records what came back as today’s check', async () => {
+  it('runs the round as the lead and answers with today’s list', async () => {
     prisma.website.findMany.mockResolvedValue([SITE])
-    probe.probeWebsite.mockResolvedValue({ httpStatus: 503, responseMs: 80, error: '' })
 
     const result = await runRound({ round: 'clock_in' })
 
     expect(result.ok).toBe(true)
-    expect(probe.probeWebsite).toHaveBeenCalledWith(SITE.url)
-    const call = prisma.websiteCheck.upsert.mock.calls[0]?.[0]
-    expect(call.where.websiteId_workDate_round).toEqual({
-      websiteId: 'site-1',
-      workDate: new Date(`${today}T00:00:00.000Z`),
-      round: 'clock_in',
+    expect(service.runRoundFor).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-1', userName: 'Ada Lovelace' }),
+      'clock_in',
+      { websiteId: undefined },
+    )
+  })
+
+  it('says so when the one site asked for is gone', async () => {
+    service.runRoundFor.mockResolvedValueOnce({ today, checked: 0 })
+
+    expect(await runRound({ round: 'clock_out', websiteId: 'gone' })).toEqual({
+      ok: false,
+      message: 'That website is no longer on the list.',
     })
-    expect(call.create).toMatchObject({
-      status: 'down',
-      httpStatus: 503,
-      checkedByName: 'Ada Lovelace',
-    })
-    // A rerun keeps whatever the lead wrote.
-    expect(call.update).not.toHaveProperty('note')
   })
 })
 
@@ -166,7 +174,7 @@ describe('exportMonth', () => {
       },
     ])
 
-    const result = await exportMonth(month)
+    const result = await exportMonth({ month, websiteId: '' })
 
     if (!result.ok) throw new Error(result.message)
     expect(result.data.rows).toHaveLength(Number(today.slice(8, 10)))
@@ -176,9 +184,33 @@ describe('exportMonth', () => {
   })
 
   it('refuses a month that has not started', async () => {
-    expect(await exportMonth('2999-01')).toEqual({
+    expect(await exportMonth({ month: '2999-01', websiteId: '' })).toEqual({
       ok: false,
       message: 'That month has not started yet.',
+    })
+  })
+
+  it('narrows the report to one website and names it', async () => {
+    const month = today.slice(0, 7)
+    prisma.website.findMany.mockResolvedValue([])
+    prisma.website.findFirst.mockResolvedValue({ name: 'Riverside site' })
+
+    const result = await exportMonth({ month, websiteId: 'site-1' })
+
+    if (!result.ok) throw new Error(result.message)
+    expect(result.data.websiteName).toBe('Riverside site')
+    expect(prisma.website.findMany.mock.calls[0]?.[0].where).toMatchObject({ id: 'site-1' })
+    expect(prisma.websiteCheck.findMany.mock.calls[0]?.[0].where).toMatchObject({
+      websiteId: 'site-1',
+    })
+  })
+
+  it('refuses a website from another organization', async () => {
+    prisma.website.findFirst.mockResolvedValue(null)
+
+    expect(await exportMonth({ month: today.slice(0, 7), websiteId: 'elsewhere' })).toEqual({
+      ok: false,
+      message: 'That website no longer exists.',
     })
   })
 })

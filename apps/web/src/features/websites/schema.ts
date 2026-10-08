@@ -75,6 +75,10 @@ export const checkNoteFormSchema = recordCheckSchema
 
 export type CheckNoteFormInput = z.input<typeof checkNoteFormSchema>
 
+// An empty websiteId is every site; one id narrows the report to that site.
+export const exportMonthSchema = z.object({ month: monthKeySchema, websiteId: z.string() })
+export type ExportMonthValues = z.output<typeof exportMonthSchema>
+
 export const itTeamSchema = z.object({ itTeamId: z.string() })
 export type ItTeamValues = z.output<typeof itTeamSchema>
 
@@ -129,5 +133,18 @@ export interface MonthExportRow {
 export interface MonthExport {
   month: string
   timeZone: string
+  /** Set when the report covers one site, so the file can be named after it. */
+  websiteName: string | undefined
   rows: MonthExportRow[]
 }
+
+export interface WebsiteOption {
+  id: string
+  name: string
+  /** Taken off the list since; still reportable for the months it was watched. */
+  removed: boolean
+}
+
+/** Who a check is recorded against when nobody pressed the button. */
+export const AUTOMATIC_CHECKER_ID = 'automatic'
+export const AUTOMATIC_CHECKER_NAME = 'Automatic check'

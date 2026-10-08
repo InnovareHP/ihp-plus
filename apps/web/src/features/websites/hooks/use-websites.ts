@@ -8,6 +8,7 @@ import {
   createWebsite,
   exportMonth,
   listClientOptions,
+  listWebsiteOptions,
   restoreWebsite,
   saveItTeam,
   updateWebsite,
@@ -17,6 +18,7 @@ import { websiteEvents } from '../events'
 import { websiteKeys } from '../query-keys'
 import type {
   Checklist,
+  ExportMonthValues,
   ItTeamValues,
   UpdateWebsiteValues,
   WebsiteDraftValues,
@@ -76,6 +78,7 @@ function useListMutation<TVariables, TData>(options: {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: websiteKeys.checklists() })
+      queryClient.invalidateQueries({ queryKey: websiteKeys.websiteOptions() })
     },
   })
 }
@@ -158,20 +161,32 @@ export function useRestoreWebsite() {
   })
 }
 
+export function useWebsiteOptions() {
+  return useQuery({
+    queryKey: websiteKeys.websiteOptions(),
+    queryFn: async () => {
+      const result = await listWebsiteOptions()
+      if (!result.ok) throw new Error(result.message)
+      return result.data
+    },
+    staleTime: 60 * 1000,
+  })
+}
+
 export function useExportMonth() {
   return useMutation({
-    mutationFn: async (month: string) => {
-      const result = await exportMonth(month)
+    mutationFn: async (values: ExportMonthValues) => {
+      const result = await exportMonth(values)
       if (!result.ok) throw new Error(result.message)
       return result.data
     },
     onSuccess: (file) => {
       downloadFile({
-        fileName: monthCsvName(file.month),
+        fileName: monthCsvName(file.month, file.websiteName),
         contentType: 'text/csv;charset=utf-8',
         bytes: new TextEncoder().encode(monthCsv(file)),
       })
-      track(websiteEvents.exported, { rows: file.rows.length })
+      track(websiteEvents.exported, { rows: file.rows.length, single: Boolean(file.websiteName) })
     },
     onError: (error: Error) => {
       track(websiteEvents.exportFailed, { reason: error.message })

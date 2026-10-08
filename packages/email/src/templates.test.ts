@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
 import {
+  websiteProblemsTemplate,
   applicationReceivedTemplate,
   applicationRejectedTemplate,
   applicationStageTemplate,
@@ -515,5 +516,21 @@ describe('hiring emails', () => {
 
     expect(email.html).not.toContain('Button not working?')
     expect(email.text).toContain('Thank you for applying.')
+  })
+})
+
+describe('websiteProblemsTemplate', () => {
+  it('lists every site that needs attention and links to the checks', () => {
+    const email = websiteProblemsTemplate({
+      roundLabel: 'Time in',
+      dayLabel: 'Sat, Oct 10, 2026',
+      problems: ['Riverside site: Down, HTTP 503', 'Main site: Issue, HTTP 200 in 7200 ms'],
+      url: 'https://portal.test/app/websites',
+    })
+
+    expect(email.subject).toBe('2 websites need attention: time in check, Sat, Oct 10, 2026')
+    expect(email.text).toContain('Riverside site: Down, HTTP 503')
+    expect(email.html).toContain('Main site: Issue, HTTP 200 in 7200 ms')
+    expect(email.html).toContain('https://portal.test/app/websites')
   })
 })

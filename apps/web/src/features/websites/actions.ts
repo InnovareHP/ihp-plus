@@ -3,13 +3,12 @@
 import { db } from '@ihp/db'
 import { shiftDateKey, workDateKey } from '@ihp/clock'
 import { websitesAccess, type WebsitesCaller } from './access'
-import { probeWebsite } from './probe'
-import { timeZoneOf } from './service'
+import { runRoundFor, timeZoneOf } from './service'
 import {
   CHECK_ROUNDS,
   dateKeySchema,
   itTeamSchema,
-  monthKeySchema,
+  exportMonthSchema,
   recordCheckSchema,
   updateWebsiteSchema,
   websiteDraftSchema,
@@ -17,15 +16,16 @@ import {
   type CheckStatus,
   type Checklist,
   type ClientOption,
+  type ExportMonthValues,
   type ItTeamValues,
   type MonthExport,
   type RecordCheckValues,
   type UpdateWebsiteValues,
   type WebsiteCheckRow,
   type WebsiteDraftInput,
+  type WebsiteOption,
   type WebsiteRow,
 } from './schema'
-import { verdictOf } from './utils/verdict'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
 
@@ -34,8 +34,6 @@ const NOT_LEAD = 'Only the IT lead runs the time-in and time-out checks.'
 const NOT_MANAGER = 'Only the IT lead or an admin can change the website list.'
 const INVALID = 'Check the highlighted fields and try again.'
 const GONE = 'That website is no longer on the list.'
-// Enough to finish a long list inside one request without opening every site at once.
-const PROBE_CONCURRENCY = 6
 
 type Viewer = WebsitesCaller & { organizationId: string }
 
@@ -282,18 +280,6 @@ export async function restoreWebsite({ id }: { id: string }) {
   return setArchived(id, null)
 }
 
-async function inBatches<T, R>(items: readonly T[], size: number, run: (item: T) => Promise<R>) {
-  const results: R[] = []
-  for (let start = 0; start < items.length; start += size) {
-    results.push(...(await Promise.all(items.slice(start, start + size).map(run))))
-  }
-  return results
-}
-
-/**
- * Opens every site on the list (or the one asked for) and records what came back as this
- * round's check. A rerun replaces the reading but keeps whatever note the lead wrote.
- */
 export async function runRound(input: {
   round: CheckRound
   websiteId?: string
@@ -305,43 +291,12 @@ export async function runRound(input: {
     return { ok: false, message: INVALID }
   }
 
+  const { today, checked } = await runRoundFor(caller, input.round, {
+    websiteId: input.websiteId,
+  })
+  if (input.websiteId && checked === 0) return { ok: false, message: GONE }
+
   const timeZone = await timeZoneOf(caller.organizationId)
-  const today = workDateKey(new Date(), timeZone)
-  const workDate = dateOf(today)
-  const sites = await db.website.findMany({
-    where: {
-      organizationId: caller.organizationId,
-      archivedAt: null,
-      ...(input.websiteId ? { id: input.websiteId } : {}),
-    },
-    select: { id: true, url: true },
-  })
-  if (input.websiteId && sites.length === 0) return { ok: false, message: GONE }
-
-  await inBatches(sites, PROBE_CONCURRENCY, async (site) => {
-    const reading = await probeWebsite(site.url)
-    const result = {
-      status: verdictOf(reading),
-      httpStatus: reading.httpStatus ?? null,
-      responseMs: reading.responseMs ?? null,
-      error: reading.error,
-      checkedById: caller.userId,
-      checkedByName: caller.userName,
-      checkedAt: new Date(),
-    }
-    await db.websiteCheck.upsert({
-      where: { websiteId_workDate_round: { websiteId: site.id, workDate, round: input.round } },
-      create: {
-        organizationId: caller.organizationId,
-        websiteId: site.id,
-        workDate,
-        round: input.round,
-        ...result,
-      },
-      update: result,
-    })
-  })
-
   return { ok: true, data: await checklistFor(caller, today, today, timeZone) }
 }
 
@@ -389,20 +344,42 @@ export async function recordCheck(input: RecordCheckValues): Promise<Result<Webs
   return row ? { ok: true, data: row } : { ok: false, message: GONE }
 }
 
-export async function exportMonth(month: string): Promise<Result<MonthExport>> {
+/** Every site ever watched, removed ones too, so last month's report can still pick them. */
+export async function listWebsiteOptions(): Promise<Result<WebsiteOption[]>> {
   const caller = await viewer()
   if (!caller) return { ok: false, message: NOT_FOUND }
 
-  const parsed = monthKeySchema.safeParse(month)
+  const sites = await db.website.findMany({
+    where: { organizationId: caller.organizationId },
+    orderBy: [{ archivedAt: { sort: 'asc', nulls: 'first' } }, { name: 'asc' }],
+    select: { id: true, name: true, archivedAt: true },
+  })
+  return {
+    ok: true,
+    data: sites.map((site) => ({
+      id: site.id,
+      name: site.name,
+      removed: Boolean(site.archivedAt),
+    })),
+  }
+}
+
+export async function exportMonth(input: ExportMonthValues): Promise<Result<MonthExport>> {
+  const caller = await viewer()
+  if (!caller) return { ok: false, message: NOT_FOUND }
+
+  const parsed = exportMonthSchema.safeParse(input)
   if (!parsed.success) return { ok: false, message: 'Pick a month to download.' }
+  const month = parsed.data.month
+  const websiteId = parsed.data.websiteId
 
   const timeZone = await timeZoneOf(caller.organizationId)
   const today = workDateKey(new Date(), timeZone)
-  const first = `${parsed.data}-01`
+  const first = `${month}-01`
   if (first > today) return { ok: false, message: 'That month has not started yet.' }
 
   const dates: string[] = []
-  for (let date = first; date.startsWith(parsed.data) && date <= today;) {
+  for (let date = first; date.startsWith(month) && date <= today;) {
     dates.push(date)
     date = shiftDateKey(date, 1)
   }
@@ -412,7 +389,10 @@ export async function exportMonth(month: string): Promise<Result<MonthExport>> {
 
   const [sites, checks] = await Promise.all([
     db.website.findMany({
-      where: onListDuring(caller.organizationId, from, until),
+      where: {
+        ...onListDuring(caller.organizationId, from, until),
+        ...(websiteId ? { id: websiteId } : {}),
+      },
       orderBy: { name: 'asc' },
       select: {
         id: true,
@@ -424,7 +404,11 @@ export async function exportMonth(month: string): Promise<Result<MonthExport>> {
       },
     }),
     db.websiteCheck.findMany({
-      where: { organizationId: caller.organizationId, workDate: { gte: from, lt: until } },
+      where: {
+        organizationId: caller.organizationId,
+        workDate: { gte: from, lt: until },
+        ...(websiteId ? { websiteId } : {}),
+      },
     }),
   ])
   const names = await clientNames(
@@ -453,7 +437,16 @@ export async function exportMonth(month: string): Promise<Result<MonthExport>> {
       }))
   })
 
-  return { ok: true, data: { month: parsed.data, timeZone, rows } }
+  // A site picked for the report is on the list even in a month it had no rows.
+  const picked = websiteId
+    ? await db.website.findFirst({
+        where: { id: websiteId, organizationId: caller.organizationId },
+        select: { name: true },
+      })
+    : undefined
+  if (websiteId && !picked) return { ok: false, message: 'That website no longer exists.' }
+
+  return { ok: true, data: { month, timeZone, websiteName: picked?.name, rows } }
 }
 
 export async function saveItTeam(input: ItTeamValues): Promise<Result<{ itTeamId: string }>> {

@@ -16,6 +16,7 @@ describe('monthCsv', () => {
     const csv = monthCsv({
       month: '2026-10',
       timeZone: 'Asia/Manila',
+      websiteName: undefined,
       rows: [
         {
           date: '2026-10-01',
@@ -43,6 +44,7 @@ describe('monthCsv', () => {
     const csv = monthCsv({
       month: '2026-10',
       timeZone: 'UTC',
+      websiteName: undefined,
       rows: [
         {
           date: '2026-10-02',
@@ -60,5 +62,8 @@ describe('monthCsv', () => {
 
   it('names the file after the month', () => {
     expect(monthCsvName('2026-10')).toBe('website-checks-2026-10.csv')
+    expect(monthCsvName('2026-10', 'Riverside Care — Main Site')).toBe(
+      'website-checks-riverside-care-main-site-2026-10.csv',
+    )
   })
 })

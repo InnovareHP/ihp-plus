@@ -53,6 +53,11 @@ export function monthCsv(file: MonthExport): string {
   return [HEADERS.map(cell).join(','), ...rows].join('\n')
 }
 
-export function monthCsvName(month: string) {
-  return `website-checks-${month}.csv`
+/** Named after the site when the report covers one, so several downloads do not collide. */
+export function monthCsvName(month: string, websiteName?: string) {
+  const slug = (websiteName ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+  return slug ? `website-checks-${slug}-${month}.csv` : `website-checks-${month}.csv`
 }

@@ -4,6 +4,7 @@ import { recordActivity } from '@/lib/activity'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { selfieUrl } from '@/lib/attendance-selfie'
 import { deleteObject } from '@/lib/s3'
+import { queueLeadRound } from '@/features/websites/service'
 import { notifyCorrectionDecided } from './notifications'
 import {
   assignShiftSchema,
@@ -493,6 +494,11 @@ export async function loadTimeClock(): Promise<TimeClockView> {
   }
 }
 
+// The IT lead's punch also starts their website round, so the checklist follows the clock.
+function punchedBy(caller: { organizationId: string; userId: string; name: string }) {
+  return { organizationId: caller.organizationId, userId: caller.userId, userName: caller.name }
+}
+
 function checkedClockValues(values: ClockActionValues, shift: AttendanceShiftRow) {
   const parsed = clockActionSchema.parse(values)
   if (shift.requireSelfie && !parsed.selfieKey) {
@@ -543,6 +549,7 @@ export async function clockIn(values: ClockActionValues): Promise<AttendanceDayR
     },
     select: daySelect,
   })
+  await queueLeadRound(punchedBy(caller), 'clock_in')
 
   return toDayRow(day, new Map([[caller.userId, caller.name]]), caller)
 }
@@ -576,6 +583,7 @@ export async function clockOut(values: ClockActionValues): Promise<AttendanceDay
     },
     select: daySelect,
   })
+  await queueLeadRound(punchedBy(caller), 'clock_out')
 
   return toDayRow(day, new Map([[caller.userId, caller.name]]), caller)
 }

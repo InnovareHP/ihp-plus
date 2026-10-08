@@ -2,7 +2,7 @@
 
 import { Stack } from '@mantine/core'
 import { PageSection } from '@/components/page-section'
-import { useExportMonth } from '../hooks/use-websites'
+import { useExportMonth, useWebsiteOptions } from '../hooks/use-websites'
 import { ChecklistPanel } from './checklist-panel'
 import { ExportMonthForm } from './export-month-form'
 import { ItDepartmentSection } from './it-department-section'
@@ -25,6 +25,7 @@ export function WebsitesWorkspace({
   userName,
 }: WebsitesWorkspaceProps) {
   const exportMonth = useExportMonth()
+  const websites = useWebsiteOptions()
 
   return (
     <Stack gap="lg">
@@ -39,13 +40,14 @@ export function WebsitesWorkspace({
 
       <PageSection
         title="Monthly report"
-        description="Every website on every day of the month, both checks side by side, as a CSV."
-        maw={720}
+        description="Every day of the month with both checks side by side, for all websites or just one, as a CSV."
       >
         <ExportMonthForm
           thisMonth={thisMonth}
-          onExport={async (month) => {
-            await exportMonth.mutateAsync(month)
+          websites={websites.data ?? []}
+          websitesLoading={websites.isPending}
+          onExport={async (values) => {
+            await exportMonth.mutateAsync(values)
           }}
         />
       </PageSection>

@@ -8,7 +8,11 @@ import { websiteEvents } from '../events'
 import { websiteKeys } from '../query-keys'
 import type { CheckRound, Checklist, RecordCheckValues } from '../schema'
 
-export function useChecklist(date: string) {
+export function useChecklist(
+  date: string,
+  /** How often to look again, given what is on screen; false stops looking. */
+  pollEvery?: (checklist: Checklist | undefined) => number | false,
+) {
   return useQuery({
     queryKey: websiteKeys.checklist(date),
     queryFn: async () => {
@@ -19,6 +23,7 @@ export function useChecklist(date: string) {
     // Stepping through days keeps the last one on screen instead of blanking the list.
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000,
+    refetchInterval: pollEvery ? (query) => pollEvery(query.state.data) : undefined,
   })
 }
 

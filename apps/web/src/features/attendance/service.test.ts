@@ -63,9 +63,11 @@ const storage = vi.hoisted(() => ({
 }))
 
 const mail = vi.hoisted(() => ({ notifyCorrectionDecided: vi.fn() }))
+const websites = vi.hoisted(() => ({ queueLeadRound: vi.fn(async () => false) }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./notifications', () => mail)
+vi.mock('@/features/websites/service', () => websites)
 vi.mock('@/lib/activity', () => activity)
 vi.mock('@/lib/s3', () => storage)
 const calendar = vi.hoisted(() => ({ fillHolidays: vi.fn(), fillUpcomingHolidays: vi.fn() }))
@@ -214,6 +216,11 @@ describe('the clock', () => {
 
     expect(day.isOpen).toBe(true)
     expect(day.lateSeconds).toBe(40 * 60)
+    // Whether it runs is the websites feature's call: it starts only for the IT lead.
+    expect(websites.queueLeadRound).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: 'org-1', userId: 'user-1' }),
+      'clock_in',
+    )
     vi.useRealTimers()
   })
 
@@ -271,6 +278,7 @@ describe('the clock', () => {
     )
     expect(day.breakSeconds).toBe(6 * 3600)
     expect(day.workedSeconds).toBe(3 * 3600)
+    expect(websites.queueLeadRound).toHaveBeenCalledWith(expect.anything(), 'clock_out')
     vi.useRealTimers()
   })
 
