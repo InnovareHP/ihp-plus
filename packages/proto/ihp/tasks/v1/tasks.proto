@@ -231,6 +231,14 @@ message DeleteStatusRequest {
 
 message DeleteStatusResponse {}
 
+// Everyone a task can be assigned to or a comment can mention: the whole organization, read by
+// any member, since any member may assign work to any other.
+message ListTeammatesRequest {}
+
+message ListTeammatesResponse {
+  repeated TaskAssignee people = 1;
+}
+
 message ListStatusesRequest {}
 
 message ListStatusesResponse {
@@ -545,6 +553,7 @@ service TasksService {
   rpc CreateList(CreateListRequest) returns (CreateListResponse);
   rpc UpdateList(UpdateListRequest) returns (UpdateListResponse);
   rpc DeleteList(DeleteListRequest) returns (DeleteListResponse);
+  rpc ListTeammates(ListTeammatesRequest) returns (ListTeammatesResponse);
   rpc ListStatuses(ListStatusesRequest) returns (ListStatusesResponse);
   rpc CreateStatus(CreateStatusRequest) returns (CreateStatusResponse);
   rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusResponse);

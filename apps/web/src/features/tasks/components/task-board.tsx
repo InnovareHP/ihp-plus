@@ -11,15 +11,13 @@ import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { searchParamsParser } from '@/lib/url-query'
 import { useRememberedUrlQuery } from '@/lib/use-remembered-url-query'
 import { useDirectoryDepartments } from '@/features/directory/hooks/use-directory'
-// The people who can be assigned are the same org list evaluations already fetches; a second
-// RPC returning the same rows would only be a second cache to keep warm.
-import { useEvaluationCandidates } from '@/features/evaluations/hooks/use-evaluations'
 import { useSession } from '@/lib/auth-client'
 import {
   useDeleteList,
   useTaskLists,
   useTaskProjects,
   useTaskStatuses,
+  useTeammates,
   useUpdateProject,
 } from '../hooks/use-task-projects'
 import {
@@ -138,7 +136,8 @@ export function TaskBoard() {
   const listRows = useMemo(() => lists.data ?? [], [lists.data])
   const statuses = useTaskStatuses()
   const statusRows = useMemo(() => statuses.data ?? [], [statuses.data])
-  const candidates = useEvaluationCandidates()
+  // Any member may assign to any colleague, so the picker reads a list open to every member.
+  const teammates = useTeammates()
   const departments = useDirectoryDepartments()
 
   const board = useTaskBoard(
@@ -189,8 +188,8 @@ export function TaskBoard() {
   const removeList = useDeleteList()
 
   const people = useMemo(
-    () => (candidates.data ?? []).map((person) => ({ value: person.userId, label: person.name })),
-    [candidates.data],
+    () => (teammates.data ?? []).map((person) => ({ value: person.userId, label: person.name })),
+    [teammates.data],
   )
 
   // Person, department and column are the organization's own rows, so they are built from data.

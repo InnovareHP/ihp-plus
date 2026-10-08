@@ -17,6 +17,7 @@ const rpc = vi.hoisted(() => ({
   listLists: vi.fn(),
   createList: vi.fn(),
   listStatuses: vi.fn(),
+  listTeammates: vi.fn(),
   listTasks: vi.fn(),
   createTask: vi.fn(),
   updateTask: vi.fn(),
@@ -34,7 +35,6 @@ const actions = vi.hoisted(() => ({ uploadTaskAttachment: vi.fn() }))
 
 const toast = vi.hoisted(() => ({ show: vi.fn() }))
 const nav = vi.hoisted(() => ({ search: '', replace: vi.fn() }))
-const candidates = vi.hoisted(() => ({ useEvaluationCandidates: vi.fn() }))
 const directory = vi.hoisted(() => ({ listDepartments: vi.fn(), listPeople: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
@@ -43,7 +43,6 @@ vi.mock('@/lib/auth-client', () => ({
   useSession: () => ({ data: { user: { id: 'user-1', name: 'Dana Reyes' } } }),
 }))
 vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
-vi.mock('@/features/evaluations/hooks/use-evaluations', () => candidates)
 vi.mock('@/features/directory/rpc', () => directory)
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: nav.replace }),
@@ -120,9 +119,10 @@ beforeEach(() => {
   // The board remembers its filters per browser; each case starts from a clean slate.
   window.localStorage.clear()
   nav.replace.mockClear()
-  candidates.useEvaluationCandidates.mockReturnValue({
-    data: [{ userId: 'user-2', name: 'Grace Hopper', email: 'grace@example.com' }],
-  })
+  rpc.listTeammates.mockResolvedValue([
+    { userId: 'user-1', name: 'Dana Reyes' },
+    { userId: 'user-2', name: 'Grace Hopper' },
+  ])
 })
 
 async function renderBoard() {
@@ -395,6 +395,18 @@ describe('TaskBoard', () => {
         }),
       ),
     )
+  })
+
+  it('offers every colleague in the assignee picker', async () => {
+    const user = userEvent.setup()
+    await renderBoard()
+
+    await user.click(screen.getByRole('button', { name: 'New task' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    await user.click(dialog.getByRole('combobox', { name: 'Assigned to' }))
+
+    expect(await screen.findByRole('option', { name: 'Grace Hopper' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Dana Reyes' })).toBeInTheDocument()
   })
 
   it('will not save a task before a project is picked', async () => {

@@ -14,6 +14,7 @@ import {
   listLists,
   listProjects,
   listStatuses,
+  listTeammates,
   reorderStatus,
   updateList,
   updateProject,
@@ -39,6 +40,16 @@ export function useTaskLists(projectId: string | undefined) {
     queryKey: taskKeys.lists(projectId ?? ''),
     queryFn: () => listLists(projectId as string),
     enabled: Boolean(projectId),
+  })
+}
+
+/** Who a task can be assigned to and a comment can mention: everyone, for every member. */
+export function useTeammates() {
+  return useQuery({
+    queryKey: taskKeys.teammates(),
+    queryFn: listTeammates,
+    // Who works here changes far less often than the work itself.
+    staleTime: 5 * 60 * 1000,
   })
 }
 

@@ -22,6 +22,7 @@ import {
   loadTimeSettings,
   loadProjects,
   loadStatuses,
+  loadTeammates,
   loadTasks,
   logTime,
   markAllMentionsRead,
@@ -97,6 +98,8 @@ export const tasks: ServiceImpl<typeof TasksService> = {
   },
 
   listStatuses: async () => ({ statuses: (await loadStatuses()).map(statusToProto) }),
+
+  listTeammates: async () => ({ people: await loadTeammates() }),
 
   createStatus: async (request) => ({
     status: statusToProto(

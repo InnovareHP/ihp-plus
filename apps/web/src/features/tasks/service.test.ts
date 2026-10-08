@@ -91,6 +91,7 @@ const {
   deleteStatus,
   loadConversation,
   loadTasks,
+  loadTeammates,
   reorderStatus,
   reorderTask,
   setTaskCompleted,
@@ -139,6 +140,28 @@ beforeEach(() => {
   prisma.taskProject.findFirst.mockResolvedValue({ id: 'project-1', taskCounter: 6 })
   prisma.user.findMany.mockResolvedValue([])
   prisma.$transaction.mockImplementation((run: (tx: typeof prisma) => unknown) => run(prisma))
+})
+
+describe('loadTeammates', () => {
+  it('lists the whole organization for any member, so anyone can assign to anyone', async () => {
+    prisma.member.findMany.mockResolvedValue([
+      { user: { id: 'user-3', name: 'Zoe Park', preferredName: null } },
+      { user: { id: 'user-2', name: 'Grace Hopper', preferredName: 'Grace' } },
+    ])
+
+    expect(await loadTeammates()).toEqual([
+      { userId: 'user-2', name: 'Grace' },
+      { userId: 'user-3', name: 'Zoe Park' },
+    ])
+    expect(prisma.member.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          organizationId: 'org-1',
+          user: { OR: [{ banned: false }, { banned: null }] },
+        },
+      }),
+    )
+  })
 })
 
 describe('loadTasks', () => {

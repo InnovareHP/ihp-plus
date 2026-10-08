@@ -540,6 +540,29 @@ export async function deleteStatus(statusId: string, moveToStatusId?: string): P
   await db.taskStatus.delete({ where: { id: status.id } })
 }
 
+/**
+ * Everyone in the organization, for the assignee picker and @mentions. Any member may read it:
+ * assigning work to a colleague is open to every member, which knownTeammates already allows.
+ */
+export async function loadTeammates(): Promise<{ userId: string; name: string }[]> {
+  const caller = await requireMember()
+  const members = await db.member.findMany({
+    // A banned account cannot sign in to see the work; the column is nullable, so null counts too.
+    where: {
+      organizationId: caller.organizationId,
+      user: { OR: [{ banned: false }, { banned: null }] },
+    },
+    select: { user: { select: { id: true, name: true, preferredName: true } } },
+  })
+
+  return members
+    .map((member) => ({
+      userId: member.user.id,
+      name: member.user.preferredName ?? member.user.name,
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name))
+}
+
 export async function loadStatuses(): Promise<TaskStatusRow[]> {
   const caller = await requireMember()
   const statuses = await ensureStatuses(caller.organizationId)

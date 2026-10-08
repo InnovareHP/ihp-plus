@@ -22,6 +22,7 @@ import type {
   LogTimeValues,
   RunningTimerRow,
   TaskActivityRow,
+  TaskAssigneeRef,
   ListFormValues,
   ProjectFormValues,
   ReorderTaskValues,
@@ -132,6 +133,11 @@ export async function reorderStatus(
 
 export async function deleteStatus(statusId: string, moveToStatusId?: string): Promise<void> {
   await call(() => browserClients.tasks.deleteStatus({ statusId, moveToStatusId }))
+}
+
+export async function listTeammates(): Promise<TaskAssigneeRef[]> {
+  const response = await call(() => browserClients.tasks.listTeammates({}))
+  return response.people.map((person) => ({ userId: person.userId, name: person.name }))
 }
 
 export async function listStatuses(): Promise<TaskStatusRow[]> {

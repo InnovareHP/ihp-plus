@@ -5,6 +5,7 @@ export const taskKeys = {
   projects: (includeArchived: boolean) => [...taskKeys.all, 'projects', includeArchived] as const,
   lists: (projectId: string) => [...taskKeys.all, 'lists', projectId] as const,
   statuses: () => [...taskKeys.all, 'statuses'] as const,
+  teammates: () => [...taskKeys.all, 'teammates'] as const,
   board: (query: TaskQuery) => [...taskKeys.all, 'board', query] as const,
   boards: () => [...taskKeys.all, 'board'] as const,
   mentions: (includeRead: boolean) => [...taskKeys.all, 'mentions', includeRead] as const,
