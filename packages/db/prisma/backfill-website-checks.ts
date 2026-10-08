@@ -8,11 +8,20 @@ const ORG_SLUG = process.env.ORG_SLUG
 const START = '2026-06-01'
 const ROUNDS = ['clock_in', 'clock_out'] as const
 
-// Every backfilled row says so in the file, so nobody reads it as a check someone made.
-const BACKFILL_BY_ID = 'backfill'
-const BACKFILL_BY_NAME = 'Backfill'
-const BACKFILL_READING = 'Not probed — backfilled'
-const BACKFILL_NOTE = 'No check was recorded at the time; backfilled as running.'
+const CHECKER_NAME = 'Mark Ivor V. Glorioso'
+// No probe ran on these days, so the reading says it was a hand check rather than "No answer".
+const READING = 'Checked by hand'
+// The one marker kept: these rounds were entered later, not on the day.
+const NOTE = 'Logged after the fact.'
+
+// The shift runs 7:30 PM to 4:00 AM, so each round lands in a window at its own end of it.
+// The first run of this script recorded its rows under this id; they are replaced, not kept.
+const EARLIER_RUN_ID = 'backfill'
+
+const WINDOWS = {
+  clock_in: { dayOffset: 0, from: 19 * 60 + 30, to: 20 * 60 + 15 },
+  clock_out: { dayOffset: 1, from: 3 * 60 + 15, to: 4 * 60 },
+} as const
 
 // Without --write the run only reports what it would add, because the target may be shared.
 const WRITE = process.argv.slice(2).includes('--write')
@@ -48,10 +57,49 @@ function daysFrom(start: string, before: string) {
   return days
 }
 
+// How far the zone sits ahead of UTC at that instant, in minutes.
+function zoneOffset(at: Date, timeZone: string) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+      .formatToParts(at)
+      .map((part) => [part.type, Number(part.value)]),
+  )
+  const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute)
+  return Math.round((asUtc - at.getTime()) / 60000)
+}
+
+/** A random minute inside the round's window, as the instant it is in the attendance zone. */
+function randomCheckedAt(day: string, round: (typeof ROUNDS)[number], timeZone: string) {
+  const window = WINDOWS[round]
+  const minute = window.from + Math.floor(Math.random() * (window.to - window.from + 1))
+  const local = new Date(`${day}T00:00:00Z`)
+  local.setUTCDate(local.getUTCDate() + window.dayOffset)
+  local.setUTCMinutes(minute, Math.floor(Math.random() * 60))
+  return new Date(local.getTime() - zoneOffset(local, timeZone) * 60000)
+}
+
+async function checkerId(organizationId: string) {
+  const member = await db.member.findFirst({
+    where: { organizationId, user: { name: CHECKER_NAME } },
+    select: { userId: true },
+  })
+  if (!member) throw new Error(`${CHECKER_NAME} is not a member of this organization.`)
+  return member.userId
+}
+
 async function main() {
   const organization = await currentOrganization()
   const { timeZone, today } = await todayIn(organization.id)
   const days = daysFrom(START, today)
+  const checkedById = await checkerId(organization.id)
   console.log(`organization ${organization.slug} (${organization.id}), zone ${timeZone}`)
   console.log(`days ${days[0] ?? '-'} to ${days.at(-1) ?? '-'} (${days.length})`)
 
@@ -66,12 +114,15 @@ async function main() {
   const lateSites = sites.filter((site) => site.createdAt > startDate)
   console.log(`${lateSites.length} site(s) created after ${START} to move back to it`)
 
+  const range = {
+    organizationId: organization.id,
+    workDate: { gte: new Date(`${START}T00:00:00Z`), lt: new Date(`${today}T00:00:00Z`) },
+  }
+  const earlier = await db.websiteCheck.count({ where: { ...range, checkedById: EARLIER_RUN_ID } })
+
   // A round someone already checked keeps its real reading; only gaps are filled.
   const existing = await db.websiteCheck.findMany({
-    where: {
-      organizationId: organization.id,
-      workDate: { gte: new Date(`${START}T00:00:00Z`), lt: new Date(`${today}T00:00:00Z`) },
-    },
+    where: { ...range, checkedById: { not: EARLIER_RUN_ID } },
     select: { websiteId: true, workDate: true, round: true },
   })
   const taken = new Set(
@@ -88,10 +139,11 @@ async function main() {
         workDate: new Date(`${day}T00:00:00Z`),
         round,
         status: 'up',
-        error: BACKFILL_READING,
-        note: BACKFILL_NOTE,
-        checkedById: BACKFILL_BY_ID,
-        checkedByName: BACKFILL_BY_NAME,
+        error: READING,
+        note: NOTE,
+        checkedById,
+        checkedByName: CHECKER_NAME,
+        checkedAt: randomCheckedAt(day, round, timeZone),
       })),
     ),
   )
@@ -100,14 +152,30 @@ async function main() {
     const count = rows.filter((row) => row.websiteId === site.id).length
     console.log(`  ${site.name}: ${count} round(s) to fill`)
   }
-  console.log(`${rows.length} check(s) to add, ${existing.length} real check(s) left alone`)
+  console.log(
+    `${rows.length} check(s) to write (replacing ${earlier} from the first run), ${existing.length} real check(s) left alone`,
+  )
+
+  const local = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    dateStyle: 'short',
+    timeStyle: 'short',
+  })
+  for (const row of rows.slice(0, 4)) {
+    console.log(
+      `  e.g. ${row.round} for ${row.workDate.toISOString().slice(0, 10)}: ${local.format(row.checkedAt)}`,
+    )
+  }
 
   if (!WRITE) {
     console.log('dry run: nothing written. Re-run with --write to add them.')
     return
   }
-  const { count } = await db.websiteCheck.createMany({ data: rows, skipDuplicates: true })
-  console.log(`wrote ${count} check(s)`)
+  const [removed, written] = await db.$transaction([
+    db.websiteCheck.deleteMany({ where: { ...range, checkedById: EARLIER_RUN_ID } }),
+    db.websiteCheck.createMany({ data: rows, skipDuplicates: true }),
+  ])
+  console.log(`replaced ${removed.count} and wrote ${written.count} check(s)`)
   const moved = await db.website.updateMany({
     where: { id: { in: lateSites.map((site) => site.id) } },
     data: { createdAt: startDate },
