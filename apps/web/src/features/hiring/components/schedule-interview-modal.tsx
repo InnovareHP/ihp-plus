@@ -32,7 +32,7 @@ import {
   type OfferInterviewInput,
   type OfferInterviewValues,
 } from '../schema'
-import { spreadAcrossDays, suggestionWindow } from '../utils/interview-time'
+import { spreadAcrossDays, suggestionWindow, viewerTimeZone } from '../utils/interview-time'
 import { FreeTimeSuggestions } from './free-time-suggestions'
 
 // How many free times the form fills in by itself, each on a different day.
@@ -53,7 +53,7 @@ const LOCATION_LABEL = {
 
 export interface ScheduleInterviewModalProps {
   application: ApplicationSummary
-  /** The organization's zone, which every time typed here is read in. */
+  /** The organization's zone, used only when the browser cannot name its own. */
   timeZone: string
   /** Outlook is connected: free times come from calendars and video calls get a Teams link. */
   calendarConnected: boolean
@@ -62,10 +62,12 @@ export interface ScheduleInterviewModalProps {
 
 export function ScheduleInterviewModal({
   application,
-  timeZone,
+  timeZone: organizationTimeZone,
   calendarConnected,
   onClose,
 }: ScheduleInterviewModalProps) {
+  // Times are typed and shown as HR's own calendar shows them; the RPC sends instants anyway.
+  const timeZone = viewerTimeZone(organizationTimeZone)
   const interviewers = useInterviewers()
   const offer = useOfferInterview(timeZone)
   const queryClient = useQueryClient()

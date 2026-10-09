@@ -12,6 +12,13 @@ const browser = vi.hoisted(() => ({
   },
 }))
 
+// The device's zone is pinned, since the runner's own clock zone differs between machines.
+const viewer = vi.hoisted(() => ({ zone: 'Asia/Manila' }))
+vi.mock('../utils/interview-time', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../utils/interview-time')>()),
+  viewerTimeZone: () => viewer.zone,
+}))
+
 // Mocked at the transport, so the real rpc module turns HR's wall clock into instants.
 vi.mock('@/rpc/browser', () => ({ browserClients: browser }))
 vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }))
@@ -45,6 +52,7 @@ async function pickRita(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  viewer.zone = 'Asia/Manila'
   browser.hiring.listInterviewers.mockResolvedValue({
     people: [{ userId: 'user-hr', name: 'Rita Santos', email: 'rita@ihp.test' }],
   })
@@ -144,7 +152,7 @@ describe('ScheduleInterviewModal', () => {
     expect(await screen.findByText('Say where the interview happens.')).toBeInTheDocument()
   })
 
-  it('sends each time as the instant it names in the organization’s zone', async () => {
+  it('sends each time as the instant it names in HR’s own zone', async () => {
     browser.hiring.offerInterview.mockReturnValue(new Promise(() => {}))
     const user = userEvent.setup()
     const { baseElement } = renderModal()
@@ -167,5 +175,24 @@ describe('ScheduleInterviewModal', () => {
       durationMinutes: 45,
     })
     expect(await axe(baseElement)).toHaveNoViolations()
+  })
+
+  it('reads the times in the zone HR’s calendar shows, not the organization’s', async () => {
+    viewer.zone = 'America/New_York'
+    browser.hiring.offerInterview.mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    renderModal()
+
+    expect(screen.getByText('Times to offer, in America/New_York')).toBeInTheDocument()
+    await pickRita(user)
+    await user.type(screen.getByLabelText(/Day, option 1/), '2030-10-14')
+    await user.type(screen.getByLabelText(/Time, option 1/), '10:00')
+    await user.click(screen.getByRole('button', { name: 'Send times to pick from' }))
+
+    await waitFor(() => expect(browser.hiring.offerInterview).toHaveBeenCalled())
+    // New York is on daylight time in October, UTC-4, so 10:00 there is 14:00 UTC.
+    expect(browser.hiring.offerInterview.mock.calls[0]?.[0].slots).toEqual([
+      { start: '2030-10-14T14:00:00.000Z', end: '2030-10-14T14:00:00.000Z' },
+    ])
   })
 })
