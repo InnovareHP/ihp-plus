@@ -4,6 +4,8 @@ import {
   commonFreeStarts,
   createCalendarEvent,
   getAvailability,
+  getCalendarTimeZone,
+  ianaTimeZone,
   isCalendarConfigured,
 } from './calendar'
 import { resetTokenCache } from './token'
@@ -212,5 +214,29 @@ describe('free/busy', () => {
       '2026-10-14T00:00:00.000Z',
       '2026-10-14T01:00:00.000Z',
     ])
+  })
+})
+
+describe('getCalendarTimeZone', () => {
+  it('reads the mailbox’s own zone from its working hours, as an IANA name', async () => {
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve(
+        String(url).includes('login.microsoftonline')
+          ? jsonResponse({ access_token: 'token-1', expires_in: 3600 })
+          : jsonResponse({
+              value: [{ workingHours: { timeZone: { name: 'Eastern Standard Time' } } }],
+            }),
+      ),
+    )
+
+    await expect(getCalendarTimeZone()).resolves.toBe('America/New_York')
+    const [url, init] = graphCalls()[0] ?? []
+    expect(String(url)).toContain('/users/careers%40ihp.test/calendar/getSchedule')
+    expect(JSON.parse(String(init?.body)).schedules).toEqual(['careers@ihp.test'])
+  })
+
+  it('keeps an IANA name and drops one nobody knows', () => {
+    expect(ianaTimeZone('Asia/Manila')).toBe('Asia/Manila')
+    expect(ianaTimeZone('Customized Time Zone')).toBeUndefined()
   })
 })

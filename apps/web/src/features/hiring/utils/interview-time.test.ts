@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   formatInterviewTime,
   isTimeZone,
@@ -6,19 +6,9 @@ import {
   spreadAcrossDays,
   suggestionWindow,
   timeZoneOptions,
-  viewerTimeZone,
 } from './interview-time'
 
 describe('interview times', () => {
-  it('uses the device zone, and the fallback when the runtime names none it knows', () => {
-    const resolved = vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions')
-    resolved.mockReturnValue({ timeZone: 'America/New_York' } as Intl.ResolvedDateTimeFormatOptions)
-    expect(viewerTimeZone('Asia/Manila')).toBe('America/New_York')
-    resolved.mockReturnValue({ timeZone: 'Not/AZone' } as Intl.ResolvedDateTimeFormatOptions)
-    expect(viewerTimeZone('Asia/Manila')).toBe('Asia/Manila')
-    resolved.mockRestore()
-  })
-
   it('writes one instant in whichever zone the reader is in, naming it', () => {
     const at = '2026-10-14T02:00:00.000Z'
 

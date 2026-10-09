@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/page-header'
 import { ApplicationDetailView } from '@/features/hiring/components/application-detail-view'
 import { requireHiringPage } from '@/features/hiring/access'
 import { loadApplication } from '@/features/hiring/pipeline-service'
+import { interviewTimeZone } from '@/features/hiring/interview-calendar'
 import { loadSettings } from '@/features/hiring/service'
 import { postingRoute, routes } from '@/lib/routes'
 
@@ -25,6 +26,7 @@ export default async function ApplicationPage({
   ])
   if (!application) notFound()
   const { summary } = application
+  const timeZone = await interviewTimeZone(settings.timeZone)
 
   return (
     <PageShell>
@@ -42,7 +44,7 @@ export default async function ApplicationPage({
         rejectionMessage={settings.rejectionMessage}
         viewerName={access.name}
         organizationName={access.membership.organization?.name ?? 'IHP+'}
-        timeZone={settings.timeZone}
+        timeZone={timeZone}
         calendarConnected={isCalendarConfigured()}
       />
     </PageShell>

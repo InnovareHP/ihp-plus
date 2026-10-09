@@ -12,24 +12,17 @@ const browser = vi.hoisted(() => ({
   },
 }))
 
-// The device's zone is pinned, since the runner's own clock zone differs between machines.
-const viewer = vi.hoisted(() => ({ zone: 'Asia/Manila' }))
-vi.mock('../utils/interview-time', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../utils/interview-time')>()),
-  viewerTimeZone: () => viewer.zone,
-}))
-
 // Mocked at the transport, so the real rpc module turns HR's wall clock into instants.
 vi.mock('@/rpc/browser', () => ({ browserClients: browser }))
 vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }))
 
 const APPLICATION = { id: 'app-1', fullName: 'Grace Hopper' } as ApplicationSummary
 
-function renderModal(onClose = vi.fn(), calendarConnected = false) {
+function renderModal(onClose = vi.fn(), calendarConnected = false, timeZone = 'Asia/Manila') {
   return render(
     <ScheduleInterviewModal
       application={APPLICATION}
-      timeZone="Asia/Manila"
+      timeZone={timeZone}
       calendarConnected={calendarConnected}
       onClose={onClose}
     />,
@@ -52,7 +45,6 @@ async function pickRita(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  viewer.zone = 'Asia/Manila'
   browser.hiring.listInterviewers.mockResolvedValue({
     people: [{ userId: 'user-hr', name: 'Rita Santos', email: 'rita@ihp.test' }],
   })
@@ -152,7 +144,7 @@ describe('ScheduleInterviewModal', () => {
     expect(await screen.findByText('Say where the interview happens.')).toBeInTheDocument()
   })
 
-  it('sends each time as the instant it names in HR’s own zone', async () => {
+  it('sends each time as the instant it names in the calendar’s zone', async () => {
     browser.hiring.offerInterview.mockReturnValue(new Promise(() => {}))
     const user = userEvent.setup()
     const { baseElement } = renderModal()
@@ -177,11 +169,10 @@ describe('ScheduleInterviewModal', () => {
     expect(await axe(baseElement)).toHaveNoViolations()
   })
 
-  it('reads the times in the zone HR’s calendar shows, not the organization’s', async () => {
-    viewer.zone = 'America/New_York'
+  it('reads the times in the zone the Outlook calendar is set to', async () => {
     browser.hiring.offerInterview.mockReturnValue(new Promise(() => {}))
     const user = userEvent.setup()
-    renderModal()
+    renderModal(vi.fn(), false, 'America/New_York')
 
     expect(screen.getByText('Times to offer, in America/New_York')).toBeInTheDocument()
     await pickRita(user)

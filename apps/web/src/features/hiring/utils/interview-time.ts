@@ -12,12 +12,6 @@ export function isTimeZone(value: string) {
   }
 }
 
-/** The zone this device's clock and Outlook calendar show, or the fallback if the runtime has none. */
-export function viewerTimeZone(fallback: string) {
-  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  return zone && isTimeZone(zone) ? zone : fallback
-}
-
 /** "Tue, Oct 14, 10:00 AM (Asia/Manila)": the zone is named so nobody converts in their head. */
 export function formatInterviewTime(iso: string, timeZone: string) {
   const when = new Intl.DateTimeFormat('en-US', {
