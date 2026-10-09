@@ -5,7 +5,6 @@ const graph = vi.hoisted(() => ({
   createCalendarEvent: vi.fn(),
   cancelCalendarEvent: vi.fn(),
   getAvailability: vi.fn(),
-  getCalendarTimeZone: vi.fn(),
 }))
 const prisma = vi.hoisted(() => ({
   hiringSettings: { findUnique: vi.fn() },
@@ -18,13 +17,8 @@ vi.mock('@ihp/graph', async (importOriginal) => ({
 }))
 vi.mock('@ihp/db', () => ({ db: prisma }))
 
-const {
-  calendarFailure,
-  interviewTimeZone,
-  putInCalendar,
-  suggestInterviewTimes,
-  takeOutOfCalendar,
-} = await import('./interview-calendar')
+const { calendarFailure, putInCalendar, suggestInterviewTimes, takeOutOfCalendar } =
+  await import('./interview-calendar')
 const { GraphError } = await import('@ihp/graph')
 const { Code } = await import('@ihp/rpc')
 
@@ -200,21 +194,5 @@ describe('when Outlook refuses', () => {
       calendarFailure(new GraphError(404, 'ErrorInvalidUser', 'Not found')).rawMessage,
     ).toMatch(/MICROSOFT_CALENDAR_MAILBOX/)
     expect(calendarFailure(new Error('socket hang up')).code).toBe(Code.Unavailable)
-  })
-})
-
-describe('interviewTimeZone', () => {
-  it('follows the zone the Outlook calendar is set to', async () => {
-    graph.getCalendarTimeZone.mockResolvedValue('America/New_York')
-    await expect(interviewTimeZone('Asia/Manila')).resolves.toBe('America/New_York')
-  })
-
-  it('keeps the organization’s zone when Outlook is off, refuses, or names none', async () => {
-    graph.getCalendarTimeZone.mockResolvedValue(undefined)
-    await expect(interviewTimeZone('Asia/Manila')).resolves.toBe('Asia/Manila')
-    graph.getCalendarTimeZone.mockRejectedValue(new GraphError(403, 'ErrorAccessDenied', 'No.'))
-    await expect(interviewTimeZone('Asia/Manila')).resolves.toBe('Asia/Manila')
-    graph.isCalendarConfigured.mockReturnValue(false)
-    await expect(interviewTimeZone('Asia/Manila')).resolves.toBe('Asia/Manila')
   })
 })

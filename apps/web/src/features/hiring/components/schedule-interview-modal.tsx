@@ -53,7 +53,7 @@ const LOCATION_LABEL = {
 
 export interface ScheduleInterviewModalProps {
   application: ApplicationSummary
-  /** The zone the interview Outlook calendar is set to, which every time typed here is read in. */
+  /** The organization's zone, which every time typed here is read in. */
   timeZone: string
   /** Outlook is connected: free times come from calendars and video calls get a Teams link. */
   calendarConnected: boolean

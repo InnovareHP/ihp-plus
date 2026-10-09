@@ -18,8 +18,6 @@ export {
   getAvailability,
   isCalendarConfigured,
   readCalendarConfig,
-  getCalendarTimeZone,
-  ianaTimeZone,
   requireCalendarMailbox,
   type Availability,
   type CalendarAttendee,

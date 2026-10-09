@@ -18,11 +18,11 @@ vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }))
 
 const APPLICATION = { id: 'app-1', fullName: 'Grace Hopper' } as ApplicationSummary
 
-function renderModal(onClose = vi.fn(), calendarConnected = false, timeZone = 'Asia/Manila') {
+function renderModal(onClose = vi.fn(), calendarConnected = false) {
   return render(
     <ScheduleInterviewModal
       application={APPLICATION}
-      timeZone={timeZone}
+      timeZone="Asia/Manila"
       calendarConnected={calendarConnected}
       onClose={onClose}
     />,
@@ -144,7 +144,7 @@ describe('ScheduleInterviewModal', () => {
     expect(await screen.findByText('Say where the interview happens.')).toBeInTheDocument()
   })
 
-  it('sends each time as the instant it names in the calendar’s zone', async () => {
+  it('sends each time as the instant it names in the organization’s zone', async () => {
     browser.hiring.offerInterview.mockReturnValue(new Promise(() => {}))
     const user = userEvent.setup()
     const { baseElement } = renderModal()
@@ -167,23 +167,5 @@ describe('ScheduleInterviewModal', () => {
       durationMinutes: 45,
     })
     expect(await axe(baseElement)).toHaveNoViolations()
-  })
-
-  it('reads the times in the zone the Outlook calendar is set to', async () => {
-    browser.hiring.offerInterview.mockReturnValue(new Promise(() => {}))
-    const user = userEvent.setup()
-    renderModal(vi.fn(), false, 'America/New_York')
-
-    expect(screen.getByText('Times to offer, in America/New_York')).toBeInTheDocument()
-    await pickRita(user)
-    await user.type(screen.getByLabelText(/Day, option 1/), '2030-10-14')
-    await user.type(screen.getByLabelText(/Time, option 1/), '10:00')
-    await user.click(screen.getByRole('button', { name: 'Send times to pick from' }))
-
-    await waitFor(() => expect(browser.hiring.offerInterview).toHaveBeenCalled())
-    // New York is on daylight time in October, UTC-4, so 10:00 there is 14:00 UTC.
-    expect(browser.hiring.offerInterview.mock.calls[0]?.[0].slots).toEqual([
-      { start: '2030-10-14T14:00:00.000Z', end: '2030-10-14T14:00:00.000Z' },
-    ])
   })
 })

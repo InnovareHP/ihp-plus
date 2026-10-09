@@ -217,7 +217,7 @@ export async function listInterviewers(): Promise<Interviewer[]> {
   return response.people.map(interviewerFromProto)
 }
 
-/** HR types each time as a wall clock in the calendar's zone; it leaves here as an instant. */
+/** HR types each time as a wall clock in the organization's zone; it leaves here as an instant. */
 export async function offerInterview(
   values: OfferInterviewValues,
   timeZone: string,

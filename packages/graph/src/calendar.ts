@@ -150,51 +150,6 @@ export async function getAvailability(options: {
   }))
 }
 
-// shortcut: only the Windows zone names an IHP+ team sits in, add a row when a new one appears.
-const WINDOWS_ZONES: Record<string, string> = {
-  'Eastern Standard Time': 'America/New_York',
-  'Central Standard Time': 'America/Chicago',
-  'Mountain Standard Time': 'America/Denver',
-  'US Mountain Standard Time': 'America/Phoenix',
-  'Pacific Standard Time': 'America/Los_Angeles',
-  'Singapore Standard Time': 'Asia/Manila',
-  'Taipei Standard Time': 'Asia/Taipei',
-  'GMT Standard Time': 'Europe/London',
-  UTC: 'UTC',
-}
-
-/** Outlook names a zone the Windows way ("Eastern Standard Time"); everything else here wants IANA. */
-export function ianaTimeZone(name: string): string | undefined {
-  const mapped = WINDOWS_ZONES[name] ?? name
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone: mapped })
-    return mapped
-  } catch {
-    return undefined
-  }
-}
-
-/** The zone the interview mailbox's Outlook calendar is set to, read from its working hours. */
-export async function getCalendarTimeZone(): Promise<string | undefined> {
-  const mailbox = requireCalendarMailbox()
-  const now = new Date()
-  const response = await graphJson<{
-    value: { workingHours?: { timeZone?: { name?: string } } }[]
-  }>(
-    `/users/${encodeURIComponent(mailbox)}/calendar/getSchedule`,
-    asCalendarApp({
-      method: 'POST',
-      body: {
-        schedules: [mailbox],
-        startTime: utcTime(now),
-        endTime: utcTime(new Date(now.getTime() + 60 * 60 * 1000)),
-      },
-    }),
-  )
-  const name = response.value[0]?.workingHours?.timeZone?.name
-  return name ? ianaTimeZone(name) : undefined
-}
-
 /**
  * The starts, every interval, where everyone is free for the whole length and the start is
  * one the caller accepts (working hours, a weekday). A character beyond a view's end is unknown,

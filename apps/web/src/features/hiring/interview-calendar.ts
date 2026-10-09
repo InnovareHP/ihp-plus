@@ -13,7 +13,6 @@ import {
   commonFreeStarts,
   createCalendarEvent,
   getAvailability,
-  getCalendarTimeZone,
   isCalendarConfigured,
 } from '@ihp/graph'
 import { Code, ConnectError } from '@ihp/rpc'
@@ -90,17 +89,6 @@ export async function takeOutOfCalendar(eventId: string, comment: string) {
   }
 }
 
-/** The interview calendar's zone, falling back to the organization's when Outlook cannot say. */
-export async function interviewTimeZone(organizationTimeZone: string) {
-  if (!isCalendarConfigured()) return organizationTimeZone
-  try {
-    return (await getCalendarTimeZone()) ?? organizationTimeZone
-  } catch (error) {
-    console.error('[hiring] could not read the interview calendar zone', error)
-    return organizationTimeZone
-  }
-}
-
 /**
  * Microsoft's refusal in words HR can act on; the raw reason goes to the log, since it names the
  * tenant setting an admin has to change.
@@ -142,8 +130,8 @@ export function calendarFailure(error: unknown): ConnectError {
 }
 
 /**
- * Times every interviewer is free, within company hours on working days in the interview
- * calendar's zone. Empty with fromCalendar false when Graph is not set up.
+ * Times every interviewer is free, within company hours on working days in the organization's
+ * zone. Empty with fromCalendar false when Graph is not set up.
  */
 export async function suggestInterviewTimes(input: {
   organizationId: string
@@ -166,7 +154,7 @@ export async function suggestInterviewTimes(input: {
       select: { user: { select: { email: true } } },
     }),
   ])
-  const timeZone = await interviewTimeZone(settings?.timeZone ?? DEFAULT_TIME_ZONE)
+  const timeZone = settings?.timeZone ?? DEFAULT_TIME_ZONE
   const emails = people.map((person) => person.user.email)
   if (emails.length === 0) return { starts: [], fromCalendar: true }
 
