@@ -36,13 +36,10 @@ function splitWords(element: HTMLElement) {
 function hero() {
   const section = one('.hero')
   if (!section) return
-  const heading = one('#hero-heading', section)
   const kicker = one('[data-hero="kicker"]', section)
   const copy = one('[data-hero="copy"]', section)
-  if (!heading || !kicker || !copy) return
+  if (!kicker || !copy) return
 
-  // The kicker splits into letters, so the heading carries its name as one phrase.
-  heading.setAttribute('aria-label', 'Powered by possibilities')
   const letters = SplitText.create(kicker, { type: 'chars', mask: 'chars', aria: 'none' })
   const words = SplitText.create(copy, { type: 'words', aria: 'none' })
 

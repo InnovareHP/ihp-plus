@@ -45,20 +45,31 @@ import StartBadge from './StartBadge.astro'
       class="mt-12 h-[55px] w-[90px] sm:mt-[72px] lg:mt-[96px] lg:h-[67px] lg:w-[110px]"
     />
 
-    <h1 id="hero-heading" class="mt-7 flex flex-col items-center sm:mt-[28px]">
+    <h1
+      id="hero-heading"
+      class="mt-7 text-sm font-semibold tracking-[0.12em] text-white/80 uppercase sm:mt-[28px] sm:text-base"
+    >
+      Marketing, technology &amp; finance services
+    </h1>
+    <!-- The slogan is the visual headline, but the h1 names what searchers look for. -->
+    <p class="mt-3 flex flex-col items-center">
+      <!-- The kicker splits into letters, so the phrase is read from here instead. -->
+      <span class="sr-only">Powered by possibilities</span>
       <span
+        aria-hidden="true"
         data-hero="kicker"
         class="font-display text-[2.75rem] leading-[1.1] font-medium text-white sm:text-[64px] sm:leading-[70px] lg:text-[76px] lg:leading-[82px]"
       >
         POWERED BY
       </span>
       <span
+        aria-hidden="true"
         data-hero="title"
         class="font-poster text-brand-gradient text-[3.5rem] leading-[1] font-extrabold tracking-[0.02em] sm:text-[100px] sm:leading-[128px] lg:text-[120px] lg:leading-[140px]"
       >
         POSSIBILITIES
       </span>
-    </h1>
+    </p>
 
     <p
       data-hero="copy"

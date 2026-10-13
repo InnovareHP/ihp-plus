@@ -17,19 +17,25 @@ const [plain, gradient] = service.headline
 
   <!-- Pinned under the sticky nav, so the headline alone decides the vertical centre. -->
 
-
   <div
     class="mx-auto flex space-y-4 min-h-svh max-w-[1280px] flex-col items-center justify-center px-4 pt-40 pb-28 text-center sm:px-8 lg:px-[104px]"
   >
-  <a
-  href="/"
-  class="svc-rise block rounded-sm focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:ring-offset-4 focus-visible:ring-offset-night focus-visible:outline-none"
->
-  <img src="/brand/logo-on-dark.svg" width="72" height="44" alt="IHP+ home" class="h-11 w-18" />
-</a>
+    <a
+      href="/"
+      class="svc-rise block rounded-sm focus-visible:ring-2 focus-visible:ring-mint-300 focus-visible:ring-offset-4 focus-visible:ring-offset-night focus-visible:outline-none"
+    >
+      <img src="/brand/logo-on-dark.svg" width="72" height="44" alt="IHP+ home" class="h-11 w-18" />
+    </a>
     <div>
       <div>
-        <h1 id="service-heading" class="uppercase">
+        <h1
+          id="service-heading"
+          class="svc-rise text-sm font-semibold tracking-[0.12em] text-white/80 uppercase sm:text-base"
+          style="--d: 2"
+        >
+          {service.name}
+        </h1>
+        <p class="mt-3 uppercase">
           <span
             class="svc-rise block font-display text-[3rem] leading-[1] font-medium sm:text-[72px] lg:text-[84px]"
             style="--d: 3">{plain}</span
@@ -38,7 +44,7 @@ const [plain, gradient] = service.headline
             class="svc-rise font-poster text-brand-gradient block text-[3.75rem] leading-[1.05] font-extrabold tracking-[0.02em] sm:text-[96px] lg:text-[112px]"
             style="--d: 4">{gradient}</span
           >
-        </h1>
+        </p>
 
         <p
           class="svc-rise mx-auto mt-6 max-w-[640px] text-base text-white/80 sm:text-lg lg:text-xl lg:leading-[1.6]"

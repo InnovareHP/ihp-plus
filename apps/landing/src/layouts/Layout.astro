@@ -38,6 +38,8 @@ const structuredData = {
       '@type': 'Organization',
       '@id': organizationId,
       name: 'IHP+',
+      // Search engines drop the "+", so the spelled-out names tie those queries to the brand.
+      alternateName: ['IHP Plus', 'IHP Plus Global', 'IHPPlusGlobal'],
       legalName: 'Ihpplusglobal',
       slogan: SLOGAN,
       url: site.href,

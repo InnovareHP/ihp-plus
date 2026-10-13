@@ -1,5 +1,11 @@
 import { useState, type SubmitEvent } from 'react'
 
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void
+  }
+}
+
 type Field = 'name' | 'email' | 'phone' | 'message'
 type Status = 'idle' | 'sending' | 'sent' | 'failed'
 
@@ -61,6 +67,8 @@ export function ContactForm({ endpoint }: ContactFormProps) {
       if (!response.ok) throw new Error(String(response.status))
       form.reset()
       setStatus('sent')
+      // GA4's recommended lead event, so organic sessions can be tied to enquiries.
+      window.gtag?.('event', 'generate_lead', { form: 'contact' })
     } catch {
       // Typed input stays in the fields, so a retry costs one click.
       setStatus('failed')
