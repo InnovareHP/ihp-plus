@@ -99,7 +99,6 @@ Change the entry port with `PROXY_PORT` in `.env`.
 | `pnpm infra:redis`      | dev redis only                                           |
 | `pnpm infra:s3`         | dev minio + bucket creation                              |
 | `pnpm stack:up`         | full docker stack                                        |
-| `pnpm stack:tunnel`     | full stack plus a Cloudflare Tunnel to the proxy         |
 
 ## RPC
 

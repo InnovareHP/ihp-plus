@@ -37,8 +37,7 @@
     "infra:s3": "docker compose --env-file .env -f infra/compose.dev.yml up -d minio minio-init",
     "infra:s3:stop": "docker compose --env-file .env -f infra/compose.dev.yml stop minio",
     "stack:up": "docker compose --env-file .env -f infra/compose.yml up --build",
-    "stack:tunnel": "docker compose --env-file .env -f infra/compose.yml --profile tunnel up --build",
-    "stack:down": "docker compose --env-file .env -f infra/compose.yml --profile tunnel down",
+    "stack:down": "docker compose --env-file .env -f infra/compose.yml down",
     "db:auth-schema": "pnpm --filter @ihp/db db:auth-schema"
   },
   "devDependencies": {
