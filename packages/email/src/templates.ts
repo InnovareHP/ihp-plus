@@ -921,3 +921,24 @@ export function websiteProblemsTemplate(options: {
     }),
   }
 }
+
+export function contactEnquiryTemplate(options: {
+  name: string
+  email: string
+  phone: string
+  message: string
+}): PreparedEmail {
+  return {
+    subject: `Website enquiry from ${options.name}`,
+    ...renderEmail({
+      preheader: options.message.slice(0, 120),
+      heading: 'New website enquiry',
+      body: [
+        `${options.name} sent this through the contact form on the website.`,
+        `Email: ${options.email}`,
+        `Phone: ${options.phone}`,
+        options.message,
+      ],
+    }),
+  }
+}

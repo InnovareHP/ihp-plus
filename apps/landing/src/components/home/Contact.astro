@@ -3,6 +3,7 @@ import { Image } from 'astro:assets'
 import contactBg from '../../assets/home/contact-bg.png'
 import bubble from '../../assets/home/contact-bubble.svg'
 import lines from '../../assets/home/contact-shape-left.svg'
+import { PORTAL_URL } from '../../data/careers'
 import { ContactForm } from './ContactForm'
 import StartBadge from './StartBadge.astro'
 ---
@@ -55,7 +56,11 @@ import StartBadge from './StartBadge.astro'
       <div
         class="contact-form relative rounded-[30px] bg-brand-600 p-6 sm:p-8 lg:absolute lg:rounded-none lg:bg-transparent lg:p-0"
       >
-        <ContactForm client:visible endpoint="/app/api/contact" />
+        <ContactForm
+          client:visible
+          endpoint={`${PORTAL_URL}/app/api/contact`}
+          turnstileSiteKey={import.meta.env.PUBLIC_TURNSTILE_SITE_KEY}
+        />
       </div>
     </div>
 

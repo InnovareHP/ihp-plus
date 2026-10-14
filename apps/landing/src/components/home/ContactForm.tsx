@@ -1,13 +1,20 @@
-import { useState, type SubmitEvent } from 'react'
+import { useEffect, useRef, useState, type SubmitEvent } from 'react'
 
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void
+    turnstile?: {
+      render: (container: HTMLElement, options: Record<string, unknown>) => string
+      reset: (widgetId: string) => void
+      remove: (widgetId: string) => void
+    }
   }
 }
 
 type Field = 'name' | 'email' | 'phone' | 'message'
-type Status = 'idle' | 'sending' | 'sent' | 'failed'
+type Status = 'idle' | 'sending' | 'sent' | 'failed' | 'unverified'
+
+const TURNSTILE_SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
 
 const FIELDS: { name: Field; label: string; type: string; autoComplete: string }[] = [
   { name: 'name', label: 'Name', type: 'text', autoComplete: 'name' },
@@ -26,12 +33,42 @@ const MESSAGES: Record<Field, { missing: string; invalid?: string }> = {
 export interface ContactFormProps {
   /** Where the enquiry is posted as JSON; the landing page is static, so it lives in the app. */
   endpoint: string
+  /** Cloudflare Turnstile site key; unset, the form renders no challenge. */
+  turnstileSiteKey?: string
 }
 
 /** The contact form inside the speech bubble: a React island, since it is the page's one control. */
-export function ContactForm({ endpoint }: ContactFormProps) {
+export function ContactForm({ endpoint, turnstileSiteKey }: ContactFormProps) {
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({})
   const [status, setStatus] = useState<Status>('idle')
+  const widget = useRef<HTMLDivElement>(null)
+  const widgetId = useRef<string | undefined>(undefined)
+
+  // Mounts Cloudflare's Turnstile widget, a non-React script, and removes it on unmount.
+  useEffect(() => {
+    const container = widget.current
+    if (!turnstileSiteKey || !container) return
+    let script = document.querySelector<HTMLScriptElement>(`script[src="${TURNSTILE_SCRIPT}"]`)
+    if (!script) {
+      script = document.createElement('script')
+      script.src = TURNSTILE_SCRIPT
+      script.async = true
+      document.head.append(script)
+    }
+    const mount = () => {
+      widgetId.current ??= window.turnstile?.render(container, {
+        sitekey: turnstileSiteKey,
+        theme: 'dark',
+      })
+    }
+    if (window.turnstile) mount()
+    else script.addEventListener('load', mount)
+    return () => {
+      script.removeEventListener('load', mount)
+      if (widgetId.current) window.turnstile?.remove(widgetId.current)
+      widgetId.current = undefined
+    }
+  }, [turnstileSiteKey])
 
   function errorOf(element: HTMLInputElement | HTMLTextAreaElement, field: Field) {
     if (element.validity.valueMissing || element.value.trim() === '') return MESSAGES[field].missing
@@ -56,8 +93,13 @@ export function ContactForm({ endpoint }: ContactFormProps) {
       return
     }
 
-    setStatus('sending')
     const body = Object.fromEntries(new FormData(form))
+    if (turnstileSiteKey && !body['cf-turnstile-response']) {
+      setStatus('unverified')
+      return
+    }
+
+    setStatus('sending')
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -72,6 +114,9 @@ export function ContactForm({ endpoint }: ContactFormProps) {
     } catch {
       // Typed input stays in the fields, so a retry costs one click.
       setStatus('failed')
+    } finally {
+      // A Turnstile token is single-use, so every attempt needs a fresh one.
+      if (widgetId.current) window.turnstile?.reset(widgetId.current)
     }
   }
 
@@ -122,6 +167,8 @@ export function ContactForm({ endpoint }: ContactFormProps) {
         })}
       </div>
 
+      {turnstileSiteKey ? <div ref={widget} className="mt-[26px] min-h-[65px]" /> : null}
+
       <div className="mt-[26px] flex flex-wrap items-center gap-4">
         <button
           type="submit"
@@ -134,6 +181,9 @@ export function ContactForm({ endpoint }: ContactFormProps) {
           {status === 'sent' ? "Thanks — we'll be in touch soon." : null}
           {status === 'failed'
             ? 'We could not send that just now. Check your connection and try again.'
+            : null}
+          {status === 'unverified'
+            ? 'Wait for the security check above to finish, then send again.'
             : null}
         </p>
       </div>
