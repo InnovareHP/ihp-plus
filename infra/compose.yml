@@ -120,6 +120,17 @@ services:
       - web
       - landing
 
+  # Opt-in public HTTPS through a Cloudflare Tunnel; its public hostname routes to http://proxy:80.
+  tunnel:
+    image: cloudflare/cloudflared:2025.4.0
+    profiles: ['tunnel']
+    restart: unless-stopped
+    command: ['tunnel', '--no-autoupdate', 'run']
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - proxy
+
 volumes:
   postgres-data:
   redis-data:

@@ -4,12 +4,13 @@ Two compose files, two Dockerfiles, one nginx proxy. Know which one you are in.
 
 ## Which stack
 
-| Command            | Runs                                                                          | Use when                                                                                             |
-| ------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `pnpm infra:up`    | `infra/compose.dev.yml` — postgres + redis, ports published                   | normal development; apps run on the host via `pnpm dev`                                              |
-| `pnpm infra:pg`    | the same file, postgres only                                                  | the usual case — Redis only backs rate limiting (sign-in, careers form), which fails open without it |
-| `pnpm infra:redis` | the same file, redis only                                                     | working on something that needs Redis and not the DB                                                 |
-| `pnpm stack:up`    | `infra/compose.yml` — postgres, redis, web, landing, proxy, built from source | verifying the production shape, Dockerfiles, or nginx routing                                        |
+| Command             | Runs                                                                                  | Use when                                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `pnpm infra:up`     | `infra/compose.dev.yml` — postgres + redis, ports published                           | normal development; apps run on the host via `pnpm dev`                                              |
+| `pnpm infra:pg`     | the same file, postgres only                                                          | the usual case — Redis only backs rate limiting (sign-in, careers form), which fails open without it |
+| `pnpm infra:redis`  | the same file, redis only                                                             | working on something that needs Redis and not the DB                                                 |
+| `pnpm stack:up`     | `infra/compose.yml` — postgres, redis, web, landing, proxy, built from source         | verifying the production shape, Dockerfiles, or nginx routing                                        |
+| `pnpm stack:tunnel` | the same, plus `cloudflared` (compose profile `tunnel`) exposing the proxy over HTTPS | showing the full stack on a public hostname; needs `CLOUDFLARE_TUNNEL_TOKEN`                         |
 
 The per-service scripts are **additive, not exclusive**: `up -d <service>` starts
 what is named and leaves everything else alone, so `infra:pg` followed by
