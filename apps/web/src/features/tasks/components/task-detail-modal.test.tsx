@@ -114,7 +114,7 @@ beforeEach(() => {
     canManage: false,
   })
   rpc.listTimeEntries.mockResolvedValue({ entries: [], totalSeconds: 0 })
-  rpc.getRunningTimer.mockResolvedValue(undefined)
+  rpc.getRunningTimer.mockResolvedValue(null)
   rpc.deleteAttachment.mockResolvedValue(undefined)
   rpc.listTaskActivity.mockResolvedValue([
     {

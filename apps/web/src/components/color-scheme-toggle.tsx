@@ -1,19 +1,29 @@
 'use client'
 
-import { ActionIcon, useMantineColorScheme } from '@mantine/core'
+import { ActionIcon, Box, useComputedColorScheme, useMantineColorScheme } from '@mantine/core'
+import { useMounted } from '@mantine/hooks'
 
 export function ColorSchemeToggle() {
-  const { colorScheme, setColorScheme } = useMantineColorScheme()
-  const next = colorScheme === 'dark' ? 'light' : 'dark'
+  const { setColorScheme } = useMantineColorScheme()
+  const computed = useComputedColorScheme('light')
+  // A saved scheme lives in localStorage, which the server never sees, so the label waits for mount.
+  const mounted = useMounted()
+  const next = computed === 'dark' ? 'light' : 'dark'
 
   return (
     <ActionIcon
       variant="default"
       size="lg"
-      aria-label={`Switch to ${next} theme`}
+      aria-label={mounted ? `Switch to ${next} theme` : 'Switch color theme'}
       onClick={() => setColorScheme(next)}
     >
-      <span aria-hidden="true">{colorScheme === 'dark' ? '☀' : '☾'}</span>
+      {/* CSS picks the glyph, so the icon is right before hydration too. */}
+      <Box component="span" aria-hidden="true" darkHidden>
+        ☾
+      </Box>
+      <Box component="span" aria-hidden="true" lightHidden>
+        ☀
+      </Box>
     </ActionIcon>
   )
 }

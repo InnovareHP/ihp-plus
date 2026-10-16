@@ -1,5 +1,6 @@
-import { ColorSchemeScript, mantineHtmlProps } from '@mantine/core'
+import { mantineHtmlProps } from '@mantine/core'
 import type { Metadata, Viewport } from 'next'
+import { ColorSchemeScript } from '@/components/color-scheme-script'
 import { Providers } from '@/components/providers'
 import { RouteAnnouncer } from '@/components/route-announcer'
 import './globals.css'
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" {...mantineHtmlProps}>
       <head>
-        <ColorSchemeScript defaultColorScheme="auto" />
+        <ColorSchemeScript />
       </head>
       <body>
         <Providers>
