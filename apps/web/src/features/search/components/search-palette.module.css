@@ -1,0 +1,28 @@
+/* Mantine's dimmed grey measures 3.32:1 on white and 4.04:1 on the dark body, so the palette uses AA shades. */
+.content {
+  @mixin light {
+    --mantine-color-dimmed: var(--mantine-color-gray-7);
+  }
+
+  @mixin dark {
+    --mantine-color-dimmed: var(--mantine-color-dark-1);
+  }
+}
+
+.action {
+  min-height: 52px;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-md);
+}
+
+/* Spotlight's own selected style is white text on a filled blue; on this light tint it must stay body text. */
+.action[data-selected] {
+  color: var(--mantine-color-text);
+  --action-description-color: var(--mantine-color-dimmed);
+  background-color: var(--mantine-color-brand-light);
+  box-shadow: inset 3px 0 0 var(--mantine-primary-color-filled);
+}
+
+.footer {
+  border-top: 1px solid var(--mantine-color-default-border);
+}

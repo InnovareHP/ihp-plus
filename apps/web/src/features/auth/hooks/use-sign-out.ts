@@ -4,6 +4,7 @@ import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
+import { clearRecentSearches } from '@/features/search/utils/recent-searches'
 import { routes } from '@/lib/routes'
 import { authErrorMessage } from '../messages'
 
@@ -17,6 +18,7 @@ export function useSignOut() {
       if (error) throw new Error(authErrorMessage(error))
     },
     onSuccess: () => {
+      clearRecentSearches()
       router.replace(routes.login)
       router.refresh()
     },
