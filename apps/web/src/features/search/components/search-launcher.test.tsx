@@ -7,7 +7,9 @@ import { searchSpotlight } from '../spotlight-store'
 import { recentKey } from '../utils/recent-searches'
 import { SearchLauncher } from './search-launcher'
 
+const clients = vi.hoisted(() => ({ search: { getDirectory: vi.fn(() => new Promise(() => {})) } }))
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('@/rpc/browser', () => ({ browserClients: clients }))
 
 const SECTIONS = visibleSections({
   canManageOrganization: true,
@@ -34,7 +36,9 @@ describe('SearchLauncher', () => {
   it('loads nothing until search is asked for', () => {
     renderLauncher()
 
-    expect(screen.queryByRole('textbox', { name: 'Search pages' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('textbox', { name: 'Search pages, people and clients' }),
+    ).not.toBeInTheDocument()
   })
 
   it('opens the palette from the header button', async () => {
@@ -43,7 +47,9 @@ describe('SearchLauncher', () => {
 
     await user.click(screen.getAllByRole('button', { name: 'Search' })[0] as HTMLElement)
 
-    expect(await screen.findByRole('textbox', { name: 'Search pages' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('textbox', { name: 'Search pages, people and clients' }),
+    ).toBeInTheDocument()
   })
 
   it('opens the palette with Ctrl+K', async () => {
@@ -52,7 +58,9 @@ describe('SearchLauncher', () => {
 
     await user.keyboard('{Control>}k{/Control}')
 
-    expect(await screen.findByRole('textbox', { name: 'Search pages' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('textbox', { name: 'Search pages, people and clients' }),
+    ).toBeInTheDocument()
   })
 
   it('leaves Ctrl+K alone while the person is typing in a field', async () => {
@@ -62,7 +70,9 @@ describe('SearchLauncher', () => {
     await user.click(screen.getByLabelText('Note'))
     await user.keyboard('{Control>}k{/Control}')
 
-    expect(screen.queryByRole('textbox', { name: 'Search pages' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('textbox', { name: 'Search pages, people and clients' }),
+    ).not.toBeInTheDocument()
   })
 
   it('has no axe violations', async () => {

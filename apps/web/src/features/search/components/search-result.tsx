@@ -1,6 +1,6 @@
 'use client'
 
-import { Badge, Box, Group, Highlight, Text, ThemeIcon } from '@mantine/core'
+import { Avatar, Badge, Box, Group, Highlight, Text, ThemeIcon } from '@mantine/core'
 import { Spotlight } from '@mantine/spotlight'
 import { IconFile, type Icon } from '@tabler/icons-react'
 import type { SearchEntry } from '../schema'
@@ -20,11 +20,28 @@ export function SearchResult({
   onOpen,
 }: SearchResultProps) {
   return (
-    <Spotlight.Action className={classes.action} onClick={() => onOpen(entry)}>
+    <Spotlight.Action
+      className={classes.action}
+      // The highlight's <mark> splits the label, which can run words together in the computed name.
+      aria-label={[entry.label, entry.description, entry.area].filter(Boolean).join(', ')}
+      onClick={() => onOpen(entry)}
+    >
       <Group wrap="nowrap" gap="sm" w="100%">
-        <ThemeIcon variant="light" size={36} radius="md" aria-hidden>
-          <ResultIcon size={18} />
-        </ThemeIcon>
+        {entry.kind === 'person' ? (
+          // Decorative: the name is read from the label, so the initials would only repeat it.
+          <Avatar
+            src={entry.photoUrl}
+            name={entry.label}
+            color="brand"
+            size={36}
+            alt=""
+            aria-hidden
+          />
+        ) : (
+          <ThemeIcon variant="light" size={36} radius="md" aria-hidden>
+            <ResultIcon size={18} />
+          </ThemeIcon>
+        )}
         <Box miw={0} flex={1}>
           <Highlight highlight={query.trim()} size="sm" fw={600} truncate>
             {entry.label}

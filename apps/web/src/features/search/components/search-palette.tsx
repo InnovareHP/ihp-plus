@@ -12,14 +12,18 @@ import { PAGE_TABS } from '@/lib/page-tabs'
 import { searchEvents } from '../events'
 import type { SearchEntry } from '../schema'
 import { searchSpotlight, searchStore } from '../spotlight-store'
-import { useRecentSearches } from '../use-recent-searches'
+import { useRecentSearches } from '../hooks/use-recent-searches'
+import { useSearchDirectory } from '../hooks/use-search-directory'
+import { clientEntries, personEntries } from '../utils/directory-entries'
 import { pageEntries } from '../utils/page-entries'
 import { iconFor, pageIcons } from '../utils/page-icons'
 import { rankEntries } from '../utils/rank'
+import { DirectoryStatus } from './directory-status'
 import classes from './search-palette.module.css'
 import { SearchResult } from './search-result'
 
-const RESULT_LIMIT = 8
+const PAGE_LIMIT = 5
+const GROUP_LIMIT = 5
 const SUGGESTION_LIMIT = 6
 
 export interface SearchPaletteProps {
@@ -39,7 +43,15 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
   const recent = useRecentSearches(storageKey)
   const icons = pageIcons(sections)
   const pages = pageEntries(sections, PAGE_TABS)
-  const results = rankEntries(pages, query, RESULT_LIMIT)
+  // Loaded once on open and filtered locally, so typing a name never waits on the network.
+  const directory = useSearchDirectory()
+  const people = directory.data ? personEntries(directory.data.people) : []
+  const clients = directory.data ? clientEntries(directory.data.clients) : []
+  const pageHits = rankEntries(pages, query, PAGE_LIMIT)
+  const peopleHits = rankEntries(people, query, GROUP_LIMIT)
+  const clientHits = rankEntries(clients, query, GROUP_LIMIT)
+  const total = pageHits.length + peopleHits.length + clientHits.length
+  const directoryState = directory.isPending ? 'loading' : directory.isError ? 'error' : null
   const recentIds = new Set(recent.entries.map((entry) => entry.id))
   const suggestions = pages.filter((page) => !recentIds.has(page.id)).slice(0, SUGGESTION_LIMIT)
 
@@ -85,8 +97,8 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
         <Modal.Title>Search</Modal.Title>
       </VisuallyHidden>
       <Spotlight.Search
-        aria-label="Search pages"
-        placeholder="Search pages…"
+        aria-label="Search pages, people and clients"
+        placeholder="Search pages, people and clients…"
         size="lg"
         leftSection={<IconSearch size={20} aria-hidden />}
         rightSectionPointerEvents="all"
@@ -94,13 +106,19 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
       />
       <Spotlight.ActionsList px="xs" pb="xs">
         {trimmed ? (
-          results.length > 0 ? (
-            group('Pages', results)
-          ) : (
-            <Spotlight.Empty>
-              No pages match “{trimmed}”. Try a shorter or different word.
-            </Spotlight.Empty>
-          )
+          <>
+            {pageHits.length > 0 ? group('Pages', pageHits) : null}
+            {peopleHits.length > 0 ? group('People', peopleHits) : null}
+            {clientHits.length > 0 ? group('Clients', clientHits) : null}
+            {directoryState ? (
+              <DirectoryStatus state={directoryState} onRetry={() => void directory.refetch()} />
+            ) : null}
+            {total === 0 && !directoryState ? (
+              <Spotlight.Empty>
+                Nothing matches “{trimmed}”. Try a shorter or different word.
+              </Spotlight.Empty>
+            ) : null}
+          </>
         ) : (
           <>
             {recent.entries.length > 0 ? group('Recent', recent.entries) : null}
@@ -122,7 +140,9 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
         </Group>
       )}
       <VisuallyHidden role="status" aria-live="polite">
-        {trimmed ? `${results.length} ${results.length === 1 ? 'result' : 'results'}` : ''}
+        {trimmed && directoryState !== 'loading'
+          ? `${total} ${total === 1 ? 'result' : 'results'}`
+          : ''}
       </VisuallyHidden>
     </Spotlight.Root>
   )

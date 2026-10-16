@@ -1,8 +1,8 @@
 'use client'
 
 import { useCallback, useSyncExternalStore } from 'react'
-import type { SearchEntry } from './schema'
-import { NO_RECENT, readRecent, rememberRecent, subscribeRecent } from './utils/recent-searches'
+import type { SearchEntry } from '../schema'
+import { NO_RECENT, readRecent, rememberRecent, subscribeRecent } from '../utils/recent-searches'
 
 export function useRecentSearches(storageKey: string) {
   const entries = useSyncExternalStore(

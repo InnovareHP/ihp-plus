@@ -4,4 +4,5 @@ import type { EventName } from '@/lib/analytics'
 export const searchEvents = {
   paletteOpened: 'search.palette.opened',
   resultOpened: 'search.result.opened',
+  directoryFailed: 'search.directory.load_failed',
 } as const satisfies Record<string, EventName>

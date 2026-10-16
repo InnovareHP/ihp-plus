@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const searchEntrySchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(['page']),
+  kind: z.enum(['page', 'person', 'client']),
   label: z.string().min(1),
   description: z.string().optional(),
   /** The sidebar area a page sits in, shown as a badge beside its name. */
@@ -10,6 +10,11 @@ export const searchEntrySchema = z.object({
   // Recent entries come back out of localStorage, which anyone can edit, so only in-app paths pass.
   href: z.string().refine((value) => value.startsWith('/') && !value.startsWith('//')),
   keywords: z.array(z.string()).optional(),
+  // Same in-app rule as href: it becomes an img src, so nothing off-site is ever loaded.
+  photoUrl: z
+    .string()
+    .refine((value) => value.startsWith('/') && !value.startsWith('//'))
+    .optional(),
 })
 
 export type SearchEntry = z.infer<typeof searchEntrySchema>
