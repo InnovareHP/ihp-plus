@@ -9,6 +9,7 @@ import { LeaveService } from '@ihp/rpc/leave'
 import { LookupsService } from '@ihp/rpc/lookups'
 import { MembersService } from '@ihp/rpc/members'
 import { RequestsService } from '@ihp/rpc/requests'
+import { SearchService } from '@ihp/rpc/search'
 import { TasksService } from '@ihp/rpc/tasks'
 import {
   applyEmploymentStatus,
@@ -33,6 +34,7 @@ import { hiring } from './hiring-routes'
 import { leave } from './leave-routes'
 import { lookups } from './lookups-routes'
 import { requests } from './requests-routes'
+import { search } from './search-routes'
 import { tasks } from './tasks-routes'
 
 // Thin by design: every implementation converts at the wire boundary and delegates to the
@@ -103,4 +105,5 @@ export function registerRoutes(router: ConnectRouter) {
   router.service(BulletinService, bulletin)
   router.service(HiringService, hiring)
   router.service(LeaveService, leave)
+  router.service(SearchService, search)
 }

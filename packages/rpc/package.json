@@ -16,7 +16,8 @@
     "./attendance": "./src/gen/ihp/attendance/v1/attendance_pb.ts",
     "./bulletin": "./src/gen/ihp/bulletin/v1/bulletin_pb.ts",
     "./hiring": "./src/gen/ihp/hiring/v1/hiring_pb.ts",
-    "./leave": "./src/gen/ihp/leave/v1/leave_pb.ts"
+    "./leave": "./src/gen/ihp/leave/v1/leave_pb.ts",
+    "./search": "./src/gen/ihp/search/v1/search_pb.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

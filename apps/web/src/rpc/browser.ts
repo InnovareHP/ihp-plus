@@ -9,6 +9,7 @@ import { LeaveService } from '@ihp/rpc/leave'
 import { LookupsService } from '@ihp/rpc/lookups'
 import { MembersService } from '@ihp/rpc/members'
 import { RequestsService } from '@ihp/rpc/requests'
+import { SearchService } from '@ihp/rpc/search'
 import { TasksService } from '@ihp/rpc/tasks'
 
 // Only the generated contract and the transport, so none of the server graph follows it
@@ -24,5 +25,6 @@ export const browserClients = {
   lookups: createClient(LookupsService, browserTransport),
   members: createClient(MembersService, browserTransport),
   requests: createClient(RequestsService, browserTransport),
+  search: createClient(SearchService, browserTransport),
   tasks: createClient(TasksService, browserTransport),
 }
