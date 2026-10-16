@@ -104,7 +104,7 @@ beforeEach(() => {
     canManage: false,
   })
   rpc.listTimeEntries.mockResolvedValue({ entries: [], totalSeconds: 0 })
-  rpc.getRunningTimer.mockResolvedValue(undefined)
+  rpc.getRunningTimer.mockResolvedValue(null)
   // The board view is the default; these cases are about the list, so they ask for it.
   nav.search = 'view=list'
   rpc.listProjects.mockResolvedValue([PROJECT])

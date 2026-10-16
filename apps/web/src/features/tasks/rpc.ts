@@ -259,9 +259,10 @@ export async function stopTimer(note?: string): Promise<TaskTimeEntryRow | undef
   return response.entry ? timeEntryFromProto(response.entry) : undefined
 }
 
-export async function getRunningTimer(): Promise<RunningTimerRow | undefined> {
+// Null, not undefined: TanStack Query rejects undefined data, and "no timer" is the usual answer.
+export async function getRunningTimer(): Promise<RunningTimerRow | null> {
   const response = await call(() => browserClients.tasks.getRunningTimer({}))
-  if (!response.entry) return undefined
+  if (!response.entry) return null
 
   return {
     entry: timeEntryFromProto(response.entry),
