@@ -461,7 +461,12 @@ export async function updateStatus(values: UpdateStatusValues): Promise<TaskStat
     if (!name) throw new ConnectError('Name the column.', Code.InvalidArgument)
     data.name = name
   }
-  if (values.color !== undefined) data.color = values.color.trim()
+  if (values.color !== undefined) {
+    // Same rule as creating a column: the colour reaches inline styles, so only a hex code passes.
+    const color = statusFormSchema.shape.color.safeParse(values.color)
+    if (!color.success) throw new ConnectError('Pick a colour.', Code.InvalidArgument)
+    data.color = color.data
+  }
 
   const updated = await db.taskStatus.update({
     where: { id: status.id },
