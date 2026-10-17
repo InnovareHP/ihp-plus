@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package ihp.search.v1;
+
+// The Ctrl+K palette's data beyond its own pages. Admins only while search is piloted with them;
+// every row carries just enough to draw a result and link to it, never contact or pay details.
+
+message PersonHit {
+  string user_id = 1;
+  // Preferred name when there is one, as the directory shows it.
+  string name = 2;
+  string job_title = 3;
+  string department = 4;
+  // In-app photo URL, stable and only served to the same organization; empty when there is none.
+  string photo_url = 5;
+}
+
+message ClientHit {
+  string client_id = 1;
+  string name = 2;
+  string status = 3;
+}
+
+message GetDirectoryRequest {}
+
+// Loaded once when the palette opens and filtered in the browser, so typing a name costs no request.
+message GetDirectoryResponse {
+  repeated PersonHit people = 1;
+  repeated ClientHit clients = 2;
+}
+
+message TaskHit {
+  string task_id = 1;
+  // Numbers restart per project, so "#12" can name one task in each of several projects.
+  int32 task_number = 2;
+  string name = 3;
+  string project_id = 4;
+  string project_name = 5;
+  string status_name = 6;
+  string status_color = 7;
+}
+
+message SearchTasksRequest {
+  // 2 to 100 characters; "#12" or "12" also matches task number 12.
+  string query = 1;
+  // At most 20; 0 means the default of 8.
+  int32 limit = 2;
+}
+
+message SearchTasksResponse {
+  repeated TaskHit tasks = 1;
+}
+
+service SearchService {
+  rpc GetDirectory(GetDirectoryRequest) returns (GetDirectoryResponse);
+  rpc SearchTasks(SearchTasksRequest) returns (SearchTasksResponse);
+}

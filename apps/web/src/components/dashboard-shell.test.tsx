@@ -13,8 +13,13 @@ vi.mock('@/features/auth/hooks/use-sign-out', () => auth)
 vi.mock('@/features/auth/hooks/use-impersonation', () => impersonation)
 vi.mock('next/navigation', () => ({ usePathname: () => nav.pathname }))
 
-const USER = { name: 'Dana Reyes', email: 'dana@ihp.example', jobTitle: 'Admissions liaison' }
-const ORGANIZATION = { name: 'IHP+', role: 'admin' }
+const USER = {
+  id: 'user-1',
+  name: 'Dana Reyes',
+  email: 'dana@ihp.example',
+  jobTitle: 'Admissions liaison',
+}
+const ORGANIZATION = { id: 'org-1', name: 'IHP+', role: 'admin' }
 
 function renderShell(props: Partial<Parameters<typeof DashboardShell>[0]> = {}) {
   return render(
@@ -185,5 +190,19 @@ describe('DashboardShell impersonation', () => {
 
     expect(stop).toHaveBeenCalled()
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('DashboardShell search', () => {
+  it('offers search to an admin', () => {
+    renderShell()
+
+    expect(screen.getAllByRole('button', { name: 'Search' }).length).toBeGreaterThan(0)
+  })
+
+  it('keeps search from members while it is piloted with admins', () => {
+    renderShell({ canManageOrganization: false })
+
+    expect(screen.queryByRole('button', { name: 'Search' })).not.toBeInTheDocument()
   })
 })

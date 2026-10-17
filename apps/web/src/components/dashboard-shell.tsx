@@ -22,6 +22,8 @@ import { RunningClockChip } from '@/features/attendance/components/running-clock
 import { useStopImpersonating } from '@/features/auth/hooks/use-impersonation'
 import { useSignOut } from '@/features/auth/hooks/use-sign-out'
 import { BulletinUnreadBadge } from '@/features/bulletin/components/bulletin-unread-badge'
+import { SearchLauncher } from '@/features/search/components/search-launcher'
+import { recentKey } from '@/features/search/utils/recent-searches'
 import { MentionsMenu } from '@/features/tasks/components/mentions-menu'
 import {
   RunningTimerButton,
@@ -36,8 +38,8 @@ import { NavGroup } from './nav-group'
 import { NavItemLink } from './nav-item-link'
 
 export interface DashboardShellProps {
-  user: { name: string; email: string; jobTitle?: string | null; photoUrl?: string }
-  organization: { name: string; role?: string }
+  user: { id: string; name: string; email: string; jobTitle?: string | null; photoUrl?: string }
+  organization: { id: string; name: string; role?: string }
   canManageOrganization?: boolean
   canApproveRequests?: boolean
   canManageHiring?: boolean
@@ -121,6 +123,14 @@ export function DashboardShell({
           </Group>
 
           <Group gap="sm" wrap="nowrap">
+            {/* Admins only while search is piloted with them before everyone gets it. */}
+            {canManageOrganization ? (
+              <SearchLauncher
+                sections={sections}
+                storageKey={recentKey(organization.id, user.id)}
+                persistRecent={!impersonating}
+              />
+            ) : null}
             <RunningClockChip />
             <RunningTimerChip />
             <RunningTimerButton />

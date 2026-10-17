@@ -764,6 +764,13 @@ describe('statuses', () => {
     )
     expect(row.name).toBe('Up next')
   })
+
+  it('refuses a colour that is not a hex code, before anything is saved', async () => {
+    await expect(
+      updateStatus({ statusId: 'status-todo', color: 'url(https://evil.example/p.png)' }),
+    ).rejects.toMatchObject({ code: Code.InvalidArgument })
+    expect(prisma.taskStatus.update).not.toHaveBeenCalled()
+  })
 })
 
 describe('promoteSubtask', () => {
