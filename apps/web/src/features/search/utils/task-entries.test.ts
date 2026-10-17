@@ -26,4 +26,20 @@ describe('taskEntries', () => {
       href: `${routes.tasks}?project=project-1&task=task-1`,
     })
   })
+
+  it('drops a status colour that is not a hex code, so it never reaches a style', () => {
+    const [entry] = taskEntries([
+      {
+        taskId: 'task-2',
+        taskNumber: 3,
+        name: 'Odd',
+        projectId: 'project-1',
+        projectName: 'Renewals',
+        statusName: 'Odd',
+        statusColor: 'url(https://evil.example/p.png)',
+      },
+    ])
+
+    expect(entry?.areaColor).toBeUndefined()
+  })
 })

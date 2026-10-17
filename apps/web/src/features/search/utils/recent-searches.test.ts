@@ -56,6 +56,23 @@ describe('recent searches', () => {
     expect(readRecent(KEY)).toEqual([])
   })
 
+  it('drops a stored link or photo that a browser would read as another host', () => {
+    for (const entry of [
+      { id: 'x', kind: 'page', label: 'x', href: '/\\evil.example' },
+      { id: 'y', kind: 'person', label: 'y', href: '/directory', photoUrl: '//evil.example/p.png' },
+      {
+        id: 'z',
+        kind: 'person',
+        label: 'z',
+        href: '/directory',
+        photoUrl: '/\\evil.example/p.png',
+      },
+    ]) {
+      window.localStorage.setItem(KEY, JSON.stringify([entry]))
+      expect(readRecent(KEY)).toEqual([])
+    }
+  })
+
   it('treats unreadable storage as an empty list', () => {
     window.localStorage.setItem(KEY, '{not json')
     expect(readRecent(KEY)).toEqual([])
