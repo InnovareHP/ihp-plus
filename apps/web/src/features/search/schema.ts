@@ -2,11 +2,16 @@ import { z } from 'zod'
 
 export const searchEntrySchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(['page', 'person', 'client']),
+  kind: z.enum(['page', 'person', 'client', 'task']),
   label: z.string().min(1),
   description: z.string().optional(),
   /** The sidebar area a page sits in, shown as a badge beside its name. */
   area: z.string().optional(),
+  /** A task status's own colour, drawn as a dot beside the badge text. */
+  areaColor: z
+    .string()
+    .regex(/^#[0-9a-f]{3,8}$|^[a-z]+(\.\d)?$/i)
+    .optional(),
   // Recent entries come back out of localStorage, which anyone can edit, so only in-app paths pass.
   href: z.string().refine((value) => value.startsWith('/') && !value.startsWith('//')),
   keywords: z.array(z.string()).optional(),

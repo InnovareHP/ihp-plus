@@ -5,4 +5,5 @@ export const searchEvents = {
   paletteOpened: 'search.palette.opened',
   resultOpened: 'search.result.opened',
   directoryFailed: 'search.directory.load_failed',
+  tasksFailed: 'search.tasks.load_failed',
 } as const satisfies Record<string, EventName>

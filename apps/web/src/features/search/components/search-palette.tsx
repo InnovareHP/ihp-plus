@@ -14,11 +14,13 @@ import type { SearchEntry } from '../schema'
 import { searchSpotlight, searchStore } from '../spotlight-store'
 import { useRecentSearches } from '../hooks/use-recent-searches'
 import { useSearchDirectory } from '../hooks/use-search-directory'
+import { useTaskSearch } from '../hooks/use-task-search'
 import { clientEntries, personEntries } from '../utils/directory-entries'
+import { taskEntries } from '../utils/task-entries'
 import { pageEntries } from '../utils/page-entries'
 import { iconFor, pageIcons } from '../utils/page-icons'
 import { rankEntries } from '../utils/rank'
-import { DirectoryStatus } from './directory-status'
+import { GroupStatus } from './group-status'
 import classes from './search-palette.module.css'
 import { SearchResult } from './search-result'
 
@@ -50,8 +52,14 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
   const pageHits = rankEntries(pages, query, PAGE_LIMIT)
   const peopleHits = rankEntries(people, query, GROUP_LIMIT)
   const clientHits = rankEntries(clients, query, GROUP_LIMIT)
-  const total = pageHits.length + peopleHits.length + clientHits.length
+  const taskSearch = useTaskSearch(query)
+  const taskHits = taskEntries(taskSearch.tasks).slice(0, GROUP_LIMIT)
+  const total = pageHits.length + peopleHits.length + clientHits.length + taskHits.length
   const directoryState = directory.isPending ? 'loading' : directory.isError ? 'error' : null
+  const taskState = taskSearch.isLoading ? 'loading' : taskSearch.isError ? 'error' : null
+  const settling = Boolean(
+    directoryState === 'loading' || taskState === 'loading' || taskSearch.isWaiting,
+  )
   const recentIds = new Set(recent.entries.map((entry) => entry.id))
   const suggestions = pages.filter((page) => !recentIds.has(page.id)).slice(0, SUGGESTION_LIMIT)
 
@@ -97,8 +105,8 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
         <Modal.Title>Search</Modal.Title>
       </VisuallyHidden>
       <Spotlight.Search
-        aria-label="Search pages, people and clients"
-        placeholder="Search pages, people and clients…"
+        aria-label="Search pages, people, clients and tasks"
+        placeholder="Search pages, people, clients and tasks…"
         size="lg"
         leftSection={<IconSearch size={20} aria-hidden />}
         rightSectionPointerEvents="all"
@@ -111,9 +119,17 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
             {peopleHits.length > 0 ? group('People', peopleHits) : null}
             {clientHits.length > 0 ? group('Clients', clientHits) : null}
             {directoryState ? (
-              <DirectoryStatus state={directoryState} onRetry={() => void directory.refetch()} />
+              <GroupStatus
+                subject="people and clients"
+                state={directoryState}
+                onRetry={() => void directory.refetch()}
+              />
             ) : null}
-            {total === 0 && !directoryState ? (
+            {taskHits.length > 0 ? group('Tasks', taskHits) : null}
+            {taskState ? (
+              <GroupStatus subject="tasks" state={taskState} rows={1} onRetry={taskSearch.retry} />
+            ) : null}
+            {total === 0 && !settling && !directoryState && !taskState ? (
               <Spotlight.Empty>
                 Nothing matches “{trimmed}”. Try a shorter or different word.
               </Spotlight.Empty>
@@ -140,9 +156,7 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
         </Group>
       )}
       <VisuallyHidden role="status" aria-live="polite">
-        {trimmed && directoryState !== 'loading'
-          ? `${total} ${total === 1 ? 'result' : 'results'}`
-          : ''}
+        {trimmed && !settling ? `${total} ${total === 1 ? 'result' : 'results'}` : ''}
       </VisuallyHidden>
     </Spotlight.Root>
   )

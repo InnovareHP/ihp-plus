@@ -7,7 +7,12 @@ import { searchSpotlight } from '../spotlight-store'
 import { recentKey } from '../utils/recent-searches'
 import { SearchLauncher } from './search-launcher'
 
-const clients = vi.hoisted(() => ({ search: { getDirectory: vi.fn(() => new Promise(() => {})) } }))
+const clients = vi.hoisted(() => ({
+  search: {
+    getDirectory: vi.fn(() => new Promise(() => {})),
+    searchTasks: vi.fn(() => new Promise(() => {})),
+  },
+}))
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }))
 vi.mock('@/rpc/browser', () => ({ browserClients: clients }))
 
@@ -37,7 +42,7 @@ describe('SearchLauncher', () => {
     renderLauncher()
 
     expect(
-      screen.queryByRole('textbox', { name: 'Search pages, people and clients' }),
+      screen.queryByRole('textbox', { name: 'Search pages, people, clients and tasks' }),
     ).not.toBeInTheDocument()
   })
 
@@ -48,7 +53,7 @@ describe('SearchLauncher', () => {
     await user.click(screen.getAllByRole('button', { name: 'Search' })[0] as HTMLElement)
 
     expect(
-      await screen.findByRole('textbox', { name: 'Search pages, people and clients' }),
+      await screen.findByRole('textbox', { name: 'Search pages, people, clients and tasks' }),
     ).toBeInTheDocument()
   })
 
@@ -59,7 +64,7 @@ describe('SearchLauncher', () => {
     await user.keyboard('{Control>}k{/Control}')
 
     expect(
-      await screen.findByRole('textbox', { name: 'Search pages, people and clients' }),
+      await screen.findByRole('textbox', { name: 'Search pages, people, clients and tasks' }),
     ).toBeInTheDocument()
   })
 
@@ -71,7 +76,7 @@ describe('SearchLauncher', () => {
     await user.keyboard('{Control>}k{/Control}')
 
     expect(
-      screen.queryByRole('textbox', { name: 'Search pages, people and clients' }),
+      screen.queryByRole('textbox', { name: 'Search pages, people, clients and tasks' }),
     ).not.toBeInTheDocument()
   })
 

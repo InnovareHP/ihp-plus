@@ -2,7 +2,7 @@
 
 import { ConnectError } from '@ihp/rpc'
 import { browserClients } from '@/rpc/browser'
-import type { SearchDirectory } from './schema'
+import type { SearchDirectory, SearchTask } from './schema'
 
 export async function getSearchDirectory(): Promise<SearchDirectory> {
   try {
@@ -23,6 +23,23 @@ export async function getSearchDirectory(): Promise<SearchDirectory> {
     }
   } catch (error) {
     // The wire code stays on the ConnectError; the palette shows its own sentence instead.
+    throw new Error(ConnectError.from(error).rawMessage)
+  }
+}
+
+export async function searchTasks(query: string, signal?: AbortSignal): Promise<SearchTask[]> {
+  try {
+    const response = await browserClients.search.searchTasks({ query }, { signal })
+    return response.tasks.map((task) => ({
+      taskId: task.taskId,
+      taskNumber: task.taskNumber,
+      name: task.name,
+      projectId: task.projectId,
+      projectName: task.projectName,
+      statusName: task.statusName,
+      statusColor: task.statusColor,
+    }))
+  } catch (error) {
     throw new Error(ConnectError.from(error).rawMessage)
   }
 }

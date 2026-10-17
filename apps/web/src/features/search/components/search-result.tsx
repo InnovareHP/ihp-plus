@@ -53,7 +53,19 @@ export function SearchResult({
           ) : null}
         </Box>
         {entry.area ? (
-          <Badge variant="default" size="sm" radius="sm" tt="none" maw={140}>
+          // A status colour is user-chosen, so it only tints the dot; the text keeps body contrast.
+          <Badge
+            variant="default"
+            size="sm"
+            radius="sm"
+            tt="none"
+            maw={140}
+            leftSection={
+              entry.areaColor ? (
+                <Box w={8} h={8} bg={entry.areaColor} aria-hidden style={{ borderRadius: '50%' }} />
+              ) : undefined
+            }
+          >
             {entry.area}
           </Badge>
         ) : null}

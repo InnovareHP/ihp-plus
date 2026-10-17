@@ -9,7 +9,7 @@ import { readRecent, recentKey } from '../utils/recent-searches'
 import { SearchPalette } from './search-palette'
 
 const router = vi.hoisted(() => ({ push: vi.fn() }))
-const clients = vi.hoisted(() => ({ search: { getDirectory: vi.fn() } }))
+const clients = vi.hoisted(() => ({ search: { getDirectory: vi.fn(), searchTasks: vi.fn() } }))
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
 // Mocked at the generated client, the transport edge, so the hook and its cache run for real.
 vi.mock('@/rpc/browser', () => ({ browserClients: clients }))
@@ -21,7 +21,7 @@ const SECTIONS = visibleSections({
   canManageHiring: true,
   canViewWebsites: true,
 })
-const SEARCH = { name: 'Search pages, people and clients' }
+const SEARCH = { name: 'Search pages, people, clients and tasks' }
 const DIRECTORY = {
   people: [
     {
@@ -34,6 +34,15 @@ const DIRECTORY = {
     { userId: 'user-3', name: 'Zoe Park', jobTitle: '', department: '', photoUrl: '' },
   ],
   clients: [{ clientId: 'client-1', name: 'Acme Health', status: 'on_hold' }],
+}
+const RENEWAL_TASK = {
+  taskId: 'task-1',
+  taskNumber: 12,
+  name: 'Renewal pack',
+  projectId: 'project-1',
+  projectName: 'Renewals',
+  statusName: 'In review',
+  statusColor: '#1346C5',
 }
 
 function renderPalette(persistRecent = true) {
@@ -48,6 +57,8 @@ beforeEach(() => {
   router.push.mockClear()
   clients.search.getDirectory.mockReset()
   clients.search.getDirectory.mockResolvedValue(DIRECTORY)
+  clients.search.searchTasks.mockReset()
+  clients.search.searchTasks.mockResolvedValue({ tasks: [] })
 })
 
 afterEach(() => {
@@ -73,7 +84,8 @@ describe('SearchPalette pages', () => {
 
     expect(screen.getByRole('button', { name: /^Contracts/ })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Dashboard/ })).not.toBeInTheDocument()
-    expect(await screen.findByRole('status')).toHaveTextContent('1 result')
+    // Announced once the task search settles, so a screen reader never hears a count that then changes.
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('1 result'))
   })
 
   it('says so when nothing matches, keeping what was typed', async () => {
@@ -200,7 +212,7 @@ describe('SearchPalette people and clients', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Couldn’t load people and clients — check your connection and try again.',
     )
-    await user.click(screen.getByRole('button', { name: 'Try again' }))
+    await user.click(screen.getByRole('button', { name: 'Try again to load people and clients' }))
 
     expect(await screen.findByRole('button', { name: /Grace Hopper/ })).toBeInTheDocument()
     expect(clients.search.getDirectory).toHaveBeenCalledTimes(2)
@@ -214,5 +226,91 @@ describe('SearchPalette people and clients', () => {
     await screen.findByRole('group', { name: 'People' })
 
     expect(await axe(baseElement)).toHaveNoViolations()
+  })
+})
+
+describe('SearchPalette tasks', () => {
+  it('finds a task and opens it on the board', async () => {
+    const user = userEvent.setup()
+    clients.search.searchTasks.mockResolvedValue({ tasks: [RENEWAL_TASK] })
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'renewal')
+    const result = await screen.findByRole('button', {
+      name: 'Renewal pack, #12 · Renewals, In review',
+    })
+    await user.click(result)
+
+    expect(router.push).toHaveBeenCalledWith(`${routes.tasks}?project=project-1&task=task-1`)
+  })
+
+  it('asks the server once for a word typed in one go, not once per letter', async () => {
+    const user = userEvent.setup()
+    clients.search.searchTasks.mockResolvedValue({ tasks: [RENEWAL_TASK] })
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'renewals')
+    await screen.findByRole('group', { name: 'Tasks' })
+
+    expect(clients.search.searchTasks).toHaveBeenCalledTimes(1)
+    expect(clients.search.searchTasks.mock.calls[0]?.[0]).toEqual({ query: 'renewals' })
+  })
+
+  it('answers a longer query from a complete shorter one without asking again', async () => {
+    const user = userEvent.setup()
+    clients.search.searchTasks.mockResolvedValue({
+      tasks: [
+        RENEWAL_TASK,
+        { ...RENEWAL_TASK, taskId: 'task-2', taskNumber: 3, name: 'Rent hall' },
+      ],
+    })
+    renderPalette()
+    const input = screen.getByRole('textbox', SEARCH)
+
+    await user.type(input, 'ren')
+    await screen.findByRole('button', { name: /^Rent hall/ })
+    await user.type(input, 'ew')
+
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /^Rent hall/ })).not.toBeInTheDocument(),
+    )
+    expect(screen.getByRole('button', { name: /^Renewal pack/ })).toBeInTheDocument()
+    expect(clients.search.searchTasks).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not ask about tasks for a single character', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'r')
+    await screen.findByRole('status')
+    await new Promise((resolve) => setTimeout(resolve, 400))
+
+    expect(clients.search.searchTasks).not.toHaveBeenCalled()
+  })
+
+  it('shows one placeholder row while tasks load, the other groups already there', async () => {
+    const user = userEvent.setup()
+    clients.search.searchTasks.mockReturnValue(new Promise(() => {}))
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'contracts')
+
+    expect(await screen.findByLabelText('Loading tasks')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByRole('button', { name: /^Contracts/ })).toBeInTheDocument()
+  })
+
+  it('says when tasks fail and retries on request', async () => {
+    const user = userEvent.setup()
+    clients.search.searchTasks
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ tasks: [RENEWAL_TASK] })
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'renewal')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t load tasks')
+    await user.click(screen.getByRole('button', { name: 'Try again to load tasks' }))
+
+    expect(await screen.findByRole('button', { name: /^Renewal pack/ })).toBeInTheDocument()
   })
 })
