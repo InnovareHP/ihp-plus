@@ -64,6 +64,9 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
   const scopeLabel =
     SCOPE_PREFIXES.find((one) => one.scope === scope)?.label.toLowerCase() ?? 'results'
   const narrow = useMediaQuery('(max-width: 48em)')
+  // A tablet is wide but still driven by fingers, so its targets need the larger size too.
+  const coarse = useMediaQuery('(pointer: coarse)')
+  const touch = Boolean(narrow || coarse)
   const recent = useRecentSearches(storageKey)
   const icons = pageIcons(sections)
   const pages = pageEntries(sections, PAGE_TABS)
@@ -146,8 +149,6 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
       fullScreen={narrow}
       size={640}
       radius="lg"
-      scrollable
-      maxHeight={narrow ? 'calc(100dvh - 120px)' : 440}
     >
       {/* Mounting a title is what gives the dialog its accessible name. */}
       <VisuallyHidden>
@@ -155,7 +156,12 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
       </VisuallyHidden>
       <Spotlight.Search
         aria-label="Search pages, people, clients and tasks"
-        placeholder="Search pages, people, clients and tasks — or type @ for people"
+        // The chips already name the kinds, and the long hint was cut off on a phone.
+        placeholder={
+          narrow
+            ? 'Search everything'
+            : 'Search pages, people, clients and tasks — or type @ for people'
+        }
         size="lg"
         leftSection={<IconSearch size={20} aria-hidden />}
         rightSectionPointerEvents="all"
@@ -164,7 +170,7 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
       />
       <ScopeChips
         scope={scope}
-        touch={Boolean(narrow)}
+        touch={touch}
         onPick={(symbol) => {
           setValue('query', `${symbol}${text}`)
           searchRef.current?.focus()
@@ -174,7 +180,12 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
           searchRef.current?.focus()
         }}
       />
-      <Spotlight.ActionsList px="xs" pb="xs">
+      {/* A ceiling, not a fixed height: the list shrinks to a few results and scrolls past many. */}
+      <Spotlight.ActionsList
+        px="xs"
+        pb="xs"
+        mah={narrow ? 'calc(100dvh - 140px)' : 'min(440px, calc(100dvh - 320px))'}
+      >
         {searching ? (
           <>
             {actionHits.length > 0 ? group('Actions', actionHits) : null}

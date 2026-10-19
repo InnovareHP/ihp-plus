@@ -30,7 +30,7 @@ export function GroupStatus({ subject, state, onRetry, rows = 2 }: GroupStatusPr
   }
 
   return (
-    <Group justify="space-between" wrap="nowrap" gap="sm" mih={52} px="sm">
+    <Group justify="space-between" gap="sm" mih={52} px="sm">
       <Text size="sm" c="dimmed" role="alert">
         Couldn’t load {subject} — check your connection and try again. Other results still work.
       </Text>

@@ -541,3 +541,53 @@ describe('SearchPalette prefixes', () => {
     expect(await axe(baseElement)).toHaveNoViolations()
   })
 })
+
+describe('SearchPalette on small and touch screens', () => {
+  function matchOnly(...queries: string[]) {
+    vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+      matches: queries.includes(query),
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+  }
+
+  afterEach(() => {
+    matchOnly()
+  })
+
+  it('gives a touch tablet the 44 px chips in one swipeable row, though it is wide', () => {
+    matchOnly('(pointer: coarse)')
+    renderPalette()
+
+    const chips = screen.getByRole('group', { name: 'Search one kind only' })
+    expect(chips.style.getPropertyValue('--group-wrap')).toBe('nowrap')
+    for (const chip of within(chips).getAllByRole('button')) {
+      expect(chip.style.minHeight).toContain('2.75rem')
+    }
+  })
+
+  it('keeps the small desktop chips for a mouse', () => {
+    renderPalette()
+
+    const chip = screen.getByRole('button', { name: /^@ People/ })
+    expect(chip.style.minHeight).toBe('')
+  })
+
+  it('moves the area under the name on a phone instead of beside it', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'grace')
+    const row = await screen.findByRole('button', { name: 'Grace Hopper, Recruiter, HR' })
+
+    // Mantine turns these props into breakpoint classes; the badge shows from 36em up, the inline copy below.
+    const badge = within(row).getByText('HR', { selector: '.mantine-Badge-label' })
+    expect(badge.closest('.mantine-Badge-root')).toHaveClass('mantine-visible-from-xs')
+    expect(row.querySelector('.mantine-hidden-from-xs')).toHaveTextContent('· HR')
+  })
+})
