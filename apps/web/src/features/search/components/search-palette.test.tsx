@@ -11,8 +11,10 @@ import { SearchPalette } from './search-palette'
 const router = vi.hoisted(() => ({ push: vi.fn() }))
 const clients = vi.hoisted(() => ({ search: { getDirectory: vi.fn(), searchTasks: vi.fn() } }))
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
+const requests = vi.hoisted(() => ({ listAvailableForms: vi.fn() }))
 // Mocked at the generated client, the transport edge, so the hook and its cache run for real.
 vi.mock('@/rpc/browser', () => ({ browserClients: clients }))
+vi.mock('@/features/requests/rpc', () => requests)
 
 const KEY = recentKey('org-1', 'user-1')
 const SECTIONS = visibleSections({
@@ -59,6 +61,8 @@ beforeEach(() => {
   clients.search.getDirectory.mockResolvedValue(DIRECTORY)
   clients.search.searchTasks.mockReset()
   clients.search.searchTasks.mockResolvedValue({ tasks: [] })
+  requests.listAvailableForms.mockReset()
+  requests.listAvailableForms.mockResolvedValue([{ id: 'form-1', name: 'Leave', timeOff: true }])
 })
 
 afterEach(() => {
@@ -353,5 +357,67 @@ describe('SearchPalette links', () => {
       await user.click(within(recent).getByRole('button', { name }))
       expect(router.push).toHaveBeenLastCalledWith(href)
     }
+  })
+})
+
+describe('SearchPalette actions', () => {
+  it('offers shortcuts before anything is typed', async () => {
+    renderPalette()
+
+    const actions = await screen.findByRole('group', { name: 'Actions' })
+    expect(within(actions).getByRole('button', { name: /^New task/ })).toBeInTheDocument()
+    expect(within(actions).getByRole('button', { name: /^Clock in or out/ })).toBeInTheDocument()
+  })
+
+  it('starts a new task on the board, and does not keep it in Recent', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'new task')
+    await user.click(await screen.findByRole('button', { name: /^New task/ }))
+
+    expect(router.push).toHaveBeenCalledWith(`${routes.tasks}?compose=new`)
+    expect(readRecent(KEY)).toEqual([])
+  })
+
+  it('finds a time-off form by "leave" and opens it', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'vacation')
+    await user.click(await screen.findByRole('button', { name: /^New request: Leave/ }))
+
+    expect(router.push).toHaveBeenCalledWith(`${routes.requests}/new/form-1`)
+  })
+
+  it('goes to the time clock rather than clocking anyone in', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'clock out')
+    await user.click(await screen.findByRole('button', { name: /^Clock in or out/ }))
+
+    expect(router.push).toHaveBeenCalledWith(routes.attendance)
+  })
+
+  it('switches the theme in place, without leaving the page', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'dark mode')
+    await user.click(await screen.findByRole('button', { name: /^Switch to dark theme/ }))
+
+    expect(router.push).not.toHaveBeenCalled()
+    await waitFor(() =>
+      expect(document.documentElement).toHaveAttribute('data-mantine-color-scheme', 'dark'),
+    )
+  })
+
+  it('keeps every other shortcut when the request forms fail to load', async () => {
+    requests.listAvailableForms.mockRejectedValue(new Error('offline'))
+    renderPalette()
+
+    const actions = await screen.findByRole('group', { name: 'Actions' })
+    expect(within(actions).getByRole('button', { name: /^New task/ })).toBeInTheDocument()
   })
 })

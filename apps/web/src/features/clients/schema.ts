@@ -76,6 +76,8 @@ const csvValues = z
 
 export const clientQuerySchema = paginationSchema.extend({
   search: z.string().trim().max(100).catch('').default(''),
+  // "new" opens the new-client form, so a link (global search's "New client") can start one.
+  compose: z.enum(['', 'new']).catch('').default(''),
   statuses: csvOf(CLIENT_STATUSES),
   ownerIds: csvValues,
   types: csvValues,

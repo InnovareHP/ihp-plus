@@ -1,6 +1,15 @@
 'use client'
 
-import { CloseButton, Group, Kbd, Modal, Text, VisuallyHidden } from '@mantine/core'
+import {
+  CloseButton,
+  Group,
+  Kbd,
+  Modal,
+  Text,
+  VisuallyHidden,
+  useComputedColorScheme,
+  useMantineColorScheme,
+} from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { Spotlight } from '@mantine/spotlight'
 import { IconSearch } from '@tabler/icons-react'
@@ -9,12 +18,14 @@ import { useForm, useWatch } from 'react-hook-form'
 import { track } from '@/lib/analytics'
 import type { NavSection } from '@/lib/navigation'
 import { PAGE_TABS } from '@/lib/page-tabs'
+import { useAvailableForms } from '@/features/requests/hooks/use-requests'
 import { searchEvents } from '../events'
 import type { SearchEntry } from '../schema'
 import { searchSpotlight, searchStore } from '../spotlight-store'
 import { useRecentSearches } from '../hooks/use-recent-searches'
 import { useSearchDirectory } from '../hooks/use-search-directory'
 import { useTaskSearch } from '../hooks/use-task-search'
+import { actionEntries, THEME_ACTION_ID } from '../utils/action-entries'
 import { clientEntries, personEntries } from '../utils/directory-entries'
 import { taskEntries } from '../utils/task-entries'
 import { pageEntries } from '../utils/page-entries'
@@ -27,6 +38,7 @@ import { SearchResult } from './search-result'
 const PAGE_LIMIT = 5
 const GROUP_LIMIT = 5
 const SUGGESTION_LIMIT = 6
+const ACTION_SUGGESTIONS = 4
 
 export interface SearchPaletteProps {
   sections: readonly NavSection[]
@@ -45,6 +57,16 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
   const recent = useRecentSearches(storageKey)
   const icons = pageIcons(sections)
   const pages = pageEntries(sections, PAGE_TABS)
+  const { setColorScheme } = useMantineColorScheme()
+  const nextTheme = useComputedColorScheme('light') === 'dark' ? 'light' : 'dark'
+  // The forms this person may file; a failed load only drops the request shortcuts.
+  const forms = useAvailableForms()
+  const actions = actionEntries({
+    visibleHrefs: new Set(pages.map((page) => page.href)),
+    forms: forms.data ?? [],
+    nextTheme,
+  })
+  const actionHits = rankEntries(actions, query, GROUP_LIMIT)
   // Loaded once on open and filtered locally, so typing a name never waits on the network.
   const directory = useSearchDirectory()
   const people = directory.data ? personEntries(directory.data.people) : []
@@ -54,7 +76,8 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
   const clientHits = rankEntries(clients, query, GROUP_LIMIT)
   const taskSearch = useTaskSearch(query)
   const taskHits = taskEntries(taskSearch.tasks).slice(0, GROUP_LIMIT)
-  const total = pageHits.length + peopleHits.length + clientHits.length + taskHits.length
+  const total =
+    actionHits.length + pageHits.length + peopleHits.length + clientHits.length + taskHits.length
   const directoryState = directory.isPending ? 'loading' : directory.isError ? 'error' : null
   const taskState = taskSearch.isLoading ? 'loading' : taskSearch.isError ? 'error' : null
   const settling = Boolean(
@@ -64,8 +87,13 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
   const suggestions = pages.filter((page) => !recentIds.has(page.id)).slice(0, SUGGESTION_LIMIT)
 
   function open(entry: SearchEntry, position: number) {
-    if (persistRecent) recent.remember(entry)
     track(searchEvents.resultOpened, { kind: entry.kind, position })
+    if (entry.id === THEME_ACTION_ID) {
+      setColorScheme(nextTheme)
+      return
+    }
+    // Recent is for places; an action is one step of work, not somewhere to return to.
+    if (persistRecent && entry.kind !== 'action') recent.remember(entry)
     router.push(entry.href)
   }
 
@@ -115,6 +143,7 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
       <Spotlight.ActionsList px="xs" pb="xs">
         {trimmed ? (
           <>
+            {actionHits.length > 0 ? group('Actions', actionHits) : null}
             {pageHits.length > 0 ? group('Pages', pageHits) : null}
             {peopleHits.length > 0 ? group('People', peopleHits) : null}
             {clientHits.length > 0 ? group('Clients', clientHits) : null}
@@ -137,6 +166,7 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
           </>
         ) : (
           <>
+            {group('Actions', actions.slice(0, ACTION_SUGGESTIONS))}
             {recent.entries.length > 0 ? group('Recent', recent.entries) : null}
             {group('Pages', suggestions)}
           </>

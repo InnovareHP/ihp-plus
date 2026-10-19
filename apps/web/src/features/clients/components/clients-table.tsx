@@ -72,6 +72,13 @@ export function ClientsTable() {
   const restore = useRestoreClient(query)
 
   const [createOpened, createModal] = useDisclosure(false)
+  // ?compose=new is the same form, opened by a link instead of the button.
+  const creating = createOpened || query.compose === 'new'
+
+  function closeCreate() {
+    createModal.close()
+    if (query.compose) setQuery({ compose: '' })
+  }
   const [editing, setEditing] = useState<ClientRow | null>(null)
   const [managing, setManaging] = useState<ClientLookupKind | null>(null)
   const [sharing, setSharing] = useState<ClientRow | null>(null)
@@ -357,8 +364,8 @@ export function ClientsTable() {
       />
 
       <ClientFormModal
-        opened={createOpened}
-        onClose={createModal.close}
+        opened={creating}
+        onClose={closeCreate}
         title="New client"
         submitLabel="Add client"
         owners={ownerOptions.slice(1)}

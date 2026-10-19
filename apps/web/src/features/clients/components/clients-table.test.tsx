@@ -132,6 +132,18 @@ describe('ClientsTable', () => {
     expect(nav.replace).toHaveBeenCalledWith('/clients?statuses=on_hold', { scroll: false })
   })
 
+  it('opens the new-client form when a link asks for it, and forgets the ask on close', async () => {
+    nav.search = 'compose=new'
+    const person = user()
+    render(<ClientsTable />)
+
+    expect(await screen.findByRole('dialog', { name: 'New client' })).toBeInTheDocument()
+    await person.keyboard('{Escape}')
+
+    await waitFor(() => expect(nav.replace).toHaveBeenCalled())
+    expect(String(nav.replace.mock.lastCall?.[0])).not.toContain('compose')
+  })
+
   it('shows a new client before the server answers', async () => {
     let resolve: (value: unknown) => void = () => {}
     actions.createClient.mockReturnValue(

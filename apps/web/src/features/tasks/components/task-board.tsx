@@ -109,7 +109,7 @@ export function TaskBoard() {
     BOARD_STORAGE_KEY,
     parseBoardQuery,
     DEFAULT_BOARD_QUERY,
-    ['task', 'tab'],
+    ['task', 'tab', 'compose'],
   )
   const [projectOpened, projectModal] = useDisclosure(false)
   const [listOpened, listModal] = useDisclosure(false)
@@ -119,7 +119,7 @@ export function TaskBoard() {
   const [renamingList, setRenamingList] = useState<TaskListRow | null>(null)
   const [deletingList, setDeletingList] = useState<TaskListRow | null>(null)
   // Which task form is open: a new task may start without a list when the board spans projects.
-  const [composing, setComposing] = useState<{
+  const [composingTask, setComposing] = useState<{
     projectId: string
     listId: string
     task: TaskRow | null
@@ -281,6 +281,16 @@ export function TaskBoard() {
       listId: task.listId,
       beforeTaskId: before?.id,
     })
+  }
+
+  // ?compose=new is the same new-task form, opened by a link instead of the button.
+  const composing =
+    composingTask ??
+    (query.compose === 'new' ? { projectId, listId: listRows[0]?.id ?? '', task: null } : null)
+
+  function closeComposer() {
+    setComposing(null)
+    if (query.compose) setQuery({ compose: '' })
   }
 
   // Editing needs the task's own project lists, which a board spanning projects does not hold.
@@ -652,7 +662,7 @@ export function TaskBoard() {
       />
       <TaskFormModal
         opened={Boolean(composing)}
-        onClose={() => setComposing(null)}
+        onClose={closeComposer}
         title={composing?.task ? 'Edit task' : 'New task'}
         submitLabel={composing?.task ? 'Save changes' : 'Add task'}
         lists={listRows}
