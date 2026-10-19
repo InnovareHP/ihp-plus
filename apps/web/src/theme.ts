@@ -1,4 +1,4 @@
-import { createTheme, type MantineColorsTuple } from '@mantine/core'
+import { createTheme, type CSSVariablesResolver, type MantineColorsTuple } from '@mantine/core'
 
 // Mirrors the OKLCH ramps in packages/config/tailwind/theme.css; Tailwind's 600 is Mantine's 6.
 const brand: MantineColorsTuple = [
@@ -95,4 +95,12 @@ export const theme = createTheme({
     Modal: { defaultProps: { closeButtonProps: { 'aria-label': 'Close dialog' } } },
     Drawer: { defaultProps: { closeButtonProps: { 'aria-label': 'Close panel' } } },
   },
+})
+
+// Mantine's dimmed grey is 3.32:1 on white and 4.04:1 on the dark body, short of AA; these shades
+// measure 6.59–8.18:1 and 5.07–9.72:1 on every surface dimmed text sits on.
+export const cssVariablesResolver: CSSVariablesResolver = () => ({
+  variables: {},
+  light: { '--mantine-color-dimmed': 'var(--mantine-color-gray-7)' },
+  dark: { '--mantine-color-dimmed': 'var(--mantine-color-dark-1)' },
 })

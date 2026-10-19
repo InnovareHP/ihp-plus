@@ -1,14 +1,3 @@
-/* Mantine's dimmed grey measures 3.32:1 on white and 4.04:1 on the dark body, so the palette uses AA shades. */
-.content {
-  @mixin light {
-    --mantine-color-dimmed: var(--mantine-color-gray-7);
-  }
-
-  @mixin dark {
-    --mantine-color-dimmed: var(--mantine-color-dark-1);
-  }
-}
-
 .action {
   min-height: 52px;
   padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
