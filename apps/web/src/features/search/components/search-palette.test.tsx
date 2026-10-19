@@ -421,3 +421,100 @@ describe('SearchPalette actions', () => {
     expect(within(actions).getByRole('button', { name: /^New task/ })).toBeInTheDocument()
   })
 })
+
+describe('SearchPalette prefixes', () => {
+  it('searches people only after "@", without asking about tasks', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), '@grace')
+
+    expect(await screen.findByRole('group', { name: 'People' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Pages' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Actions' })).not.toBeInTheDocument()
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    expect(clients.search.searchTasks).not.toHaveBeenCalled()
+  })
+
+  it('lists a kind when its prefix stands alone', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), '$')
+
+    const group = await screen.findByRole('group', { name: 'Clients' })
+    expect(within(group).getByRole('button', { name: /^Acme Health/ })).toBeInTheDocument()
+  })
+
+  it('searches actions after ">" and pages after "/"', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+    const input = screen.getByRole('textbox', SEARCH)
+
+    await user.type(input, '>clock')
+    expect(await screen.findByRole('group', { name: 'Actions' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Pages' })).not.toBeInTheDocument()
+
+    await user.clear(input)
+    await user.type(input, '/calendar')
+    expect(await screen.findByRole('group', { name: 'Pages' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Actions' })).not.toBeInTheDocument()
+  })
+
+  it('searches tasks after "#", by name or by number', async () => {
+    const user = userEvent.setup()
+    clients.search.searchTasks.mockResolvedValue({ tasks: [RENEWAL_TASK] })
+    renderPalette()
+    const input = screen.getByRole('textbox', SEARCH)
+
+    await user.type(input, '#renewal')
+    expect(await screen.findByRole('group', { name: 'Tasks' })).toBeInTheDocument()
+    expect(clients.search.searchTasks.mock.lastCall?.[0]).toEqual({ query: 'renewal' })
+
+    await user.clear(input)
+    await user.type(input, '#12')
+    await waitFor(() =>
+      expect(clients.search.searchTasks.mock.lastCall?.[0]).toEqual({ query: '12' }),
+    )
+  })
+
+  it('asks for a name or number when "#" stands alone, and sends nothing', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), '#')
+
+    expect(await screen.findByText('Type a task name, or a number like 12.')).toBeInTheDocument()
+    expect(screen.queryByText(/Nothing matches/)).not.toBeInTheDocument()
+    expect(clients.search.searchTasks).not.toHaveBeenCalled()
+  })
+
+  it('types a prefix from its chip, and clears it again from the label', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+    const input = screen.getByRole('textbox', SEARCH)
+    await user.type(input, 'grace')
+
+    await user.click(screen.getByRole('button', { name: /^@ People/ }))
+
+    expect(input).toHaveValue('@grace')
+    expect(input).toHaveFocus()
+    expect(screen.getByText('Searching people only')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Search everything' }))
+
+    expect(input).toHaveValue('grace')
+    expect(input).toHaveFocus()
+    expect(screen.getByRole('button', { name: /^\$ Clients/ })).toBeInTheDocument()
+  })
+
+  it('has no axe violations with a prefix narrowing the search', async () => {
+    const user = userEvent.setup()
+    const { baseElement } = renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), '@')
+    await screen.findByRole('group', { name: 'People' })
+
+    expect(await axe(baseElement)).toHaveNoViolations()
+  })
+})

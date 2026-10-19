@@ -14,6 +14,7 @@ import { useMediaQuery } from '@mantine/hooks'
 import { Spotlight } from '@mantine/spotlight'
 import { IconSearch } from '@tabler/icons-react'
 import { useRouter } from 'next/navigation'
+import { useRef } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { track } from '@/lib/analytics'
 import type { NavSection } from '@/lib/navigation'
@@ -27,11 +28,13 @@ import { useSearchDirectory } from '../hooks/use-search-directory'
 import { useTaskSearch } from '../hooks/use-task-search'
 import { actionEntries, THEME_ACTION_ID } from '../utils/action-entries'
 import { clientEntries, personEntries } from '../utils/directory-entries'
+import { parseQuery, type SearchScope } from '../utils/parse-query'
 import { taskEntries } from '../utils/task-entries'
 import { pageEntries } from '../utils/page-entries'
 import { iconFor, pageIcons } from '../utils/page-icons'
 import { rankEntries } from '../utils/rank'
 import { GroupStatus } from './group-status'
+import { ScopeChips } from './scope-chips'
 import classes from './search-palette.module.css'
 import { SearchResult } from './search-result'
 
@@ -52,7 +55,11 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
   // The search box is a form field like any other, so react-hook-form owns it rather than useState.
   const { control, setValue, reset } = useForm<{ query: string }>({ defaultValues: { query: '' } })
   const query = useWatch({ control, name: 'query' })
-  const trimmed = query.trim()
+  // A leading @, $, #, / or > narrows the search to one kind; the rest is what to match.
+  const { scope, text } = parseQuery(query)
+  const searching = scope !== null || text.length > 0
+  const inScope = (kind: SearchScope) => scope === null || scope === kind
+  const searchRef = useRef<HTMLInputElement>(null)
   const narrow = useMediaQuery('(max-width: 48em)')
   const recent = useRecentSearches(storageKey)
   const icons = pageIcons(sections)
@@ -66,19 +73,29 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
     forms: forms.data ?? [],
     nextTheme,
   })
-  const actionHits = rankEntries(actions, query, GROUP_LIMIT)
+  const actionHits = inScope('actions') ? rankEntries(actions, text, GROUP_LIMIT) : []
   // Loaded once on open and filtered locally, so typing a name never waits on the network.
   const directory = useSearchDirectory()
   const people = directory.data ? personEntries(directory.data.people) : []
   const clients = directory.data ? clientEntries(directory.data.clients) : []
-  const pageHits = rankEntries(pages, query, PAGE_LIMIT)
-  const peopleHits = rankEntries(people, query, GROUP_LIMIT)
-  const clientHits = rankEntries(clients, query, GROUP_LIMIT)
-  const taskSearch = useTaskSearch(query)
+  const pageHits = inScope('pages') ? rankEntries(pages, text, PAGE_LIMIT) : []
+  const peopleHits = inScope('people') ? rankEntries(people, text, GROUP_LIMIT) : []
+  const clientHits = inScope('clients') ? rankEntries(clients, text, GROUP_LIMIT) : []
+  // Outside the tasks scope no task is asked for at all, which spares the server a request.
+  const taskSearch = useTaskSearch(inScope('tasks') ? text : '')
+  // Tasks are too many to list, so "#" alone asks for a name or number instead.
+  const taskHint = scope === 'tasks' && text.length < 2
   const taskHits = taskEntries(taskSearch.tasks).slice(0, GROUP_LIMIT)
   const total =
     actionHits.length + pageHits.length + peopleHits.length + clientHits.length + taskHits.length
-  const directoryState = directory.isPending ? 'loading' : directory.isError ? 'error' : null
+  const wantsDirectory = inScope('people') || inScope('clients')
+  const directoryState = !wantsDirectory
+    ? null
+    : directory.isPending
+      ? 'loading'
+      : directory.isError
+        ? 'error'
+        : null
   const taskState = taskSearch.isLoading ? 'loading' : taskSearch.isError ? 'error' : null
   const settling = Boolean(
     directoryState === 'loading' || taskState === 'loading' || taskSearch.isWaiting,
@@ -105,7 +122,7 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
           <SearchResult
             key={entry.id}
             entry={entry}
-            query={trimmed}
+            query={text}
             icon={iconFor(icons, entry.href)}
             onOpen={(one) => open(one, index)}
           />
@@ -134,14 +151,27 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
       </VisuallyHidden>
       <Spotlight.Search
         aria-label="Search pages, people, clients and tasks"
-        placeholder="Search pages, people, clients and tasks…"
+        placeholder="Search pages, people, clients and tasks — or type @ for people"
         size="lg"
         leftSection={<IconSearch size={20} aria-hidden />}
         rightSectionPointerEvents="all"
         rightSection={<CloseButton aria-label="Close search" onClick={searchSpotlight.close} />}
+        ref={searchRef}
+      />
+      <ScopeChips
+        scope={scope}
+        touch={Boolean(narrow)}
+        onPick={(symbol) => {
+          setValue('query', `${symbol}${text}`)
+          searchRef.current?.focus()
+        }}
+        onClear={() => {
+          setValue('query', text)
+          searchRef.current?.focus()
+        }}
       />
       <Spotlight.ActionsList px="xs" pb="xs">
-        {trimmed ? (
+        {searching ? (
           <>
             {actionHits.length > 0 ? group('Actions', actionHits) : null}
             {pageHits.length > 0 ? group('Pages', pageHits) : null}
@@ -158,9 +188,14 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
             {taskState ? (
               <GroupStatus subject="tasks" state={taskState} rows={1} onRetry={taskSearch.retry} />
             ) : null}
-            {total === 0 && !settling && !directoryState && !taskState ? (
+            {taskHint ? (
+              <Text size="sm" c="dimmed" px="md" py="sm">
+                Type a task name, or a number like 12.
+              </Text>
+            ) : null}
+            {total === 0 && !taskHint && !settling && !directoryState && !taskState ? (
               <Spotlight.Empty>
-                Nothing matches “{trimmed}”. Try a shorter or different word.
+                Nothing matches “{text || query.trim()}”. Try a shorter or different word.
               </Spotlight.Empty>
             ) : null}
           </>
@@ -186,7 +221,7 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
         </Group>
       )}
       <VisuallyHidden role="status" aria-live="polite">
-        {trimmed && !settling ? `${total} ${total === 1 ? 'result' : 'results'}` : ''}
+        {searching && !settling ? `${total} ${total === 1 ? 'result' : 'results'}` : ''}
       </VisuallyHidden>
     </Spotlight.Root>
   )
