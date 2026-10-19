@@ -125,6 +125,8 @@ export const boardQuerySchema = z.object({
   view: z.enum(TASK_VIEWS).catch('board').default('board'),
   // The open task: a detail panel has to be linkable, so it is a query param, not local state.
   task: z.string().trim().max(64).catch('').default(''),
+  // "new" opens the new-task form, so a link (global search's "New task") can start one.
+  compose: z.enum(['', 'new']).catch('').default(''),
   tab: z.enum(TASK_TABS).catch('task').default('task'),
   list: z.string().trim().max(64).catch('').default(''),
   assignee: z.enum(TASK_ASSIGNEE_FILTERS).catch('all').default('all'),

@@ -5,7 +5,7 @@ const IN_APP_PATH = /^\/(?![/\\])/
 
 export const searchEntrySchema = z.object({
   id: z.string().min(1),
-  kind: z.enum(['page', 'person', 'client', 'task']),
+  kind: z.enum(['page', 'person', 'client', 'task', 'action']),
   label: z.string().min(1),
   description: z.string().optional(),
   /** The sidebar area a page sits in, shown as a badge beside its name. */
@@ -23,6 +23,11 @@ export const searchEntrySchema = z.object({
 })
 
 export type SearchEntry = z.infer<typeof searchEntrySchema>
+
+/** Recent only ever keeps places, so a stored "action" is someone editing their own storage. */
+export const recentEntrySchema = searchEntrySchema.extend({
+  kind: z.enum(['page', 'person', 'client', 'task']),
+})
 
 export const TASK_RESULT_LIMIT = 8
 

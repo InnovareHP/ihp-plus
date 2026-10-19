@@ -11,8 +11,10 @@ import { SearchPalette } from './search-palette'
 const router = vi.hoisted(() => ({ push: vi.fn() }))
 const clients = vi.hoisted(() => ({ search: { getDirectory: vi.fn(), searchTasks: vi.fn() } }))
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
+const requests = vi.hoisted(() => ({ listAvailableForms: vi.fn() }))
 // Mocked at the generated client, the transport edge, so the hook and its cache run for real.
 vi.mock('@/rpc/browser', () => ({ browserClients: clients }))
+vi.mock('@/features/requests/rpc', () => requests)
 
 const KEY = recentKey('org-1', 'user-1')
 const SECTIONS = visibleSections({
@@ -59,6 +61,8 @@ beforeEach(() => {
   clients.search.getDirectory.mockResolvedValue(DIRECTORY)
   clients.search.searchTasks.mockReset()
   clients.search.searchTasks.mockResolvedValue({ tasks: [] })
+  requests.listAvailableForms.mockReset()
+  requests.listAvailableForms.mockResolvedValue([{ id: 'form-1', name: 'Leave', timeOff: true }])
 })
 
 afterEach(() => {
@@ -312,5 +316,228 @@ describe('SearchPalette tasks', () => {
     await user.click(screen.getByRole('button', { name: 'Try again to load tasks' }))
 
     expect(await screen.findByRole('button', { name: /^Renewal pack/ })).toBeInTheDocument()
+  })
+})
+
+describe('SearchPalette links', () => {
+  it('opens a client on the clients page, filtered to its name', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'acme')
+    await user.click(await screen.findByRole('button', { name: /^Acme Health/ }))
+
+    expect(router.push).toHaveBeenCalledWith(`${routes.clients}?search=Acme%20Health`)
+  })
+
+  it('reopens a person, a client and a task from Recent at the same place', async () => {
+    const user = userEvent.setup()
+    clients.search.searchTasks.mockResolvedValue({ tasks: [RENEWAL_TASK] })
+    renderPalette()
+    const opened: [RegExp, string][] = [
+      [/^Grace Hopper/, `${routes.directory}?search=Grace%20Hopper`],
+      [/^Acme Health/, `${routes.clients}?search=Acme%20Health`],
+      [/^Renewal pack/, `${routes.tasks}?project=project-1&task=task-1`],
+    ]
+
+    for (const [name, query] of [
+      [/^Grace Hopper/, 'grace'],
+      [/^Acme Health/, 'acme'],
+      [/^Renewal pack/, 'renewal'],
+    ] as const) {
+      act(() => searchSpotlight.open())
+      await user.type(screen.getByRole('textbox', SEARCH), query)
+      await user.click(await screen.findByRole('button', { name }))
+    }
+    router.push.mockClear()
+
+    for (const [name, href] of opened) {
+      act(() => searchSpotlight.open())
+      const recent = await screen.findByRole('group', { name: 'Recent' })
+      await user.click(within(recent).getByRole('button', { name }))
+      expect(router.push).toHaveBeenLastCalledWith(href)
+    }
+  })
+})
+
+describe('SearchPalette actions', () => {
+  it('offers shortcuts before anything is typed', async () => {
+    renderPalette()
+
+    const actions = await screen.findByRole('group', { name: 'Actions' })
+    expect(within(actions).getByRole('button', { name: /^New task/ })).toBeInTheDocument()
+    expect(within(actions).getByRole('button', { name: /^Clock in or out/ })).toBeInTheDocument()
+  })
+
+  it('starts a new task on the board, and does not keep it in Recent', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'new task')
+    await user.click(await screen.findByRole('button', { name: /^New task/ }))
+
+    expect(router.push).toHaveBeenCalledWith(`${routes.tasks}?compose=new`)
+    expect(readRecent(KEY)).toEqual([])
+  })
+
+  it('finds a time-off form by "leave" and opens it', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'vacation')
+    await user.click(await screen.findByRole('button', { name: /^New request: Leave/ }))
+
+    expect(router.push).toHaveBeenCalledWith(`${routes.requests}/new/form-1`)
+  })
+
+  it('goes to the time clock rather than clocking anyone in', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'clock out')
+    await user.click(await screen.findByRole('button', { name: /^Clock in or out/ }))
+
+    expect(router.push).toHaveBeenCalledWith(routes.attendance)
+  })
+
+  it('switches the theme in place, without leaving the page', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'dark mode')
+    await user.click(await screen.findByRole('button', { name: /^Switch to dark theme/ }))
+
+    expect(router.push).not.toHaveBeenCalled()
+    await waitFor(() =>
+      expect(document.documentElement).toHaveAttribute('data-mantine-color-scheme', 'dark'),
+    )
+  })
+
+  it('offers the light theme when the dark one is on', async () => {
+    window.localStorage.setItem('mantine-color-scheme-value', 'dark')
+    renderPalette()
+
+    const actions = await screen.findByRole('group', { name: 'Actions' })
+    await waitFor(() =>
+      expect(
+        within(actions).getByRole('button', { name: /^Switch to light theme/ }),
+      ).toBeInTheDocument(),
+    )
+  })
+
+  it('keeps every other shortcut when the request forms fail to load', async () => {
+    requests.listAvailableForms.mockRejectedValue(new Error('offline'))
+    renderPalette()
+
+    const actions = await screen.findByRole('group', { name: 'Actions' })
+    expect(within(actions).getByRole('button', { name: /^New task/ })).toBeInTheDocument()
+  })
+})
+
+describe('SearchPalette prefixes', () => {
+  it('searches people only after "@", without asking about tasks', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), '@grace')
+
+    expect(await screen.findByRole('group', { name: 'People' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Pages' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Actions' })).not.toBeInTheDocument()
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    expect(clients.search.searchTasks).not.toHaveBeenCalled()
+  })
+
+  it('lists a kind when its prefix stands alone', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), '$')
+
+    const group = await screen.findByRole('group', { name: 'Clients' })
+    expect(within(group).getByRole('button', { name: /^Acme Health/ })).toBeInTheDocument()
+  })
+
+  it('searches actions after ">" and pages after "/"', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+    const input = screen.getByRole('textbox', SEARCH)
+
+    await user.type(input, '>clock')
+    expect(await screen.findByRole('group', { name: 'Actions' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Pages' })).not.toBeInTheDocument()
+
+    await user.clear(input)
+    await user.type(input, '/calendar')
+    expect(await screen.findByRole('group', { name: 'Pages' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Actions' })).not.toBeInTheDocument()
+  })
+
+  it('searches tasks after "#", by name or by number', async () => {
+    const user = userEvent.setup()
+    clients.search.searchTasks.mockResolvedValue({ tasks: [RENEWAL_TASK] })
+    renderPalette()
+    const input = screen.getByRole('textbox', SEARCH)
+
+    await user.type(input, '#renewal')
+    expect(await screen.findByRole('group', { name: 'Tasks' })).toBeInTheDocument()
+    expect(clients.search.searchTasks.mock.lastCall?.[0]).toEqual({ query: 'renewal' })
+
+    await user.clear(input)
+    await user.type(input, '#12')
+    await waitFor(() =>
+      expect(clients.search.searchTasks.mock.lastCall?.[0]).toEqual({ query: '12' }),
+    )
+  })
+
+  it('asks for a name or number when "#" stands alone, and sends nothing', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), '#')
+
+    expect(await screen.findByText('Type a task name, or a number like 12.')).toBeInTheDocument()
+    expect(screen.queryByText(/Nothing matches/)).not.toBeInTheDocument()
+    expect(clients.search.searchTasks).not.toHaveBeenCalled()
+  })
+
+  it('types a prefix from its chip, and clears it again from the label', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+    const input = screen.getByRole('textbox', SEARCH)
+    await user.type(input, 'grace')
+
+    await user.click(screen.getByRole('button', { name: /^@ People/ }))
+
+    expect(input).toHaveValue('@grace')
+    expect(input).toHaveFocus()
+    expect(screen.getByText('Searching people only')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Search everything' }))
+
+    expect(input).toHaveValue('grace')
+    expect(input).toHaveFocus()
+    expect(screen.getByRole('button', { name: /^\$ Clients/ })).toBeInTheDocument()
+  })
+
+  it('says there is nothing to list rather than echoing a bare prefix', async () => {
+    const user = userEvent.setup()
+    clients.search.getDirectory.mockResolvedValue({ people: [], clients: [] })
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), '@')
+
+    expect(await screen.findByText('No people to show yet.')).toBeInTheDocument()
+    expect(screen.queryByText(/Nothing matches “@”/)).not.toBeInTheDocument()
+  })
+
+  it('has no axe violations with a prefix narrowing the search', async () => {
+    const user = userEvent.setup()
+    const { baseElement } = renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), '@')
+    await screen.findByRole('group', { name: 'People' })
+
+    expect(await axe(baseElement)).toHaveNoViolations()
   })
 })

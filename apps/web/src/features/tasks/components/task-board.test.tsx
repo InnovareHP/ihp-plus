@@ -355,6 +355,29 @@ describe('TaskBoard', () => {
     expect(screen.getByRole('button', { name: 'New task' })).toBeEnabled()
   })
 
+  it('opens the new-task form when a link asks for it, and forgets the ask on close', async () => {
+    nav.search = 'view=list&compose=new'
+    const user = userEvent.setup()
+    render(<TaskBoard />)
+
+    const dialog = await screen.findByRole('dialog', { name: 'New task' })
+    expect(within(dialog).getByRole('button', { name: 'Add task' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+
+    await waitFor(() => expect(nav.replace).toHaveBeenCalled())
+    expect(String(nav.replace.mock.lastCall?.[0])).not.toContain('compose')
+  })
+
+  it('does not open the form from a link when there is no list to add to, like the button', async () => {
+    nav.search = 'view=list&compose=new'
+    rpc.listLists.mockResolvedValue([])
+    rpc.listTasks.mockResolvedValue([])
+    render(<TaskBoard />)
+
+    expect(await screen.findByRole('button', { name: 'New task' })).toBeDisabled()
+    expect(screen.queryByRole('dialog', { name: 'New task' })).not.toBeInTheDocument()
+  })
+
   it('asks which project a new task goes in, then offers that project’s lists', async () => {
     nav.search = 'project=mine'
     rpc.listProjects.mockResolvedValue([
