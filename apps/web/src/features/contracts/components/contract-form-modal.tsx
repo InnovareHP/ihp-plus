@@ -41,6 +41,8 @@ import {
   useCreateContract,
   useUpdateContract,
 } from '../use-contracts'
+import { DialogActions } from '@/components/dialog-actions'
+import { FieldRow } from '@/components/field-row'
 
 const EMPTY_DRAFT: ContractDraftInput = {
   clientId: '',
@@ -183,7 +185,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
         <Stack gap="md">
           <FormError message={errors.root?.message} title="Could not save the contract" />
 
-          <Group grow align="flex-start">
+          <FieldRow>
             <Controller
               control={control}
               name="clientId"
@@ -217,7 +219,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
               aria-required="true"
               error={errors.title?.message}
             />
-          </Group>
+          </FieldRow>
 
           <Controller
             control={control}
@@ -239,7 +241,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
             )}
           />
 
-          <Group grow align="flex-start">
+          <FieldRow>
             <TextInput
               {...register('startDate')}
               label="Start date"
@@ -254,7 +256,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
               description="Optional; blank is open-ended."
               type="date"
             />
-          </Group>
+          </FieldRow>
 
           <Divider label="Services" labelPosition="left" />
 
@@ -414,14 +416,14 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
             />
           </Stack>
 
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose} type="button">
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Saving…' : isEditing ? 'Save changes' : 'Create contract'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

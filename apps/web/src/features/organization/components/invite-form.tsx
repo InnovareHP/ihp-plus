@@ -10,6 +10,7 @@ import { announceSuccess } from '@/lib/announce'
 import { useInviteMember } from '../hooks/use-invitations'
 import { useTeams } from '../hooks/use-teams'
 import { INVITABLE_ROLES, inviteMemberSchema, type InviteMemberValues } from '../schema'
+import { FieldRow } from '@/components/field-row'
 
 const ROLE_OPTIONS = INVITABLE_ROLES.map((role) => ({
   value: role,
@@ -68,7 +69,7 @@ export function InviteForm({ invitedBy }: { invitedBy: string }) {
             error={errors.email?.message}
           />
 
-          <Group grow align="flex-start">
+          <FieldRow>
             <Controller
               control={control}
               name="teamId"
@@ -108,7 +109,7 @@ export function InviteForm({ invitedBy }: { invitedBy: string }) {
                 />
               )}
             />
-          </Group>
+          </FieldRow>
 
           <Group>
             <Button

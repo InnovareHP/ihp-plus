@@ -28,6 +28,8 @@ export function DeleteStatusModal({
 
   return (
     <Modal
+      // A two-button question stays a small box on a phone, as native confirmations do.
+      data-compact
       opened={Boolean(status)}
       onClose={onCancel}
       centered

@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, FileInput, Group, Modal, Stack, Textarea } from '@mantine/core'
+import { Button, FileInput, Modal, Stack, Textarea } from '@mantine/core'
 import { IconPaperclip } from '@tabler/icons-react'
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
@@ -15,6 +15,7 @@ import {
   type SendOfferFormInput,
   type SendOfferFormValues,
 } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface SendOfferModalProps {
   application: ApplicationSummary
@@ -112,14 +113,14 @@ export function SendOfferModal({
             )}
           />
 
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Sending…' : revised ? 'Send revised offer' : 'Send offer'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

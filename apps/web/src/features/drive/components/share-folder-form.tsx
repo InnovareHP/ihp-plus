@@ -1,9 +1,11 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Stack, Text, TextInput } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { EMPTY_SHARE_FOLDER, shareFolderSchema, type ShareFolderValues } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
+import { FieldRow } from '@/components/field-row'
 
 export interface ShareFolderFormProps {
   clientName: string
@@ -50,7 +52,7 @@ export function ShareFolderForm({ clientName, onShare }: ShareFolderFormProps) {
         </Text>
 
         {/* Both fields carry one line of description, so the inputs line up. */}
-        <Group grow align="flex-start">
+        <FieldRow>
           <TextInput
             {...register('email')}
             label="Email address"
@@ -72,13 +74,13 @@ export function ShareFolderForm({ clientName, onShare }: ShareFolderFormProps) {
             autoComplete="name"
             error={errors.name?.message}
           />
-        </Group>
+        </FieldRow>
 
-        <Group justify="flex-end">
+        <DialogActions>
           <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? 'Sharing…' : 'Share folder'}
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

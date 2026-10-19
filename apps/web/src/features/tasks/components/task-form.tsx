@@ -27,6 +27,8 @@ import {
   type TaskListRow,
 } from '../schema'
 import { StagedFileChip } from './staged-file-chip'
+import { DialogActions } from '@/components/dialog-actions'
+import { FieldRow } from '@/components/field-row'
 
 const PRIORITY_OPTIONS = TASK_PRIORITIES.map((priority) => ({
   value: priority,
@@ -192,7 +194,7 @@ export function TaskForm({
           )}
         />
 
-        <Group grow align="flex-start">
+        <FieldRow>
           <Controller
             control={control}
             name="priority"
@@ -227,7 +229,7 @@ export function TaskForm({
             error={errors.dueDate?.message}
             errorProps={{ role: 'alert' }}
           />
-        </Group>
+        </FieldRow>
 
         <Controller
           control={control}
@@ -279,14 +281,14 @@ export function TaskForm({
           ) : null}
         </Stack>
 
-        <Group justify="flex-end">
+        <DialogActions>
           <Button variant="default" onClick={onClose} type="button">
             Cancel
           </Button>
           <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? 'Saving…' : submitLabel}
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

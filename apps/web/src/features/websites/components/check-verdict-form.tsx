@@ -9,6 +9,7 @@ import {
   checkNoteFormSchema,
   type CheckNoteFormInput,
 } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface CheckVerdictFormProps {
   defaults: CheckNoteFormInput
@@ -79,14 +80,14 @@ export function CheckVerdictForm({ defaults, onSave, onClose }: CheckVerdictForm
           error={errors.note?.message}
           data-autofocus
         />
-        <Group justify="flex-end">
+        <DialogActions>
           <Button variant="default" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit" loading={isSubmitting}>
             Save check
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

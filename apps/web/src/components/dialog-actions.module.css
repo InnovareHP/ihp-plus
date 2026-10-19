@@ -1,0 +1,13 @@
+/* Inside a dialog on a phone the buttons stay in reach, above the keyboard and the home bar. */
+@media (max-width: $mantine-breakpoint-sm) {
+  :global(.mantine-Modal-body) .actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin-inline: calc(var(--mb-padding, var(--mantine-spacing-md)) * -1);
+    padding: var(--mantine-spacing-sm) var(--mb-padding, var(--mantine-spacing-md));
+    padding-bottom: calc(var(--mantine-spacing-sm) + env(safe-area-inset-bottom));
+    background-color: var(--mantine-color-body);
+    border-top: 1px solid var(--mantine-color-default-border);
+  }
+}

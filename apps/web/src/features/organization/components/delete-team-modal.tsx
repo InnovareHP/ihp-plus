@@ -10,6 +10,8 @@ export function DeleteTeamModal({ team, onClose }: { team: TeamRow | null; onClo
 
   return (
     <Modal
+      // A two-button question stays a small box on a phone, as native confirmations do.
+      data-compact
       opened={Boolean(team)}
       onClose={onClose}
       title={`Delete ${team?.name ?? 'department'}?`}
