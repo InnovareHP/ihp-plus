@@ -145,7 +145,6 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
       query={query}
       onQueryChange={(value) => setValue('query', value)}
       onSpotlightClose={() => reset()}
-      classNames={{ content: classes.content }}
       fullScreen={narrow}
       size={640}
       radius="lg"
