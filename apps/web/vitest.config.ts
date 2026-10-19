@@ -10,5 +10,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // An axe scan of a large form takes ~3.5 s alone and passed 5 s when every file shares the CPU.
+    testTimeout: 15_000,
   },
 })
