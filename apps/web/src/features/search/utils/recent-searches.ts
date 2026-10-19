@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { searchEntrySchema, type SearchEntry } from '../schema'
+import { recentEntrySchema, type SearchEntry } from '../schema'
 
 const PREFIX = 'ihp.search.recent.'
 const MAX_RECENT = 5
@@ -31,7 +31,7 @@ function readRaw(key: string) {
 function parse(raw: string | null): readonly SearchEntry[] {
   if (!raw) return NO_RECENT
   try {
-    const parsed = z.array(searchEntrySchema).safeParse(JSON.parse(raw))
+    const parsed = z.array(recentEntrySchema).safeParse(JSON.parse(raw))
     return parsed.success ? parsed.data.slice(0, MAX_RECENT) : NO_RECENT
   } catch {
     return NO_RECENT

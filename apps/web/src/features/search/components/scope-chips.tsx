@@ -21,7 +21,7 @@ export function ScopeChips({ scope, touch, onPick, onClear }: ScopeChipsProps) {
         <Text size="sm" c="dimmed">
           Searching {active.label.toLowerCase()} only
         </Text>
-        <CloseButton size={touch ? 'lg' : 'sm'} aria-label="Search everything" onClick={onClear} />
+        <CloseButton size={touch ? 'xl' : 'sm'} aria-label="Search everything" onClick={onClear} />
       </Group>
     )
   }

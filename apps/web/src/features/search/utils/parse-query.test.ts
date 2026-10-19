@@ -22,6 +22,10 @@ describe('parseQuery', () => {
     expect(parseQuery('@')).toEqual({ scope: 'people', text: '' })
   })
 
+  it('reads a prefix after a leading space', () => {
+    expect(parseQuery(' @bob')).toEqual({ scope: 'people', text: 'bob' })
+  })
+
   it('only reads a prefix at the start', () => {
     expect(parseQuery('acme @ home')).toEqual({ scope: null, text: 'acme @ home' })
   })

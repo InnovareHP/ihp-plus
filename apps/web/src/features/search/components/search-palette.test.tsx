@@ -413,6 +413,18 @@ describe('SearchPalette actions', () => {
     )
   })
 
+  it('offers the light theme when the dark one is on', async () => {
+    window.localStorage.setItem('mantine-color-scheme-value', 'dark')
+    renderPalette()
+
+    const actions = await screen.findByRole('group', { name: 'Actions' })
+    await waitFor(() =>
+      expect(
+        within(actions).getByRole('button', { name: /^Switch to light theme/ }),
+      ).toBeInTheDocument(),
+    )
+  })
+
   it('keeps every other shortcut when the request forms fail to load', async () => {
     requests.listAvailableForms.mockRejectedValue(new Error('offline'))
     renderPalette()
@@ -506,6 +518,17 @@ describe('SearchPalette prefixes', () => {
     expect(input).toHaveValue('grace')
     expect(input).toHaveFocus()
     expect(screen.getByRole('button', { name: /^\$ Clients/ })).toBeInTheDocument()
+  })
+
+  it('says there is nothing to list rather than echoing a bare prefix', async () => {
+    const user = userEvent.setup()
+    clients.search.getDirectory.mockResolvedValue({ people: [], clients: [] })
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), '@')
+
+    expect(await screen.findByText('No people to show yet.')).toBeInTheDocument()
+    expect(screen.queryByText(/Nothing matches “@”/)).not.toBeInTheDocument()
   })
 
   it('has no axe violations with a prefix narrowing the search', async () => {

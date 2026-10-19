@@ -24,6 +24,11 @@ export const searchEntrySchema = z.object({
 
 export type SearchEntry = z.infer<typeof searchEntrySchema>
 
+/** Recent only ever keeps places, so a stored "action" is someone editing their own storage. */
+export const recentEntrySchema = searchEntrySchema.extend({
+  kind: z.enum(['page', 'person', 'client', 'task']),
+})
+
 export const TASK_RESULT_LIMIT = 8
 
 export const taskSearchSchema = z.object({

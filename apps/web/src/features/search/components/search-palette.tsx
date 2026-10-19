@@ -19,6 +19,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { track } from '@/lib/analytics'
 import type { NavSection } from '@/lib/navigation'
 import { PAGE_TABS } from '@/lib/page-tabs'
+import { routes } from '@/lib/routes'
 import { useAvailableForms } from '@/features/requests/hooks/use-requests'
 import { searchEvents } from '../events'
 import type { SearchEntry } from '../schema'
@@ -28,7 +29,7 @@ import { useSearchDirectory } from '../hooks/use-search-directory'
 import { useTaskSearch } from '../hooks/use-task-search'
 import { actionEntries, THEME_ACTION_ID } from '../utils/action-entries'
 import { clientEntries, personEntries } from '../utils/directory-entries'
-import { parseQuery, type SearchScope } from '../utils/parse-query'
+import { parseQuery, SCOPE_PREFIXES, type SearchScope } from '../utils/parse-query'
 import { taskEntries } from '../utils/task-entries'
 import { pageEntries } from '../utils/page-entries'
 import { iconFor, pageIcons } from '../utils/page-icons'
@@ -60,16 +61,19 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
   const searching = scope !== null || text.length > 0
   const inScope = (kind: SearchScope) => scope === null || scope === kind
   const searchRef = useRef<HTMLInputElement>(null)
+  const scopeLabel =
+    SCOPE_PREFIXES.find((one) => one.scope === scope)?.label.toLowerCase() ?? 'results'
   const narrow = useMediaQuery('(max-width: 48em)')
   const recent = useRecentSearches(storageKey)
   const icons = pageIcons(sections)
   const pages = pageEntries(sections, PAGE_TABS)
   const { setColorScheme } = useMantineColorScheme()
   const nextTheme = useComputedColorScheme('light') === 'dark' ? 'light' : 'dark'
-  // The forms this person may file; a failed load only drops the request shortcuts.
-  const forms = useAvailableForms()
+  const visibleHrefs = new Set(pages.map((page) => page.href))
+  // Asked for only when Requests is in the sidebar; a failed load only drops those shortcuts.
+  const forms = useAvailableForms(visibleHrefs.has(routes.requests))
   const actions = actionEntries({
-    visibleHrefs: new Set(pages.map((page) => page.href)),
+    visibleHrefs,
     forms: forms.data ?? [],
     nextTheme,
   })
@@ -195,7 +199,9 @@ export function SearchPalette({ sections, storageKey, persistRecent }: SearchPal
             ) : null}
             {total === 0 && !taskHint && !settling && !directoryState && !taskState ? (
               <Spotlight.Empty>
-                Nothing matches “{text || query.trim()}”. Try a shorter or different word.
+                {text
+                  ? `Nothing matches “${text}”. Try a shorter or different word.`
+                  : `No ${scopeLabel} to show yet.`}
               </Spotlight.Empty>
             ) : null}
           </>

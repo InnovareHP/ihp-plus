@@ -73,6 +73,15 @@ describe('recent searches', () => {
     }
   })
 
+  it('drops a stored action, since Recent only ever saves places', () => {
+    window.localStorage.setItem(
+      KEY,
+      JSON.stringify([{ id: 'action:theme', kind: 'action', label: 'x', href: '/settings' }]),
+    )
+
+    expect(readRecent(KEY)).toEqual([])
+  })
+
   it('treats unreadable storage as an empty list', () => {
     window.localStorage.setItem(KEY, '{not json')
     expect(readRecent(KEY)).toEqual([])

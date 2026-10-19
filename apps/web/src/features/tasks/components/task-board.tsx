@@ -286,7 +286,10 @@ export function TaskBoard() {
   // ?compose=new is the same new-task form, opened by a link instead of the button.
   const composing =
     composingTask ??
-    (query.compose === 'new' ? { projectId, listId: listRows[0]?.id ?? '', task: null } : null)
+    // Waits for the lists, as the button does, so the form mounts with a list to put the task in.
+    (query.compose === 'new' && projectRows.length > 0 && (acrossProjects || listRows.length > 0)
+      ? { projectId, listId: listRows[0]?.id ?? '', task: null }
+      : null)
 
   function closeComposer() {
     setComposing(null)

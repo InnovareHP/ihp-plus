@@ -144,6 +144,15 @@ describe('ClientsTable', () => {
     expect(String(nav.replace.mock.lastCall?.[0])).not.toContain('compose')
   })
 
+  it('keeps the link that opened the form out of the list request', async () => {
+    nav.search = 'compose=new'
+    render(<ClientsTable />)
+    await screen.findByRole('dialog', { name: 'New client' })
+
+    await waitFor(() => expect(actions.listClients).toHaveBeenCalled())
+    expect(JSON.stringify(actions.listClients.mock.calls)).not.toContain('compose')
+  })
+
   it('shows a new client before the server answers', async () => {
     let resolve: (value: unknown) => void = () => {}
     actions.createClient.mockReturnValue(
