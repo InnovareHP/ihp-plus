@@ -82,6 +82,30 @@ describe('TableToolbar', () => {
     expect(setQuery).toHaveBeenCalledWith({ emptyOnly: true })
   })
 
+  it('counts a select at its "no filter" value as no filter, with no chip', () => {
+    render(
+      <TableToolbar
+        label="tasks"
+        query={{ search: '', assignee: 'all' }}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={[
+          {
+            kind: 'select',
+            key: 'assignee',
+            label: 'Assigned to',
+            none: 'all',
+            options: [{ value: 'mine', label: 'Assigned to me' }],
+          },
+        ]}
+      />,
+    )
+
+    // Before the fix every task board showed "Filters 2" with chips reading "ALL" and "ANY".
+    expect(screen.getByRole('button', { name: 'Filters' })).toBeInTheDocument()
+    expect(screen.queryByText('Filtered by')).not.toBeInTheDocument()
+  })
+
   it('shows one chip per applied value, with the option label rather than its id', () => {
     renderToolbar({ ...EMPTY, teamIds: ['team-1', 'team-2'], status: 'active' })
 

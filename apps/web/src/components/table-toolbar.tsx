@@ -19,7 +19,15 @@ export interface FilterOption {
  */
 export type FilterControl =
   | { kind: 'multi'; key: string; label: string; options: readonly FilterOption[]; help?: string }
-  | { kind: 'select'; key: string; label: string; options: readonly FilterOption[]; help?: string }
+  | {
+      kind: 'select'
+      key: string
+      label: string
+      options: readonly FilterOption[]
+      help?: string
+      /** The value that means "no filter" when the schema's default is not empty, e.g. "all". */
+      none?: string
+    }
   | { kind: 'toggle'; key: string; label: string; help?: string }
   | { kind: 'dateRange'; fromKey: string; toKey: string; label: string; help?: string }
 
@@ -57,10 +65,13 @@ export function TableToolbar<TQuery extends Record<string, unknown>>({
           onSearch={(value) => setQuery({ [searchKey]: value } as Partial<TQuery>)}
         />
 
-        <Group gap="sm">
+        {/* On a phone the buttons take the row's full width at one 44 px height, like a native toolbar. */}
+        <Group gap="sm" wrap="nowrap" w={{ base: '100%', sm: 'auto' }}>
           {filters.length > 0 ? (
             <Button
               variant="default"
+              mih={{ base: 44, sm: 0 }}
+              flex="none"
               leftSection={<IconFilter size={16} aria-hidden />}
               // The count is in the name rather than a decorative dot, so it is announced
               // instead of only seen.
