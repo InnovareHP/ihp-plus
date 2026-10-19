@@ -14,7 +14,7 @@ export function TaskStats({ tasks }: TaskStatsProps) {
   const unassigned = tasks.filter((task) => task.assignees.length === 0).length
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+    <SimpleGrid cols={{ base: 2, lg: 4 }} spacing="md">
       <StatCard label="Open" value={tasks.length - done} hint="Still to finish on this board" />
       <StatCard label="Done" value={done} hint="Closed in a done column" />
       <StatCard label="Overdue" value={overdue} hint="Past their due date and still open" />

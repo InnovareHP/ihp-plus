@@ -1,9 +1,13 @@
 'use client'
 
 import { Box, Group, Paper, Stack, Text, Title } from '@mantine/core'
-import { useState } from 'react'
+import { useReducedMotion } from '@mantine/hooks'
+import { useId, useState } from 'react'
 import type { TaskRow as Task, TaskStatusRow } from '../schema'
+import { taskCount } from '../utils/task-count'
+import { KanbanColumnBar } from './kanban-column-bar'
 import { TaskCard } from './task-card'
+import classes from './task-kanban.module.css'
 
 export interface TaskKanbanProps {
   statuses: readonly TaskStatusRow[]
@@ -35,6 +39,20 @@ export function TaskKanban({
 }: TaskKanbanProps) {
   const [dragging, setDragging] = useState<Task | null>(null)
   const [over, setOver] = useState<string | null>(null)
+  const columnIdBase = useId()
+  const reduceMotion = useReducedMotion()
+  const columnId = (statusId: string) => `${columnIdBase}-${statusId}`
+
+  // Scrolling alone would leave a screen reader where it was, so focus follows to the column.
+  function jumpTo(statusId: string) {
+    const column = document.getElementById(columnId(statusId))
+    column?.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      inline: 'start',
+      block: 'nearest',
+    })
+    column?.focus({ preventScroll: true })
+  }
 
   function drop(status: TaskStatusRow, items: readonly Task[], index: number) {
     setOver(null)
@@ -47,92 +65,108 @@ export function TaskKanban({
   }
 
   return (
-    // The board scrolls sideways in its own container so the page never does.
-    <Box style={{ overflowX: 'auto' }} pb="sm">
-      <Group align="flex-start" gap="md" wrap="nowrap">
-        {statuses.map((status) => {
-          const items = tasks.filter((task) => task.statusId === status.id)
+    <Stack gap="xs">
+      <KanbanColumnBar
+        columns={statuses.map((status) => ({
+          id: status.id,
+          name: status.name,
+          color: status.color,
+          count: tasks.filter((task) => task.statusId === status.id).length,
+        }))}
+        onJump={jumpTo}
+      />
+      {/* The board scrolls sideways in its own container so the page never does. */}
+      <Box className={classes.board} style={{ overflowX: 'auto' }} pb="sm">
+        <Group align="flex-start" gap="md" wrap="nowrap">
+          {statuses.map((status) => {
+            const items = tasks.filter((task) => task.statusId === status.id)
 
-          return (
-            <Paper
-              key={status.id}
-              component="section"
-              // A named region per column, so a screen reader can jump between them.
-              aria-label={`${status.name}, ${items.length} tasks`}
-              withBorder
-              radius="md"
-              p="sm"
-              w={300}
-              miw={300}
-              bg={over === status.id ? 'var(--mantine-color-default-hover)' : undefined}
-              onDragOver={(event) => {
-                event.preventDefault()
-                setOver(status.id)
-              }}
-              onDragLeave={() => setOver((current) => (current === status.id ? null : current))}
-              onDrop={() => drop(status, items, items.length)}
-            >
-              <Stack gap="sm">
-                <Group justify="space-between" align="baseline" wrap="nowrap">
-                  <Group gap={8} align="center" wrap="nowrap">
-                    <Box
-                      w={10}
-                      h={10}
-                      style={{ background: status.color, borderRadius: 999 }}
-                      aria-hidden
-                    />
-                    <Title order={3} size="h6">
-                      {status.name}
-                    </Title>
+            return (
+              <Paper
+                key={status.id}
+                id={columnId(status.id)}
+                tabIndex={-1}
+                className={classes.column}
+                component="section"
+                // A named region per column, so a screen reader can jump between them.
+                aria-label={`${status.name}, ${taskCount(items.length)}`}
+                withBorder
+                radius="md"
+                p="sm"
+                // The board's own width, not the screen's: the page's padding made 85vw spill past
+                // the edge. 32 px short leaves a peek of the next column to say it swipes.
+                w={{ base: 'calc(100% - 32px)', sm: 300 }}
+                miw={{ base: 'calc(100% - 32px)', sm: 300 }}
+                bg={over === status.id ? 'var(--mantine-color-default-hover)' : undefined}
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  setOver(status.id)
+                }}
+                onDragLeave={() => setOver((current) => (current === status.id ? null : current))}
+                onDrop={() => drop(status, items, items.length)}
+              >
+                <Stack gap="sm">
+                  <Group justify="space-between" align="baseline" wrap="nowrap">
+                    <Group gap={8} align="center" wrap="nowrap">
+                      <Box
+                        w={10}
+                        h={10}
+                        style={{ background: status.color, borderRadius: 999 }}
+                        aria-hidden
+                      />
+                      <Title order={3} size="h6">
+                        {status.name}
+                      </Title>
+                    </Group>
+                    <Text size="xs" c="dimmed">
+                      {items.length}
+                    </Text>
                   </Group>
-                  <Text size="xs" c="dimmed">
-                    {items.length}
-                  </Text>
-                </Group>
 
-                {items.length === 0 ? (
-                  <Text size="xs" c="dimmed">
-                    Nothing here.
-                  </Text>
-                ) : (
-                  <Stack
-                    component="ul"
-                    gap="xs"
-                    style={{ listStyle: 'none', padding: 0, margin: 0 }}
-                  >
-                    {items.map((task, index) => {
-                      const siblings = items.filter((item) => item.listId === task.listId)
-                      const slot = siblings.findIndex((item) => item.id === task.id)
+                  {items.length === 0 ? (
+                    <Text size="xs" c="dimmed">
+                      Nothing here.
+                    </Text>
+                  ) : (
+                    <Stack
+                      component="ul"
+                      gap="xs"
+                      style={{ listStyle: 'none', padding: 0, margin: 0 }}
+                    >
+                      {items.map((task, index) => {
+                        const siblings = items.filter((item) => item.listId === task.listId)
+                        const slot = siblings.findIndex((item) => item.id === task.id)
 
-                      return (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          otherStatuses={statuses.filter((one) => one.id !== status.id)}
-                          canMoveUp={slot > 0}
-                          canMoveDown={slot < siblings.length - 1}
-                          onOpen={onOpen}
-                          onMoveTo={onMoveTo}
-                          onMoveUp={() =>
-                            onReorder(task, status.id, siblings[slot - 1]?.id ?? undefined)
-                          }
-                          onMoveDown={() =>
-                            onReorder(task, status.id, siblings[slot + 2]?.id ?? undefined)
-                          }
-                          onEdit={onEdit}
-                          onDelete={onDelete}
-                          onDragStart={setDragging}
-                          onDropBefore={() => drop(status, items, index)}
-                        />
-                      )
-                    })}
-                  </Stack>
-                )}
-              </Stack>
-            </Paper>
-          )
-        })}
-      </Group>
-    </Box>
+                        return (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            otherStatuses={statuses.filter((one) => one.id !== status.id)}
+                            canMoveUp={slot > 0}
+                            canMoveDown={slot < siblings.length - 1}
+                            onOpen={onOpen}
+                            onMoveTo={onMoveTo}
+                            onMoveUp={() =>
+                              onReorder(task, status.id, siblings[slot - 1]?.id ?? undefined)
+                            }
+                            onMoveDown={() =>
+                              onReorder(task, status.id, siblings[slot + 2]?.id ?? undefined)
+                            }
+                            onEdit={onEdit}
+                            onDelete={onDelete}
+                            onDragStart={setDragging}
+                            onDropBefore={() => drop(status, items, index)}
+                          />
+                        )
+                      })}
+                    </Stack>
+                  )}
+                </Stack>
+              </Paper>
+            )
+          })}
+        </Group>
+      </Box>
+    </Stack>
   )
 }

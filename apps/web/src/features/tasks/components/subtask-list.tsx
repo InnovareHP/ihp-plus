@@ -23,6 +23,7 @@ import {
 } from '@tabler/icons-react'
 import { useForm } from 'react-hook-form'
 import { subtaskFormSchema, type SubtaskFormValues, type TaskSubtaskRow } from '../schema'
+import touch from './touch-target.module.css'
 
 export interface SubtaskListProps {
   subtasks: readonly TaskSubtaskRow[]
@@ -121,6 +122,7 @@ export function SubtaskList({
                 <Menu position="bottom-end" withinPortal>
                   <Menu.Target>
                     <ActionIcon
+                      className={touch.target}
                       variant="subtle"
                       color="gray"
                       aria-label={`Actions for ${subtask.name}`}

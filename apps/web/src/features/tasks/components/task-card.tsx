@@ -23,6 +23,7 @@ import {
 import { formatDuration } from '../utils/duration'
 import { ParentTaskLine } from './parent-task-line'
 import { ProjectTaskLine } from './project-task-line'
+import touch from './touch-target.module.css'
 
 const due = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
@@ -99,7 +100,12 @@ export function TaskCard({
 
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
-              <ActionIcon variant="subtle" color="gray" aria-label={`Actions for ${task.name}`}>
+              <ActionIcon
+                className={touch.target}
+                variant="subtle"
+                color="gray"
+                aria-label={`Actions for ${task.name}`}
+              >
                 <IconDotsVertical size={16} aria-hidden />
               </ActionIcon>
             </Menu.Target>

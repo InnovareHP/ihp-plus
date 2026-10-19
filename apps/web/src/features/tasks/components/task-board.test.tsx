@@ -378,6 +378,39 @@ describe('TaskBoard', () => {
     expect(screen.queryByRole('dialog', { name: 'New task' })).not.toBeInTheDocument()
   })
 
+  it('keeps the other board actions in a "More" menu, for a phone', async () => {
+    const user = userEvent.setup()
+    await renderBoard()
+
+    await user.click(screen.getByRole('button', { name: 'More board actions' }))
+
+    expect(screen.getByRole('menuitem', { name: 'Columns' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'New list' })).toBeInTheDocument()
+    // A member cannot set the clock's rules, so neither place offers them.
+    expect(screen.queryByRole('menuitem', { name: 'Time rules' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Time rules' })).not.toBeInTheDocument()
+  })
+
+  it('opens the time rules from the "More" menu for someone who may set them', async () => {
+    rpc.getTimeSettings.mockResolvedValue({
+      settings: {
+        allowManualEntry: true,
+        allowSelfEdit: true,
+        requireNote: false,
+        trackOnlyAssigned: false,
+        autoStopHours: 12,
+      },
+      canManage: true,
+    })
+    const user = userEvent.setup()
+    await renderBoard()
+
+    await user.click(screen.getByRole('button', { name: 'More board actions' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Time rules' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Time tracking rules' })).toBeInTheDocument()
+  })
+
   it('asks which project a new task goes in, then offers that project’s lists', async () => {
     nav.search = 'project=mine'
     rpc.listProjects.mockResolvedValue([
