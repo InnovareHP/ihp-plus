@@ -314,3 +314,44 @@ describe('SearchPalette tasks', () => {
     expect(await screen.findByRole('button', { name: /^Renewal pack/ })).toBeInTheDocument()
   })
 })
+
+describe('SearchPalette links', () => {
+  it('opens a client on the clients page, filtered to its name', async () => {
+    const user = userEvent.setup()
+    renderPalette()
+
+    await user.type(screen.getByRole('textbox', SEARCH), 'acme')
+    await user.click(await screen.findByRole('button', { name: /^Acme Health/ }))
+
+    expect(router.push).toHaveBeenCalledWith(`${routes.clients}?search=Acme%20Health`)
+  })
+
+  it('reopens a person, a client and a task from Recent at the same place', async () => {
+    const user = userEvent.setup()
+    clients.search.searchTasks.mockResolvedValue({ tasks: [RENEWAL_TASK] })
+    renderPalette()
+    const opened: [RegExp, string][] = [
+      [/^Grace Hopper/, `${routes.directory}?search=Grace%20Hopper`],
+      [/^Acme Health/, `${routes.clients}?search=Acme%20Health`],
+      [/^Renewal pack/, `${routes.tasks}?project=project-1&task=task-1`],
+    ]
+
+    for (const [name, query] of [
+      [/^Grace Hopper/, 'grace'],
+      [/^Acme Health/, 'acme'],
+      [/^Renewal pack/, 'renewal'],
+    ] as const) {
+      act(() => searchSpotlight.open())
+      await user.type(screen.getByRole('textbox', SEARCH), query)
+      await user.click(await screen.findByRole('button', { name }))
+    }
+    router.push.mockClear()
+
+    for (const [name, href] of opened) {
+      act(() => searchSpotlight.open())
+      const recent = await screen.findByRole('group', { name: 'Recent' })
+      await user.click(within(recent).getByRole('button', { name }))
+      expect(router.push).toHaveBeenLastCalledWith(href)
+    }
+  })
+})
