@@ -1,10 +1,11 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, NumberInput, Stack, Text } from '@mantine/core'
+import { Button, Modal, NumberInput, Stack, Text } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import { formatLeaveDays } from '../balance'
 import { allowanceFormSchema, type AllowanceFormValues, type LeaveBalance } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface AllowanceTarget {
   userId: string
@@ -77,7 +78,7 @@ function AllowanceForm({
             />
           )}
         />
-        <Group justify="flex-end" wrap="wrap" gap="xs">
+        <DialogActions wrap="wrap" gap="xs">
           {target.balance.overridden ? (
             <Button
               variant="subtle"
@@ -93,7 +94,7 @@ function AllowanceForm({
             Cancel
           </Button>
           <Button type="submit">Save allowance</Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

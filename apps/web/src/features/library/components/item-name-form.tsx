@@ -1,9 +1,10 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Alert, Button, Group, Stack, TextInput } from '@mantine/core'
+import { Alert, Button, Stack, TextInput } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { newFolderSchema, type NewFolderValues } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface ItemNameFormProps {
   label: string
@@ -60,11 +61,11 @@ export function ItemNameForm({ defaultName = '', onSubmit, ...copy }: ItemNameFo
           data-autofocus
         />
 
-        <Group justify="flex-end">
+        <DialogActions>
           <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? copy.pendingLabel : copy.submitLabel}
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

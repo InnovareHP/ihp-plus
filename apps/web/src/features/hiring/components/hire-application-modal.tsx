@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, Select, Stack, Text } from '@mantine/core'
+import { Button, Modal, Select, Stack, Text } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { FormError } from '@/components/form-error'
@@ -10,6 +10,7 @@ import { announceSuccess } from '@/lib/announce'
 import { useTeams } from '@/features/organization/hooks/use-teams'
 import { useHireApplication } from '../hooks/use-applications'
 import type { ApplicationSummary } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 const hireSchema = z.object({ teamId: z.string().trim().default('') })
 
@@ -85,14 +86,14 @@ export function HireApplicationModal({
               />
             )}
           />
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" loading={formState.isSubmitting}>
               {formState.isSubmitting ? 'Sending…' : 'Hire and send invitation'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

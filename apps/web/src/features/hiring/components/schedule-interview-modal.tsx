@@ -34,6 +34,8 @@ import {
 } from '../schema'
 import { spreadAcrossDays, suggestionWindow } from '../utils/interview-time'
 import { FreeTimeSuggestions } from './free-time-suggestions'
+import { DialogActions } from '@/components/dialog-actions'
+import { FieldRow } from '@/components/field-row'
 
 // How many free times the form fills in by itself, each on a different day.
 const AUTO_SLOTS = 3
@@ -190,7 +192,7 @@ export function ScheduleInterviewModal({
             errorProps={{ role: 'alert' }}
           />
 
-          <Group grow align="flex-start">
+          <FieldRow>
             <Controller
               control={control}
               name="durationMinutes"
@@ -236,7 +238,7 @@ export function ScheduleInterviewModal({
                 />
               )}
             />
-          </Group>
+          </FieldRow>
 
           <Fieldset legend={`Times to offer, in ${timeZone}`} variant="unstyled">
             <Stack gap="xs">
@@ -320,14 +322,14 @@ export function ScheduleInterviewModal({
             errorProps={{ role: 'alert' }}
           />
 
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Sending…' : 'Send times to pick from'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

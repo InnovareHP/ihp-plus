@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Anchor,
   Button,
-  Group,
   Modal,
   NumberInput,
   Select,
@@ -25,6 +24,7 @@ import {
   type CatalogItemValues,
 } from '../schema'
 import { useCreateCatalogItem, useUpdateCatalogItem } from '../use-contracts'
+import { DialogActions } from '@/components/dialog-actions'
 
 const UNIT_OPTIONS = CATALOG_UNITS.map((value) => ({
   value,
@@ -250,7 +250,7 @@ export function CatalogItemFormModal({
             error={errors.defaultTerms?.message}
           />
 
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose} type="button">
               Cancel
             </Button>
@@ -263,7 +263,7 @@ export function CatalogItemFormModal({
                   ? 'Save changes'
                   : 'Add service'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

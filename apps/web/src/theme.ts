@@ -1,4 +1,5 @@
 import { createTheme, type CSSVariablesResolver, type MantineColorsTuple } from '@mantine/core'
+import dialog from './components/dialog.module.css'
 
 // Mirrors the OKLCH ramps in packages/config/tailwind/theme.css; Tailwind's 600 is Mantine's 6.
 const brand: MantineColorsTuple = [
@@ -92,7 +93,11 @@ export const theme = createTheme({
     Button: { defaultProps: { fw: 600 } },
     Title: { defaultProps: { fw: 700 } },
     // Mantine's close button is an icon alone, so every dialog names it here once.
-    Modal: { defaultProps: { closeButtonProps: { 'aria-label': 'Close dialog' } } },
+    Modal: {
+      defaultProps: { closeButtonProps: { 'aria-label': 'Close dialog' } },
+      // Every dialog fills a phone's screen; the rule lives here so a new one cannot forget it.
+      classNames: { root: dialog.root, inner: dialog.inner, content: dialog.content },
+    },
     Drawer: { defaultProps: { closeButtonProps: { 'aria-label': 'Close panel' } } },
   },
 })

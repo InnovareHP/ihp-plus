@@ -1,0 +1,10 @@
+/* On a phone a swipe comes to rest on a column; a mouse keeps free scrolling. */
+@media (max-width: $mantine-breakpoint-sm) {
+  .board {
+    scroll-snap-type: x mandatory;
+  }
+
+  .column {
+    scroll-snap-align: start;
+  }
+}

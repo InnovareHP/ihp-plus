@@ -1,10 +1,11 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, Stack, TextInput } from '@mantine/core'
+import { Button, Modal, Stack, TextInput } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { useCreateTeam } from '../hooks/use-teams'
 import { createTeamSchema, type CreateTeamValues } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export function CreateTeamModal({ opened, onClose }: { opened: boolean; onClose: () => void }) {
   const create = useCreateTeam()
@@ -45,14 +46,14 @@ export function CreateTeamModal({ opened, onClose }: { opened: boolean; onClose:
             error={errors.name?.message}
             data-autofocus
           />
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Creating…' : 'Create department'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

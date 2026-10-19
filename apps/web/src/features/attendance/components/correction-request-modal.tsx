@@ -1,12 +1,14 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, NumberInput, Stack, Text, Textarea, TextInput } from '@mantine/core'
+import { Button, Modal, NumberInput, Stack, Text, Textarea, TextInput } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { announceSuccess } from '@/lib/announce'
 import { useRequestCorrection } from '../hooks/use-corrections'
 import { correctionSchema, type CorrectionValues } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
+import { FieldRow } from '@/components/field-row'
 
 export interface CorrectionRequestModalProps {
   opened: boolean
@@ -77,7 +79,7 @@ export function CorrectionRequestModal({
             {...register('workDate')}
           />
 
-          <Group grow align="flex-start">
+          <FieldRow>
             <TextInput
               type="time"
               label="Clocked in"
@@ -98,7 +100,7 @@ export function CorrectionRequestModal({
               errorProps={{ role: 'alert' }}
               {...register('clockOutTime')}
             />
-          </Group>
+          </FieldRow>
 
           <Controller
             control={control}
@@ -132,14 +134,14 @@ export function CorrectionRequestModal({
             {...register('reason')}
           />
 
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="subtle" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Sending…' : 'Send request'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

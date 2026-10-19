@@ -6,7 +6,6 @@ import {
   Anchor,
   Button,
   FileInput,
-  Group,
   MultiSelect,
   Select,
   Stack,
@@ -31,6 +30,8 @@ import {
   supportsLetterhead,
 } from '@/features/letterhead/utils/letterhead-templates'
 import type { UploadDocumentModalProps } from './upload-document-modal'
+import { DialogActions } from '@/components/dialog-actions'
+import { FieldRow } from '@/components/field-row'
 
 /** Whichever of "all departments" or a department list was chosen most recently. */
 function collapseShelves(previous: readonly string[], next: readonly string[]) {
@@ -163,7 +164,7 @@ export function DocumentForm({
           data-autofocus
         />
 
-        <Group grow align="flex-start">
+        <FieldRow>
           <MultiSelect
             label="Filed under"
             placeholder="Pick one or more shelves"
@@ -198,7 +199,7 @@ export function DocumentForm({
             onChange={(value) => setValue('category', value ?? '', { shouldDirty: true })}
             error={errors.category?.message}
           />
-        </Group>
+        </FieldRow>
 
         <Textarea
           {...register('description')}
@@ -211,14 +212,14 @@ export function DocumentForm({
           error={errors.description?.message}
         />
 
-        <Group justify="flex-end">
+        <DialogActions>
           <Button variant="default" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? 'Saving…' : submitLabel}
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

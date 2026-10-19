@@ -84,8 +84,8 @@ describe('TaskKanban', () => {
       task({ id: 'task-2', taskNumber: 15, name: 'Chase the signature', statusId: 'status-done' }),
     ])
 
-    const done = screen.getByRole('region', { name: 'Done, 1 tasks' })
-    const todo = screen.getByRole('region', { name: 'To do, 1 tasks' })
+    const done = screen.getByRole('region', { name: 'Done, 1 task' })
+    const todo = screen.getByRole('region', { name: 'To do, 1 task' })
 
     expect(within(done).getByText(/Chase the signature/)).toBeInTheDocument()
     expect(within(todo).getByText(/Send the renewal pack/)).toBeInTheDocument()
@@ -196,6 +196,40 @@ describe('TaskKanban', () => {
 
   it('has no axe violations', async () => {
     const { container } = renderBoard([task({ commentCount: 1 })])
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('TaskKanban column bar', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // jsdom lays nothing out, so it has no scrollIntoView of its own.
+    Element.prototype.scrollIntoView = vi.fn()
+  })
+
+  it('names every column with its count, for a phone that shows one at a time', () => {
+    renderBoard([task(), task({ id: 'task-2', name: 'Book the venue', statusId: 'status-done' })])
+
+    const bar = screen.getByRole('group', { name: 'Jump to a column' })
+    expect(within(bar).getByRole('button', { name: 'To do, 1 task' })).toBeInTheDocument()
+    expect(within(bar).getByRole('button', { name: 'In progress, 0 tasks' })).toBeInTheDocument()
+    expect(within(bar).getByRole('button', { name: 'Done, 1 task' })).toBeInTheDocument()
+  })
+
+  it('jumps to the column tapped and moves focus there, so a screen reader follows', async () => {
+    const user = userEvent.setup()
+    renderBoard([task({ statusId: 'status-done' })])
+
+    await user.click(screen.getByRole('button', { name: 'Done, 1 task' }))
+
+    const done = screen.getByRole('region', { name: 'Done, 1 task' })
+    expect(done.scrollIntoView).toHaveBeenCalled()
+    expect(done).toHaveFocus()
+  })
+
+  it('has no axe violations with the bar showing', async () => {
+    const { container } = renderBoard([task()])
+
     expect(await axe(container)).toHaveNoViolations()
   })
 })

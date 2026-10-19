@@ -44,7 +44,7 @@ export function chipsOf<TQuery extends Record<string, unknown>>(
 
     if (filter.kind === 'select') {
       const value = stringOf(query[filter.key])
-      if (value) {
+      if (value && value !== filter.none) {
         chips.push({
           id: filter.key,
           label: labelOf(filter.options, value),

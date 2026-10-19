@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Alert, Button, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
+import { Alert, Button, Select, Stack, Textarea, TextInput } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import {
   websiteDraftSchema,
@@ -9,6 +9,7 @@ import {
   type WebsiteDraftInput,
   type WebsiteDraftValues,
 } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface WebsiteFormProps {
   defaults: WebsiteDraftInput
@@ -106,14 +107,14 @@ export function WebsiteForm({
           minRows={2}
           error={errors.notes?.message}
         />
-        <Group justify="flex-end">
+        <DialogActions>
           <Button variant="default" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit" loading={isSubmitting}>
             {submitLabel}
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

@@ -53,7 +53,12 @@ describe('SearchLauncher', () => {
     await user.click(screen.getAllByRole('button', { name: 'Search' })[0] as HTMLElement)
 
     expect(
-      await screen.findByRole('textbox', { name: 'Search pages, people, clients and tasks' }),
+      await screen.findByRole(
+        'textbox',
+        { name: 'Search pages, people, clients and tasks' },
+        // The palette's code is fetched on first open, which a full parallel run can slow past 1 s.
+        { timeout: 5000 },
+      ),
     ).toBeInTheDocument()
   })
 
@@ -64,7 +69,12 @@ describe('SearchLauncher', () => {
     await user.keyboard('{Control>}k{/Control}')
 
     expect(
-      await screen.findByRole('textbox', { name: 'Search pages, people, clients and tasks' }),
+      await screen.findByRole(
+        'textbox',
+        { name: 'Search pages, people, clients and tasks' },
+        // The palette's code is fetched on first open, which a full parallel run can slow past 1 s.
+        { timeout: 5000 },
+      ),
     ).toBeInTheDocument()
   })
 

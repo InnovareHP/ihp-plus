@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, Stack, TextInput } from '@mantine/core'
+import { Button, Modal, Stack, TextInput } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { useCreateProject, useUpdateProject } from '../hooks/use-task-projects'
 import {
@@ -10,6 +10,7 @@ import {
   type ProjectFormValues,
   type TaskProjectRow,
 } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface ProjectFormModalProps {
   opened: boolean
@@ -78,14 +79,14 @@ export function ProjectFormModal({
             error={errors.name?.message}
             data-autofocus
           />
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose} type="button">
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Saving…' : project ? 'Save changes' : 'Create project'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

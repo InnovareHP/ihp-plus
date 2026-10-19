@@ -1,0 +1,21 @@
+/* On a phone a dialog takes the whole screen like a native one; "Delete …?" confirmations opt out. */
+@media (max-width: $mantine-breakpoint-sm) {
+  .root:not([data-compact]) {
+    --modal-border-radius: 0;
+  }
+
+  .root:not([data-compact]) .inner {
+    --modal-inner-y-offset: 0;
+    --modal-inner-x-offset: 0;
+  }
+
+  .root:not([data-compact]) .content {
+    --modal-content-flex: 0 0 100%;
+    --modal-content-height: 100dvh;
+    border-radius: 0;
+    /* A form about one screen tall toggled its scrollbar on and off, and the width change flickered. */
+    scrollbar-gutter: stable;
+    /* Mantine sets an inline max-height of 90% of the screen, which a full screen must lift. */
+    max-height: 100dvh !important;
+  }
+}

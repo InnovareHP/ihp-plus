@@ -1,10 +1,11 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, Stack, Textarea } from '@mantine/core'
+import { Button, Modal, Stack, Textarea } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { CORRECTION_NEEDS_REASON, type AttendanceCorrectionRow } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 const reasonSchema = z.object({ note: z.string().trim().min(1, CORRECTION_NEEDS_REASON).max(300) })
 type ReasonValues = z.infer<typeof reasonSchema>
@@ -61,14 +62,14 @@ export function RejectCorrectionModal({
               data-autofocus
               {...register('note')}
             />
-            <Group justify="flex-end">
+            <DialogActions>
               <Button variant="subtle" onClick={onClose}>
                 Cancel
               </Button>
               <Button type="submit" color="red" variant="light">
                 Turn down request
               </Button>
-            </Group>
+            </DialogActions>
           </Stack>
         </form>
       ) : null}

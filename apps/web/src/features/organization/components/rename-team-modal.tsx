@@ -1,10 +1,11 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, Stack, TextInput } from '@mantine/core'
+import { Button, Modal, Stack, TextInput } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { useRenameTeam } from '../hooks/use-teams'
 import { renameTeamSchema, type RenameTeamValues, type TeamRow } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export function RenameTeamModal({ team, onClose }: { team: TeamRow | null; onClose: () => void }) {
   const rename = useRenameTeam()
@@ -43,14 +44,14 @@ export function RenameTeamModal({ team, onClose }: { team: TeamRow | null; onClo
             error={errors.name?.message}
             data-autofocus
           />
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Saving…' : 'Save name'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>
