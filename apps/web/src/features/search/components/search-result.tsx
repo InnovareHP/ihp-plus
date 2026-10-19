@@ -46,20 +46,30 @@ export function SearchResult({
           <Highlight highlight={query.trim()} size="sm" fw={600} truncate>
             {entry.label}
           </Highlight>
-          {entry.description ? (
+          {entry.description || entry.area ? (
             <Text size="xs" c="dimmed" truncate>
               {entry.description}
+              {/* On a phone the badge would squeeze the name, so the area joins this line instead. */}
+              {entry.area ? (
+                <Box component="span" hiddenFrom="xs">
+                  {entry.description ? ' · ' : ''}
+                  {entry.area}
+                </Box>
+              ) : null}
             </Text>
           ) : null}
         </Box>
         {entry.area ? (
           // A status colour is user-chosen, so it only tints the dot; the text keeps body contrast.
           <Badge
+            visibleFrom="xs"
             variant="default"
             size="sm"
             radius="sm"
             tt="none"
-            maw={140}
+            // A share of the row, not a fixed width, so a full department name fits beside the person.
+            maw="40%"
+            flex="none"
             leftSection={
               entry.areaColor ? (
                 <Box w={8} h={8} bg={entry.areaColor} aria-hidden style={{ borderRadius: '50%' }} />

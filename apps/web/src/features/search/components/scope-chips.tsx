@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, CloseButton, Group, Text } from '@mantine/core'
+import { Button, CloseButton, Group, ScrollArea, Text } from '@mantine/core'
 import { SCOPE_PREFIXES, type SearchScope } from '../utils/parse-query'
 
 export interface ScopeChipsProps {
@@ -26,8 +26,15 @@ export function ScopeChips({ scope, touch, onPick, onClear }: ScopeChipsProps) {
     )
   }
 
-  return (
-    <Group gap={6} px="md" py={6} role="group" aria-label="Search one kind only">
+  const chips = (
+    <Group
+      gap={6}
+      px="md"
+      py={6}
+      wrap={touch ? 'nowrap' : 'wrap'}
+      role="group"
+      aria-label="Search one kind only"
+    >
       {SCOPE_PREFIXES.map((one) => (
         <Button
           key={one.symbol}
@@ -35,6 +42,8 @@ export function ScopeChips({ scope, touch, onPick, onClear }: ScopeChipsProps) {
           size={touch ? 'sm' : 'compact-xs'}
           mih={touch ? 44 : undefined}
           radius="xl"
+          // In the swipeable row a chip keeps its width; squeezed, its label was cut off.
+          flex="none"
           // The visible text leads, so a voice user can say what they see.
           aria-label={`${one.symbol} ${one.label}: search ${one.label.toLowerCase()} only`}
           onClick={() => onPick(one.symbol)}
@@ -43,5 +52,14 @@ export function ScopeChips({ scope, touch, onPick, onClear }: ScopeChipsProps) {
         </Button>
       ))}
     </Group>
+  )
+
+  // Wrapped onto three rows the chips would take a small phone's results; one row swipes instead.
+  return touch ? (
+    <ScrollArea type="never" scrollbars="x">
+      {chips}
+    </ScrollArea>
+  ) : (
+    chips
   )
 }
