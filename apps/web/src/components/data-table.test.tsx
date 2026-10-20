@@ -57,6 +57,14 @@ describe('DataTable', () => {
     expect(within(table).getAllByRole('row')).toHaveLength(3)
   })
 
+  it('labels each cell for the phone card view without changing what a screen reader hears', () => {
+    renderTable()
+
+    const table = screen.getByRole('table', { name: 'Leads' })
+    // The visual "City" label is hidden from assistive tech; the column header already names it.
+    expect(within(table).getByRole('cell', { name: 'Trenton' })).toHaveTextContent('CityTrenton')
+  })
+
   it('shows a skeleton with the table hidden while the data is pending', () => {
     renderTable({ isPending: true, rows: undefined })
 

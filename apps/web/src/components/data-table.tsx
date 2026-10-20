@@ -6,6 +6,7 @@ import type { PageInfo } from '@/lib/pagination'
 import { useClientPagination } from '@/lib/use-client-pagination'
 import { DataTableFooter } from './data-table-footer'
 import { DataTableSkeleton } from './data-table-skeleton'
+import classes from './data-table.module.css'
 import { SortControl } from './data-table-sort-control'
 
 export type SortDirection = 'asc' | 'desc'
@@ -57,6 +58,8 @@ export interface DataTableProps<TRow> {
   onSortChange?: (sort: DataTableSort) => void
   /** URL param for the built-in paging; defaults to one derived from `label`. */
   pageKey?: string
+  /** 'cards' stacks each row on a phone; 'scroll' keeps a wide grid that scrolls sideways. */
+  phoneLayout?: 'cards' | 'scroll'
 }
 
 const ARIA_SORT = { asc: 'ascending', desc: 'descending' } as const
@@ -113,6 +116,7 @@ function PagedTable<TRow>({
   skeletonRows = 3,
   sort,
   onSortChange,
+  phoneLayout = 'cards',
 }: DataTableProps<TRow>) {
   if (isPending) {
     return <DataTableSkeleton label={label} rows={skeletonRows} />
@@ -141,7 +145,11 @@ function PagedTable<TRow>({
 
   return (
     <Stack gap="md">
-      <Table.ScrollContainer minWidth={minWidth}>
+      <Table.ScrollContainer
+        minWidth={minWidth}
+        className={phoneLayout === 'cards' ? classes.cards : undefined}
+        classNames={{ scrollContainerInner: classes.inner }}
+      >
         {/* A background refetch dims the table; only isPending may replace it with the skeleton. */}
         <Table
           striped
@@ -195,6 +203,10 @@ function PagedTable<TRow>({
                     </Table.Th>
                   ) : (
                     <Table.Td key={column.key} ta={column.align}>
+                      {/* The table's own header names the cell for a screen reader, so this is visual. */}
+                      <span className={classes.cellLabel} aria-hidden>
+                        {column.header}
+                      </span>
                       {column.render(row)}
                     </Table.Td>
                   ),
