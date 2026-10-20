@@ -164,7 +164,7 @@ export function PostingsTable() {
         setQuery={setQuery}
         clearFilters={clearFilters}
         filters={filters}
-        action={
+        primaryAction={
           <LinkButton href={NEW_POSTING_ROUTE} leftSection={<IconPlus size={16} aria-hidden />}>
             New posting
           </LinkButton>

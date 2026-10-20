@@ -1,12 +1,13 @@
 'use client'
 
-import { Badge, Button, CloseButton, Drawer, Group, Stack, Text } from '@mantine/core'
+import { Badge, Box, Button, CloseButton, Drawer, Group, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconFilter } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { chipsOf, stringOf } from '@/lib/table-filters'
 import { FilterField } from './filter-field'
 import { SearchField } from './search-field'
+import classes from './table-toolbar.module.css'
 
 export interface FilterOption {
   value: string
@@ -40,8 +41,10 @@ export interface TableToolbarProps<TQuery extends Record<string, unknown>> {
   /** The query key the search box writes to. */
   searchKey?: string
   filters?: readonly FilterControl[]
-  /** The list's primary action, kept on the same line as the search. */
+  /** Secondary controls beside Filters, e.g. a view switch or a "More" menu. */
   action?: ReactNode
+  /** The page's one main button; on a phone it gets a full-width row. */
+  primaryAction?: ReactNode
 }
 
 export function TableToolbar<TQuery extends Record<string, unknown>>({
@@ -52,6 +55,7 @@ export function TableToolbar<TQuery extends Record<string, unknown>>({
   searchKey = 'search',
   filters = [],
   action,
+  primaryAction,
 }: TableToolbarProps<TQuery>) {
   const [opened, drawer] = useDisclosure(false)
   const chips = chipsOf(filters, query, setQuery)
@@ -66,7 +70,7 @@ export function TableToolbar<TQuery extends Record<string, unknown>>({
         />
 
         {/* On a phone the buttons take the row's full width at one 44 px height, like a native toolbar. */}
-        <Group gap="sm" wrap="nowrap" w={{ base: '100%', sm: 'auto' }}>
+        <Group gap="sm" wrap="wrap" w={{ base: '100%', sm: 'auto' }}>
           {filters.length > 0 ? (
             <Button
               variant="default"
@@ -91,6 +95,7 @@ export function TableToolbar<TQuery extends Record<string, unknown>>({
             </Button>
           ) : null}
           {action}
+          {primaryAction ? <Box className={classes.primary}>{primaryAction}</Box> : null}
         </Group>
       </Group>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Group, Paper, Stack, Text, Title } from '@mantine/core'
+import { Box, Button, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import { useReducedMotion } from '@mantine/hooks'
 import { useId, useState } from 'react'
 import type { TaskRow as Task, TaskStatusRow } from '../schema'
@@ -18,7 +18,12 @@ export interface TaskKanbanProps {
   onReorder: (task: Task, statusId: string, beforeTaskId: string | undefined) => void
   onEdit: (task: Task) => void
   onDelete: (task: Task) => void
+  /** A search or filter is on, so every match shows rather than the first few. */
+  showAll?: boolean
 }
+
+// Finished work is rarely why someone opens the board, so those columns start shorter.
+const VISIBLE = { active: 10, done: 5, cancelled: 5 } as const
 
 /**
  * A column is a status and a card keeps its list, so the row a card lands before is the next one
@@ -36,8 +41,10 @@ export function TaskKanban({
   onReorder,
   onEdit,
   onDelete,
+  showAll = false,
 }: TaskKanbanProps) {
   const [dragging, setDragging] = useState<Task | null>(null)
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
   const [over, setOver] = useState<string | null>(null)
   const columnIdBase = useId()
   const reduceMotion = useReducedMotion()
@@ -80,6 +87,10 @@ export function TaskKanban({
         <Group align="flex-start" gap="md" wrap="nowrap">
           {statuses.map((status) => {
             const items = tasks.filter((task) => task.statusId === status.id)
+            const limit = VISIBLE[status.category]
+            const open = showAll || expanded.has(status.id)
+            const shown = open ? items : items.slice(0, limit)
+            const hidden = items.length - shown.length
 
             return (
               <Paper
@@ -133,7 +144,7 @@ export function TaskKanban({
                       gap="xs"
                       style={{ listStyle: 'none', padding: 0, margin: 0 }}
                     >
-                      {items.map((task, index) => {
+                      {shown.map((task, index) => {
                         const siblings = items.filter((item) => item.listId === task.listId)
                         const slot = siblings.findIndex((item) => item.id === task.id)
 
@@ -161,6 +172,24 @@ export function TaskKanban({
                       })}
                     </Stack>
                   )}
+
+                  {!showAll && items.length > limit ? (
+                    <Button
+                      variant="subtle"
+                      size="sm"
+                      fullWidth
+                      onClick={() =>
+                        setExpanded((current) => {
+                          const next = new Set(current)
+                          if (open) next.delete(status.id)
+                          else next.add(status.id)
+                          return next
+                        })
+                      }
+                    >
+                      {open ? 'Show fewer' : `Show ${hidden} more`}
+                    </Button>
+                  ) : null}
                 </Stack>
               </Paper>
             )

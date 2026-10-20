@@ -12,7 +12,7 @@ export interface PageSectionProps {
 
 export function PageSection({ title, description, actions, maw, children }: PageSectionProps) {
   return (
-    <Card component="section" padding="lg" maw={maw} w="100%">
+    <Card component="section" p={{ base: 'md', sm: 'lg' }} maw={maw} w="100%">
       <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm" mb="md">
         <Stack gap={2} miw={0}>
           <Title order={2} size="h5">

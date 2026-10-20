@@ -213,7 +213,7 @@ export function TeamsPanel() {
         setQuery={setQuery}
         clearFilters={clearFilters}
         filters={TEAM_FILTERS}
-        action={
+        primaryAction={
           <Button leftSection={<IconPlus size={16} aria-hidden />} onClick={createModal.open}>
             New department
           </Button>

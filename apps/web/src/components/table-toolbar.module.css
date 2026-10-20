@@ -1,0 +1,19 @@
+/* On a phone the page's main action takes a full-width 44 px row of its own, last so tab order matches. */
+.primary {
+  display: flex;
+  flex: 1 0 100%;
+
+  & > * {
+    flex: 1;
+    min-height: 44px;
+  }
+
+  @media (min-width: $mantine-breakpoint-sm) {
+    flex: none;
+
+    & > * {
+      flex: none;
+      min-height: 0;
+    }
+  }
+}
