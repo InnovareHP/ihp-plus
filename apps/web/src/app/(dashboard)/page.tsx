@@ -1,9 +1,10 @@
-import { Badge, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Stack, Text, Title } from '@mantine/core'
 import type { Metadata } from 'next'
 import { PageShell } from '@/components/page-shell'
 import { PageHeader } from '@/components/page-header'
 import { AttentionGrid } from '@/features/dashboard/components/attention-grid'
-import { SummaryCard } from '@/features/dashboard/components/summary-card'
+import { ProfileCard } from '@/features/dashboard/components/profile-card'
+import { VerifiedBadge } from '@/features/dashboard/components/verified-badge'
 import { loadDashboardSummary } from '@/features/dashboard/service'
 import { FirstDaysChecklist } from '@/features/new-hires/components/first-days-checklist'
 import { loadChecklistFor } from '@/features/new-hires/service'
@@ -40,66 +41,41 @@ export default async function DashboardPage() {
         <AttentionGrid summary={summary} />
       </Stack>
 
-      <Stack gap="sm" component="section" aria-labelledby="account-heading">
-        <Title order={2} size="h4" id="account-heading">
-          Your account
+      <Stack gap="sm" component="section" aria-labelledby="profile-heading">
+        <Title order={2} size="h4" id="profile-heading">
+          Your profile
         </Title>
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-          <SummaryCard title="Your role">
-            <Text size="sm">{profile.jobTitle}</Text>
-            <Text size="sm" c="dimmed">
-              {profile.employmentType} in {membership.team?.name ?? 'no department'}
-            </Text>
-            {profile.employmentStatus ? (
-              <Text size="sm" c="dimmed">
-                {profile.employmentStatus}
-              </Text>
-            ) : null}
-            {profile.startDate ? (
-              <Text size="sm" c="dimmed">
-                Started {dateOnly.format(profile.startDate)}
-              </Text>
-            ) : null}
-          </SummaryCard>
-
-          <SummaryCard
-            title="Email"
-            badge={
-              user.emailVerified ? (
-                <Badge color="green" variant="light">
-                  Verified
-                </Badge>
-              ) : (
-                <Badge color="yellow" variant="light">
-                  Unverified
-                </Badge>
-              )
-            }
-          >
-            <Text size="sm">{user.email}</Text>
-            <Text size="sm" c="dimmed">
-              {user.emailVerified
-                ? 'This address receives portal notices.'
-                : 'Check your inbox for the verification link.'}
-            </Text>
-          </SummaryCard>
-
-          <SummaryCard title="IHP company ID">
-            <Text size="sm" ff="monospace" fw={600}>
-              {profile.ihpId ?? 'Not issued'}
-            </Text>
-            <Text size="sm" c="dimmed">
-              Issued at setup and never reissued. Quote it when you contact People &amp; Culture.
-            </Text>
-          </SummaryCard>
-
-          <SummaryCard title="Session">
-            <Text size="sm">Expires {dateTime.format(new Date(session.expiresAt))}</Text>
-            <Text size="sm" c="dimmed">
-              You are signed out automatically when it lapses.
-            </Text>
-          </SummaryCard>
-        </SimpleGrid>
+        <ProfileCard
+          rows={[
+            { label: 'Role', value: profile.jobTitle },
+            {
+              label: 'Department',
+              value: `${membership.team?.name ?? 'No department'} · ${profile.employmentType}`,
+            },
+            ...(profile.employmentStatus
+              ? [{ label: 'Status', value: profile.employmentStatus }]
+              : []),
+            ...(profile.startDate
+              ? [{ label: 'Started', value: dateOnly.format(profile.startDate) }]
+              : []),
+            { label: 'Email', value: user.email },
+            { label: 'Email status', value: <VerifiedBadge verified={user.emailVerified} /> },
+            {
+              label: 'IHP company ID',
+              value: (
+                <Text span inherit ff="monospace">
+                  {profile.ihpId ?? 'Not issued'}
+                </Text>
+              ),
+            },
+            { label: 'Session expires', value: dateTime.format(new Date(session.expiresAt)) },
+          ]}
+          note={
+            user.emailVerified
+              ? undefined
+              : 'Your email is not verified yet. Check your inbox for the verification link.'
+          }
+        />
       </Stack>
     </PageShell>
   )

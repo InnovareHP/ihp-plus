@@ -206,3 +206,33 @@ describe('DashboardShell search', () => {
     expect(screen.queryByRole('button', { name: 'Search' })).not.toBeInTheDocument()
   })
 })
+
+describe('DashboardShell account menu', () => {
+  it('keeps the header slim: the photo opens a menu holding the name, email and theme', async () => {
+    const user = userEvent.setup()
+    renderShell()
+
+    // The name is no longer printed beside the photo, and the theme has no button of its own.
+    expect(screen.queryByRole('button', { name: /^Switch to (dark|light) theme$/ })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Account menu for Dana Reyes' }))
+
+    const menu = screen.getByRole('menu')
+    expect(within(menu).getByText('Dana Reyes')).toBeInTheDocument()
+    expect(within(menu).getByText('dana@ihp.example')).toBeInTheDocument()
+    expect(within(menu).getByRole('menuitem', { name: 'Settings' })).toBeInTheDocument()
+    expect(
+      within(menu).getByRole('menuitem', { name: /^Switch to (dark|light) theme$/ }),
+    ).toBeInTheDocument()
+    expect(within(menu).getByRole('menuitem', { name: 'Sign out' })).toBeInTheDocument()
+  })
+
+  it('switches the theme from the menu and keeps the menu open', async () => {
+    const user = userEvent.setup()
+    renderShell()
+
+    await user.click(screen.getByRole('button', { name: 'Account menu for Dana Reyes' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Switch to dark theme' }))
+
+    expect(screen.getByRole('menuitem', { name: 'Switch to light theme' })).toBeInTheDocument()
+  })
+})

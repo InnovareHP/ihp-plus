@@ -11,19 +11,15 @@ export default function DashboardLoading() {
       </Stack>
       <Stack gap="sm">
         <Skeleton height={26} width="12rem" />
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+        <SimpleGrid cols={{ base: 2, lg: 4 }} spacing={{ base: 'xs', sm: 'md' }}>
           {[0, 1, 2, 3].map((card) => (
-            <Skeleton key={card} height={150} radius="md" />
+            <Skeleton key={card} h={{ base: 170, sm: 150 }} radius="md" />
           ))}
         </SimpleGrid>
       </Stack>
       <Stack gap="sm">
         <Skeleton height={26} width="9rem" />
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-          {[0, 1, 2, 3].map((card) => (
-            <Skeleton key={card} height={140} radius="md" />
-          ))}
-        </SimpleGrid>
+        <Skeleton h={{ base: 200, sm: 120 }} radius="md" />
       </Stack>
     </PageShell>
   )

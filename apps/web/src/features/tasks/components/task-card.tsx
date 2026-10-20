@@ -23,7 +23,7 @@ import {
 import { formatDuration } from '../utils/duration'
 import { ParentTaskLine } from './parent-task-line'
 import { ProjectTaskLine } from './project-task-line'
-import touch from './touch-target.module.css'
+import touch from '@/components/touch-target.module.css'
 
 const due = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 

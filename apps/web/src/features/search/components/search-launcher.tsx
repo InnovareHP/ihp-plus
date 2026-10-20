@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { track } from '@/lib/analytics'
 import { searchEvents } from '../events'
 import { searchSpotlight } from '../spotlight-store'
+import touch from '@/components/touch-target.module.css'
 import type { SearchPaletteProps } from './search-palette'
 
 const loadPalette = () => import('./search-palette').then((module) => module.SearchPalette)
@@ -35,9 +36,15 @@ export function SearchLauncher(props: SearchLauncherProps) {
 
   return (
     <>
+      {/* Looks like a quiet search field rather than one more button, so the header reads calmly. */}
+      {/* A tablet's header already carries the sidebar toggle, so the full field waits for a laptop. */}
       <Button
-        visibleFrom="sm"
+        visibleFrom="md"
         variant="default"
+        w={220}
+        justify="space-between"
+        fw={400}
+        c="dimmed"
         leftSection={<IconSearch size={16} aria-hidden />}
         rightSection={<Kbd size="xs">{shortcut}</Kbd>}
         aria-label="Search"
@@ -46,12 +53,14 @@ export function SearchLauncher(props: SearchLauncherProps) {
         onMouseEnter={warm}
         onFocus={warm}
       >
-        Search
+        Search…
       </Button>
       <ActionIcon
-        hiddenFrom="sm"
-        variant="default"
+        hiddenFrom="md"
+        variant="subtle"
+        color="gray"
         size="lg"
+        className={touch.target}
         aria-label="Search"
         onClick={open}
         onFocus={warm}
