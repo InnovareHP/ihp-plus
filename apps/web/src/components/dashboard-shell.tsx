@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  ActionIcon,
   AppShell,
   Avatar,
   Badge,
@@ -14,25 +15,23 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { useDisclosure, useHotkeys } from '@mantine/hooks'
-import { IconChevronDown, IconLogout, IconSettings } from '@tabler/icons-react'
+import { IconLogout, IconSettings } from '@tabler/icons-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
-import { RunningClockChip } from '@/features/attendance/components/running-clock-chip'
 import { useStopImpersonating } from '@/features/auth/hooks/use-impersonation'
 import { useSignOut } from '@/features/auth/hooks/use-sign-out'
 import { BulletinUnreadBadge } from '@/features/bulletin/components/bulletin-unread-badge'
 import { SearchLauncher } from '@/features/search/components/search-launcher'
 import { recentKey } from '@/features/search/utils/recent-searches'
 import { MentionsMenu } from '@/features/tasks/components/mentions-menu'
-import {
-  RunningTimerButton,
-  RunningTimerChip,
-} from '@/features/tasks/components/running-timer-chip'
 import { isNavItemActive, visibleSections } from '@/lib/navigation'
 import { routes } from '@/lib/routes'
+import { ActivityButton } from './activity-button'
 import { AppLogo } from './app-logo'
-import { ColorSchemeToggle } from './color-scheme-toggle'
+import { ColorSchemeMenuItem } from './color-scheme-menu-item'
+import classes from './dashboard-shell.module.css'
+import touch from './touch-target.module.css'
 import { ImpersonationBanner } from './impersonation-banner'
 import { NavGroup } from './nav-group'
 import { NavItemLink } from './nav-item-link'
@@ -94,8 +93,8 @@ export function DashboardShell({
         collapsed: { mobile: !navOpened, desktop: !sidebarShown },
       }}
     >
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+      <AppShell.Header className={classes.header}>
+        <Group h="100%" px={{ base: 'sm', sm: 'md' }} justify="space-between" wrap="nowrap">
           <Group gap="sm" wrap="nowrap" miw={0}>
             <Burger
               opened={navOpened}
@@ -116,13 +115,13 @@ export function DashboardShell({
               aria-controls="primary-navigation"
             />
             <AppLogo height={28} />
-            <Divider orientation="vertical" my="sm" visibleFrom="sm" />
-            <Text size="sm" c="dimmed" truncate visibleFrom="sm">
+            <Divider orientation="vertical" my="sm" visibleFrom="md" />
+            <Text size="sm" c="dimmed" truncate visibleFrom="md">
               {organization.name}
             </Text>
           </Group>
 
-          <Group gap="sm" wrap="nowrap">
+          <Group gap="xs" wrap="nowrap">
             {/* Admins only while search is piloted with them before everyone gets it. */}
             {canManageOrganization ? (
               <SearchLauncher
@@ -131,27 +130,41 @@ export function DashboardShell({
                 persistRecent={!impersonating}
               />
             ) : null}
-            <RunningClockChip />
-            <RunningTimerChip />
-            <RunningTimerButton />
+            <ActivityButton />
             <MentionsMenu />
-            <ColorSchemeToggle />
-            <Menu position="bottom-end" withinPortal shadow="md" width={220}>
+            {/* The photo alone opens the menu; the name lives inside it, so the header stays slim. */}
+            <Menu position="bottom-end" withinPortal shadow="md" width={240}>
               <Menu.Target>
-                <UnstyledButton aria-label={`Account menu for ${user.name}`}>
-                  <Group gap="xs" wrap="nowrap">
-                    <Avatar src={user.photoUrl} alt="" color="brand" radius="xl" size={30}>
-                      {initials(user.name)}
-                    </Avatar>
-                    <Text size="sm" fw={500} visibleFrom="xs">
-                      {user.name}
-                    </Text>
-                    <IconChevronDown size={14} aria-hidden />
-                  </Group>
-                </UnstyledButton>
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  radius="xl"
+                  size="lg"
+                  className={touch.target}
+                  aria-label={`Account menu for ${user.name}`}
+                >
+                  <Avatar
+                    src={user.photoUrl}
+                    alt=""
+                    color="brand"
+                    radius="xl"
+                    size={26}
+                    className={classes.avatar}
+                  >
+                    {initials(user.name)}
+                  </Avatar>
+                </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown>
-                <Menu.Label>{user.email}</Menu.Label>
+                <Stack gap={0} px="sm" py="xs">
+                  <Text size="sm" fw={600} truncate>
+                    {user.name}
+                  </Text>
+                  <Text size="xs" c="dimmed" truncate>
+                    {user.email}
+                  </Text>
+                </Stack>
+                <Menu.Divider />
                 <Menu.Item
                   component={Link}
                   href={routes.settings}
@@ -159,6 +172,7 @@ export function DashboardShell({
                 >
                   Settings
                 </Menu.Item>
+                <ColorSchemeMenuItem />
                 <Menu.Divider />
                 <Menu.Item
                   color="red"

@@ -9,7 +9,7 @@ import {
   IconPlus,
 } from '@tabler/icons-react'
 import { MY_TASKS_PROJECT, type TaskProjectRow } from '../schema'
-import touch from './touch-target.module.css'
+import touch from '@/components/touch-target.module.css'
 
 export interface ProjectSelectProps {
   projects: readonly TaskProjectRow[]

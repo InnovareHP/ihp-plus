@@ -23,7 +23,7 @@ import {
 } from '@tabler/icons-react'
 import { useForm } from 'react-hook-form'
 import { subtaskFormSchema, type SubtaskFormValues, type TaskSubtaskRow } from '../schema'
-import touch from './touch-target.module.css'
+import touch from '@/components/touch-target.module.css'
 
 export interface SubtaskListProps {
   subtasks: readonly TaskSubtaskRow[]

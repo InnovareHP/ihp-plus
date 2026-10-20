@@ -12,6 +12,7 @@ import {
 } from '../hooks/use-mentions'
 import type { TaskMentionRow } from '../schema'
 import { describeMoment } from '@/lib/relative-time'
+import touch from '@/components/touch-target.module.css'
 
 function taskHref(mention: TaskMentionRow) {
   return `${routes.tasks}?project=${mention.projectId}&task=${mention.taskId}`
@@ -30,14 +31,15 @@ export function MentionsMenu() {
     <Menu position="bottom-end" withinPortal shadow="md" width={340}>
       <Menu.Target>
         {/* The count sits inside the button: on the wrapper, its aria-expanded lands on a div. */}
-        <ActionIcon variant="subtle" color="gray" size="lg" aria-label={label}>
-          <Indicator
-            disabled={feed.unreadCount === 0}
-            label={feed.unreadCount > 9 ? '9+' : feed.unreadCount}
-            size={16}
-            color="red"
-            offset={-2}
-          >
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="lg"
+          className={touch.target}
+          aria-label={label}
+        >
+          {/* A quiet brand dot says something is new; the count lives in the name and the list. */}
+          <Indicator disabled={feed.unreadCount === 0} size={8} color="brand" withBorder offset={2}>
             <IconBell size={18} aria-hidden />
           </Indicator>
         </ActionIcon>
