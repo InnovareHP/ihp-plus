@@ -21,7 +21,7 @@ export function AttentionGrid({ summary }: { summary: DashboardSummary }) {
         </Text>
       ) : null}
 
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+      <SimpleGrid cols={{ base: 2, lg: 4 }} spacing={{ base: 'xs', sm: 'md' }}>
         {summary.approvalsWaiting === null ? null : (
           <StatCard
             label="Waiting for your decision"

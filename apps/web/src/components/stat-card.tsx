@@ -14,11 +14,11 @@ export interface StatCardProps {
 
 export function StatCard({ label, value, hint, action }: StatCardProps) {
   return (
-    <Card padding="lg">
+    <Card p={{ base: 'sm', sm: 'lg' }}>
       <Text size="sm" c="dimmed">
         {label}
       </Text>
-      <Text fz={32} fw={700} lh={1.2}>
+      <Text fz={{ base: 26, sm: 32 }} fw={700} lh={1.2}>
         {typeof value === 'number' ? number.format(value) : value}
       </Text>
       <Text size="xs" c="dimmed">

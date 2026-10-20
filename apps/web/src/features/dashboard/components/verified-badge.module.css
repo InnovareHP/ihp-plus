@@ -1,0 +1,20 @@
+/* Icon shades measured at 3:1 or better against the badge in both themes. */
+.verified {
+  @mixin light {
+    color: var(--mantine-color-teal-9);
+  }
+
+  @mixin dark {
+    color: var(--mantine-color-teal-4);
+  }
+}
+
+.unverified {
+  @mixin light {
+    color: var(--mantine-color-orange-9);
+  }
+
+  @mixin dark {
+    color: var(--mantine-color-orange-4);
+  }
+}
