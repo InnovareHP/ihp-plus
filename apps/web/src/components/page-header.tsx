@@ -17,16 +17,21 @@ export function PageHeader({ title, description, breadcrumbs, actions }: PageHea
       {breadcrumbs && breadcrumbs.length > 0 ? <PageBreadcrumbs items={breadcrumbs} /> : null}
       <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
         <Stack gap={4} miw={0}>
-          <Title order={1} size="h2">
+          {/* A phone gets the next step down so a long title does not fill the first screen. */}
+          <Title order={1} size="h2" fz={{ base: 'h3', sm: 'h2' }} lh={{ base: 'h3', sm: 'h2' }}>
             {title}
           </Title>
           {description ? (
-            <Text c="dimmed" maw="60ch">
+            <Text c="dimmed" maw="60ch" fz={{ base: 'sm', sm: 'md' }}>
               {description}
             </Text>
           ) : null}
         </Stack>
-        {actions ? <Group gap="sm">{actions}</Group> : null}
+        {actions ? (
+          <Group gap="sm" w={{ base: '100%', sm: 'auto' }}>
+            {actions}
+          </Group>
+        ) : null}
       </Group>
       <Divider />
     </Stack>
