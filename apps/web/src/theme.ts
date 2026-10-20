@@ -1,5 +1,6 @@
 import { createTheme, type CSSVariablesResolver, type MantineColorsTuple } from '@mantine/core'
 import dialog from './components/dialog.module.css'
+import input from './components/input.module.css'
 
 // Mirrors the OKLCH ramps in packages/config/tailwind/theme.css; Tailwind's 600 is Mantine's 6.
 const brand: MantineColorsTuple = [
@@ -88,6 +89,8 @@ export const theme = createTheme({
       (registered, name) => ({ ...registered, [name]: { defaultProps: INPUT_DEFAULTS } }),
       {},
     ),
+    // Every field built on Input, from search boxes to selects, picks this up.
+    Input: { classNames: { input: input.input } },
     Card: { defaultProps: { withBorder: true, radius: 'md' } },
     Paper: { defaultProps: { radius: 'md' } },
     Button: { defaultProps: { fw: 600 } },

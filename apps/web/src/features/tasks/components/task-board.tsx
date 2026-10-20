@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react'
 import { EmptyState } from '@/components/empty-state'
 import { PageSection } from '@/components/page-section'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
+import { chipsOf } from '@/lib/table-filters'
 import { searchParamsParser } from '@/lib/url-query'
 import { useRememberedUrlQuery } from '@/lib/use-remembered-url-query'
 import { useDirectoryDepartments } from '@/features/directory/hooks/use-directory'
@@ -478,7 +479,7 @@ export function TaskBoard() {
             clearFilters={clearFilters}
             filters={filters}
             action={
-              <Group gap="sm" wrap="nowrap" flex={{ base: 1, sm: 'none' }}>
+              <Group gap="sm" wrap="nowrap">
                 {/* A background refresh dims rather than replaces: only a first load blanks a board. */}
                 {board.isFetching && !board.isPending ? (
                   <Text size="xs" c="dimmed" aria-hidden>
@@ -518,18 +519,17 @@ export function TaskBoard() {
                     <Menu.Item onClick={listModal.open}>New list</Menu.Item>
                   </Menu.Dropdown>
                 </Menu>
-                <Button
-                  // The page's one primary action, so on a phone it takes the free width.
-                  flex={{ base: 1, sm: 'none' }}
-                  mih={{ base: 44, sm: 0 }}
-                  leftSection={<IconPlus size={16} aria-hidden />}
-                  // Across projects the form asks which project, so there is always somewhere to add.
-                  disabled={!acrossProjects && listRows.length === 0}
-                  onClick={() => composeTask()}
-                >
-                  New task
-                </Button>
               </Group>
+            }
+            primaryAction={
+              <Button
+                leftSection={<IconPlus size={16} aria-hidden />}
+                // Across projects the form asks which project, so there is always somewhere to add.
+                disabled={!acrossProjects && listRows.length === 0}
+                onClick={() => composeTask()}
+              >
+                New task
+              </Button>
             }
           />
 
@@ -579,6 +579,7 @@ export function TaskBoard() {
             <TaskKanban
               statuses={statusRows}
               tasks={tasks}
+              showAll={Boolean(query.search) || chipsOf(filters, query, setQuery).length > 0}
               onOpen={(task) => setQuery({ task: task.id })}
               onMoveTo={(task, statusId) =>
                 update.mutate({

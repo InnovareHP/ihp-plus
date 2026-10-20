@@ -127,7 +127,8 @@ describe('TaskKanban', () => {
     const user = userEvent.setup()
     renderBoard([task()])
 
-    await user.click(screen.getByText('Unassigned'))
+    // The desktop and phone layouts each carry the assignee line; either is the card's body.
+    await user.click(screen.getAllByText('Unassigned')[0] as HTMLElement)
 
     expect(handlers.onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'task-1' }))
   })
@@ -231,5 +232,33 @@ describe('TaskKanban column bar', () => {
     const { container } = renderBoard([task()])
 
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('shows the first ten of a long column and the rest on request', async () => {
+    const user = userEvent.setup()
+    renderBoard(
+      Array.from({ length: 13 }, (_, index) =>
+        task({ id: `task-${index}`, taskNumber: index + 1, name: `Task ${index + 1}` }),
+      ),
+    )
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(10)
+    await user.click(screen.getByRole('button', { name: 'Show 3 more' }))
+    expect(screen.getAllByRole('listitem')).toHaveLength(13)
+    await user.click(screen.getByRole('button', { name: 'Show fewer' }))
+    expect(screen.getAllByRole('listitem')).toHaveLength(10)
+  })
+
+  it('names one assignee and counts the rest on the phone card', () => {
+    renderBoard([
+      task({
+        assignees: [
+          { userId: 'user-2', name: 'Grace Hopper' },
+          { userId: 'user-3', name: 'Ken Watts' },
+        ],
+      }),
+    ])
+
+    expect(screen.getByText('Grace +1')).toBeInTheDocument()
   })
 })
