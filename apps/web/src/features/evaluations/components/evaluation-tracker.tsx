@@ -149,7 +149,7 @@ export function EvaluationTracker() {
         setQuery={setQuery}
         clearFilters={clearFilters}
         filters={filters}
-        action={
+        primaryAction={
           <Button
             leftSection={<IconPlus size={16} aria-hidden />}
             onClick={() => {

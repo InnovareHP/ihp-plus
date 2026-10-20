@@ -50,6 +50,30 @@ describe('TableToolbar', () => {
     vi.clearAllMocks()
   })
 
+  it('reaches the main action last, after search and filters, as a phone lays it out', async () => {
+    const person = user()
+    render(
+      <TableToolbar
+        label="departments"
+        query={EMPTY}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={FILTERS}
+        action={<button type="button">More</button>}
+        primaryAction={<button type="button">New department</button>}
+      />,
+    )
+
+    await person.tab()
+    expect(screen.getByRole('searchbox', { name: 'Search departments' })).toHaveFocus()
+    await person.tab()
+    expect(screen.getByRole('button', { name: 'Filters' })).toHaveFocus()
+    await person.tab()
+    expect(screen.getByRole('button', { name: 'More' })).toHaveFocus()
+    await person.tab()
+    expect(screen.getByRole('button', { name: 'New department' })).toHaveFocus()
+  })
+
   it('debounces what is typed into the search box into the query', async () => {
     const person = user()
     renderToolbar()
