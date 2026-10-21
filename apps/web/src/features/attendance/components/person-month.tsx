@@ -38,7 +38,7 @@ export function PersonMonth({ calendar, countryNames }: PersonMonthProps) {
 
   return (
     <>
-      <Box visibleFrom="sm">
+      <Box visibleFrom="md">
         <MonthGrid
           month={calendar.month}
           today={calendar.today}
@@ -46,7 +46,7 @@ export function PersonMonth({ calendar, countryNames }: PersonMonthProps) {
           isShaded={(date) => byDate.get(date)?.state === 'off'}
         />
       </Box>
-      <Box hiddenFrom="sm">
+      <Box hiddenFrom="md">
         <DayCardList
           today={calendar.today}
           dates={calendar.days

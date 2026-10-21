@@ -20,7 +20,7 @@ export function CalendarPanel() {
   const month = data?.month ?? requested
 
   return (
-    <Card padding="lg" component="section" aria-labelledby="calendar-heading">
+    <Card p={{ base: 'md', sm: 'lg' }} component="section" aria-labelledby="calendar-heading">
       <Stack gap="md">
         <Group justify="space-between" align="center" wrap="wrap" gap="sm">
           <Stack gap={2}>

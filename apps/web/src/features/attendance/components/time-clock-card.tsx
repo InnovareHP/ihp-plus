@@ -1,6 +1,17 @@
 'use client'
 
-import { Alert, Button, Card, Group, Skeleton, Stack, Text, Textarea, Title } from '@mantine/core'
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  Group,
+  Skeleton,
+  Stack,
+  Text,
+  Textarea,
+  Title,
+} from '@mantine/core'
 import { IconCoffee, IconPlayerStop, IconPlayerPlay } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -8,6 +19,7 @@ import { useEndBreak, useStartBreak, useTimeClock } from '../hooks/use-time-cloc
 import { useNow } from '../hooks/use-now'
 import { usePunch, type PunchKind } from '../hooks/use-punch'
 import type { AttendanceSettingsRow, AttendanceShiftRow } from '../schema'
+import actions from '@/components/action-row.module.css'
 import { formatHours, minutesToClock } from '@ihp/clock'
 import { dayState, liveBreakSeconds, liveWorkedSeconds } from '../utils/day'
 import { ClockReading } from './clock-reading'
@@ -42,7 +54,7 @@ export function TimeClockCard() {
 
   if (clock.isPending) {
     return (
-      <Card padding="lg" aria-busy="true">
+      <Card p={{ base: 'md', sm: 'lg' }} aria-busy="true">
         <Stack gap="md">
           <Skeleton height={28} width={180} />
           <Skeleton height={56} />
@@ -88,7 +100,7 @@ export function TimeClockCard() {
   }
 
   return (
-    <Card padding="lg" component="section" aria-labelledby="time-clock-heading">
+    <Card p={{ base: 'md', sm: 'lg' }} component="section" aria-labelledby="time-clock-heading">
       <Stack gap="md">
         <Group justify="space-between" align="flex-start" wrap="wrap">
           <Stack gap={4}>
@@ -138,7 +150,7 @@ export function TimeClockCard() {
           />
         ) : null}
 
-        <Group gap="sm">
+        <Box className={actions.row}>
           {state === 'absent' ? (
             <Button
               leftSection={<IconPlayerPlay size={18} />}
@@ -192,7 +204,7 @@ export function TimeClockCard() {
               it if something is off.
             </Text>
           ) : null}
-        </Group>
+        </Box>
       </Stack>
     </Card>
   )

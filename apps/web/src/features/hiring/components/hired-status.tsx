@@ -1,6 +1,7 @@
 'use client'
 
 import { Alert, Button, Stack, Text } from '@mantine/core'
+import touch from '@/components/touch-target.module.css'
 import { describeMoment } from '@/lib/relative-time'
 
 export interface HiredStatusProps {
@@ -42,7 +43,8 @@ export function HiredStatus({
         </Text>
         <Button
           variant="default"
-          size="compact-sm"
+          size="sm"
+          className={touch.target}
           w="fit-content"
           loading={isResending}
           onClick={onResend}

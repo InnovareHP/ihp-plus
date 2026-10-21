@@ -1,4 +1,5 @@
 import { Anchor, Group, Text } from '@mantine/core'
+import touch from '@/components/touch-target.module.css'
 import type { AttendanceDayRow } from '../schema'
 
 /** The photos taken at each end, for the person themselves and for an admin. */
@@ -19,6 +20,7 @@ export function SelfieLinks({ day }: { day: AttendanceDayRow }) {
           target="_blank"
           rel="noreferrer"
           size="sm"
+          className={touch.target}
           aria-label={`Selfie taken clocking in on ${day.workDate}`}
         >
           In
@@ -30,6 +32,7 @@ export function SelfieLinks({ day }: { day: AttendanceDayRow }) {
           target="_blank"
           rel="noreferrer"
           size="sm"
+          className={touch.target}
           aria-label={`Selfie taken clocking out on ${day.workDate}`}
         >
           Out

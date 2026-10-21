@@ -1,0 +1,4 @@
+/* An email has no spaces to wrap at, so it breaks anywhere rather than hiding behind an ellipsis. */
+.email {
+  word-break: break-all;
+}

@@ -1,22 +1,12 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  Alert,
-  Anchor,
-  Button,
-  Group,
-  Paper,
-  Radio,
-  Select,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core'
+import { Alert, Anchor, Button, Paper, Radio, Select, Stack, Text, Title } from '@mantine/core'
 import { useRouter } from 'next/navigation'
 import { useSyncExternalStore } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
+import actionRow from '@/components/action-row.module.css'
 import { FormError } from '@/components/form-error'
 import { useAskForOtherTimes, useBookInterview } from '../hooks/use-interviews'
 import { INTERVIEW_FORMAT_LABELS, type InterviewOffer } from '../schema'
@@ -131,7 +121,7 @@ export function InterviewPicker({ offer, applicationId, signature }: InterviewPi
               </Anchor>
             ) : null}
             {zonePicker}
-            <Group>
+            <div className={actionRow.row}>
               <Button
                 variant="subtle"
                 color="gray"
@@ -140,7 +130,7 @@ export function InterviewPicker({ offer, applicationId, signature }: InterviewPi
               >
                 I can no longer make this time
               </Button>
-            </Group>
+            </div>
           </Stack>
         ) : null}
 
@@ -195,7 +185,7 @@ export function InterviewPicker({ offer, applicationId, signature }: InterviewPi
                     </Radio.Group>
                   )}
                 />
-                <Group>
+                <div className={actionRow.row}>
                   <Button type="submit" loading={formState.isSubmitting}>
                     {formState.isSubmitting ? 'Booking…' : 'Book this time'}
                   </Button>
@@ -207,7 +197,7 @@ export function InterviewPicker({ offer, applicationId, signature }: InterviewPi
                   >
                     None of these work
                   </Button>
-                </Group>
+                </div>
               </Stack>
             </form>
           )

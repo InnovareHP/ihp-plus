@@ -54,7 +54,7 @@ export function ApprovalsPanel() {
   const queue = useRequestQueue(query)
   const decide = useDecideRequest(query)
   const [deciding, setDeciding] = useState<RequestRow | null>(null)
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [viewing, setViewing] = useState<RequestRow | null>(null)
 
   const columns: DataTableColumn<RequestRow>[] = [
     {
@@ -92,9 +92,7 @@ export function ApprovalsPanel() {
       align: 'right',
       render: (row) => (
         <RowActionsMenu name={`${row.requesterName}'s ${row.formName} request`}>
-          <Menu.Item onClick={() => setExpanded(expanded === row.id ? null : row.id)}>
-            {expanded === row.id ? 'Hide answers' : 'Show answers'}
-          </Menu.Item>
+          <Menu.Item onClick={() => setViewing(row)}>Show answers</Menu.Item>
           {row.canDecide ? (
             <Menu.Item onClick={() => setDeciding(row)}>Approve or reject</Menu.Item>
           ) : (
@@ -105,8 +103,6 @@ export function ApprovalsPanel() {
       ),
     },
   ]
-
-  const openRow = queue.data?.rows.find((row) => row.id === expanded)
 
   return (
     <Stack gap="md">
@@ -152,19 +148,15 @@ export function ApprovalsPanel() {
         }
       />
 
-      {openRow ? (
-        <Stack
-          gap="xs"
-          p="md"
-          bd="1px solid var(--mantine-color-default-border)"
-          style={{ borderRadius: 'var(--mantine-radius-md)' }}
-        >
-          <Text fw={600} size="sm">
-            {openRow.formName} · {openRow.requesterName}
-          </Text>
-          <FormAnswers fields={openRow.fields} values={openRow.values} />
-        </Stack>
-      ) : null}
+      {/* A modal keeps the answers in view on a phone, where a block under the table is off-screen. */}
+      <Modal
+        opened={Boolean(viewing)}
+        onClose={() => setViewing(null)}
+        centered
+        title={viewing ? `${viewing.formName} from ${viewing.requesterName}` : 'Answers'}
+      >
+        {viewing ? <FormAnswers fields={viewing.fields} values={viewing.values} /> : null}
+      </Modal>
 
       <Modal
         opened={Boolean(deciding)}
@@ -177,6 +169,7 @@ export function ApprovalsPanel() {
             <FormAnswers fields={deciding.fields} values={deciding.values} />
             <DecisionFields
               label="request"
+              inDialog
               isPending={decide.isPending}
               onCancel={() => setDeciding(null)}
               onDecide={(decision, note) => {

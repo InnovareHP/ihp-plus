@@ -1,0 +1,31 @@
+/* A phone swipes stage to stage in the board's own scroller, so the page never scrolls sideways. */
+.board {
+  display: flex;
+  gap: var(--mantine-spacing-md);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: var(--mantine-spacing-sm);
+
+  @media (min-width: $mantine-breakpoint-sm) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow-x: visible;
+    scroll-snap-type: none;
+    padding-bottom: 0;
+  }
+
+  @media (min-width: $mantine-breakpoint-lg) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (min-width: $mantine-breakpoint-xl) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* 32 px short of the board's width leaves a peek of the next stage to say it swipes. */
+.column {
+  flex: 0 0 calc(100% - 32px);
+  min-width: 0;
+  scroll-snap-align: start;
+}

@@ -96,7 +96,11 @@ export function AttendanceBoardPanel({ timeZone }: AttendanceBoardPanelProps) {
   ]
 
   return (
-    <Card padding="lg" component="section" aria-labelledby="attendance-board-heading">
+    <Card
+      p={{ base: 'md', sm: 'lg' }}
+      component="section"
+      aria-labelledby="attendance-board-heading"
+    >
       <Stack gap="md">
         <Group justify="space-between" align="flex-end" wrap="wrap">
           <Stack gap={2}>
@@ -115,7 +119,7 @@ export function AttendanceBoardPanel({ timeZone }: AttendanceBoardPanelProps) {
           />
         </Group>
 
-        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="md">
+        <SimpleGrid cols={{ base: 2, md: 4 }} spacing={{ base: 'xs', sm: 'md' }}>
           <StatCard
             label="Present"
             value={board.data?.presentCount ?? 0}

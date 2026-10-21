@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Radio, Stack, Text } from '@mantine/core'
+import { Button, Flex, Group, Radio, Stack, Text } from '@mantine/core'
 import { Controller, useForm, type Control, type FieldValues } from 'react-hook-form'
 import { FieldInput } from '@/components/field-input'
 import { FormError } from '@/components/form-error'
@@ -87,11 +87,12 @@ export function ScorecardForm({ interviewId, applicantName, fields, mine }: Scor
               error={errors.recommendation?.message as string | undefined}
               errorProps={{ role: 'alert' }}
             >
-              <Group gap="md" mt="xs">
+              {/* One per line on a phone, where five in a row wrapped into a ragged block. */}
+              <Flex direction={{ base: 'column', sm: 'row' }} gap="md" mt="xs">
                 {RECOMMENDATIONS.map((value) => (
                   <Radio key={value} value={value} label={RECOMMENDATION_LABELS[value]} />
                 ))}
-              </Group>
+              </Flex>
             </Radio.Group>
           )}
         />

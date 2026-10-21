@@ -2,6 +2,8 @@
 
 import { Anchor, Badge, Button, Card, Group, List, Modal, Stack, Text } from '@mantine/core'
 import Link from 'next/link'
+import { DialogActions } from '@/components/dialog-actions'
+import touch from '@/components/touch-target.module.css'
 import { interviewRoute } from '@/lib/routes'
 import { useDisclosure } from '@mantine/hooks'
 import {
@@ -113,17 +115,24 @@ export function InterviewCard({
                 component={Link}
                 href={interviewRoute(interview.id)}
                 variant="light"
-                size="compact-sm"
+                size="sm"
+                className={touch.target}
               >
                 Open interview and scorecard
               </Button>
             ) : null}
             {interview.status !== 'booked' ? (
-              <Button variant="light" size="compact-sm" onClick={onOfferNewTimes}>
+              <Button variant="light" size="sm" className={touch.target} onClick={onOfferNewTimes}>
                 Offer new times
               </Button>
             ) : null}
-            <Button variant="subtle" color="red" size="compact-sm" onClick={confirm.open}>
+            <Button
+              variant="subtle"
+              color="red"
+              size="sm"
+              className={touch.target}
+              onClick={confirm.open}
+            >
               Cancel interview
             </Button>
           </Group>
@@ -142,7 +151,7 @@ export function InterviewCard({
               ? 'Everyone invited is emailed that it is off, and it leaves their calendars.'
               : 'The times they were offered stop working. Nobody is emailed.'}
           </Text>
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={confirm.close}>
               Keep it
             </Button>
@@ -156,7 +165,7 @@ export function InterviewCard({
             >
               Cancel interview
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </Modal>
     </Card>

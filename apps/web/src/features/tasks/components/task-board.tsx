@@ -62,6 +62,7 @@ import { storeFiles } from '../attachments'
 import { taskKeys } from '../query-keys'
 import { DeleteListModal } from './delete-list-modal'
 import { TaskDetailModal } from './task-detail-modal'
+import { QuickFilters } from './quick-filters'
 import { TaskKanban } from './task-kanban'
 import { ListFormModal } from './list-form-modal'
 import { ProjectFormModal } from './project-form-modal'
@@ -531,6 +532,13 @@ export function TaskBoard() {
                 New task
               </Button>
             }
+          />
+
+          <QuickFilters
+            assignee={query.assignee}
+            due={query.due}
+            showMine={!acrossProjects}
+            onChange={setQuery}
           />
 
           {board.isError ? (

@@ -3,6 +3,7 @@
 import { ActionIcon, Menu } from '@mantine/core'
 import { IconDotsVertical } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
+import touch from './touch-target.module.css'
 
 export interface RowActionsMenuProps {
   /** What the row is, so the trigger reads "Actions for Acme Corp" rather than a bare icon. */
@@ -22,6 +23,7 @@ export function RowActionsMenu({ name, loading, children }: RowActionsMenuProps)
           variant="subtle"
           color="gray"
           size="lg"
+          className={touch.target}
           loading={loading}
           aria-label={`Actions for ${name}`}
         >

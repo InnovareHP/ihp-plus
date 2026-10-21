@@ -1,8 +1,9 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Stack, Textarea } from '@mantine/core'
+import { Button, Stack, Textarea } from '@mantine/core'
 import { useForm } from 'react-hook-form'
+import actionRow from '@/components/action-row.module.css'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { announceSuccess } from '@/lib/announce'
@@ -57,11 +58,11 @@ export function CancelLeavePanel({ row }: { row: RequestRow }) {
             error={errors.note?.message}
             errorProps={{ role: 'alert' }}
           />
-          <Group>
+          <div className={actionRow.row}>
             <Button type="submit" color="red" variant="light" loading={isSubmitting}>
               {isSubmitting ? 'Cancelling…' : `Cancel ${row.requesterName}'s leave`}
             </Button>
-          </Group>
+          </div>
         </Stack>
       </form>
     </PageSection>

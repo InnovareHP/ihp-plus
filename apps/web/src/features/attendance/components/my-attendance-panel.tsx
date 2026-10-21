@@ -1,8 +1,9 @@
 'use client'
 
-import { Button, Card, Group, Menu, Stack, Text, Title } from '@mantine/core'
+import { Box, Button, Card, Group, Menu, Stack, Text, Title } from '@mantine/core'
 import { formatTimeOfDay, minutesToClock, workDateKey } from '@ihp/clock'
 import { useState } from 'react'
+import actions from '@/components/action-row.module.css'
 import { RowActionsMenu } from '@/components/row-actions-menu'
 import { useMyCorrections, useWithdrawCorrection } from '../hooks/use-corrections'
 import { useAttendanceRange } from '../hooks/use-attendance-range'
@@ -52,7 +53,7 @@ export function MyAttendancePanel() {
   }
 
   return (
-    <Card padding="lg" component="section" aria-labelledby="my-attendance-heading">
+    <Card p={{ base: 'md', sm: 'lg' }} component="section" aria-labelledby="my-attendance-heading">
       <Stack gap="md">
         <Group justify="space-between" align="flex-end" wrap="wrap">
           <Stack gap={2}>
@@ -63,25 +64,27 @@ export function MyAttendancePanel() {
               Times are shown in the company zone, {timeZone}.
             </Text>
           </Stack>
-          <Group gap="sm" align="flex-end" wrap="wrap">
+          <Group gap="sm" align="flex-end" wrap="wrap" w={{ base: '100%', sm: 'auto' }}>
             <AttendanceRangeFields from={range.from} to={range.to} onChange={range.setRange} />
-            <ExportTimesheetButton
-              days={log.data?.days}
-              absences={log.data?.absences}
-              from={range.from}
-              to={range.to}
-              timeZone={timeZone}
-            />
-            <BillingStatementButton
-              days={log.data?.days}
-              absences={log.data?.absences}
-              from={range.from}
-              to={range.to}
-              today={today}
-            />
-            <Button variant="default" onClick={askAboutAnotherDay}>
-              Ask for a correction
-            </Button>
+            <Box className={actions.row} w={{ base: '100%', sm: 'auto' }}>
+              <ExportTimesheetButton
+                days={log.data?.days}
+                absences={log.data?.absences}
+                from={range.from}
+                to={range.to}
+                timeZone={timeZone}
+              />
+              <BillingStatementButton
+                days={log.data?.days}
+                absences={log.data?.absences}
+                from={range.from}
+                to={range.to}
+                today={today}
+              />
+              <Button variant="default" onClick={askAboutAnotherDay}>
+                Ask for a correction
+              </Button>
+            </Box>
           </Group>
         </Group>
 

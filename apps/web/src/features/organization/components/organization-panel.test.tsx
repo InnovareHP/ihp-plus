@@ -68,6 +68,22 @@ describe('OrganizationPanel', () => {
     await waitFor(() => expect(nav.refresh).toHaveBeenCalled())
   })
 
+  it('keeps save enabled on an untouched form, so the button never goes dead', async () => {
+    const person = user()
+    render(<OrganizationPanel />)
+
+    await screen.findByLabelText(/Organization name/)
+    const save = screen.getByRole('button', { name: 'Save changes' })
+    expect(save).toBeEnabled()
+    await person.click(save)
+
+    await waitFor(() =>
+      expect(actions.updateOrganizationProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'IHP+', slug: 'ihp' }),
+      ),
+    )
+  })
+
   it('rejects a slug with spaces before the server sees it', async () => {
     const person = user()
     render(<OrganizationPanel />)

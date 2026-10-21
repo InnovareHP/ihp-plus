@@ -1,13 +1,16 @@
-import { Card, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Card, SimpleGrid, Spoiler, Stack, Text, Title } from '@mantine/core'
+import { EmptyState } from '@/components/empty-state'
+import touch from '@/components/touch-target.module.css'
 import type { OrgChart as OrgChartData } from '../schema'
 import { ChartPeople } from './chart-people'
 
 export function OrgChart({ chart }: { chart: OrgChartData }) {
   if (chart.departments.length === 0) {
     return (
-      <Text size="sm" c="dimmed">
-        No departments are set up yet. An admin adds them on the organization page.
-      </Text>
+      <EmptyState
+        title="No departments are set up yet"
+        description="An admin adds them on the organization page, and each one appears here with its leads and team."
+      />
     )
   }
 
@@ -48,10 +51,21 @@ export function OrgChart({ chart }: { chart: OrgChartData }) {
               <Title order={3} size="h6" mt="sm">
                 Team
               </Title>
-              <ChartPeople
-                people={department.members}
-                emptyText="No one else is in this department yet."
-              />
+              {/* A big department collapses so one card does not push the rest a screen away. */}
+              <Spoiler
+                maxHeight={200}
+                showLabel="Show all"
+                hideLabel="Show less"
+                showAriaLabel={`Show all of ${department.name}`}
+                hideAriaLabel={`Show less of ${department.name}`}
+                classNames={{ control: touch.target }}
+                attributes={{ content: { 'aria-label': `${department.name} team` } }}
+              >
+                <ChartPeople
+                  people={department.members}
+                  emptyText="No one else is in this department yet."
+                />
+              </Spoiler>
             </Card>
           )
         })}

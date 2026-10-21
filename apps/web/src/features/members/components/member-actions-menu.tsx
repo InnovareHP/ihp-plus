@@ -1,7 +1,7 @@
 'use client'
 
-import { Menu } from '@mantine/core'
-import { IconLogin2, IconUserCheck, IconUserOff } from '@tabler/icons-react'
+import { Box, Menu } from '@mantine/core'
+import { IconBriefcase, IconLogin2, IconUserCheck, IconUserOff } from '@tabler/icons-react'
 import { RowActionsMenu } from '@/components/row-actions-menu'
 
 export interface MemberActionsMenuProps {
@@ -12,6 +12,8 @@ export interface MemberActionsMenuProps {
   isSigningIn: boolean
   onToggleBanned: () => void
   onSignInAs: () => void
+  /** Opens shift, pay and status, which a phone's card leaves out. */
+  onEditWorkDetails?: () => void
 }
 
 export function MemberActionsMenu({
@@ -22,11 +24,24 @@ export function MemberActionsMenu({
   isSigningIn,
   onToggleBanned,
   onSignInAs,
+  onEditWorkDetails,
 }: MemberActionsMenuProps) {
-  if (!canSuspend && !canSignInAs) return null
+  if (!canSuspend && !canSignInAs && !onEditWorkDetails) return null
+  // A row whose only action is the phone one carries no menu on wider screens, where it would be empty.
+  const phoneOnly = !canSuspend && !canSignInAs
 
-  return (
+  const menu = (
     <RowActionsMenu name={name}>
+      {/* Phones only: wider screens edit these right in the row. */}
+      {onEditWorkDetails ? (
+        <Menu.Item
+          hiddenFrom="sm"
+          leftSection={<IconBriefcase size={14} aria-hidden />}
+          onClick={onEditWorkDetails}
+        >
+          Edit shift, pay and status
+        </Menu.Item>
+      ) : null}
       {canSignInAs ? (
         <Menu.Item
           leftSection={<IconLogin2 size={14} aria-hidden />}
@@ -49,4 +64,6 @@ export function MemberActionsMenu({
       ) : null}
     </RowActionsMenu>
   )
+
+  return phoneOnly ? <Box hiddenFrom="sm">{menu}</Box> : menu
 }

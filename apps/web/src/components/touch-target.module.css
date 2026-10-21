@@ -3,5 +3,9 @@
   .target {
     min-width: 44px;
     min-height: 44px;
+    /* A text link gets the same box, with its label centred in it. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }

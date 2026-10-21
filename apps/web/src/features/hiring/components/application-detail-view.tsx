@@ -1,8 +1,9 @@
 'use client'
 
-import { Alert, Badge, Button, Grid, Group, Menu, Stack, Text } from '@mantine/core'
+import { Alert, Badge, Box, Button, Grid, Group, Menu, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { IconArrowBackUp, IconChevronDown, IconMail } from '@tabler/icons-react'
+import actionRow from '@/components/action-row.module.css'
 import { ActivityTimeline } from '@/components/activity-timeline'
 import { FormAnswers } from '@/components/form-answers'
 import { PageSection } from '@/components/page-section'
@@ -81,7 +82,7 @@ export function ApplicationDetailView({
           {summary.status === 'active' ? <Text size="sm">Stage: {summary.stageName}</Text> : null}
         </Group>
 
-        <Group gap="sm">
+        <Box className={actionRow.row} w={{ base: '100%', sm: 'auto' }}>
           {summary.status === 'active' ? <Button onClick={hireDialog.open}>Hire</Button> : null}
           {summary.status === 'active' && targets.length > 0 ? (
             <Menu position="bottom-end" withinPortal>
@@ -121,7 +122,7 @@ export function ApplicationDetailView({
               Reopen
             </Button>
           ) : null}
-        </Group>
+        </Box>
       </Group>
 
       {summary.status === 'hired' ? (

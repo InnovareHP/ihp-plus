@@ -99,6 +99,37 @@ describe('PipelineBoard', () => {
     })
   })
 
+  it('moves a card on to the next stage in one tap', async () => {
+    rpc.moveApplication.mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    const { container } = render(<PipelineBoard posting={POSTING} rejectionMessage="Thanks." />)
+
+    await user.click(await screen.findByRole('button', { name: 'Move to Screening: Grace Hopper' }))
+
+    await waitFor(() =>
+      expect(within(column('Screening')).getAllByText('Grace Hopper')).toHaveLength(1),
+    )
+    expect(within(column('Applied')).queryByText('Grace Hopper')).not.toBeInTheDocument()
+    expect(rpc.moveApplication).toHaveBeenCalledWith({
+      applicationId: 'app-1',
+      stageId: 'screening',
+      sendEmail: false,
+      message: '',
+    })
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('offers no next-stage move from the last stage', async () => {
+    const last = DEFAULT_STAGES.at(-1)
+    rpc.listPipeline.mockResolvedValue([
+      { ...GRACE, stageId: last?.id ?? '', stageName: last?.name ?? '' },
+    ])
+    render(<PipelineBoard posting={POSTING} rejectionMessage="Thanks." />)
+
+    await screen.findByText('Grace Hopper')
+    expect(screen.queryByRole('button', { name: /^Move to .*: Grace Hopper$/ })).toBeNull()
+  })
+
   it('puts the card back and says why when the move fails', async () => {
     rpc.moveApplication.mockRejectedValue(new Error('That stage is no longer on this posting.'))
     const user = userEvent.setup()

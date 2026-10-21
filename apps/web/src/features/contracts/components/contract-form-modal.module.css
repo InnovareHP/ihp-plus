@@ -1,0 +1,59 @@
+/* Below sm each line is its own card (name, then price and quantity, then total and remove), so nothing scrolls sideways. */
+.cellLabel {
+  display: none;
+}
+
+.lines {
+  @media (min-width: $mantine-breakpoint-sm) {
+    min-width: 640px;
+  }
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    border: 0;
+
+    & thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+
+    & tbody {
+      display: block;
+    }
+
+    & tbody tr {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+      margin-bottom: var(--mantine-spacing-sm);
+      padding: var(--mantine-spacing-sm);
+      border: 1px solid var(--mantine-color-default-border);
+      border-radius: var(--mantine-radius-md);
+    }
+
+    & tbody th,
+    & tbody td {
+      display: block;
+      padding: 0;
+      border: 0;
+    }
+
+    & tbody th {
+      grid-column: 1 / -1;
+    }
+
+    & .cellLabel {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--mantine-color-dimmed);
+      font-size: var(--mantine-font-size-xs);
+    }
+
+    & .remove {
+      align-self: end;
+      justify-self: end;
+    }
+  }
+}

@@ -1,0 +1,24 @@
+/* On a phone a row of actions shares the width at a 44 px height; from sm they sit at their own size. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-sm);
+
+  & > * {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+
+  @media (min-width: $mantine-breakpoint-sm) {
+    justify-content: var(--action-row-justify, flex-start);
+
+    & > * {
+      flex: none;
+      min-height: 0;
+    }
+  }
+}
+
+.end {
+  --action-row-justify: flex-end;
+}

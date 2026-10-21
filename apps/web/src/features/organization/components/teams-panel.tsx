@@ -179,6 +179,7 @@ export function TeamsPanel() {
     {
       key: 'createdAt',
       header: 'Created',
+      hideOnPhone: true,
       width: 160,
       render: (team) => (
         <Text size="sm" c="dimmed">

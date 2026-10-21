@@ -57,6 +57,7 @@ export function MyRequestsTable({
     {
       key: 'decision',
       header: 'Decision',
+      stackOnPhone: true,
       render: (row) => (
         <Text size="sm" c="dimmed" lineClamp={2}>
           {row.decisionNote || (row.decidedBy ? `Decided by ${row.decidedBy}` : '—')}

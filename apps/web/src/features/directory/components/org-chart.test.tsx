@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import { render, screen, within } from '@/test/render'
+import { render, screen, userEvent, within } from '@/test/render'
 import { OrgChart } from './org-chart'
 
 const CHART = {
@@ -17,7 +17,27 @@ const CHART = {
   ],
 }
 
+// jsdom does no layout, so the Spoiler is told its content is taller than its cap.
+class TallObserver {
+  constructor(private readonly callback: ResizeObserverCallback) {}
+  observe(target: Element) {
+    const size = [{ inlineSize: 300, blockSize: 600 }]
+    this.callback(
+      [{ target, borderBoxSize: size, contentBoxSize: size, contentRect: new DOMRect() }] as never,
+      this as never,
+    )
+  }
+  unobserve() {}
+  disconnect() {}
+}
+
+const QuietObserver = globalThis.ResizeObserver
+
 describe('OrgChart', () => {
+  afterEach(() => {
+    vi.stubGlobal('ResizeObserver', QuietObserver)
+  })
+
   it('shows each department as its own section, leads above the team', () => {
     render(<OrgChart chart={CHART} />)
 
@@ -38,10 +58,25 @@ describe('OrgChart', () => {
     ).toBeInTheDocument()
   })
 
+  it('collapses a long team behind a show all control', async () => {
+    vi.stubGlobal('ResizeObserver', TallObserver)
+    const person = userEvent.setup()
+    render(<OrgChart chart={CHART} />)
+
+    const toggle = await screen.findByRole('button', { name: 'Show all of Revenue Cycle' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(toggle).toHaveTextContent('Show all')
+
+    await person.click(toggle)
+    const collapse = screen.getByRole('button', { name: 'Show less of Revenue Cycle' })
+    expect(collapse).toHaveAttribute('aria-expanded', 'true')
+  })
+
   it('explains an organization with no departments yet', () => {
     render(<OrgChart chart={{ ...CHART, departments: [] }} />)
 
-    expect(screen.getByText(/No departments are set up yet/)).toBeInTheDocument()
+    expect(screen.getByText('No departments are set up yet')).toBeInTheDocument()
+    expect(screen.getByText(/An admin adds them on the organization page/)).toBeInTheDocument()
   })
 
   it('has no axe violations', async () => {
