@@ -2,6 +2,7 @@
 
 import { Button, Chip, Group, Loader, Stack, Text } from '@mantine/core'
 import { IconCalendarBolt } from '@tabler/icons-react'
+import touch from '@/components/touch-target.module.css'
 import { useSlotSuggestions } from '../hooks/use-interviews'
 import { formatInterviewTime, slotOf, suggestionWindow } from '../utils/interview-time'
 
@@ -80,7 +81,8 @@ export function FreeTimeSuggestions({
         </Text>
         <Button
           variant="light"
-          size="compact-sm"
+          size="sm"
+          className={touch.target}
           leftSection={<IconCalendarBolt size={14} aria-hidden />}
           onClick={() => onFillAll(suggestions.data.starts)}
         >
@@ -94,7 +96,7 @@ export function FreeTimeSuggestions({
           return (
             <Chip
               key={start}
-              size="xs"
+              size="sm"
               checked={taken}
               disabled={taken}
               onChange={() => onPick(slot)}

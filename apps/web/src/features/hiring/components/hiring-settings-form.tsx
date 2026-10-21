@@ -1,8 +1,9 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Select, Stack, Textarea } from '@mantine/core'
+import { Button, Select, Stack, Textarea } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
+import actionRow from '@/components/action-row.module.css'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { announceSuccess } from '@/lib/announce'
@@ -158,11 +159,11 @@ export function HiringSettingsForm({ settings }: { settings: HiringSettings }) {
           />
         </PageSection>
 
-        <Group>
+        <div className={actionRow.row}>
           <Button type="submit" loading={isSubmitting} disabled={!isDirty}>
             {isSubmitting ? 'Saving…' : 'Save settings'}
           </Button>
-        </Group>
+        </div>
       </Stack>
     </form>
   )

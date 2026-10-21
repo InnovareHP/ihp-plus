@@ -1,17 +1,6 @@
 'use client'
 
-import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Group,
-  SimpleGrid,
-  Skeleton,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core'
+import { Alert, Badge, Box, Button, Card, Group, Skeleton, Stack, Text, Title } from '@mantine/core'
 import { EmptyState } from '@/components/empty-state'
 import { LinkButton } from '@/components/link-button'
 import { careersPostingRoute } from '@/lib/routes'
@@ -21,8 +10,7 @@ import type { PostingRow } from '../schema'
 import { ApplicantCard } from './applicant-card'
 import { ApplicationActionsMenu } from './application-actions-menu'
 import { DecisionModals } from './decision-modals'
-
-const GRID = { base: 1, sm: 2, lg: 3, xl: 4 }
+import classes from './pipeline-board.module.css'
 
 export interface PipelineBoardProps {
   posting: PostingRow
@@ -35,11 +23,15 @@ export function PipelineBoard({ posting, rejectionMessage }: PipelineBoardProps)
 
   if (pipeline.isPending) {
     return (
-      <SimpleGrid cols={GRID} spacing="md" aria-busy="true">
-        {posting.stages.map((stage) => (
-          <Skeleton key={stage.id} height={220} radius="md" />
-        ))}
-      </SimpleGrid>
+      <>
+        {/* Holds the "Updating…" line's space, so the board does not drop when it lands. */}
+        <Skeleton height={16} width="5rem" mb="xs" />
+        <Box className={classes.board} aria-busy="true">
+          {posting.stages.map((stage) => (
+            <Skeleton key={stage.id} height={220} radius="md" className={classes.column} />
+          ))}
+        </Box>
+      </>
     )
   }
 
@@ -78,13 +70,19 @@ export function PipelineBoard({ posting, rejectionMessage }: PipelineBoardProps)
 
   return (
     <>
-      <SimpleGrid cols={GRID} spacing="md" opacity={pipeline.isFetching ? 0.7 : undefined}>
-        {posting.stages.map((stage) => {
+      {/* Kept in the layout while hidden, so a background refetch shifts nothing under a click. */}
+      <Text size="xs" c="dimmed" aria-hidden mb="xs" opacity={pipeline.isFetching ? 1 : 0}>
+        Updating…
+      </Text>
+      <Box className={classes.board}>
+        {posting.stages.map((stage, index) => {
           const here = pipeline.data.filter((row) => row.stageId === stage.id)
           const headingId = `stage-${stage.id}`
+          const next = posting.stages[index + 1]
           return (
             <Card
               key={stage.id}
+              className={classes.column}
               component="section"
               aria-labelledby={headingId}
               padding="md"
@@ -113,6 +111,8 @@ export function PipelineBoard({ posting, rejectionMessage }: PipelineBoardProps)
                       <ApplicantCard
                         key={application.id}
                         application={application}
+                        nextStage={application.status === 'active' ? next : undefined}
+                        onAdvance={(stage) => decisions.requestMove(application, stage)}
                         actions={
                           <ApplicationActionsMenu
                             application={application}
@@ -130,7 +130,7 @@ export function PipelineBoard({ posting, rejectionMessage }: PipelineBoardProps)
             </Card>
           )
         })}
-      </SimpleGrid>
+      </Box>
       <DecisionModals decisions={decisions} rejectionMessage={rejectionMessage} />
     </>
   )

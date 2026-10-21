@@ -19,6 +19,7 @@ import { IconExternalLink } from '@tabler/icons-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Controller, useForm, useWatch } from 'react-hook-form'
+import actionRow from '@/components/action-row.module.css'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { announceSuccess } from '@/lib/announce'
@@ -453,7 +454,7 @@ export function PostingEditor({ posting, defaultStages }: PostingEditorProps) {
           </Alert>
         ) : null}
 
-        <Group>
+        <div className={actionRow.row}>
           <Button type="submit" loading={isSubmitting} disabled={!isDirty && Boolean(posting)}>
             {isSubmitting ? 'Saving…' : status === 'draft' ? 'Save draft' : 'Save changes'}
           </Button>
@@ -476,7 +477,7 @@ export function PostingEditor({ posting, defaultStages }: PostingEditorProps) {
               Save and stop taking applications
             </Button>
           ) : null}
-        </Group>
+        </div>
       </Stack>
     </form>
   )

@@ -33,7 +33,7 @@ export function ReportFilters({ postingOptions }: ReportFiltersProps) {
           setQuery({ period: REPORT_PERIODS.find((period) => period === value) ?? 'all' })
         }
         allowDeselect={false}
-        w={200}
+        w={{ base: '100%', xs: 200 }}
       />
       <Select
         label="Posting"
