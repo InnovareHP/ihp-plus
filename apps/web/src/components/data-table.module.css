@@ -3,19 +3,21 @@
   display: none;
 }
 
+/* Doubled classes outrank Mantine's attribute-qualified table rules, such as the sticky header's. */
 @media (max-width: $mantine-breakpoint-sm) {
-  .cards .inner {
+  .cards.cards .inner {
     min-width: 0;
   }
 
-  .cards table,
-  .cards tbody {
+  .cards.cards table,
+  .cards.cards tbody {
     display: block;
     border: 0;
   }
 
   /* The header row stays in the accessibility tree; only its pixels go. */
-  .cards thead {
+  .cards.cards thead {
+    display: block;
     position: absolute;
     width: 1px;
     height: 1px;
@@ -23,7 +25,8 @@
     clip-path: inset(50%);
   }
 
-  .cards tbody tr {
+  .cards.cards tbody tr {
+    position: relative;
     display: block;
     margin-bottom: var(--mantine-spacing-sm);
     padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
@@ -32,29 +35,70 @@
     background: var(--mantine-color-body);
   }
 
-  .cards tbody th,
-  .cards tbody td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--mantine-spacing-md);
-    padding: 6px 0;
+  .cards.cards tbody th {
+    display: block;
+    padding: 0 0 var(--mantine-spacing-xs);
     border: 0;
-    text-align: right;
-  }
-
-  .cards tbody th {
-    justify-content: flex-start;
-    padding-bottom: var(--mantine-spacing-xs);
     font-weight: 600;
     text-align: left;
   }
 
-  .cards tbody td .cellLabel {
-    display: block;
-    flex: none;
-    color: var(--mantine-color-dimmed);
-    font-size: var(--mantine-font-size-sm);
+  /* Every line is a label column and a value column, so values start at one edge whatever the label. */
+  .cards.cards tbody td {
+    display: grid;
+    grid-template-columns: minmax(6rem, 44%) minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--mantine-spacing-md);
+    padding: 6px 0;
+    border: 0;
+    /* 16px, the size fields must be on a phone to stop iOS zooming, so text and fields match. */
+    font-size: 1rem;
     text-align: left;
+  }
+
+  .cards.cards tbody td .cellValue {
+    min-width: 0;
+  }
+
+  /* Mantine sets a Text's size inline, so only !important lifts small values to the card's size. */
+  .cards.cards tbody td .cellValue [data-size='sm'] {
+    --text-fz: 1rem !important;
+  }
+
+  /* The row header is the card's title, so its main line steps above the 16px lines under it. */
+  .cards.cards tbody th [data-size='sm'] {
+    --text-fz: var(--mantine-font-size-md) !important;
+    font-weight: 600;
+  }
+
+  .cards.cards tbody td[data-phone-hidden] {
+    display: none;
+  }
+
+  .cards.cards tbody td[data-phone-stack] {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 4px;
+  }
+
+  /* The row's actions sit in the card's top corner instead of on a labelled line of their own. */
+  .cards.cards tbody td[data-phone-corner] {
+    display: block;
+    position: absolute;
+    top: var(--mantine-spacing-xs);
+    right: var(--mantine-spacing-xs);
+    padding: 0;
+  }
+
+  .cards.cards tbody td[data-phone-corner] .cellLabel {
+    display: none;
+  }
+
+  .cards.cards tbody tr:has(td[data-phone-corner]) th {
+    padding-right: 48px;
+  }
+
+  .cards.cards tbody td .cellLabel {
+    display: block;
+    color: var(--mantine-color-dimmed);
   }
 }

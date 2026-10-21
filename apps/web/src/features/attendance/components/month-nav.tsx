@@ -1,5 +1,6 @@
 import { ActionIcon, Button, Group } from '@mantine/core'
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
+import touch from '@/components/touch-target.module.css'
 import { shiftMonth } from '../utils/calendar'
 
 export interface MonthNavProps {
@@ -16,6 +17,7 @@ export function MonthNav({ month, thisMonth, onChange }: MonthNavProps) {
       <ActionIcon
         variant="default"
         size="lg"
+        className={touch.target}
         aria-label="Previous month"
         disabled={!month}
         onClick={() => onChange(shiftMonth(month, -1))}
@@ -24,6 +26,7 @@ export function MonthNav({ month, thisMonth, onChange }: MonthNavProps) {
       </ActionIcon>
       <Button
         variant="default"
+        className={touch.target}
         disabled={!month || month === thisMonth}
         onClick={() => onChange('')}
       >
@@ -32,6 +35,7 @@ export function MonthNav({ month, thisMonth, onChange }: MonthNavProps) {
       <ActionIcon
         variant="default"
         size="lg"
+        className={touch.target}
         aria-label="Next month"
         disabled={!month}
         onClick={() => onChange(shiftMonth(month, 1))}

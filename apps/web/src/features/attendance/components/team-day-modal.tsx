@@ -1,8 +1,9 @@
 'use client'
 
-import { Button, Group, List, Modal, Stack, Text, Title } from '@mantine/core'
+import { Button, List, Modal, Stack, Text, Title } from '@mantine/core'
 import { formatHours } from '@ihp/clock'
 import Link from 'next/link'
+import { DialogActions } from '@/components/dialog-actions'
 import { routes } from '@/lib/routes'
 import type { TeamCalendarDayRow, TeamCalendarEntry, TeamCalendarState } from '../schema'
 
@@ -72,7 +73,7 @@ export function TeamDayModal({ day, onClose }: TeamDayModalProps) {
               </Stack>
             )
           })}
-          <Group justify="flex-end">
+          <DialogActions>
             <Button
               component={Link}
               href={`${routes.attendanceTeam}?to=${day.date}`}
@@ -80,7 +81,7 @@ export function TeamDayModal({ day, onClose }: TeamDayModalProps) {
             >
               Open this day on the board
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       ) : null}
     </Modal>

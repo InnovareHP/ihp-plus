@@ -3,7 +3,9 @@
 import { ActionIcon, Group, Table, Text, Tooltip } from '@mantine/core'
 import { IconPencil } from '@tabler/icons-react'
 import type { FormAllowance, LeaveBalance, PersonBalances } from '../schema'
+import touch from '@/components/touch-target.module.css'
 import { BalanceCell } from './balance-cell'
+import classes from './team-leave-table.module.css'
 
 export interface TeamLeaveTableProps {
   forms: readonly FormAllowance[]
@@ -17,7 +19,9 @@ export function TeamLeaveTable({ forms, people, onEdit }: TeamLeaveTableProps) {
       <Table striped stickyHeader verticalSpacing="xs" aria-label="Leave balances by person">
         <Table.Thead>
           <Table.Tr>
-            <Table.Th scope="col">Person</Table.Th>
+            <Table.Th scope="col" className={classes.person}>
+              Person
+            </Table.Th>
             {forms.map((form) => (
               <Table.Th key={form.formId} scope="col">
                 {form.formName}
@@ -32,7 +36,7 @@ export function TeamLeaveTable({ forms, people, onEdit }: TeamLeaveTableProps) {
         <Table.Tbody>
           {people.map((person) => (
             <Table.Tr key={person.userId}>
-              <Table.Th scope="row">
+              <Table.Th scope="row" className={classes.person}>
                 <Text size="sm" fw={500}>
                   {person.name}
                 </Text>
@@ -55,6 +59,7 @@ export function TeamLeaveTable({ forms, people, onEdit }: TeamLeaveTableProps) {
                         <ActionIcon
                           variant="subtle"
                           size="lg"
+                          className={touch.target}
                           aria-label={label}
                           onClick={() => onEdit(person, balance, form)}
                         >

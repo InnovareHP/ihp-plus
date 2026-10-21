@@ -14,6 +14,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
+import touch from '@/components/touch-target.module.css'
 import { IconFileTypePdf, IconMail, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useState, type BaseSyntheticEvent } from 'react'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
@@ -291,6 +292,7 @@ export function BillingStatementModal({
                     variant="subtle"
                     color="red"
                     size={36}
+                    className={touch.target}
                     aria-label={`Remove expense ${index + 1}`}
                     onClick={() => expenses.remove(index)}
                   >

@@ -37,7 +37,11 @@ export function TeamTimesheetPanel({ timeZone }: TeamTimesheetPanelProps) {
     <Stack gap="md">
       {/* Requests to fix a day sit above the days they would change. */}
       <CorrectionsQueue />
-      <Card padding="lg" component="section" aria-labelledby="team-timesheet-heading">
+      <Card
+        p={{ base: 'md', sm: 'lg' }}
+        component="section"
+        aria-labelledby="team-timesheet-heading"
+      >
         <Stack gap="md">
           <Group justify="space-between" align="flex-end" wrap="wrap">
             <Stack gap={2}>
@@ -48,8 +52,9 @@ export function TeamTimesheetPanel({ timeZone }: TeamTimesheetPanelProps) {
                 Times are shown in the company zone, {timeZone}.
               </Text>
             </Stack>
-            <Group gap="sm" align="flex-end" wrap="wrap">
+            <Group gap="sm" align="flex-end" wrap="wrap" w={{ base: '100%', sm: 'auto' }}>
               <Select
+                w={{ base: '100%', sm: 220 }}
                 label="Employee"
                 placeholder="Everyone"
                 clearable

@@ -1,6 +1,7 @@
 import { createTheme, type CSSVariablesResolver, type MantineColorsTuple } from '@mantine/core'
 import dialog from './components/dialog.module.css'
 import input from './components/input.module.css'
+import tabs from './components/tabs.module.css'
 
 // Mirrors the OKLCH ramps in packages/config/tailwind/theme.css; Tailwind's 600 is Mantine's 6.
 const brand: MantineColorsTuple = [
@@ -91,9 +92,12 @@ export const theme = createTheme({
     ),
     // Every field built on Input, from search boxes to selects, picks this up.
     Input: { classNames: { input: input.input } },
+    Tabs: { classNames: { list: tabs.list, tab: tabs.tab } },
     Card: { defaultProps: { withBorder: true, radius: 'md' } },
     Paper: { defaultProps: { radius: 'md' } },
     Button: { defaultProps: { fw: 600 } },
+    // Sentence case like the rest of the copy; all-caps badges shouted across busy rows.
+    Badge: { defaultProps: { tt: 'none' } },
     Title: { defaultProps: { fw: 700 } },
     // Mantine's close button is an icon alone, so every dialog names it here once.
     Modal: {
@@ -107,8 +111,39 @@ export const theme = createTheme({
 
 // Mantine's dimmed grey is 3.32:1 on white and 4.04:1 on the dark body, short of AA; these shades
 // measure 6.59–8.18:1 and 5.07–9.72:1 on every surface dimmed text sits on.
+// Light badges put shade 9 on shade 1, which measured 2.69 (yellow) to 4.33:1 (teal); darkened, each holds 4.97–5.60:1.
+const DARKENED_LIGHT_TEXT = { teal: 90, green: 85, lime: 75, yellow: 65, orange: 80 } as const
+
+// Coloured text (`c="red"`) used shade 6, 2.36–4.32:1 on white; the light-badge text colour clears 4.5 for every hue.
+const TEXT_COLORS = [
+  'red',
+  'pink',
+  'grape',
+  'violet',
+  'indigo',
+  'blue',
+  'cyan',
+  'teal',
+  'green',
+  'lime',
+  'yellow',
+  'orange',
+] as const
+
+function lightColorVariables() {
+  const variables: Record<string, string> = {}
+  for (const [name, percent] of Object.entries(DARKENED_LIGHT_TEXT)) {
+    variables[`--mantine-color-${name}-light-color`] =
+      `color-mix(in srgb, var(--mantine-color-${name}-9) ${percent}%, black)`
+  }
+  for (const name of TEXT_COLORS) {
+    variables[`--mantine-color-${name}-text`] = `var(--mantine-color-${name}-light-color)`
+  }
+  return variables
+}
+
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {},
-  light: { '--mantine-color-dimmed': 'var(--mantine-color-gray-7)' },
+  light: { '--mantine-color-dimmed': 'var(--mantine-color-gray-7)', ...lightColorVariables() },
   dark: { '--mantine-color-dimmed': 'var(--mantine-color-dark-1)' },
 })

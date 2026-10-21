@@ -77,7 +77,7 @@ export function ShiftsPanel() {
   ]
 
   return (
-    <Card padding="lg" component="section" aria-labelledby="shifts-heading">
+    <Card p={{ base: 'md', sm: 'lg' }} component="section" aria-labelledby="shifts-heading">
       <Stack gap="md">
         <Group justify="space-between" align="flex-end" wrap="wrap">
           <Stack gap={2}>
@@ -89,7 +89,12 @@ export function ShiftsPanel() {
               their row under Organization → Members; anyone without one works the company hours.
             </Text>
           </Stack>
-          <Button leftSection={<IconPlus size={18} />} onClick={() => setWriting(true)}>
+          <Button
+            leftSection={<IconPlus size={18} />}
+            w={{ base: '100%', sm: 'auto' }}
+            mih={{ base: 44, sm: 0 }}
+            onClick={() => setWriting(true)}
+          >
             New shift
           </Button>
         </Group>

@@ -1,6 +1,7 @@
 'use client'
 
-import { Button, FileButton, Group, Image, Paper, Stack, Text } from '@mantine/core'
+import { Box, Button, FileButton, Image, Paper, Stack, Text } from '@mantine/core'
+import actions from '@/components/action-row.module.css'
 import { useRef } from 'react'
 import { useSelfie } from '../hooks/use-selfie'
 import { SELFIE_TYPES } from '../schema'
@@ -49,7 +50,7 @@ export function SelfieCapture({ purpose, onCaptured, onCancel }: SelfieCapturePr
           </Text>
         ) : null}
 
-        <Group justify="flex-end">
+        <Box className={`${actions.row} ${actions.end}`}>
           <Button variant="subtle" onClick={onCancel}>
             Cancel
           </Button>
@@ -76,7 +77,7 @@ export function SelfieCapture({ purpose, onCaptured, onCancel }: SelfieCapturePr
               {(props) => <Button {...props}>Choose a photo</Button>}
             </FileButton>
           )}
-        </Group>
+        </Box>
       </Stack>
     </Paper>
   )

@@ -1,0 +1,21 @@
+/* A row of tabs scrolls sideways on a phone rather than wrapping into a second, ambiguous row. */
+@media (max-width: $mantine-breakpoint-sm) {
+  /* Doubled to outrank Mantine's own list rule, which loads after this module. */
+  .list.list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* The right edge fades out to say more tabs sit that way; the end padding lets the last one clear it. */
+    mask-image: linear-gradient(to right, black calc(100% - 40px), transparent);
+    padding-inline-end: 40px;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .tab.tab {
+    flex: none;
+    white-space: nowrap;
+  }
+}

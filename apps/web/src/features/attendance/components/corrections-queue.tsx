@@ -47,6 +47,7 @@ export function CorrectionsQueue() {
     {
       key: 'reason',
       header: 'What happened',
+      stackOnPhone: true,
       render: (row) => (
         <Text size="sm" c="dimmed">
           {row.reason}
@@ -77,7 +78,12 @@ export function CorrectionsQueue() {
   ]
 
   return (
-    <Card padding="lg" component="section" aria-labelledby="corrections-heading" withBorder>
+    <Card
+      p={{ base: 'md', sm: 'lg' }}
+      component="section"
+      aria-labelledby="corrections-heading"
+      withBorder
+    >
       <Stack gap="md">
         <Group gap="xs">
           <Title order={2} size="h5" id="corrections-heading">
