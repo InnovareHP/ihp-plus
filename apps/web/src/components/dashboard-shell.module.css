@@ -12,3 +12,23 @@
     0 0 0 2px var(--mantine-color-body),
     0 0 0 4px var(--mantine-primary-color-filled);
 }
+
+/* From laptop width the search field leads the right-hand group, as it did before. */
+@media (min-width: $mantine-breakpoint-md) {
+  .search {
+    order: -1;
+  }
+}
+
+.profile {
+  border-radius: var(--mantine-radius-md);
+
+  @mixin hover {
+    background-color: var(--mantine-color-default-hover);
+  }
+
+  /* An inset ring, because the rail's scroll area clips anything drawn outside a row. */
+  &:focus-visible {
+    outline-offset: -2px;
+  }
+}
