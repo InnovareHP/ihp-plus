@@ -8,6 +8,7 @@ import {
   type ClientOptionMap,
 } from '../schema'
 import { ClientForm } from './client-form'
+
 export interface ClientFormModalProps {
   opened: boolean
   onClose: () => void
@@ -16,6 +17,8 @@ export interface ClientFormModalProps {
   owners: { value: string; label: string }[]
   options: ClientOptionMap
   onManageOptions: (kind: ClientLookupKind) => void
+  /** The record being edited; keys the form so a different client starts fresh. */
+  clientId?: string
   defaults?: ClientDraftValues
   onSave: (values: ClientDraftValues) => Promise<void>
 }
@@ -28,6 +31,7 @@ export function ClientFormModal({
   owners,
   options,
   onManageOptions,
+  clientId,
   defaults,
   onSave,
 }: ClientFormModalProps) {
@@ -42,7 +46,7 @@ export function ClientFormModal({
     >
       {/* Keyed on the record so opening a different client resets the fields without an effect. */}
       <ClientForm
-        key={defaults?.name ?? 'new'}
+        key={clientId ?? 'new'}
         submitLabel={submitLabel}
         owners={owners}
         options={options}

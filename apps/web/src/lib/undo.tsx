@@ -2,6 +2,7 @@
 
 import { Button, Group, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import touch from '@/components/touch-target.module.css'
 
 /** Long enough to notice the row go, short enough that nobody waits on it. */
 export const UNDO_WINDOW_MS = 8000
@@ -30,6 +31,7 @@ export function offerUndo({ message, undoLabel, onUndo, onCommit }: UndoOffer) {
         <Button
           size="compact-sm"
           variant="subtle"
+          className={touch.target}
           onClick={() => {
             undone = true
             notifications.hide(id)

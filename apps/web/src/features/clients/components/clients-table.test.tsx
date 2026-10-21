@@ -14,11 +14,13 @@ const actions = vi.hoisted(() => ({
   archiveClientOption: vi.fn(),
 }))
 
-const toast = vi.hoisted(() => ({ show: vi.fn() }))
+const toast = vi.hoisted(() => ({ show: vi.fn(), hide: vi.fn() }))
 const nav = vi.hoisted(() => ({ search: '', replace: vi.fn() }))
 
 vi.mock('../actions', () => actions)
-vi.mock('@mantine/notifications', () => ({ notifications: { show: toast.show } }))
+vi.mock('@mantine/notifications', () => ({
+  notifications: { show: toast.show, hide: toast.hide },
+}))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: nav.replace }),
   usePathname: () => '/clients',
@@ -125,11 +127,34 @@ describe('ClientsTable', () => {
     render(<ClientsTable />)
     await screen.findByText('Riverside Care Center')
 
-    const filters = within(screen.getByRole('search', { name: 'Filter clients' }))
-    await person.click(filters.getByRole('combobox', { name: 'Status' }))
+    await person.click(screen.getByRole('button', { name: 'Filters' }))
+    const drawer = await screen.findByRole('dialog', { name: 'Filter clients' })
+    await person.click(within(drawer).getByRole('combobox', { name: 'Status' }))
     await person.click(screen.getByRole('option', { name: 'On hold' }))
 
     expect(nav.replace).toHaveBeenCalledWith('/clients?statuses=on_hold', { scroll: false })
+  })
+
+  it('shows each filter from the URL as a chip that clears only itself', async () => {
+    nav.search = 'statuses=active&tags=Medicare'
+    const person = user()
+    render(<ClientsTable />)
+    await screen.findByText('Riverside Care Center')
+
+    expect(screen.getByRole('button', { name: 'Filters, 2 applied' })).toBeInTheDocument()
+    await person.click(screen.getByRole('button', { name: 'Remove the Medicare filter' }))
+
+    expect(nav.replace).toHaveBeenCalledWith('/clients?statuses=active', { scroll: false })
+  })
+
+  it('switches to the archived view through the URL', async () => {
+    const person = user()
+    render(<ClientsTable />)
+    await screen.findByText('Riverside Care Center')
+
+    await person.click(screen.getByRole('radio', { name: 'Archived' }))
+
+    expect(nav.replace).toHaveBeenCalledWith('/clients?view=archived', { scroll: false })
   })
 
   it('opens the new-client form when a link asks for it, and forgets the ask on close', async () => {
@@ -228,9 +253,13 @@ describe('ClientsTable', () => {
     await waitFor(() => expect(toast.show).toHaveBeenCalled())
 
     const undo = toast.show.mock.calls.at(-1)?.[0]
+    expect(undo.message.props.children[0].props.children).toBe('Archived Riverside Care Center')
     render(undo.message)
     await person.click(screen.getByRole('button', { name: 'Undo' }))
     expect(actions.restoreClient).toHaveBeenCalledWith({ id: 'client-1' })
+    // Closing the toast after an undo must not archive the client a second time.
+    undo.onClose()
+    expect(actions.archiveClient).toHaveBeenCalledTimes(1)
   })
 
   it('separates a filtered dead end from an empty list and offers a way back', async () => {

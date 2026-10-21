@@ -1,10 +1,11 @@
 'use client'
 
-import { Alert, Button, Group, Skeleton, Stack, Text } from '@mantine/core'
+import { Alert, Box, Button, Skeleton, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { IconPlus } from '@tabler/icons-react'
+import actionRow from '@/components/action-row.module.css'
 import { LookupOptionsModal } from '@/components/lookup-options-modal'
 import { PageSection } from '@/components/page-section'
 import { EmptyState } from '@/components/empty-state'
@@ -66,12 +67,12 @@ export function RateCard({ canManage }: { canManage: boolean }) {
     </Button>
   ) : null
   const toolbar = canManage ? (
-    <Group justify="flex-end">
+    <Box className={[actionRow.row, actionRow.end].join(' ')}>
       <Button variant="default" onClick={manageModal.open}>
         Manage sections
       </Button>
       {addButton}
-    </Group>
+    </Box>
   ) : null
   const modals = canManage ? (
     <>

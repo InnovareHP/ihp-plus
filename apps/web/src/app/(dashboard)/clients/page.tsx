@@ -1,9 +1,9 @@
-import { Skeleton, Stack } from '@mantine/core'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { PageShell } from '@/components/page-shell'
 import { PageHeader } from '@/components/page-header'
 import { ClientTabs } from '@/features/clients/components/client-tabs'
+import { ClientsSkeleton } from '@/features/clients/components/clients-skeleton'
 import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { isStripeConfigured } from '@/lib/stripe'
 
@@ -23,21 +23,9 @@ export default async function ClientsPage() {
         description="Every client this organization works with, what they have signed, and the rates it is all priced from."
       />
       {/* The table keeps its page, sort and filters in the URL, which needs a boundary. */}
-      <Suspense fallback={<ClientsFallback />}>
+      <Suspense fallback={<ClientsSkeleton />}>
         <ClientTabs canManage={canManage} billingEnabled={billingEnabled} />
       </Suspense>
     </PageShell>
-  )
-}
-
-function ClientsFallback() {
-  return (
-    <Stack gap="md" aria-busy="true">
-      <Skeleton height={60} width="18rem" />
-      <Skeleton height={38} />
-      {[0, 1, 2].map((row) => (
-        <Skeleton key={row} height={56} />
-      ))}
-    </Stack>
   )
 }

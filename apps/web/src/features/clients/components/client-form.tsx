@@ -23,6 +23,7 @@ import {
   type ClientOptionMap,
 } from '../schema'
 import { DialogActions } from '@/components/dialog-actions'
+import touch from '@/components/touch-target.module.css'
 
 const STATUS_OPTIONS = CLIENT_STATUSES.map((status) => ({
   value: status,
@@ -81,7 +82,13 @@ export function ClientForm({
         label={label}
         placeholder={`Choose a ${label.toLowerCase()}`}
         description={
-          <Anchor component="button" type="button" size="xs" onClick={() => onManageOptions(kind)}>
+          <Anchor
+            component="button"
+            type="button"
+            size="xs"
+            className={touch.target}
+            onClick={() => onManageOptions(kind)}
+          >
             Manage options
           </Anchor>
         }
@@ -153,13 +160,9 @@ export function ClientForm({
             placeholder="(609) 555-0134"
             error={errors.phone?.message}
           />
-          {optionField('type', 'Client type')}
-          {optionField('serviceLine', 'Service line')}
-          {optionField('source', 'Source')}
           <Select
             label="Account owner"
             placeholder="Choose an owner"
-            description="Who handles this client."
             data={owners}
             value={watch('ownerId')}
             clearable
@@ -168,17 +171,20 @@ export function ClientForm({
             onChange={(value) => setValue('ownerId', value ?? '', { shouldDirty: true })}
             error={errors.ownerId?.message}
           />
+          <TextInput
+            {...register('lastContactAt')}
+            label="Last contact"
+            placeholder="mm/dd/yyyy"
+            type="date"
+            error={errors.lastContactAt?.message}
+          />
+          {/* Every option field carries the same Manage options line, so paired rows stay level. */}
+          {optionField('type', 'Client type')}
+          {optionField('serviceLine', 'Service line')}
           {optionField('city', 'City')}
           {optionField('state', 'State')}
+          {optionField('source', 'Source')}
         </SimpleGrid>
-
-        <TextInput
-          {...register('lastContactAt')}
-          label="Last contact"
-          placeholder="mm/dd/yyyy"
-          type="date"
-          error={errors.lastContactAt?.message}
-        />
 
         <TagsInput
           label="Tags"
