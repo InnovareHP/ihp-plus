@@ -1,13 +1,24 @@
 'use client'
 
-import { Alert, Button, Group, SegmentedControl, Skeleton, Stack, Text } from '@mantine/core'
+import {
+  ActionIcon,
+  Alert,
+  Button,
+  Group,
+  Menu,
+  SegmentedControl,
+  Skeleton,
+  Stack,
+  Text,
+} from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useQueryClient } from '@tanstack/react-query'
-import { IconPlus } from '@tabler/icons-react'
+import { IconDots, IconPlus } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 import { EmptyState } from '@/components/empty-state'
 import { PageSection } from '@/components/page-section'
 import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
+import { chipsOf } from '@/lib/table-filters'
 import { searchParamsParser } from '@/lib/url-query'
 import { useRememberedUrlQuery } from '@/lib/use-remembered-url-query'
 import { useDirectoryDepartments } from '@/features/directory/hooks/use-directory'
@@ -29,6 +40,7 @@ import {
   useTaskDetail,
   useUpdateTask,
 } from '../hooks/use-tasks'
+import { useTimeSettings } from '../hooks/use-time'
 import {
   boardQuerySchema,
   DEFAULT_BOARD_QUERY,
@@ -55,7 +67,7 @@ import { ListFormModal } from './list-form-modal'
 import { ProjectFormModal } from './project-form-modal'
 import { ProjectSelect } from './project-select'
 import { StatusManagerModal } from './status-manager-modal'
-import { TimeRulesButton } from './time-rules-button'
+import { TimeRulesModal } from './time-rules-modal'
 import { TaskFormModal } from './task-form-modal'
 import { TaskListSection } from './task-list-section'
 import { TaskSelectionBar } from './task-selection-bar'
@@ -72,6 +84,8 @@ const STATIC_FILTERS: readonly FilterControl[] = [
     kind: 'select',
     key: 'assignee',
     label: 'Assigned to',
+    // "all" is the board's default, so it is no filter at all and gets no chip.
+    none: 'all',
     options: TASK_ASSIGNEE_FILTERS.filter((filter) => filter !== 'all').map((filter) => ({
       value: filter,
       label: TASK_ASSIGNEE_FILTER_LABELS[filter],
@@ -90,6 +104,7 @@ const STATIC_FILTERS: readonly FilterControl[] = [
     kind: 'select',
     key: 'due',
     label: 'Due',
+    none: 'any',
     options: TASK_DUE_FILTERS.filter((filter) => filter !== 'any').map((filter) => ({
       value: filter,
       label: TASK_DUE_FILTER_LABELS[filter],
@@ -109,17 +124,20 @@ export function TaskBoard() {
     BOARD_STORAGE_KEY,
     parseBoardQuery,
     DEFAULT_BOARD_QUERY,
-    ['task', 'tab'],
+    ['task', 'tab', 'compose'],
   )
   const [projectOpened, projectModal] = useDisclosure(false)
   const [listOpened, listModal] = useDisclosure(false)
   const [columnsOpened, columnsModal] = useDisclosure(false)
+  const [rulesOpened, rulesModal] = useDisclosure(false)
+  // The server says who may set the clock's rules, so a member never sees the way in.
+  const canSetRules = Boolean(useTimeSettings().data?.canManage)
   const queryClient = useQueryClient()
   const [renamingProject, setRenamingProject] = useState<TaskProjectRow | null>(null)
   const [renamingList, setRenamingList] = useState<TaskListRow | null>(null)
   const [deletingList, setDeletingList] = useState<TaskListRow | null>(null)
   // Which task form is open: a new task may start without a list when the board spans projects.
-  const [composing, setComposing] = useState<{
+  const [composingTask, setComposing] = useState<{
     projectId: string
     listId: string
     task: TaskRow | null
@@ -281,6 +299,19 @@ export function TaskBoard() {
       listId: task.listId,
       beforeTaskId: before?.id,
     })
+  }
+
+  // ?compose=new is the same new-task form, opened by a link instead of the button.
+  const composing =
+    composingTask ??
+    // Waits for the lists, as the button does, so the form mounts with a list to put the task in.
+    (query.compose === 'new' && projectRows.length > 0 && (acrossProjects || listRows.length > 0)
+      ? { projectId, listId: listRows[0]?.id ?? '', task: null }
+      : null)
+
+  function closeComposer() {
+    setComposing(null)
+    if (query.compose) setQuery({ compose: '' })
   }
 
   // Editing needs the task's own project lists, which a board spanning projects does not hold.
@@ -448,29 +479,57 @@ export function TaskBoard() {
             clearFilters={clearFilters}
             filters={filters}
             action={
-              <Group gap="sm">
+              <Group gap="sm" wrap="nowrap">
                 {/* A background refresh dims rather than replaces: only a first load blanks a board. */}
                 {board.isFetching && !board.isPending ? (
                   <Text size="xs" c="dimmed" aria-hidden>
                     Updating…
                   </Text>
                 ) : null}
-                <TimeRulesButton />
-                <Button variant="default" onClick={columnsModal.open}>
-                  Columns
-                </Button>
-                <Button variant="default" onClick={listModal.open}>
-                  New list
-                </Button>
-                <Button
-                  leftSection={<IconPlus size={16} aria-hidden />}
-                  // Across projects the form asks which project, so there is always somewhere to add.
-                  disabled={!acrossProjects && listRows.length === 0}
-                  onClick={() => composeTask()}
-                >
-                  New task
-                </Button>
+                <Group gap="sm" visibleFrom="sm">
+                  {canSetRules ? (
+                    <Button variant="default" onClick={rulesModal.open}>
+                      Time rules
+                    </Button>
+                  ) : null}
+                  <Button variant="default" onClick={columnsModal.open}>
+                    Columns
+                  </Button>
+                  <Button variant="default" onClick={listModal.open}>
+                    New list
+                  </Button>
+                </Group>
+                {/* On a phone three more buttons wrapped the toolbar onto several rows. */}
+                <Menu position="bottom-end" withinPortal>
+                  <Menu.Target>
+                    <ActionIcon
+                      hiddenFrom="sm"
+                      variant="default"
+                      size={44}
+                      aria-label="More board actions"
+                    >
+                      <IconDots size={18} aria-hidden />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    {canSetRules ? (
+                      <Menu.Item onClick={rulesModal.open}>Time rules</Menu.Item>
+                    ) : null}
+                    <Menu.Item onClick={columnsModal.open}>Columns</Menu.Item>
+                    <Menu.Item onClick={listModal.open}>New list</Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
               </Group>
+            }
+            primaryAction={
+              <Button
+                leftSection={<IconPlus size={16} aria-hidden />}
+                // Across projects the form asks which project, so there is always somewhere to add.
+                disabled={!acrossProjects && listRows.length === 0}
+                onClick={() => composeTask()}
+              >
+                New task
+              </Button>
             }
           />
 
@@ -520,6 +579,7 @@ export function TaskBoard() {
             <TaskKanban
               statuses={statusRows}
               tasks={tasks}
+              showAll={Boolean(query.search) || chipsOf(filters, query, setQuery).length > 0}
               onOpen={(task) => setQuery({ task: task.id })}
               onMoveTo={(task, statusId) =>
                 update.mutate({
@@ -652,7 +712,7 @@ export function TaskBoard() {
       />
       <TaskFormModal
         opened={Boolean(composing)}
-        onClose={() => setComposing(null)}
+        onClose={closeComposer}
         title={composing?.task ? 'Edit task' : 'New task'}
         submitLabel={composing?.task ? 'Save changes' : 'Add task'}
         lists={listRows}
@@ -662,6 +722,7 @@ export function TaskBoard() {
         defaults={defaults}
         onSave={handleSave}
       />
+      <TimeRulesModal opened={rulesOpened} onClose={rulesModal.close} />
     </Stack>
   )
 }

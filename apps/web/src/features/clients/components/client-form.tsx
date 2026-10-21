@@ -5,7 +5,6 @@ import {
   Alert,
   Anchor,
   Button,
-  Group,
   Select,
   SimpleGrid,
   Stack,
@@ -23,6 +22,7 @@ import {
   type ClientLookupKind,
   type ClientOptionMap,
 } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 const STATUS_OPTIONS = CLIENT_STATUSES.map((status) => ({
   value: status,
@@ -203,14 +203,14 @@ export function ClientForm({
           error={errors.notes?.message}
         />
 
-        <Group justify="flex-end">
+        <DialogActions>
           <Button variant="default" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? 'Saving…' : submitLabel}
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

@@ -25,10 +25,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         canViewWebsites={(await websitesRole(membership, user.id)).canView}
         impersonating={Boolean(session?.session.impersonatedBy)}
         organization={{
+          id: membership.organizationId ?? '',
           name: membership.organization?.name ?? 'IHP+',
           role: membership.organizationRole,
         }}
         user={{
+          id: user.id,
           name: profile.preferredName ?? user.name,
           email: user.email,
           jobTitle: profile.jobTitle,

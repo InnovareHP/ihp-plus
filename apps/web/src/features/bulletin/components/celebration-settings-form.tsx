@@ -1,10 +1,11 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Stack, Switch, Text } from '@mantine/core'
+import { Button, Stack, Switch, Text } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { bulletinSettingsSchema, type BulletinSettingsRow } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface CelebrationSettingsFormProps {
   settings: BulletinSettingsRow
@@ -82,14 +83,14 @@ export function CelebrationSettingsForm({
             )}
           />
         ))}
-        <Group justify="flex-end" gap="xs">
+        <DialogActions gap="xs">
           <Button variant="default" onClick={onCancel}>
             Cancel
           </Button>
           <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? 'Saving…' : 'Save changes'}
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

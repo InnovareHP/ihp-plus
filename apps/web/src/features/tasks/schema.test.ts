@@ -114,12 +114,18 @@ describe('boardQuerySchema', () => {
       priority: [],
       due: 'any',
       task: '',
+      compose: '',
       tab: 'task',
       list: '',
       assignee: 'mine',
       search: 'renewal',
       archived: true,
     })
+  })
+
+  it('opens the new-task form only for compose=new', () => {
+    expect(boardQuerySchema.parse({ compose: 'new' }).compose).toBe('new')
+    expect(boardQuerySchema.parse({ compose: 'edit' }).compose).toBe('')
   })
 
   it('falls back to the first panel when the tab in the URL is not one of them', () => {

@@ -9,6 +9,7 @@ import {
   IconPlus,
 } from '@tabler/icons-react'
 import { MY_TASKS_PROJECT, type TaskProjectRow } from '../schema'
+import touch from '@/components/touch-target.module.css'
 
 export interface ProjectSelectProps {
   projects: readonly TaskProjectRow[]
@@ -55,6 +56,7 @@ export function ProjectSelect({
         <Menu position="bottom-end" withinPortal>
           <Menu.Target>
             <ActionIcon
+              className={touch.target}
               variant="default"
               size="lg"
               aria-label={`Actions for ${current.name}`}

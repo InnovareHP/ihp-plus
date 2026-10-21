@@ -12,17 +12,38 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { MembersTable } from '@/features/members/components/members-table'
 import { NewHiresPanel } from '@/features/new-hires/components/new-hires-panel'
+import { ORGANIZATION_TAB_LABELS } from '@/lib/page-tabs'
 import { ORGANIZATION_TABS, type OrganizationTab } from '@/lib/routes'
 import { InvitationsPanel } from './invitations-panel'
 import { OrganizationPanel } from './organization-panel'
 import { TeamsPanel } from './teams-panel'
 
 const TABS: { value: OrganizationTab; label: string; icon: ReactNode }[] = [
-  { value: 'overview', label: 'Overview', icon: <IconBuilding size={16} aria-hidden /> },
-  { value: 'members', label: 'Members', icon: <IconUserCog size={16} aria-hidden /> },
-  { value: 'departments', label: 'Departments', icon: <IconUsersGroup size={16} aria-hidden /> },
-  { value: 'invitations', label: 'Invitations', icon: <IconMailForward size={16} aria-hidden /> },
-  { value: 'onboarding', label: 'Onboarding', icon: <IconChecklist size={16} aria-hidden /> },
+  {
+    value: 'overview',
+    label: ORGANIZATION_TAB_LABELS.overview,
+    icon: <IconBuilding size={16} aria-hidden />,
+  },
+  {
+    value: 'members',
+    label: ORGANIZATION_TAB_LABELS.members,
+    icon: <IconUserCog size={16} aria-hidden />,
+  },
+  {
+    value: 'departments',
+    label: ORGANIZATION_TAB_LABELS.departments,
+    icon: <IconUsersGroup size={16} aria-hidden />,
+  },
+  {
+    value: 'invitations',
+    label: ORGANIZATION_TAB_LABELS.invitations,
+    icon: <IconMailForward size={16} aria-hidden />,
+  },
+  {
+    value: 'onboarding',
+    label: ORGANIZATION_TAB_LABELS.onboarding,
+    icon: <IconChecklist size={16} aria-hidden />,
+  },
 ]
 
 function tabOf(value: string | null): OrganizationTab {

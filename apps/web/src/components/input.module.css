@@ -1,0 +1,7 @@
+/* iOS zooms into any field under 16px, and a phone needs a 44px target, so small screens get both. */
+@media (max-width: $mantine-breakpoint-md) {
+  .input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}

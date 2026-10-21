@@ -25,7 +25,9 @@ describe('upload session tokens', () => {
     const token = sealUploadSession(SESSION)
 
     expect(openUploadSession(token, 2_000)).toBeUndefined()
-    expect(openUploadSession(`A${token.slice(1)}`, 1_000)).toBeUndefined()
+    // The first character is random, so a fixed "A" left about 1 token in 64 unaltered.
+    const altered = `${token.startsWith('A') ? 'B' : 'A'}${token.slice(1)}`
+    expect(openUploadSession(altered, 1_000)).toBeUndefined()
     vi.stubEnv('BETTER_AUTH_SECRET', 'another-secret-entirely-also-long-enough')
     expect(openUploadSession(token, 1_000)).toBeUndefined()
   })

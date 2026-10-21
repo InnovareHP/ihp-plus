@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, ColorInput, Group, Modal, Select, Stack, TextInput } from '@mantine/core'
+import { Button, ColorInput, Modal, Select, Stack, TextInput } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import {
   statusFormSchema,
@@ -10,6 +10,7 @@ import {
   type StatusFormValues,
   type TaskStatusRow,
 } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 const CATEGORY_LABELS: Record<(typeof TASK_STATUS_CATEGORIES)[number], string> = {
   active: 'Open work',
@@ -114,14 +115,14 @@ export function StatusFormModal({ opened, status, onClose, onSave }: StatusFormM
             />
           )}
 
-          <Group justify="flex-end">
+          <DialogActions>
             <Button type="button" variant="default" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Saving…' : status ? 'Save changes' : 'Add column'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

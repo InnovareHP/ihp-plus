@@ -23,6 +23,7 @@ import {
 import { formatDuration } from '../utils/duration'
 import { ParentTaskLine } from './parent-task-line'
 import { ProjectTaskLine } from './project-task-line'
+import touch from '@/components/touch-target.module.css'
 
 const due = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
@@ -170,6 +171,7 @@ export function TaskRow({
 
         <Group gap={4} wrap="nowrap">
           <ActionIcon
+            className={touch.target}
             variant="subtle"
             aria-label={`Move ${task.name} up`}
             disabled={!canMoveUp}
@@ -178,6 +180,7 @@ export function TaskRow({
             <IconArrowUp size={16} aria-hidden />
           </ActionIcon>
           <ActionIcon
+            className={touch.target}
             variant="subtle"
             aria-label={`Move ${task.name} down`}
             disabled={!canMoveDown}
@@ -187,7 +190,11 @@ export function TaskRow({
           </ActionIcon>
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
-              <ActionIcon variant="subtle" aria-label={`Actions for ${task.name}`}>
+              <ActionIcon
+                className={touch.target}
+                variant="subtle"
+                aria-label={`Actions for ${task.name}`}
+              >
                 <IconDotsVertical size={16} aria-hidden />
               </ActionIcon>
             </Menu.Target>

@@ -30,6 +30,7 @@ import {
   type StatementPeriod,
 } from '../utils/billing-statement'
 import { deliverStatement, type StatementOutput } from '../utils/statement-output'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface BillingStatementModalProps {
   opened: boolean
@@ -351,7 +352,7 @@ export function BillingStatementModal({
             </Group>
           </Stack>
 
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="subtle" onClick={onClose}>
               Cancel
             </Button>
@@ -380,7 +381,7 @@ export function BillingStatementModal({
             >
               {isSubmitting && pending === 'print' ? 'Saving…' : 'Save and print'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

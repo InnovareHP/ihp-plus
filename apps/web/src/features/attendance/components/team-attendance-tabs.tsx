@@ -9,6 +9,7 @@ import {
 } from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
+import { ATTENDANCE_TAB_LABELS } from '@/lib/page-tabs'
 import { ATTENDANCE_TABS, type AttendanceTab } from '@/lib/routes'
 import { useCorrectionQueue } from '../hooks/use-corrections'
 import { useAttendanceSettings } from '../hooks/use-time-clock'
@@ -18,14 +19,26 @@ import { TeamCalendarPanel } from './team-calendar-panel'
 import { TeamTimesheetPanel } from './team-timesheet-panel'
 
 const TABS: { value: AttendanceTab; label: string; icon: ReactNode }[] = [
-  { value: 'today', label: 'Today', icon: <IconClockHour4 size={16} aria-hidden /> },
+  {
+    value: 'today',
+    label: ATTENDANCE_TAB_LABELS.today,
+    icon: <IconClockHour4 size={16} aria-hidden />,
+  },
   {
     value: 'timesheets',
-    label: 'Timesheets',
+    label: ATTENDANCE_TAB_LABELS.timesheets,
     icon: <IconFileSpreadsheet size={16} aria-hidden />,
   },
-  { value: 'calendar', label: 'Calendar', icon: <IconCalendarMonth size={16} aria-hidden /> },
-  { value: 'shifts', label: 'Shifts', icon: <IconCalendarTime size={16} aria-hidden /> },
+  {
+    value: 'calendar',
+    label: ATTENDANCE_TAB_LABELS.calendar,
+    icon: <IconCalendarMonth size={16} aria-hidden />,
+  },
+  {
+    value: 'shifts',
+    label: ATTENDANCE_TAB_LABELS.shifts,
+    icon: <IconCalendarTime size={16} aria-hidden />,
+  },
 ]
 
 function tabOf(value: string | null): AttendanceTab {

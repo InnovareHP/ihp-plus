@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, Stack, Switch, Text, Textarea } from '@mantine/core'
+import { Button, Modal, Stack, Switch, Text, Textarea } from '@mantine/core'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import {
   moveSchema,
@@ -10,6 +10,7 @@ import {
   type MoveValues,
   type Stage,
 } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface MoveApplicationModalProps {
   application: ApplicationSummary
@@ -73,14 +74,14 @@ export function MoveApplicationModal({
               They are moved quietly; nothing is sent.
             </Text>
           )}
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit">
               {sendEmail ? `Move and email ${firstName}` : `Move to ${stage.name}`}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

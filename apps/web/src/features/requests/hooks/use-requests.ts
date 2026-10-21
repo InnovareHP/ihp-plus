@@ -30,10 +30,11 @@ import type {
   RequestsPage,
 } from '../schema'
 
-export function useAvailableForms() {
+export function useAvailableForms(enabled = true) {
   return useQuery({
     queryKey: requestKeys.available(),
     queryFn: listAvailableForms,
+    enabled,
   })
 }
 

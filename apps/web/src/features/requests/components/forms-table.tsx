@@ -222,7 +222,7 @@ export function FormsTable({ kind = 'request' }: FormsTableProps) {
         setQuery={setQuery}
         clearFilters={clearFilters}
         filters={filters}
-        action={
+        primaryAction={
           <LinkButton href={newFormRoute} leftSection={<IconPlus size={16} aria-hidden />}>
             New form
           </LinkButton>

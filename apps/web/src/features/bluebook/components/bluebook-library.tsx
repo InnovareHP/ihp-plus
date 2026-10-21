@@ -324,15 +324,17 @@ export function BluebookLibrary() {
                     Categories
                   </Button>
                 ) : null}
-                {uploadable.length > 0 ? (
-                  <Button
-                    leftSection={<IconUpload size={16} aria-hidden />}
-                    onClick={uploadModal.open}
-                  >
-                    Upload file
-                  </Button>
-                ) : null}
               </Group>
+            }
+            primaryAction={
+              uploadable.length > 0 ? (
+                <Button
+                  leftSection={<IconUpload size={16} aria-hidden />}
+                  onClick={uploadModal.open}
+                >
+                  Upload file
+                </Button>
+              ) : null
             }
           />
 

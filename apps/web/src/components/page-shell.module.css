@@ -1,0 +1,10 @@
+/* Phones get a tighter rhythm between sections so more of each page fits on the first screen. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-lg);
+
+  @media (min-width: $mantine-breakpoint-sm) {
+    gap: var(--mantine-spacing-xl);
+  }
+}

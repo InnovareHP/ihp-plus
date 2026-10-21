@@ -104,7 +104,7 @@ beforeEach(() => {
     canManage: false,
   })
   rpc.listTimeEntries.mockResolvedValue({ entries: [], totalSeconds: 0 })
-  rpc.getRunningTimer.mockResolvedValue(undefined)
+  rpc.getRunningTimer.mockResolvedValue(null)
   // The board view is the default; these cases are about the list, so they ask for it.
   nav.search = 'view=list'
   rpc.listProjects.mockResolvedValue([PROJECT])
@@ -353,6 +353,62 @@ describe('TaskBoard', () => {
     expect(screen.getByRole('heading', { name: 'Onboarding revamp' })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Add task' })).toHaveLength(2)
     expect(screen.getByRole('button', { name: 'New task' })).toBeEnabled()
+  })
+
+  it('opens the new-task form when a link asks for it, and forgets the ask on close', async () => {
+    nav.search = 'view=list&compose=new'
+    const user = userEvent.setup()
+    render(<TaskBoard />)
+
+    const dialog = await screen.findByRole('dialog', { name: 'New task' })
+    expect(within(dialog).getByRole('button', { name: 'Add task' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+
+    await waitFor(() => expect(nav.replace).toHaveBeenCalled())
+    expect(String(nav.replace.mock.lastCall?.[0])).not.toContain('compose')
+  })
+
+  it('does not open the form from a link when there is no list to add to, like the button', async () => {
+    nav.search = 'view=list&compose=new'
+    rpc.listLists.mockResolvedValue([])
+    rpc.listTasks.mockResolvedValue([])
+    render(<TaskBoard />)
+
+    expect(await screen.findByRole('button', { name: 'New task' })).toBeDisabled()
+    expect(screen.queryByRole('dialog', { name: 'New task' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the other board actions in a "More" menu, for a phone', async () => {
+    const user = userEvent.setup()
+    await renderBoard()
+
+    await user.click(screen.getByRole('button', { name: 'More board actions' }))
+
+    expect(screen.getByRole('menuitem', { name: 'Columns' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'New list' })).toBeInTheDocument()
+    // A member cannot set the clock's rules, so neither place offers them.
+    expect(screen.queryByRole('menuitem', { name: 'Time rules' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Time rules' })).not.toBeInTheDocument()
+  })
+
+  it('opens the time rules from the "More" menu for someone who may set them', async () => {
+    rpc.getTimeSettings.mockResolvedValue({
+      settings: {
+        allowManualEntry: true,
+        allowSelfEdit: true,
+        requireNote: false,
+        trackOnlyAssigned: false,
+        autoStopHours: 12,
+      },
+      canManage: true,
+    })
+    const user = userEvent.setup()
+    await renderBoard()
+
+    await user.click(screen.getByRole('button', { name: 'More board actions' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Time rules' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Time tracking rules' })).toBeInTheDocument()
   })
 
   it('asks which project a new task goes in, then offers that project’s lists', async () => {

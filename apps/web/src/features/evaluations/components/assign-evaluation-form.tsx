@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, MultiSelect, Select, Stack, TextInput } from '@mantine/core'
+import { Button, MultiSelect, Select, Stack, TextInput } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { announceSuccess } from '@/lib/announce'
@@ -13,6 +13,7 @@ import {
   type AssignEvaluationsValues,
   type EvaluationCandidate,
 } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 function personLabel(person: EvaluationCandidate) {
   const detail = [person.team, person.employmentStatus].filter(Boolean).join(' · ')
@@ -137,14 +138,14 @@ export function AssignEvaluationForm({ onDone }: { onDone: () => void }) {
           errorProps={{ role: 'alert' }}
         />
 
-        <Group justify="flex-end">
+        <DialogActions>
           <Button variant="default" onClick={onDone}>
             Cancel
           </Button>
           <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? 'Assigning…' : 'Assign evaluation'}
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

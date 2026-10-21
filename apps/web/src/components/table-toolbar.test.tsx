@@ -50,6 +50,30 @@ describe('TableToolbar', () => {
     vi.clearAllMocks()
   })
 
+  it('reaches the main action last, after search and filters, as a phone lays it out', async () => {
+    const person = user()
+    render(
+      <TableToolbar
+        label="departments"
+        query={EMPTY}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={FILTERS}
+        action={<button type="button">More</button>}
+        primaryAction={<button type="button">New department</button>}
+      />,
+    )
+
+    await person.tab()
+    expect(screen.getByRole('searchbox', { name: 'Search departments' })).toHaveFocus()
+    await person.tab()
+    expect(screen.getByRole('button', { name: 'Filters' })).toHaveFocus()
+    await person.tab()
+    expect(screen.getByRole('button', { name: 'More' })).toHaveFocus()
+    await person.tab()
+    expect(screen.getByRole('button', { name: 'New department' })).toHaveFocus()
+  })
+
   it('debounces what is typed into the search box into the query', async () => {
     const person = user()
     renderToolbar()
@@ -80,6 +104,30 @@ describe('TableToolbar', () => {
     await person.click(await screen.findByRole('switch', { name: 'Only empty departments' }))
 
     expect(setQuery).toHaveBeenCalledWith({ emptyOnly: true })
+  })
+
+  it('counts a select at its "no filter" value as no filter, with no chip', () => {
+    render(
+      <TableToolbar
+        label="tasks"
+        query={{ search: '', assignee: 'all' }}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={[
+          {
+            kind: 'select',
+            key: 'assignee',
+            label: 'Assigned to',
+            none: 'all',
+            options: [{ value: 'mine', label: 'Assigned to me' }],
+          },
+        ]}
+      />,
+    )
+
+    // Before the fix every task board showed "Filters 2" with chips reading "ALL" and "ANY".
+    expect(screen.getByRole('button', { name: 'Filters' })).toBeInTheDocument()
+    expect(screen.queryByText('Filtered by')).not.toBeInTheDocument()
   })
 
   it('shows one chip per applied value, with the option label rather than its id', () => {

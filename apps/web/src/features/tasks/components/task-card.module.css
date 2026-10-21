@@ -1,0 +1,9 @@
+/* A phone shows two lines of the name; the full name is one tap away in the task itself. */
+@media (max-width: $mantine-breakpoint-sm) {
+  .name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}

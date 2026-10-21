@@ -1,0 +1,7 @@
+/* A finger needs 44 px; a mouse keeps the compact icon, so desktop rows stay dense. */
+@media (pointer: coarse) {
+  .target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

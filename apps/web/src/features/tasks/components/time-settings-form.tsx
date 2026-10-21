@@ -1,11 +1,12 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, NumberInput, Skeleton, Stack, Switch, Text } from '@mantine/core'
+import { Button, NumberInput, Skeleton, Stack, Switch, Text } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import { FormError } from '@/components/form-error'
 import { useSaveTimeSettings, useTimeSettings } from '../hooks/use-time'
 import { timeSettingsSchema, type TaskTimeSettingsRow } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 /** Only an admin sees this; a member's half of time tracking is the timer on the task itself. */
 export function TimeSettingsForm() {
@@ -123,11 +124,11 @@ export function TimeSettingsForm() {
           )}
         />
 
-        <Group justify="flex-end">
+        <DialogActions>
           <Button type="submit" loading={isSubmitting || save.isPending} disabled={!isDirty}>
             {isSubmitting || save.isPending ? 'Saving…' : 'Save rules'}
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </form>
   )

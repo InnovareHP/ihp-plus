@@ -1,0 +1,14 @@
+/* Content scrolls under a frosted header; browsers without blur keep the solid body colour. */
+@supports (backdrop-filter: blur(1px)) {
+  .header {
+    background: color-mix(in srgb, var(--mantine-color-body) 85%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+  }
+}
+
+/* A gap in the body colour, then the brand ring (7.75:1 light, 5.5:1 dark), sized to the 34 px button. */
+.avatar {
+  box-shadow:
+    0 0 0 2px var(--mantine-color-body),
+    0 0 0 4px var(--mantine-primary-color-filled);
+}

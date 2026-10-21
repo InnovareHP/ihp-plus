@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Button,
   Divider,
-  Group,
   Modal,
   NumberInput,
   Select,
@@ -28,6 +27,8 @@ import { clockToMinutes, DEFAULT_WORKDAYS, minutesToClock } from '@ihp/clock'
 import { CountrySelect } from './country-select'
 import { ShiftHolidays } from './shift-holidays'
 import { WorkdaysField } from './workdays-field'
+import { DialogActions } from '@/components/dialog-actions'
+import { FieldRow } from '@/components/field-row'
 
 export interface ShiftModalProps {
   opened: boolean
@@ -142,7 +143,7 @@ export function ShiftModal({ opened, onClose, shift, defaults, settings }: Shift
             {...register('name')}
           />
 
-          <Group grow align="flex-start">
+          <FieldRow>
             <Controller
               control={control}
               name="shiftStartMinutes"
@@ -183,7 +184,7 @@ export function ShiftModal({ opened, onClose, shift, defaults, settings }: Shift
                 />
               )}
             />
-          </Group>
+          </FieldRow>
 
           <Controller
             control={control}
@@ -354,14 +355,14 @@ export function ShiftModal({ opened, onClose, shift, defaults, settings }: Shift
             )}
           />
 
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="subtle" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Saving…' : 'Save shift'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
 

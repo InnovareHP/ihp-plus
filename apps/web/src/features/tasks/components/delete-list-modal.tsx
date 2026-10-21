@@ -16,6 +16,8 @@ export function DeleteListModal({ list, taskCount, onCancel, onConfirm }: Delete
 
   return (
     <Modal
+      // A two-button question stays a small box on a phone, as native confirmations do.
+      data-compact
       opened={Boolean(list)}
       onClose={onCancel}
       centered

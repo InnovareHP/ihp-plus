@@ -83,7 +83,7 @@ describe('TaskTimePanel', () => {
     vi.clearAllMocks()
     rpc.getTimeSettings.mockResolvedValue({ settings: RULES, canManage: false })
     rpc.listTimeEntries.mockResolvedValue({ entries: [ENTRY], totalSeconds: 5400 })
-    rpc.getRunningTimer.mockResolvedValue(undefined)
+    rpc.getRunningTimer.mockResolvedValue(null)
     rpc.startTimer.mockResolvedValue({ ...ENTRY, id: 'entry-2', isRunning: true })
     rpc.stopTimer.mockResolvedValue(ENTRY)
     rpc.logTime.mockResolvedValue(ENTRY)

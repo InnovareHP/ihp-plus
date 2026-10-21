@@ -6,13 +6,22 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { ContractsTable } from '@/features/contracts/components/contracts-table'
 import { RateCard } from '@/features/contracts/components/rate-card'
+import { CLIENT_TAB_LABELS } from '@/lib/page-tabs'
 import { CLIENT_TABS, type ClientTab } from '@/lib/routes'
 import { ClientsTable } from './clients-table'
 
 const TABS: { value: ClientTab; label: string; icon: ReactNode }[] = [
-  { value: 'clients', label: 'Clients', icon: <IconAddressBook size={16} aria-hidden /> },
-  { value: 'contracts', label: 'Contracts', icon: <IconFileText size={16} aria-hidden /> },
-  { value: 'rates', label: 'Rate card', icon: <IconTag size={16} aria-hidden /> },
+  {
+    value: 'clients',
+    label: CLIENT_TAB_LABELS.clients,
+    icon: <IconAddressBook size={16} aria-hidden />,
+  },
+  {
+    value: 'contracts',
+    label: CLIENT_TAB_LABELS.contracts,
+    icon: <IconFileText size={16} aria-hidden />,
+  },
+  { value: 'rates', label: CLIENT_TAB_LABELS.rates, icon: <IconTag size={16} aria-hidden /> },
 ]
 
 function tabOf(value: string | null): ClientTab {

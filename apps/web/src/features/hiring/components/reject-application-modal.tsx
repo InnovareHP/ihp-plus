@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, Stack, Switch, Text, Textarea } from '@mantine/core'
+import { Button, Modal, Stack, Switch, Text, Textarea } from '@mantine/core'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import {
   rejectSchema,
@@ -9,6 +9,7 @@ import {
   type RejectInput,
   type RejectValues,
 } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface RejectApplicationModalProps {
   application: ApplicationSummary
@@ -86,14 +87,14 @@ export function RejectApplicationModal({
               They are not told; their status link will read that the application is closed.
             </Text>
           )}
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose}>
               Keep in the running
             </Button>
             <Button type="submit" color="red">
               Not moving forward
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>

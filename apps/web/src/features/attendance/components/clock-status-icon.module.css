@@ -1,0 +1,20 @@
+/* A status icon needs 3:1: the filled shades measured 2.55 (teal) and 1.86 (amber) on white. */
+.working {
+  @mixin light {
+    color: var(--mantine-color-teal-9);
+  }
+
+  @mixin dark {
+    color: var(--mantine-color-teal-4);
+  }
+}
+
+.onBreak {
+  @mixin light {
+    color: var(--mantine-color-yellow-9);
+  }
+
+  @mixin dark {
+    color: var(--mantine-color-yellow-4);
+  }
+}

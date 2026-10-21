@@ -13,6 +13,7 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { IconAdjustments, IconPlus } from '@tabler/icons-react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { LookupOptionsModal } from '@/components/lookup-options-modal'
@@ -72,6 +73,21 @@ export function ClientsTable() {
   const restore = useRestoreClient(query)
 
   const [createOpened, createModal] = useDisclosure(false)
+  // ?compose=new (global search's "New client") opens the same form; it stays out of the list
+  // query so the cached rows, the page number and the optimistic insert are untouched.
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const linkedCreate = searchParams.get('compose') === 'new'
+  const creating = createOpened || linkedCreate
+
+  function closeCreate() {
+    createModal.close()
+    if (!linkedCreate) return
+    const rest = new URLSearchParams(searchParams.toString())
+    rest.delete('compose')
+    router.replace(rest.size > 0 ? `${pathname}?${rest}` : pathname, { scroll: false })
+  }
   const [editing, setEditing] = useState<ClientRow | null>(null)
   const [managing, setManaging] = useState<ClientLookupKind | null>(null)
   const [sharing, setSharing] = useState<ClientRow | null>(null)
@@ -357,8 +373,8 @@ export function ClientsTable() {
       />
 
       <ClientFormModal
-        opened={createOpened}
-        onClose={createModal.close}
+        opened={creating}
+        onClose={closeCreate}
         title="New client"
         submitLabel="Add client"
         owners={ownerOptions.slice(1)}

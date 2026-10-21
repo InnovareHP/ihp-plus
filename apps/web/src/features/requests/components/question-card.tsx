@@ -20,6 +20,7 @@ import {
   type FormDraftInput,
   type FormDraftValues,
 } from '../schema'
+import { FieldRow } from '@/components/field-row'
 
 const TYPE_OPTIONS = FIELD_TYPES.map((type) => ({ value: type, label: FIELD_TYPE_LABELS[type] }))
 const TYPE_OPTIONS_WITHOUT_FILE = TYPE_OPTIONS.filter((option) => option.value !== 'file')
@@ -92,7 +93,7 @@ export function QuestionCard({
       </Group>
 
       <Stack gap="sm">
-        <Group grow align="flex-start">
+        <FieldRow>
           <TextInput
             {...register(`fields.${index}.label`)}
             label="Label"
@@ -118,9 +119,9 @@ export function QuestionCard({
               />
             )}
           />
-        </Group>
+        </FieldRow>
 
-        <Group grow align="flex-start">
+        <FieldRow>
           <TextInput
             {...register(`fields.${index}.help`)}
             label="Help text"
@@ -134,7 +135,7 @@ export function QuestionCard({
             placeholder="An example answer"
             description="Shown inside the empty field."
           />
-        </Group>
+        </FieldRow>
 
         {type === 'select' ? (
           <Controller
@@ -155,7 +156,7 @@ export function QuestionCard({
         ) : null}
 
         {type === 'number' ? (
-          <Group grow align="flex-start">
+          <FieldRow>
             <Controller
               control={control}
               name={`fields.${index}.min`}
@@ -182,7 +183,7 @@ export function QuestionCard({
                 />
               )}
             />
-          </Group>
+          </FieldRow>
         ) : null}
 
         <Controller

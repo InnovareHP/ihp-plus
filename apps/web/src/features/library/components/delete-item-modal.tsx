@@ -16,6 +16,8 @@ export function DeleteItemModal({ entry, isPending, onClose, onDelete }: DeleteI
 
   return (
     <Modal
+      // A two-button question stays a small box on a phone, as native confirmations do.
+      data-compact
       opened={entry !== null}
       onClose={onClose}
       title={isFolder ? 'Delete folder' : 'Delete file'}

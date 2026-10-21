@@ -1,10 +1,11 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Modal, Select, Stack, TextInput } from '@mantine/core'
+import { Button, Modal, Select, Stack, TextInput } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
 import { useCreateList, useUpdateList } from '../hooks/use-task-projects'
 import { listFormSchema, type ListFormValues, type TaskListRow } from '../schema'
+import { DialogActions } from '@/components/dialog-actions'
 
 export interface ListFormModalProps {
   opened: boolean
@@ -89,14 +90,14 @@ export function ListFormModal({
             error={errors.name?.message}
             data-autofocus
           />
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={onClose} type="button">
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Saving…' : list ? 'Save changes' : 'Create list'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </form>
     </Modal>
