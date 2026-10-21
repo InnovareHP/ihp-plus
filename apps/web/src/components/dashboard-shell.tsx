@@ -4,6 +4,7 @@ import {
   ActionIcon,
   AppShell,
   Avatar,
+  Box,
   Badge,
   Burger,
   Divider,
@@ -48,6 +49,10 @@ export interface DashboardShellProps {
   children: ReactNode
 }
 
+function capitalize(word: string) {
+  return word.charAt(0).toUpperCase() + word.slice(1)
+}
+
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -88,7 +93,8 @@ export function DashboardShell({
       padding={0}
       header={{ height: 60 }}
       navbar={{
-        width: 300,
+        // At 768 px a 300 px sidebar took 40% of the screen.
+        width: { sm: 260, lg: 300 },
         breakpoint: 'sm',
         collapsed: { mobile: !navOpened, desktop: !sidebarShown },
       }}
@@ -122,15 +128,18 @@ export function DashboardShell({
           </Group>
 
           <Group gap="xs" wrap="nowrap">
+            {/* The time comes first in the DOM, as a phone shows it; from laptop width CSS puts search first. */}
+            <ActivityButton />
             {/* Admins only while search is piloted with them before everyone gets it. */}
             {canManageOrganization ? (
-              <SearchLauncher
-                sections={sections}
-                storageKey={recentKey(organization.id, user.id)}
-                persistRecent={!impersonating}
-              />
+              <Box className={classes.search}>
+                <SearchLauncher
+                  sections={sections}
+                  storageKey={recentKey(organization.id, user.id)}
+                  persistRecent={!impersonating}
+                />
+              </Box>
             ) : null}
-            <ActivityButton />
             <MentionsMenu />
             {/* The photo alone opens the menu; the name lives inside it, so the header stays slim. */}
             <Menu position="bottom-end" withinPortal shadow="md" width={240}>
@@ -163,6 +172,13 @@ export function DashboardShell({
                   <Text size="xs" c="dimmed" truncate>
                     {user.email}
                   </Text>
+                  {organization.role || user.jobTitle ? (
+                    <Text size="xs" c="dimmed" truncate>
+                      {[organization.role && capitalize(organization.role), user.jobTitle]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </Text>
+                  ) : null}
                 </Stack>
                 <Menu.Divider />
                 <Menu.Item
@@ -190,7 +206,7 @@ export function DashboardShell({
 
       <AppShell.Navbar id="primary-navigation" p="sm" aria-label="Primary">
         <AppShell.Section grow component={ScrollArea} type="scroll">
-          <Stack gap="lg">
+          <Stack gap="md">
             {sections.map((section) => (
               <Stack key={section.id} gap={4} component="nav" aria-label={section.label}>
                 <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="xs" lts="0.04em">
@@ -229,10 +245,18 @@ export function DashboardShell({
             href={routes.settings}
             w="100%"
             p="xs"
+            className={classes.profile}
             onClick={closeNav}
           >
             <Group gap="sm" wrap="nowrap">
-              <Avatar src={user.photoUrl} alt="" color="brand" radius="xl" size={34}>
+              <Avatar
+                src={user.photoUrl}
+                alt=""
+                color="brand"
+                radius="xl"
+                size={32}
+                className={classes.avatar}
+              >
                 {initials(user.name)}
               </Avatar>
               <Stack gap={0} miw={0} style={{ flex: 1 }}>
@@ -243,8 +267,9 @@ export function DashboardShell({
                   {user.jobTitle ?? user.email}
                 </Text>
               </Stack>
+              {/* Outline, because the light brand badge's text fell short of AA on the dark body. */}
               {organization.role ? (
-                <Badge size="xs" variant="light" tt="capitalize">
+                <Badge size="xs" variant="outline" tt="capitalize">
                   {organization.role}
                 </Badge>
               ) : null}
