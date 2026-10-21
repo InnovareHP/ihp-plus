@@ -121,6 +121,7 @@ export function NewHiresTable() {
     {
       key: 'stuckOn',
       header: 'Stuck on',
+      stackOnPhone: true,
       width: 190,
       render: (row) =>
         row.completedAt ? (
@@ -144,6 +145,7 @@ export function NewHiresTable() {
     {
       key: 'steps',
       header: 'Steps',
+      stackOnPhone: true,
       render: (row) => <StepBadges progress={row.progress} />,
     },
     {

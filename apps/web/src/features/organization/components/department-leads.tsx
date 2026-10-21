@@ -2,6 +2,7 @@
 
 import { Badge, Button, CloseButton, Group, Select, Skeleton, Stack, Text } from '@mantine/core'
 import { useState } from 'react'
+import touch from '@/components/touch-target.module.css'
 import {
   useAddDepartmentLead,
   useDepartmentLeads,
@@ -65,6 +66,7 @@ export function DepartmentLeads({ teamId, teamName, canEdit }: DepartmentLeadsPr
                   canEdit ? (
                     <CloseButton
                       size="xs"
+                      className={touch.target}
                       variant="transparent"
                       aria-label={`Remove ${name} as a lead of ${teamName}`}
                       onClick={() => removeLead.mutate({ teamId, userId: lead.userId })}
@@ -93,7 +95,7 @@ export function DepartmentLeads({ teamId, teamName, canEdit }: DepartmentLeadsPr
             style={{ flex: 1 }}
           />
           <Button
-            size="sm"
+            className={touch.target}
             disabled={!chosen}
             onClick={() => {
               if (!chosen) return

@@ -1,4 +1,5 @@
 import { Card, SimpleGrid, Skeleton, Stack, Title } from '@mantine/core'
+import actionRow from '@/components/action-row.module.css'
 
 export function OrganizationSkeleton() {
   return (
@@ -15,11 +16,14 @@ export function OrganizationSkeleton() {
         {/* Same shape as the loaded form: a paired row, then a full-width field. */}
         <Stack gap="md">
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-            <Skeleton height={60} />
+            <Skeleton height={76} />
             <Skeleton height={76} />
           </SimpleGrid>
           <Skeleton height={76} />
-          <Skeleton height={36} width={140} />
+          {/* The real save button sits in an action row, so the placeholder takes the same box. */}
+          <div className={actionRow.row}>
+            <Skeleton height={36} width={140} />
+          </div>
         </Stack>
       </Card>
     </>

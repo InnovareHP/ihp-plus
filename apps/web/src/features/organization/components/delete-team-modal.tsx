@@ -1,6 +1,7 @@
 'use client'
 
-import { Button, Group, Modal, Stack, Text } from '@mantine/core'
+import { Button, Modal, Stack, Text } from '@mantine/core'
+import { DialogActions } from '@/components/dialog-actions'
 import { useDeleteTeam } from '../hooks/use-teams'
 import type { TeamRow } from '../schema'
 
@@ -22,7 +23,7 @@ export function DeleteTeamModal({ team, onClose }: { team: TeamRow | null; onClo
           Deleting {team?.name} cannot be undone. People already in it keep their profile but lose
           their department.
         </Text>
-        <Group justify="flex-end">
+        <DialogActions>
           <Button variant="default" onClick={onClose}>
             Keep it
           </Button>
@@ -37,7 +38,7 @@ export function DeleteTeamModal({ team, onClose }: { team: TeamRow | null; onClo
           >
             Delete department
           </Button>
-        </Group>
+        </DialogActions>
       </Stack>
     </Modal>
   )

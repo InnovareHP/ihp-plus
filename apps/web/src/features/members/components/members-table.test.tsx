@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import { render, screen, userEvent, waitFor } from '@/test/render'
+import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import { MembersTable } from './members-table'
 
 const actions = vi.hoisted(() => ({
@@ -88,7 +88,7 @@ describe('MembersTable', () => {
     )
     expect(
       screen.getByRole('combobox', { name: 'Organization role for Ada Lovelace' }),
-    ).toHaveValue('member')
+    ).toHaveValue('Member')
   })
 
   it('marks your own row and offers no way to suspend yourself', async () => {
@@ -96,9 +96,10 @@ describe('MembersTable', () => {
     render(<MembersTable />)
 
     expect(await screen.findByText('You')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: 'Actions for Grace Hopper' }),
-    ).not.toBeInTheDocument()
+    // Your own row's menu only carries the phone's work details, never suspend.
+    await openActions(person, 'Grace Hopper')
+    expect(screen.queryByRole('menuitem', { name: 'Suspend' })).not.toBeInTheDocument()
+    await person.keyboard('{Escape}')
     await openActions(person, 'Ada Lovelace')
     expect(screen.getByRole('menuitem', { name: 'Suspend' })).toBeInTheDocument()
   })
@@ -191,10 +192,30 @@ describe('MembersTable', () => {
     render(<MembersTable canImpersonate />)
     await openActions(person, 'Ada Lovelace')
     expect(screen.getByRole('menuitem', { name: 'Sign in as' })).toBeEnabled()
-    // Your own row has nothing to act on, so it carries no menu at all.
+    await person.keyboard('{Escape}')
+    await openActions(person, 'Grace Hopper')
+    expect(screen.queryByRole('menuitem', { name: 'Sign in as' })).not.toBeInTheDocument()
+  })
+
+  it('opens shift, pay and status in a dialog from the row menu, for a phone', async () => {
+    const person = user()
+    render(<MembersTable />)
+
+    await openActions(person, 'Ada Lovelace')
+    await person.click(screen.getByRole('menuitem', { name: 'Edit shift, pay and status' }))
+
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Shift, pay and status for Ada Lovelace',
+    })
+    expect(within(dialog).getByLabelText('Shift', { selector: 'input' })).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('Pay basis', { selector: 'input' })).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'Actions for Grace Hopper' }),
-    ).not.toBeInTheDocument()
+      within(dialog).getByLabelText('Employment status', { selector: 'input' }),
+    ).toBeInTheDocument()
+    expect(await axe(dialog)).toHaveNoViolations()
+
+    await person.click(within(dialog).getByRole('button', { name: 'Done' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
   it('does not offer sign in as for a suspended member', async () => {

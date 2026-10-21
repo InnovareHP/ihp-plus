@@ -1,7 +1,8 @@
 'use client'
 
-import { Button, Divider, Group, Menu, Select, Stack, Text } from '@mantine/core'
+import { Button, Divider, Menu, Select, Stack, Text } from '@mantine/core'
 import { useState } from 'react'
+import actionRow from '@/components/action-row.module.css'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { RowActionsMenu } from '@/components/row-actions-menu'
@@ -88,7 +89,7 @@ export function TeamMembersBody({ team }: { team: TeamRow }) {
             label: person.teamName ? `${person.name} · ${person.teamName}` : person.name,
           }))}
         />
-        <Group>
+        <div className={actionRow.row}>
           <Button
             disabled={!chosen}
             loading={assign.isPending}
@@ -100,7 +101,7 @@ export function TeamMembersBody({ team }: { team: TeamRow }) {
           >
             {chosen ? `Move ${chosen.name} here` : 'Move here'}
           </Button>
-        </Group>
+        </div>
       </Stack>
 
       <Divider />

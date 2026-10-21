@@ -1,9 +1,10 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, SimpleGrid, Stack, TextInput } from '@mantine/core'
+import { Button, SimpleGrid, Stack, TextInput } from '@mantine/core'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
+import actionRow from '@/components/action-row.module.css'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { announceSuccess } from '@/lib/announce'
@@ -22,7 +23,7 @@ export function OrganizationProfileForm({
     handleSubmit,
     reset,
     setError,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isSubmitting },
   } = useForm<OrganizationProfileValues>({
     resolver: zodResolver(organizationProfileSchema),
     mode: 'onTouched',
@@ -90,11 +91,11 @@ export function OrganizationProfileForm({
             error={errors.logo?.message}
           />
 
-          <Group>
-            <Button type="submit" loading={isSubmitting} disabled={!isDirty}>
+          <div className={actionRow.row}>
+            <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Saving…' : 'Save changes'}
             </Button>
-          </Group>
+          </div>
         </Stack>
       </form>
     </PageSection>

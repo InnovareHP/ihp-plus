@@ -1,9 +1,10 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Select, Stack, TextInput } from '@mantine/core'
+import { Button, Select, Stack, TextInput } from '@mantine/core'
 import { IconSend } from '@tabler/icons-react'
 import { Controller, useForm } from 'react-hook-form'
+import actionRow from '@/components/action-row.module.css'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { announceSuccess } from '@/lib/announce'
@@ -111,7 +112,7 @@ export function InviteForm({ invitedBy }: { invitedBy: string }) {
             />
           </FieldRow>
 
-          <Group>
+          <div className={actionRow.row}>
             <Button
               type="submit"
               loading={isSubmitting}
@@ -119,7 +120,7 @@ export function InviteForm({ invitedBy }: { invitedBy: string }) {
             >
               {isSubmitting ? 'Sending…' : 'Send invite'}
             </Button>
-          </Group>
+          </div>
         </Stack>
       </form>
     </PageSection>

@@ -5,7 +5,7 @@ import {
   Avatar,
   Button,
   FileInput,
-  Group,
+  Flex,
   Stack,
   Text,
   TextInput,
@@ -13,6 +13,7 @@ import {
 } from '@mantine/core'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
+import actionRow from '@/components/action-row.module.css'
 import { FormError } from '@/components/form-error'
 import { useUploadPhoto } from '@/features/onboarding/hooks/use-upload-photo'
 import { ACCEPTED_PHOTO_TYPES } from '@/features/onboarding/utils/photo'
@@ -86,7 +87,12 @@ export function ContactDetailsForm({
       <Stack gap="md">
         <FormError message={errors.root?.message} title="Could not save your details" />
 
-        <Group gap="lg" align="flex-end" wrap="nowrap">
+        {/* Below xs the photo sits above its field, so the input keeps a usable width at 320px. */}
+        <Flex
+          gap="lg"
+          direction={{ base: 'column', xs: 'row' }}
+          align={{ base: 'flex-start', xs: 'flex-end' }}
+        >
           <Avatar
             src={upload.data?.url ?? initialPhotoUrl}
             alt=""
@@ -106,8 +112,9 @@ export function ContactDetailsForm({
             error={errors.photoKey?.message ?? (upload.isError ? upload.error.message : undefined)}
             errorProps={{ role: 'alert' }}
             flex={1}
+            w={{ base: '100%', xs: 'auto' }}
           />
-        </Group>
+        </Flex>
 
         {/* A loading indicator is invisible to a screen reader, so upload state is announced. */}
         <VisuallyHidden aria-live="polite">
@@ -139,16 +146,16 @@ export function ContactDetailsForm({
           {...register('phone')}
         />
 
-        <Group gap="sm">
+        <div className={actionRow.row}>
           <Button type="submit" loading={isSubmitting} disabled={upload.isPending}>
             {isSubmitting ? 'Saving…' : 'Save changes'}
           </Button>
-          {saved ? (
-            <Text size="sm" c="dimmed" role="status">
-              Saved.
-            </Text>
-          ) : null}
-        </Group>
+        </div>
+        {saved ? (
+          <Text size="sm" c="dimmed" role="status">
+            Saved.
+          </Text>
+        ) : null}
       </Stack>
     </form>
   )
