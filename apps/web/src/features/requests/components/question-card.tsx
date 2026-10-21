@@ -21,6 +21,7 @@ import {
   type FormDraftValues,
 } from '../schema'
 import { FieldRow } from '@/components/field-row'
+import touch from '@/components/touch-target.module.css'
 
 const TYPE_OPTIONS = FIELD_TYPES.map((type) => ({ value: type, label: FIELD_TYPE_LABELS[type] }))
 const TYPE_OPTIONS_WITHOUT_FILE = TYPE_OPTIONS.filter((option) => option.value !== 'file')
@@ -62,8 +63,9 @@ export function QuestionCard({
         <Text component="legend" size="sm" fw={600}>
           Question {index + 1}
         </Text>
-        <Group gap={4} wrap="nowrap">
+        <Group gap="xs" wrap="nowrap">
           <ActionIcon
+            className={touch.target}
             variant="subtle"
             color="gray"
             disabled={index <= firstMovableIndex}
@@ -73,6 +75,7 @@ export function QuestionCard({
             <IconArrowUp size={16} aria-hidden />
           </ActionIcon>
           <ActionIcon
+            className={touch.target}
             variant="subtle"
             color="gray"
             disabled={index === total - 1}
@@ -82,6 +85,7 @@ export function QuestionCard({
             <IconArrowDown size={16} aria-hidden />
           </ActionIcon>
           <ActionIcon
+            className={touch.target}
             variant="subtle"
             color="red"
             aria-label={`Remove question ${index + 1}`}

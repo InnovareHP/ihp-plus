@@ -1,9 +1,10 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Stack, Text } from '@mantine/core'
+import { Button, Stack, Text } from '@mantine/core'
 import { useRouter } from 'next/navigation'
 import { Controller, useForm, useWatch, type Control, type FieldValues } from 'react-hook-form'
+import actionRow from '@/components/action-row.module.css'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { EmptyState } from '@/components/empty-state'
@@ -105,14 +106,14 @@ export function RequestForm({ form }: { form: FormRow }) {
             {form.timeOff ? ' Once approved, these days show as leave on your time clock.' : ''}
           </Text>
 
-          <Group>
+          <div className={actionRow.row}>
             <Button type="submit" loading={isSubmitting}>
               {isSubmitting ? 'Sending…' : 'Send request'}
             </Button>
             <Button variant="subtle" color="gray" onClick={() => router.push(routes.requests)}>
               Cancel
             </Button>
-          </Group>
+          </div>
         </Stack>
       </form>
     </PageSection>

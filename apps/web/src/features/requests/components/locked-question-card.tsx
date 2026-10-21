@@ -15,7 +15,7 @@ export function LockedQuestionCard({ index, label, help }: LockedQuestionCardPro
       bd="1px solid var(--mantine-color-default-border)"
       bg="var(--mantine-color-default-hover)"
     >
-      <Group justify="space-between" wrap="nowrap" align="flex-start">
+      <Group justify="space-between" align="flex-start">
         <Stack gap={2}>
           <Text size="sm" fw={600}>
             Question {index + 1}: {label}

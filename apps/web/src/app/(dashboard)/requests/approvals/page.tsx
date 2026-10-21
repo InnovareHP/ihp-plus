@@ -28,7 +28,7 @@ export default async function ApprovalsPage() {
       <Suspense
         fallback={
           <Stack gap="xs" aria-busy="true">
-            <Skeleton height={60} width="20rem" />
+            <Skeleton height={60} width="20rem" maw="100%" />
             <Skeleton height={38} />
             <Skeleton height={56} />
           </Stack>

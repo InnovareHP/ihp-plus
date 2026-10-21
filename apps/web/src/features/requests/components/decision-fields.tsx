@@ -1,7 +1,9 @@
 'use client'
 
-import { Button, Group, Stack, Textarea } from '@mantine/core'
+import { Button, Stack, Textarea } from '@mantine/core'
 import { useForm } from 'react-hook-form'
+import actionRow from '@/components/action-row.module.css'
+import { DialogActions } from '@/components/dialog-actions'
 import { REJECTION_NEEDS_REASON, type Decision } from '../schema'
 
 export interface DecisionFieldsProps {
@@ -11,6 +13,8 @@ export interface DecisionFieldsProps {
   noteHelp?: string
   onDecide: (decision: Decision, note: string) => void
   onCancel?: () => void
+  /** Inside a modal the buttons pin to the bottom of a phone screen instead of sharing a row. */
+  inDialog?: boolean
 }
 
 /**
@@ -23,6 +27,7 @@ export function DecisionFields({
   noteHelp,
   onDecide,
   onCancel,
+  inDialog = false,
 }: DecisionFieldsProps) {
   const {
     register,
@@ -42,6 +47,28 @@ export function DecisionFields({
     onDecide(decision, note)
   }
 
+  const buttons = (
+    <>
+      <Button type="button" loading={isPending} onClick={() => decide('approved')}>
+        Approve {label}
+      </Button>
+      <Button
+        type="button"
+        color="red"
+        variant="light"
+        disabled={isPending}
+        onClick={() => decide('rejected')}
+      >
+        Reject {label}
+      </Button>
+      {onCancel ? (
+        <Button type="button" variant="subtle" color="gray" onClick={onCancel}>
+          Cancel
+        </Button>
+      ) : null}
+    </>
+  )
+
   return (
     <Stack gap="md">
       <Textarea
@@ -56,25 +83,11 @@ export function DecisionFields({
         data-autofocus
       />
 
-      <Group>
-        <Button type="button" loading={isPending} onClick={() => decide('approved')}>
-          Approve {label}
-        </Button>
-        <Button
-          type="button"
-          color="red"
-          variant="light"
-          disabled={isPending}
-          onClick={() => decide('rejected')}
-        >
-          Reject {label}
-        </Button>
-        {onCancel ? (
-          <Button type="button" variant="subtle" color="gray" onClick={onCancel}>
-            Cancel
-          </Button>
-        ) : null}
-      </Group>
+      {inDialog ? (
+        <DialogActions>{buttons}</DialogActions>
+      ) : (
+        <div className={actionRow.row}>{buttons}</div>
+      )}
     </Stack>
   )
 }

@@ -120,14 +120,22 @@ describe('ApprovalsPanel', () => {
     expect(screen.queryByRole('menuitem', { name: 'Approve or reject' })).not.toBeInTheDocument()
   })
 
-  it('shows the answers inline without leaving the queue', async () => {
+  it('shows the answers in a dialog without leaving the queue', async () => {
     const person = user()
     render(<ApprovalsPanel />)
 
     await person.click(await screen.findByRole('button', { name: /Actions for Ada Lovelace/ }))
     await person.click(await screen.findByRole('menuitem', { name: 'Show answers' }))
 
-    expect(await screen.findByText('Laptop')).toBeInTheDocument()
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Equipment request from Ada Lovelace',
+    })
+    expect(within(dialog).getByText('Laptop')).toBeInTheDocument()
+    expect(await axe(dialog)).toHaveNoViolations()
+
+    await person.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(screen.getByRole('table', { name: 'Requests' })).toBeInTheDocument()
   })
 
   it('will not reject without a reason, since the requester has to know what to change', async () => {

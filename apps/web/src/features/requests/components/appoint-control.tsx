@@ -18,7 +18,7 @@ export function AppointControl({ department }: { department: DepartmentApprovers
   const chosen = candidates.find((person) => person.userId === picked)
 
   return (
-    <Group align="flex-end" gap="xs" wrap="nowrap">
+    <Group align="flex-end" gap="xs">
       <Select
         aria-label={`Add an approver for ${department.teamName}`}
         placeholder={people.isPending ? 'Loading…' : 'Search people'}
@@ -32,7 +32,7 @@ export function AppointControl({ department }: { department: DepartmentApprovers
           value: person.userId,
           label: person.teamName ? `${person.name} · ${person.teamName}` : person.name,
         }))}
-        w={220}
+        w={{ base: '100%', sm: 220 }}
       />
       <Button
         size="sm"

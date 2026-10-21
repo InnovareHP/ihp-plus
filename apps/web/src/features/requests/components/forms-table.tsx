@@ -45,6 +45,7 @@ const STATUS_COLORS: Record<FormRow['status'], string> = {
 const departmentsColumn: DataTableColumn<FormRow> = {
   key: 'departments',
   header: 'Departments',
+  stackOnPhone: true,
   render: (form) =>
     form.teams.length === 0 ? (
       <Text size="sm" c="dimmed">
