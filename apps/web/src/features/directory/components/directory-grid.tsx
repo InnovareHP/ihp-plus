@@ -6,6 +6,7 @@ import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
 import { EmptyState } from '@/components/empty-state'
 import { useDirectory, useDirectoryDepartments } from '../hooks/use-directory'
 import { useDirectoryQuery } from '../hooks/use-directory-query'
+import { DIRECTORY_COLS } from '../grid'
 import { isFilteredDirectoryQuery, UNASSIGNED } from '../schema'
 import { DirectorySkeleton } from './directory-skeleton'
 import { PersonCard } from './person-card'
@@ -46,10 +47,12 @@ export function DirectoryGrid() {
 
       {people.isError ? (
         <Stack gap="md">
-          <Alert role="alert" color="red" variant="light" title="Could not load the directory">
-            <Text size="sm">{people.error.message}</Text>
+          <Alert role="alert" color="red" variant="light">
+            <Text size="sm">
+              Could not load the directory — check your connection and try again.
+            </Text>
           </Alert>
-          <Button onClick={() => people.refetch()} w="fit-content">
+          <Button onClick={() => people.refetch()} w="fit-content" mih={{ base: 44, sm: 0 }}>
             Try again
           </Button>
         </Stack>
@@ -77,7 +80,7 @@ export function DirectoryGrid() {
       {people.data && people.data.rows.length > 0 ? (
         <Stack gap="md">
           <SimpleGrid
-            cols={{ base: 1, sm: 2, lg: 3, xl: 4 }}
+            cols={DIRECTORY_COLS}
             spacing="md"
             // A background refetch dims the grid rather than replacing it with a skeleton.
             opacity={people.isPlaceholderData ? 0.6 : undefined}
