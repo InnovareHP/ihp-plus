@@ -8,3 +8,13 @@
     scroll-snap-align: start;
   }
 }
+
+/* A drag needs the board to scroll freely toward the edge it nears, so snapping waits. */
+.board[data-dragging] {
+  scroll-snap-type: none;
+}
+
+/* An empty column still offers a target worth aiming at. */
+.emptyDrop {
+  min-height: 48px;
+}

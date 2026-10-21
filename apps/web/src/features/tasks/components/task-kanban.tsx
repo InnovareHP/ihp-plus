@@ -1,12 +1,29 @@
 'use client'
 
-import { Box, Button, Group, Paper, Stack, Text, Title } from '@mantine/core'
+import { Box, Group, Stack } from '@mantine/core'
 import { useReducedMotion } from '@mantine/hooks'
-import { useId, useState } from 'react'
+import {
+  closestCorners,
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type Announcements,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  type UniqueIdentifier,
+} from '@dnd-kit/core'
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import { useId, useRef, useState } from 'react'
 import type { TaskRow as Task, TaskStatusRow } from '../schema'
-import { taskCount } from '../utils/task-count'
+import { beforeTaskIdFor } from '../utils/drag-order'
 import { KanbanColumnBar } from './kanban-column-bar'
-import { TaskCard } from './task-card'
+import { TaskColumn } from './task-column'
+import { TaskDragPreview } from './task-drag-preview'
 import classes from './task-kanban.module.css'
 
 export interface TaskKanbanProps {
@@ -25,13 +42,10 @@ export interface TaskKanbanProps {
 // Finished work is rarely why someone opens the board, so those columns start shorter.
 const VISIBLE = { active: 10, done: 5, cancelled: 5 } as const
 
-/**
- * A column is a status and a card keeps its list, so the row a card lands before is the next one
- * from its own list — ordering a column never shuffles a list the user cannot see.
- */
-function beforeInList(items: readonly Task[], from: number, listId: string) {
-  return items.slice(from).find((item) => item.listId === listId)?.id
-}
+const COLUMN = 'column:'
+
+const INSTRUCTIONS =
+  'To move a task, press Space or Enter on its drag handle, use the arrow keys to move it, then press Space or Enter to drop it, or Escape to cancel.'
 
 export function TaskKanban({
   statuses,
@@ -43,12 +57,56 @@ export function TaskKanban({
   onDelete,
   showAll = false,
 }: TaskKanbanProps) {
-  const [dragging, setDragging] = useState<Task | null>(null)
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
-  const [over, setOver] = useState<string | null>(null)
+  // While a card is held, the shown order of every column lives here so cards make room live.
+  const [preview, setPreview] = useState<Record<string, string[]> | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const startOrder = useRef<Record<string, string[]>>({})
+  const justDropped = useRef(false)
   const columnIdBase = useId()
   const reduceMotion = useReducedMotion()
   const columnId = (statusId: string) => `${columnIdBase}-${statusId}`
+
+  const sensors = useSensors(
+    // A few pixels of travel before a drag, so a plain click still opens the card.
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    // Press and hold on a phone, so a swipe still scrolls the board and the page.
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  const byId = new Map(tasks.map((task) => [task.id, task]))
+  const columnItems = (statusId: string) => tasks.filter((task) => task.statusId === statusId)
+
+  function shownIds(status: TaskStatusRow) {
+    const items = columnItems(status.id)
+    const open = showAll || expanded.has(status.id)
+    return (open ? items : items.slice(0, VISIBLE[status.category])).map((task) => task.id)
+  }
+
+  function containerOf(id: UniqueIdentifier, order: Record<string, string[]>) {
+    const key = String(id)
+    if (key.startsWith(COLUMN)) return key.slice(COLUMN.length)
+    return Object.keys(order).find((statusId) => order[statusId]?.includes(key))
+  }
+
+  const nameOf = (id: UniqueIdentifier) => byId.get(String(id))?.name ?? 'the task'
+  const columnNameOf = (id: UniqueIdentifier) => {
+    const statusId = containerOf(id, preview ?? startOrder.current)
+    return statuses.find((status) => status.id === statusId)?.name ?? 'the board'
+  }
+
+  // Named for people, not ids: dnd-kit announces these in its own live region.
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => `Picked up ${nameOf(active.id)}.`,
+    onDragOver: ({ active, over }) =>
+      over ? `${nameOf(active.id)} is over ${columnNameOf(over.id)}.` : undefined,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? `${nameOf(active.id)} dropped in ${columnNameOf(over.id)}.`
+        : `${nameOf(active.id)} put back.`,
+    onDragCancel: ({ active }) => `Moving ${nameOf(active.id)} was cancelled.`,
+  }
 
   // Scrolling alone would leave a screen reader where it was, so focus follows to the column.
   function jumpTo(statusId: string) {
@@ -61,15 +119,73 @@ export function TaskKanban({
     column?.focus({ preventScroll: true })
   }
 
-  function drop(status: TaskStatusRow, items: readonly Task[], index: number) {
-    setOver(null)
-    if (!dragging) return
-
-    const rest = items.filter((item) => item.id !== dragging.id)
-    const cut = index > items.findIndex((item) => item.id === dragging.id) ? index - 1 : index
-    onReorder(dragging, status.id, beforeInList(rest, Math.max(cut, 0), dragging.listId))
-    setDragging(null)
+  function handleDragStart({ active }: DragStartEvent) {
+    const order = Object.fromEntries(statuses.map((status) => [status.id, shownIds(status)]))
+    startOrder.current = order
+    setPreview(order)
+    setActiveId(String(active.id))
   }
+
+  // Crossing into another column moves the card there at once, so that column opens a gap for it.
+  function handleDragOver({ active, over }: DragOverEvent) {
+    if (!over) return
+    setPreview((current) => {
+      if (!current) return current
+      const from = containerOf(active.id, current)
+      const to = containerOf(over.id, current)
+      if (!from || !to || from === to) return current
+
+      const moving = String(active.id)
+      const target = current[to] ?? []
+      const overIndex = target.indexOf(String(over.id))
+      const at = overIndex === -1 ? target.length : overIndex
+      return {
+        ...current,
+        [from]: (current[from] ?? []).filter((id) => id !== moving),
+        [to]: [...target.slice(0, at), moving, ...target.slice(at)],
+      }
+    })
+  }
+
+  function reset() {
+    setPreview(null)
+    setActiveId(null)
+  }
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    const current = preview
+    reset()
+    const task = byId.get(String(active.id))
+    if (!over || !current || !task) return
+
+    const to = containerOf(over.id, current)
+    if (!to) return
+    let order = current[to] ?? []
+    const from = order.indexOf(task.id)
+    const overIndex = order.indexOf(String(over.id))
+    if (from !== -1 && overIndex !== -1 && from !== overIndex) {
+      order = arrayMove(order, from, overIndex)
+    }
+
+    // A drop where the card started is no move at all, so nothing is sent.
+    const unchanged = to === task.statusId && order.join() === (startOrder.current[to] ?? []).join()
+    if (unchanged) return
+
+    // A drop ends with a click on the card underneath, which must not also open it.
+    justDropped.current = true
+    window.setTimeout(() => (justDropped.current = false), 0)
+
+    const column = columnItems(to)
+    onReorder(task, to, beforeTaskIdFor(order, task.id, column, task.listId))
+  }
+
+  function open(task: Task) {
+    if (justDropped.current) return
+    onOpen(task)
+  }
+
+  const active = activeId ? byId.get(activeId) : undefined
+  const activeColumn = activeId && preview ? containerOf(activeId, preview) : undefined
 
   return (
     <Stack gap="xs">
@@ -82,120 +198,64 @@ export function TaskKanban({
         }))}
         onJump={jumpTo}
       />
-      {/* The board scrolls sideways in its own container so the page never does. */}
-      <Box className={classes.board} style={{ overflowX: 'auto' }} pb="sm">
-        <Group align="flex-start" gap="md" wrap="nowrap">
-          {statuses.map((status) => {
-            const items = tasks.filter((task) => task.statusId === status.id)
-            const limit = VISIBLE[status.category]
-            const open = showAll || expanded.has(status.id)
-            const shown = open ? items : items.slice(0, limit)
-            const hidden = items.length - shown.length
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        accessibility={{ announcements, screenReaderInstructions: { draggable: INSTRUCTIONS } }}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={reset}
+      >
+        {/* The board scrolls sideways in its own container so the page never does. */}
+        <Box
+          className={classes.board}
+          data-dragging={activeId ? true : undefined}
+          style={{ overflowX: 'auto' }}
+          pb="sm"
+        >
+          <Group align="flex-start" gap="md" wrap="nowrap">
+            {statuses.map((status) => {
+              const items = columnItems(status.id)
+              const isOpen = showAll || expanded.has(status.id)
+              const ids = preview?.[status.id] ?? shownIds(status)
+              const shown = ids.flatMap((id) => byId.get(id) ?? [])
 
-            return (
-              <Paper
-                key={status.id}
-                id={columnId(status.id)}
-                tabIndex={-1}
-                className={classes.column}
-                component="section"
-                // A named region per column, so a screen reader can jump between them.
-                aria-label={`${status.name}, ${taskCount(items.length)}`}
-                withBorder
-                radius="md"
-                p="sm"
-                // The board's own width, not the screen's: the page's padding made 85vw spill past
-                // the edge. 32 px short leaves a peek of the next column to say it swipes.
-                w={{ base: 'calc(100% - 32px)', sm: 300 }}
-                miw={{ base: 'calc(100% - 32px)', sm: 300 }}
-                bg={over === status.id ? 'var(--mantine-color-default-hover)' : undefined}
-                onDragOver={(event) => {
-                  event.preventDefault()
-                  setOver(status.id)
-                }}
-                onDragLeave={() => setOver((current) => (current === status.id ? null : current))}
-                onDrop={() => drop(status, items, items.length)}
-              >
-                <Stack gap="sm">
-                  <Group justify="space-between" align="baseline" wrap="nowrap">
-                    <Group gap={8} align="center" wrap="nowrap">
-                      <Box
-                        w={10}
-                        h={10}
-                        style={{ background: status.color, borderRadius: 999 }}
-                        aria-hidden
-                      />
-                      <Title order={3} size="h6">
-                        {status.name}
-                      </Title>
-                    </Group>
-                    <Text size="xs" c="dimmed">
-                      {items.length}
-                    </Text>
-                  </Group>
-
-                  {items.length === 0 ? (
-                    <Text size="xs" c="dimmed">
-                      Nothing here.
-                    </Text>
-                  ) : (
-                    <Stack
-                      component="ul"
-                      gap="xs"
-                      style={{ listStyle: 'none', padding: 0, margin: 0 }}
-                    >
-                      {shown.map((task, index) => {
-                        const siblings = items.filter((item) => item.listId === task.listId)
-                        const slot = siblings.findIndex((item) => item.id === task.id)
-
-                        return (
-                          <TaskCard
-                            key={task.id}
-                            task={task}
-                            otherStatuses={statuses.filter((one) => one.id !== status.id)}
-                            canMoveUp={slot > 0}
-                            canMoveDown={slot < siblings.length - 1}
-                            onOpen={onOpen}
-                            onMoveTo={onMoveTo}
-                            onMoveUp={() =>
-                              onReorder(task, status.id, siblings[slot - 1]?.id ?? undefined)
-                            }
-                            onMoveDown={() =>
-                              onReorder(task, status.id, siblings[slot + 2]?.id ?? undefined)
-                            }
-                            onEdit={onEdit}
-                            onDelete={onDelete}
-                            onDragStart={setDragging}
-                            onDropBefore={() => drop(status, items, index)}
-                          />
-                        )
-                      })}
-                    </Stack>
-                  )}
-
-                  {!showAll && items.length > limit ? (
-                    <Button
-                      variant="subtle"
-                      size="sm"
-                      fullWidth
-                      onClick={() =>
-                        setExpanded((current) => {
-                          const next = new Set(current)
-                          if (open) next.delete(status.id)
-                          else next.add(status.id)
-                          return next
-                        })
-                      }
-                    >
-                      {open ? 'Show fewer' : `Show ${hidden} more`}
-                    </Button>
-                  ) : null}
-                </Stack>
-              </Paper>
-            )
-          })}
-        </Group>
-      </Box>
+              return (
+                <TaskColumn
+                  key={status.id}
+                  id={columnId(status.id)}
+                  status={status}
+                  items={items}
+                  shown={shown}
+                  hiddenCount={items.length - shownIds(status).length}
+                  canToggle={!showAll && items.length > VISIBLE[status.category]}
+                  expanded={isOpen}
+                  onToggle={() =>
+                    setExpanded((current) => {
+                      const next = new Set(current)
+                      if (isOpen) next.delete(status.id)
+                      else next.add(status.id)
+                      return next
+                    })
+                  }
+                  highlighted={activeColumn === status.id && activeColumn !== active?.statusId}
+                  reduceMotion={reduceMotion}
+                  statuses={statuses}
+                  onOpen={open}
+                  onMoveTo={onMoveTo}
+                  onReorder={onReorder}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
+              )
+            })}
+          </Group>
+        </Box>
+        <DragOverlay dropAnimation={reduceMotion ? null : undefined}>
+          {active ? <TaskDragPreview task={active} /> : null}
+        </DragOverlay>
+      </DndContext>
     </Stack>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties, DOMAttributes, ReactNode } from 'react'
 import { ActionIcon, Badge, Box, Group, Menu, Paper, Stack, Text } from '@mantine/core'
 import {
   IconArrowDown,
@@ -49,9 +50,15 @@ export interface TaskCardProps {
   onMoveDown: (task: Task) => void
   onEdit: (task: Task) => void
   onDelete: (task: Task) => void
-  onDragStart: (task: Task) => void
-  /** A card dropped on this one lands above it. */
-  onDropBefore: (task: Task) => void
+  /** The drag wiring, from the sortable wrapper; a card rendered on its own has none. */
+  drag?: {
+    ref: (node: HTMLElement | null) => void
+    style: CSSProperties
+    /** Pointer and touch starts only; the keyboard starts a drag from the handle. */
+    handlers: DOMAttributes<HTMLElement>
+    handle: ReactNode
+    isDragging: boolean
+  }
 }
 
 export function TaskCard({
@@ -65,8 +72,7 @@ export function TaskCard({
   onMoveDown,
   onEdit,
   onDelete,
-  onDragStart,
-  onDropBefore,
+  drag,
 }: TaskCardProps) {
   const overdue = isTaskOverdue(task)
   const upcoming = isTaskUpcoming(task)
@@ -77,20 +83,16 @@ export function TaskCard({
       withBorder
       radius="md"
       p="sm"
-      draggable
-      onDragStart={() => onDragStart(task)}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
-        // The column behind would otherwise take the drop and send the card to the end.
-        event.stopPropagation()
-        onDropBefore(task)
-      }}
+      ref={drag?.ref}
+      {...drag?.handlers}
+      // The card left behind fades while its copy follows the pointer.
+      opacity={drag?.isDragging ? 0.4 : undefined}
       onClick={(event) => {
         // The menu and the name are controls of their own; anywhere else on the card opens it.
         if ((event.target as HTMLElement).closest('button, a')) return
         onOpen(task)
       }}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', ...drag?.style }}
     >
       <Stack gap={6}>
         <Group justify="space-between" wrap="nowrap" align="flex-start" gap="xs">
@@ -108,57 +110,60 @@ export function TaskCard({
             #{task.taskNumber} {task.name}
           </Text>
 
-          <Menu position="bottom-end" withinPortal>
-            <Menu.Target>
-              <ActionIcon
-                className={touch.target}
-                variant="subtle"
-                color="gray"
-                aria-label={`Actions for ${task.name}`}
-              >
-                <IconDotsVertical size={16} aria-hidden />
-              </ActionIcon>
-            </Menu.Target>
+          <Group gap={0} wrap="nowrap">
+            {drag?.handle}
+            <Menu position="bottom-end" withinPortal>
+              <Menu.Target>
+                <ActionIcon
+                  className={touch.target}
+                  variant="subtle"
+                  color="gray"
+                  aria-label={`Actions for ${task.name}`}
+                >
+                  <IconDotsVertical size={16} aria-hidden />
+                </ActionIcon>
+              </Menu.Target>
 
-            <Menu.Dropdown>
-              <Menu.Label>Order</Menu.Label>
-              <Menu.Item
-                leftSection={<IconArrowUp size={16} aria-hidden />}
-                disabled={!canMoveUp}
-                onClick={() => onMoveUp(task)}
-              >
-                Move up
-              </Menu.Item>
-              <Menu.Item
-                leftSection={<IconArrowDown size={16} aria-hidden />}
-                disabled={!canMoveDown}
-                onClick={() => onMoveDown(task)}
-              >
-                Move down
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Label>Move to</Menu.Label>
-              {otherStatuses.map((status) => (
-                <Menu.Item key={status.id} onClick={() => onMoveTo(task, status.id)}>
-                  {status.name}
+              <Menu.Dropdown>
+                <Menu.Label>Order</Menu.Label>
+                <Menu.Item
+                  leftSection={<IconArrowUp size={16} aria-hidden />}
+                  disabled={!canMoveUp}
+                  onClick={() => onMoveUp(task)}
+                >
+                  Move up
                 </Menu.Item>
-              ))}
-              <Menu.Divider />
-              <Menu.Item
-                leftSection={<IconPencil size={16} aria-hidden />}
-                onClick={() => onEdit(task)}
-              >
-                Edit
-              </Menu.Item>
-              <Menu.Item
-                color="red"
-                leftSection={<IconTrash size={16} aria-hidden />}
-                onClick={() => onDelete(task)}
-              >
-                Delete
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
+                <Menu.Item
+                  leftSection={<IconArrowDown size={16} aria-hidden />}
+                  disabled={!canMoveDown}
+                  onClick={() => onMoveDown(task)}
+                >
+                  Move down
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Label>Move to</Menu.Label>
+                {otherStatuses.map((status) => (
+                  <Menu.Item key={status.id} onClick={() => onMoveTo(task, status.id)}>
+                    {status.name}
+                  </Menu.Item>
+                ))}
+                <Menu.Divider />
+                <Menu.Item
+                  leftSection={<IconPencil size={16} aria-hidden />}
+                  onClick={() => onEdit(task)}
+                >
+                  Edit
+                </Menu.Item>
+                <Menu.Item
+                  color="red"
+                  leftSection={<IconTrash size={16} aria-hidden />}
+                  onClick={() => onDelete(task)}
+                >
+                  Delete
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </Group>
         </Group>
 
         {/* A phone card keeps what someone scans for: urgency, the due date and who has it. */}

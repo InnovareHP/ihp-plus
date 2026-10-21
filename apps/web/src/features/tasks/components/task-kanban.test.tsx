@@ -261,4 +261,41 @@ describe('TaskKanban column bar', () => {
 
     expect(screen.getByText('Grace +1')).toBeInTheDocument()
   })
+
+  it('gives every card a drag handle that explains the keyboard moves', () => {
+    renderBoard([task()])
+
+    const handle = screen.getByRole('button', { name: 'Drag Send the renewal pack' })
+    expect(handle).toHaveAccessibleDescription(/arrow keys/)
+  })
+
+  it('announces a keyboard pick-up and leaves the board alone when it is cancelled', async () => {
+    const user = userEvent.setup()
+    renderBoard([task()])
+
+    screen.getByRole('button', { name: 'Drag Send the renewal pack' }).focus()
+    await user.keyboard(' ')
+    // The pick-up is announced, then at once where the card sits, which is what stays on screen.
+    expect(await screen.findByText('Send the renewal pack is over To do.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Drag Send the renewal pack' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    await user.keyboard('{Escape}')
+    expect(
+      await screen.findByText('Moving Send the renewal pack was cancelled.'),
+    ).toBeInTheDocument()
+    expect(handlers.onReorder).not.toHaveBeenCalled()
+  })
+
+  it('opens the card from a plain click, which never counts as a drag', async () => {
+    const user = userEvent.setup()
+    renderBoard([task()])
+
+    await user.click(screen.getAllByText('Unassigned')[0] as HTMLElement)
+
+    expect(handlers.onOpen).toHaveBeenCalledTimes(1)
+    expect(handlers.onReorder).not.toHaveBeenCalled()
+  })
 })
