@@ -1,0 +1,29 @@
+// Contracts and proposals an admin drafts by chatting with the AI. Its own Postgres schema
+// because `pnpm db:auth-schema` rewrites auth.prisma wholesale.
+
+model Draft {
+  id             String @id @default(uuid())
+  // Plain columns, not relations: the generated auth models own no draft fields.
+  organizationId String
+  createdById    String
+
+  kind  String
+  title String
+  body  String
+  // The body before the AI's last edit, which is what undo puts back.
+  previousBody String?
+  // The conversation as [{ role, content }]; it is only ever read and written whole.
+  messages     Json    @default("[]")
+
+  // The proposal the contract is based on, resent to the AI every turn so it never forgets it.
+  proposalName   String?
+  proposalFormat String?
+  proposal       Bytes?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, updatedAt])
+  @@map("draft")
+  @@schema("drafts")
+}

@@ -9,6 +9,7 @@ export const routes = {
   clients: '/clients',
   bluebook: '/bluebook',
   letterhead: '/letterhead',
+  drafts: '/drafts',
   library: '/library',
   websites: '/websites',
   tasks: '/tasks',
@@ -127,6 +128,10 @@ export function applicationFormRoute(formId: string) {
 }
 
 export const NEW_APPLICATION_FORM_ROUTE = `${routes.hiringForms}/new`
+
+export function draftRoute(draftId: string) {
+  return `${routes.drafts}/${draftId}`
+}
 
 export function scorecardFormRoute(formId: string) {
   return `${routes.hiringScorecards}/${formId}`

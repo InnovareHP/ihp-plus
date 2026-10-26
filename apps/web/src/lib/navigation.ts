@@ -8,6 +8,7 @@ import {
   IconClipboardList,
   IconClockHour4,
   IconFileCertificate,
+  IconFileText,
   IconFolderOpen,
   IconFolders,
   IconLayoutDashboard,
@@ -263,6 +264,13 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Organization',
         description: 'People, departments and invites',
         icon: IconBuilding,
+        manageOnly: true,
+      },
+      {
+        href: routes.drafts,
+        label: 'Contract drafts',
+        description: 'Turn a proposal into a contract with the AI',
+        icon: IconFileText,
         manageOnly: true,
       },
       {

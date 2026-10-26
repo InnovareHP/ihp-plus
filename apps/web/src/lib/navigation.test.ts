@@ -86,6 +86,7 @@ describe('navigation', () => {
     expect(hrefsIn(ADMIN, 'admin')).toEqual([
       routes.hiring,
       routes.organization,
+      routes.drafts,
       routes.folderAccess,
     ])
   })
@@ -117,12 +118,13 @@ describe('navigation', () => {
     ])
   })
 
-  it('shows a manager hiring, the organization page and folder access, nothing more', () => {
+  it('shows a manager hiring, the organization page, contracts and proposals and folder access', () => {
     // Overview, members, departments, invitations and approvers are tabs on one page, so they
     // are one link; folder access is a page of its own and earns the second.
     expect(hrefsIn(ADMIN, 'admin')).toEqual([
       routes.hiring,
       routes.organization,
+      routes.drafts,
       routes.folderAccess,
     ])
   })
