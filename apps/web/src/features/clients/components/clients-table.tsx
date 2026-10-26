@@ -1,17 +1,7 @@
 'use client'
 
-import {
-  Badge,
-  Button,
-  Group,
-  Menu,
-  MultiSelect,
-  SegmentedControl,
-  Stack,
-  Text,
-} from '@mantine/core'
+import { Badge, Button, Group, Menu, SegmentedControl, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { notifications } from '@mantine/notifications'
 import { IconAdjustments, IconPlus } from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
@@ -20,7 +10,8 @@ import { LookupOptionsModal } from '@/components/lookup-options-modal'
 import { ClientAccessModal } from '@/features/drive/components/client-access-modal'
 import { EmptyState } from '@/components/empty-state'
 import { RowActionsMenu } from '@/components/row-actions-menu'
-import { SearchField } from '@/components/search-field'
+import { TableToolbar, type FilterControl } from '@/components/table-toolbar'
+import { offerUndo } from '@/lib/undo'
 import {
   CLIENT_LOOKUP_KINDS,
   CLIENT_STATUS_COLORS,
@@ -97,32 +88,38 @@ export function ClientsTable() {
     ...owners.map((owner) => ({ value: owner.id, label: owner.name })),
   ]
 
-  // Undo instead of a confirm dialog: archiving is reversible, so it applies first.
+  // Undo instead of a confirm dialog: archiving is reversible, so it applies first and undo restores.
   function archiveWithUndo(row: ClientRow) {
     archive.mutate(
       { id: row.id, name: row.name },
       {
         onSuccess: () =>
-          notifications.show({
-            message: (
-              <Group gap="sm" justify="space-between" wrap="nowrap">
-                <Text size="sm">Archived {row.name}</Text>
-                <Button
-                  size="compact-sm"
-                  variant="subtle"
-                  onClick={() => restore.mutate({ id: row.id })}
-                >
-                  Undo
-                </Button>
-              </Group>
-            ),
-            autoClose: 10_000,
+          offerUndo({
+            message: `Archived ${row.name}`,
+            undoLabel: 'Undo',
+            onUndo: () => restore.mutate({ id: row.id }),
+            onCommit: () => {},
           }),
       },
     )
   }
 
-  const valuesOf = (kind: ClientLookupKind) => options[kind] ?? []
+  const valuesOf = (kind: ClientLookupKind) =>
+    (options[kind] ?? []).map((value) => ({ value, label: value }))
+
+  // Same query keys as before the drawer, so existing links keep their filters.
+  const filters: FilterControl[] = [
+    { kind: 'multi', key: 'statuses', label: 'Status', options: STATUS_OPTIONS },
+    { kind: 'multi', key: 'ownerIds', label: 'Owner', options: ownerOptions },
+    { kind: 'multi', key: 'types', label: 'Type', options: valuesOf('clientType') },
+    {
+      kind: 'multi',
+      key: 'serviceLines',
+      label: 'Service line',
+      options: valuesOf('clientServiceLine'),
+    },
+    { kind: 'multi', key: 'tags', label: 'Tags', options: valuesOf('clientTag') },
+  ]
 
   const columns: DataTableColumn<ClientRow>[] = [
     {
@@ -153,6 +150,7 @@ export function ClientsTable() {
     {
       key: 'contact',
       header: 'Contact',
+      stackOnPhone: true,
       render: (row) => (
         <Stack gap={0}>
           <Text size="sm">{row.email || '—'}</Text>
@@ -176,6 +174,7 @@ export function ClientsTable() {
     {
       key: 'type',
       header: 'Type',
+      stackOnPhone: true,
       sortable: true,
       render: (row) => (
         <Stack gap={0}>
@@ -189,11 +188,13 @@ export function ClientsTable() {
     {
       key: 'owner',
       header: 'Owner',
+      hideOnPhone: true,
       render: (row) => <Text size="sm">{row.ownerName || 'Unassigned'}</Text>,
     },
     {
       key: 'city',
       header: 'Location',
+      hideOnPhone: true,
       sortable: true,
       render: (row) => (
         <Text size="sm">{[row.city, row.state].filter(Boolean).join(', ') || '—'}</Text>
@@ -231,72 +232,16 @@ export function ClientsTable() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
-        {/* A search landmark: the filter bar is its own region, separate from the table. */}
-        <Group role="search" aria-label="Filter clients" align="flex-end" wrap="wrap" gap="sm">
-          <SearchField
-            label="clients"
-            labelVisible
-            placeholder="Name, contact, email, phone"
-            width={260}
-            initial={query.search}
-            onSearch={(search) => setQuery({ search })}
-          />
-          <MultiSelect
-            label="Status"
-            placeholder={query.statuses.length > 0 ? undefined : 'Any'}
-            data={STATUS_OPTIONS}
-            value={query.statuses}
-            onChange={(statuses) => setQuery({ statuses: statuses as typeof query.statuses })}
-            clearable
-            w={{ base: '100%', sm: 200 }}
-          />
-          <MultiSelect
-            label="Owner"
-            placeholder={query.ownerIds.length > 0 ? undefined : 'Anyone'}
-            data={ownerOptions}
-            value={query.ownerIds}
-            onChange={(ownerIds) => setQuery({ ownerIds })}
-            clearable
-            searchable
-            w={{ base: '100%', sm: 220 }}
-          />
-          <MultiSelect
-            label="Type"
-            placeholder={query.types.length > 0 ? undefined : 'Any'}
-            data={valuesOf('clientType')}
-            value={query.types}
-            onChange={(types) => setQuery({ types })}
-            clearable
-            searchable
-            w={{ base: '100%', sm: 200 }}
-          />
-          <MultiSelect
-            label="Service line"
-            placeholder={query.serviceLines.length > 0 ? undefined : 'Any'}
-            data={valuesOf('clientServiceLine')}
-            value={query.serviceLines}
-            onChange={(serviceLines) => setQuery({ serviceLines })}
-            clearable
-            searchable
-            w={{ base: '100%', sm: 200 }}
-          />
-          <MultiSelect
-            label="Tags"
-            placeholder={query.tags.length > 0 ? undefined : 'Any'}
-            data={valuesOf('clientTag')}
-            value={query.tags}
-            onChange={(tags) => setQuery({ tags })}
-            clearable
-            searchable
-            w={{ base: '100%', sm: 200 }}
-          />
-          <Stack gap={4}>
-            <Text size="sm" fw={500} component="span" id="clients-view-label">
-              View
-            </Text>
+      <TableToolbar
+        label="clients"
+        query={query}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={filters}
+        action={
+          <>
             <SegmentedControl
-              aria-labelledby="clients-view-label"
+              aria-label="Which clients to show"
               value={query.view}
               onChange={(view) => setQuery({ view: view as typeof query.view })}
               data={[
@@ -304,21 +249,22 @@ export function ClientsTable() {
                 { value: 'archived', label: 'Archived' },
               ]}
             />
-          </Stack>
-        </Group>
-        <Group gap="sm">
-          <Button
-            variant="default"
-            leftSection={<IconAdjustments size={16} aria-hidden />}
-            onClick={() => setManaging('clientType')}
-          >
-            Manage options
-          </Button>
+            <Button
+              variant="default"
+              mih={{ base: 44, sm: 0 }}
+              leftSection={<IconAdjustments size={16} aria-hidden />}
+              onClick={() => setManaging('clientType')}
+            >
+              Manage options
+            </Button>
+          </>
+        }
+        primaryAction={
           <Button leftSection={<IconPlus size={16} aria-hidden />} onClick={createModal.open}>
             New client
           </Button>
-        </Group>
-      </Group>
+        }
+      />
 
       <DataTable
         label="Clients"
@@ -332,7 +278,7 @@ export function ClientsTable() {
         // Only a page or filter change keeps a stale page on screen; a plain refetch stays silent.
         isFetching={clients.isPlaceholderData}
         isFiltered={isFilteredClientQuery(query)}
-        minWidth={1120}
+        minWidth={900}
         empty={
           query.view === 'archived' ? (
             <EmptyState
@@ -393,6 +339,7 @@ export function ClientsTable() {
         owners={ownerOptions.slice(1)}
         options={options}
         onManageOptions={setManaging}
+        clientId={editing?.id}
         defaults={editing ? draftOf(editing) : undefined}
         onSave={async (values) => {
           if (!editing) return

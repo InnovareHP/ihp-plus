@@ -43,6 +43,8 @@ import {
 } from '../use-contracts'
 import { DialogActions } from '@/components/dialog-actions'
 import { FieldRow } from '@/components/field-row'
+import touch from '@/components/touch-target.module.css'
+import classes from './contract-form-modal.module.css'
 
 const EMPTY_DRAFT: ContractDraftInput = {
   clientId: '',
@@ -281,8 +283,13 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
           ) : null}
 
           {lines.fields.length > 0 ? (
-            <Table.ScrollContainer minWidth={640}>
-              <Table withTableBorder withColumnBorders verticalSpacing="xs">
+            <Table.ScrollContainer minWidth={0}>
+              <Table
+                className={classes.lines}
+                withTableBorder
+                withColumnBorders
+                verticalSpacing="xs"
+              >
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th scope="col">Service</Table.Th>
@@ -312,6 +319,9 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
                         />
                       </Table.Th>
                       <Table.Td>
+                        <Text span aria-hidden className={classes.cellLabel}>
+                          Agreed price
+                        </Text>
                         <Controller
                           control={control}
                           name={`lines.${index}.unitPriceCents`}
@@ -333,6 +343,9 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
                         />
                       </Table.Td>
                       <Table.Td>
+                        <Text span aria-hidden className={classes.cellLabel}>
+                          Quantity
+                        </Text>
                         <Controller
                           control={control}
                           name={`lines.${index}.quantity`}
@@ -350,14 +363,18 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
                         />
                       </Table.Td>
                       <Table.Td>
+                        <Text span aria-hidden className={classes.cellLabel}>
+                          Line total
+                        </Text>
                         <Text size="sm" fw={500}>
                           {formatCents(lineTotalCents(watchedLines?.[index] ?? field))}
                         </Text>
                       </Table.Td>
-                      <Table.Td>
+                      <Table.Td className={classes.remove}>
                         <ActionIcon
                           variant="subtle"
                           color="red"
+                          className={touch.target}
                           aria-label={`Remove ${watchedLines?.[index]?.name ?? `service ${index + 1}`}`}
                           onClick={() => lines.remove(index)}
                         >
@@ -392,6 +409,7 @@ export function ContractFormModal({ opened, onClose, clientId, contract }: Contr
               <Button
                 variant="subtle"
                 size="compact-xs"
+                className={touch.target}
                 type="button"
                 onClick={() => {
                   termsEdited.current = false

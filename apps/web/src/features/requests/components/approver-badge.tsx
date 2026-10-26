@@ -3,6 +3,7 @@
 import { Badge, Button } from '@mantine/core'
 import { useSetApprover } from '../hooks/use-approvers'
 import type { DepartmentApproversRow } from '../schema'
+import touch from '@/components/touch-target.module.css'
 
 export function ApproverBadge({
   department,
@@ -21,6 +22,7 @@ export function ApproverBadge({
         <Button
           variant="transparent"
           size="compact-xs"
+          className={touch.target}
           color="red"
           px={0}
           aria-label={`Remove ${approver.name} as an approver for ${department.teamName}`}

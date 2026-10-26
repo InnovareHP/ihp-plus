@@ -25,6 +25,10 @@ export interface DataTableColumn<TRow> {
   sortable?: boolean
   width?: number
   align?: 'left' | 'center' | 'right'
+  /** Left out of the phone card, for a detail that only makes the card longer. */
+  hideOnPhone?: boolean
+  /** Long text sits under its label on the phone card instead of squeezed to its right. */
+  stackOnPhone?: boolean
 }
 
 export interface DataTableProps<TRow> {
@@ -202,12 +206,19 @@ function PagedTable<TRow>({
                       {column.render(row)}
                     </Table.Th>
                   ) : (
-                    <Table.Td key={column.key} ta={column.align}>
+                    <Table.Td
+                      key={column.key}
+                      ta={column.align}
+                      data-phone-hidden={column.hideOnPhone || undefined}
+                      data-phone-stack={column.stackOnPhone || undefined}
+                      // A row's actions menu needs no label line; on a phone it moves to the corner.
+                      data-phone-corner={column.key === 'actions' || undefined}
+                    >
                       {/* The table's own header names the cell for a screen reader, so this is visual. */}
                       <span className={classes.cellLabel} aria-hidden>
                         {column.header}
                       </span>
-                      {column.render(row)}
+                      <div className={classes.cellValue}>{column.render(row)}</div>
                     </Table.Td>
                   ),
                 )}

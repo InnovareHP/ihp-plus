@@ -1,6 +1,6 @@
 'use client'
 
-import { Group, TextInput } from '@mantine/core'
+import { SimpleGrid, TextInput } from '@mantine/core'
 
 export interface AttendanceRangeFieldsProps {
   from: string
@@ -11,7 +11,8 @@ export interface AttendanceRangeFieldsProps {
 /** The range every timesheet screen is read through, kept in the URL by its owner. */
 export function AttendanceRangeFields({ from, to, onChange }: AttendanceRangeFieldsProps) {
   return (
-    <Group gap="sm" align="flex-end" wrap="wrap">
+    // Two dates side by side at any width, filling a phone's row instead of sitting at odd sizes.
+    <SimpleGrid cols={2} spacing="sm" w={{ base: '100%', sm: 'auto' }}>
       <TextInput
         type="date"
         label="From"
@@ -26,6 +27,6 @@ export function AttendanceRangeFields({ from, to, onChange }: AttendanceRangeFie
         min={from}
         onChange={(event) => onChange({ to: event.currentTarget.value })}
       />
-    </Group>
+    </SimpleGrid>
   )
 }

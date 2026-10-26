@@ -15,9 +15,12 @@ export function FormCard({ form }: { form: FormRow }) {
           </Text>
         </Stack>
         <Group>
+          {/* Full width at 44 px on a phone so the card's one action is an easy tap. */}
           <LinkButton
             href={newRequestRoute(form.id)}
             size="sm"
+            mih={{ base: 44, sm: 0 }}
+            w={{ base: '100%', sm: 'auto' }}
             leftSection={<IconFilePlus size={16} aria-hidden />}
           >
             Start

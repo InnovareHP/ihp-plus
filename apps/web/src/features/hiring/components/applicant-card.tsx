@@ -1,11 +1,12 @@
 'use client'
 
-import { Anchor, Card, Group, Stack, Text } from '@mantine/core'
-import { IconFileText } from '@tabler/icons-react'
+import { Anchor, Button, Card, Group, Stack, Text } from '@mantine/core'
+import { IconArrowRight, IconFileText } from '@tabler/icons-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import touch from '@/components/touch-target.module.css'
 import { applicationRoute } from '@/lib/routes'
-import { daysSince, type ApplicationSummary } from '../schema'
+import { daysSince, type ApplicationSummary, type Stage } from '../schema'
 
 const dateOnly = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
 
@@ -13,9 +14,12 @@ export interface ApplicantCardProps {
   application: ApplicationSummary
   /** The row's actions menu, supplied by the board. */
   actions: ReactNode
+  /** The stage after this one; without it the card offers no one-tap move. */
+  nextStage?: Stage
+  onAdvance: (stage: Stage) => void
 }
 
-export function ApplicantCard({ application, actions }: ApplicantCardProps) {
+export function ApplicantCard({ application, actions, nextStage, onAdvance }: ApplicantCardProps) {
   const waiting = daysSince(application.stageChangedAt)
 
   return (
@@ -44,6 +48,21 @@ export function ApplicantCard({ application, actions }: ApplicantCardProps) {
         </Stack>
         {actions}
       </Group>
+      {/* The commonest move one tap away, so a phone needs no trip through the menu. */}
+      {nextStage ? (
+        <Button
+          variant="default"
+          size="sm"
+          className={touch.target}
+          mt="xs"
+          fullWidth
+          rightSection={<IconArrowRight size={16} aria-hidden />}
+          aria-label={`Move to ${nextStage.name}: ${application.fullName}`}
+          onClick={() => onAdvance(nextStage)}
+        >
+          Move to {nextStage.name}
+        </Button>
+      ) : null}
     </Card>
   )
 }

@@ -21,7 +21,7 @@ export function TeamMonth({ calendar, countryNames, onOpenDay }: TeamMonthProps)
 
   return (
     <>
-      <Box visibleFrom="sm">
+      <Box visibleFrom="md">
         <MonthGrid
           month={calendar.month}
           today={calendar.today}
@@ -33,7 +33,7 @@ export function TeamMonth({ calendar, countryNames, onOpenDay }: TeamMonthProps)
           }}
         />
       </Box>
-      <Box hiddenFrom="sm">
+      <Box hiddenFrom="md">
         <DayCardList
           today={calendar.today}
           dates={calendar.days

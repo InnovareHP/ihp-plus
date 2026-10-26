@@ -1,6 +1,6 @@
 'use client'
 
-import { Badge, Button, Group, Stack, Text, UnstyledButton } from '@mantine/core'
+import { Badge, Button, Stack, Text, UnstyledButton } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
 import { useDisclosure } from '@mantine/hooks'
 import { useState } from 'react'
@@ -78,6 +78,7 @@ export function ContractsTable({
     {
       key: 'client',
       header: 'Client',
+      stackOnPhone: true,
       render: (row) => <Text size="sm">{row.clientName}</Text>,
     },
     {
@@ -111,6 +112,7 @@ export function ContractsTable({
     {
       key: 'billing',
       header: 'Billing',
+      hideOnPhone: true,
       width: 120,
       render: (row) =>
         row.isBilled ? (
@@ -127,6 +129,7 @@ export function ContractsTable({
     {
       key: 'createdAt',
       header: 'Created',
+      hideOnPhone: true,
       width: 140,
       sortable: true,
       render: (row) => (
@@ -139,20 +142,20 @@ export function ContractsTable({
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
-        <TableToolbar
-          label="contracts"
-          query={query}
-          setQuery={setQuery}
-          clearFilters={clearFilters}
-          filters={FILTERS}
-        />
-        {canManage ? (
-          <Button leftSection={<IconPlus size={16} aria-hidden />} onClick={createModal.open}>
-            New contract
-          </Button>
-        ) : null}
-      </Group>
+      <TableToolbar
+        label="contracts"
+        query={query}
+        setQuery={setQuery}
+        clearFilters={clearFilters}
+        filters={FILTERS}
+        primaryAction={
+          canManage ? (
+            <Button leftSection={<IconPlus size={16} aria-hidden />} onClick={createModal.open}>
+              New contract
+            </Button>
+          ) : undefined
+        }
+      />
 
       <DataTable
         label="Contracts"

@@ -65,6 +65,17 @@ describe('DataTable', () => {
     expect(within(table).getByRole('cell', { name: 'Trenton' })).toHaveTextContent('CityTrenton')
   })
 
+  it('keeps a phone-hidden column in the table for wider screens and screen readers', () => {
+    renderTable({
+      columns: [
+        ...COLUMNS,
+        { key: 'note', header: 'Note', hideOnPhone: true, render: () => 'Met twice' },
+      ],
+    })
+
+    expect(screen.getAllByRole('cell', { name: 'Met twice' })).toHaveLength(2)
+  })
+
   it('shows a skeleton with the table hidden while the data is pending', () => {
     renderTable({ isPending: true, rows: undefined })
 

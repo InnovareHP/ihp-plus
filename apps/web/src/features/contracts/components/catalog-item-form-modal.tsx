@@ -25,6 +25,7 @@ import {
 } from '../schema'
 import { useCreateCatalogItem, useUpdateCatalogItem } from '../use-contracts'
 import { DialogActions } from '@/components/dialog-actions'
+import touch from '@/components/touch-target.module.css'
 
 const UNIT_OPTIONS = CATALOG_UNITS.map((value) => ({
   value,
@@ -132,7 +133,13 @@ export function CatalogItemFormModal({
                 label="Section"
                 placeholder="Choose a section"
                 description={
-                  <Anchor component="button" type="button" size="xs" onClick={onManageSections}>
+                  <Anchor
+                    component="button"
+                    type="button"
+                    size="xs"
+                    className={touch.target}
+                    onClick={onManageSections}
+                  >
                     Manage sections
                   </Anchor>
                 }
@@ -167,7 +174,7 @@ export function CatalogItemFormModal({
             error={errors.description?.message}
           />
 
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
             <Controller
               control={control}
               name="priceMinCents"

@@ -6,7 +6,7 @@ export default function RequestFormsLoading() {
     <PageShell>
       <Stack gap="sm" aria-busy="true">
         <Skeleton height={32} width="14rem" />
-        <Skeleton height={20} width="36rem" />
+        <Skeleton height={20} width="36rem" maw="100%" />
       </Stack>
       <Stack gap="xs">
         <Skeleton height={38} />

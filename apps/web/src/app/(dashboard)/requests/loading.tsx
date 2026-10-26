@@ -6,7 +6,7 @@ export default function RequestsLoading() {
     <PageShell>
       <Stack gap="sm" aria-busy="true">
         <Skeleton height={32} width="10rem" />
-        <Skeleton height={20} width="34rem" />
+        <Skeleton height={20} width="34rem" maw="100%" />
       </Stack>
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
         {[0, 1, 2].map((card) => (

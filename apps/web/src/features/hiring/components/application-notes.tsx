@@ -2,6 +2,7 @@
 
 import { ActionIcon, Card, Group, Stack, Text } from '@mantine/core'
 import { IconTrash } from '@tabler/icons-react'
+import touch from '@/components/touch-target.module.css'
 import { describeMoment } from '@/lib/relative-time'
 import type { ApplicationNote } from '../schema'
 
@@ -42,6 +43,7 @@ export function ApplicationNotes({ notes, onDelete }: ApplicationNotesProps) {
               </Stack>
               {note.isMine && !pending ? (
                 <ActionIcon
+                  className={touch.target}
                   variant="subtle"
                   color="gray"
                   size="lg"

@@ -50,7 +50,7 @@ export default async function SettingsPage() {
         </Group>
       </Card>
 
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
         <Card component="section" padding="lg" aria-labelledby="contact-heading">
           <Title order={2} size="h5" mb="sm" id="contact-heading">
             Contact details
@@ -114,7 +114,8 @@ function Row({ label, value }: { label: string; value: ReactNode }) {
       <Text component="dt" size="sm" c="dimmed" miw={150}>
         {label}
       </Text>
-      <Text component="dd" size="sm" m={0}>
+      {/* An email or a department name has no break point, so it may break anywhere at 320px. */}
+      <Text component="dd" size="sm" m={0} style={{ overflowWrap: 'anywhere' }} miw={0}>
         {value}
       </Text>
     </Group>

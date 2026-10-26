@@ -13,6 +13,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { IconArrowDown, IconArrowUp, IconMail, IconPlus, IconTrash } from '@tabler/icons-react'
+import touch from '@/components/touch-target.module.css'
 import { ENTRY_STAGE_ID, MAX_STAGES, type StageInput } from '../schema'
 
 export interface StageErrors {
@@ -105,6 +106,7 @@ export function StageListEditor({
                     {isEntry ? null : (
                       <Group gap={4} wrap="nowrap">
                         <ActionIcon
+                          className={touch.target}
                           variant="subtle"
                           color="gray"
                           size="lg"
@@ -116,6 +118,7 @@ export function StageListEditor({
                           <IconArrowUp size={16} aria-hidden />
                         </ActionIcon>
                         <ActionIcon
+                          className={touch.target}
                           variant="subtle"
                           color="gray"
                           size="lg"
@@ -126,6 +129,7 @@ export function StageListEditor({
                           <IconArrowDown size={16} aria-hidden />
                         </ActionIcon>
                         <ActionIcon
+                          className={touch.target}
                           variant="subtle"
                           color="red"
                           size="lg"

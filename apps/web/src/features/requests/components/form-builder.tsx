@@ -5,7 +5,6 @@ import {
   Alert,
   Badge,
   Button,
-  Group,
   MultiSelect,
   NumberInput,
   Stack,
@@ -17,6 +16,7 @@ import {
 import { IconPlus } from '@tabler/icons-react'
 import { useRouter } from 'next/navigation'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
+import actionRow from '@/components/action-row.module.css'
 import { FormError } from '@/components/form-error'
 import { PageSection } from '@/components/page-section'
 import { EmptyState } from '@/components/empty-state'
@@ -374,7 +374,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
           </Alert>
         ) : null}
 
-        <Group>
+        <div className={actionRow.row}>
           <Button type="submit" loading={isSubmitting} disabled={!isDirty && Boolean(form)}>
             {isSubmitting ? 'Saving…' : 'Save draft'}
           </Button>
@@ -385,7 +385,7 @@ export function FormBuilder({ form, kind = 'request' }: FormBuilderProps) {
           >
             {form?.status === 'published' ? 'Save and republish' : 'Publish'}
           </Button>
-        </Group>
+        </div>
       </Stack>
     </form>
   )

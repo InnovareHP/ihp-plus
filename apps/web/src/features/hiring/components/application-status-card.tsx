@@ -15,6 +15,7 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { DialogActions } from '@/components/dialog-actions'
 import { careersPostingRoute, routes } from '@/lib/routes'
 import { useWithdrawApplication } from '../hooks/use-apply'
 import {
@@ -115,14 +116,14 @@ export function ApplicationStatusCard({ application, signature }: ApplicationSta
               {withdraw.error.message}
             </Alert>
           ) : null}
-          <Group justify="flex-end">
+          <DialogActions>
             <Button variant="default" onClick={confirm.close}>
               Keep my application
             </Button>
             <Button color="red" loading={withdraw.isPending} onClick={onWithdraw}>
               {withdraw.isPending ? 'Withdrawing…' : 'Withdraw application'}
             </Button>
-          </Group>
+          </DialogActions>
         </Stack>
       </Modal>
     </Paper>

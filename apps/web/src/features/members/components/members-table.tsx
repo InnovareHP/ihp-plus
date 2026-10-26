@@ -1,6 +1,7 @@
 'use client'
 
 import { Badge, Button, Group, Select, Stack, Text } from '@mantine/core'
+import { useState } from 'react'
 import { useImpersonate } from '@/features/auth/hooks/use-impersonation'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { MemberPaySelect } from '@/features/attendance/components/member-pay-select'
@@ -17,7 +18,9 @@ import {
   type MemberSortKey,
 } from '../schema'
 import { useMemberQuery } from '../hooks/use-member-query'
+import { EmploymentStatusSelect } from './employment-status-select'
 import { MemberActionsMenu } from './member-actions-menu'
+import { MemberWorkDetailsModal } from './member-work-details-modal'
 import {
   useMembers,
   useSetBanned,
@@ -26,7 +29,11 @@ import {
   useSetPortalRole,
 } from '../hooks/use-members'
 
-const ORGANIZATION_OPTIONS = ORGANIZATION_ROLES.map((role) => ({ value: role, label: role }))
+// Sentence case to match the portal roles beside it; the stored value stays lower case.
+const ORGANIZATION_OPTIONS = ORGANIZATION_ROLES.map((role) => ({
+  value: role,
+  label: role.charAt(0).toUpperCase() + role.slice(1),
+}))
 const PORTAL_OPTIONS = PORTAL_ROLES.map((role) => ({
   value: role,
   label: PORTAL_ROLE_LABELS[role],
@@ -91,6 +98,8 @@ export function MembersTable({ canImpersonate = false }: { canImpersonate?: bool
   const portalRole = useSetPortalRole()
   const banned = useSetBanned()
   const impersonate = useImpersonate()
+  // Whose shift, pay and status are open on a phone is a disclosure nothing else reads.
+  const [editing, setEditing] = useState<MemberRow | null>(null)
 
   // The column key is the server's sort key, so a header click needs no translation table.
   const columns: DataTableColumn<MemberRow>[] = [
@@ -125,31 +134,26 @@ export function MembersTable({ canImpersonate = false }: { canImpersonate?: bool
     {
       key: 'shift',
       header: 'Shift',
+      hideOnPhone: true,
       render: (row) => <MemberShiftSelect userId={row.userId} userName={row.name} />,
     },
     {
       key: 'pay',
       header: 'Pay',
+      hideOnPhone: true,
       render: (row) => <MemberPaySelect userId={row.userId} userName={row.name} />,
     },
     {
       key: 'employmentStatus',
       header: 'Employment status',
+      hideOnPhone: true,
       render: (row) => (
-        <Select
-          aria-label={`Employment status for ${row.name}`}
-          // A retired status the person still holds is seeded in, so the row shows what is saved.
-          data={
-            row.employmentStatus && !statuses.includes(row.employmentStatus)
-              ? [row.employmentStatus, ...statuses]
-              : statuses
-          }
-          value={row.employmentStatus ?? null}
-          placeholder="Not set"
-          size="sm"
-          w={150}
+        <EmploymentStatusSelect
+          userName={row.name}
+          value={row.employmentStatus}
+          statuses={statuses}
           onChange={(value) =>
-            employmentStatus.mutate({ userId: row.userId, employmentStatus: value ?? '' })
+            employmentStatus.mutate({ userId: row.userId, employmentStatus: value })
           }
         />
       ),
@@ -165,7 +169,7 @@ export function MembersTable({ canImpersonate = false }: { canImpersonate?: bool
           value={row.organizationRole}
           allowDeselect={false}
           size="sm"
-          w={130}
+          w={{ base: '100%', sm: 130 }}
           onChange={(value) =>
             value &&
             organizationRole.mutate({
@@ -188,7 +192,7 @@ export function MembersTable({ canImpersonate = false }: { canImpersonate?: bool
           value={row.portalRole}
           allowDeselect={false}
           size="sm"
-          w={120}
+          w={{ base: '100%', sm: 120 }}
           onChange={(value) =>
             value &&
             portalRole.mutate({
@@ -222,6 +226,7 @@ export function MembersTable({ canImpersonate = false }: { canImpersonate?: bool
           isSigningIn={impersonate.isPending && impersonate.variables === row.userId}
           onToggleBanned={() => banned.mutate({ userId: row.userId, banned: !row.banned })}
           onSignInAs={() => impersonate.mutate(row.userId)}
+          onEditWorkDetails={() => setEditing(row)}
         />
       ),
     },
@@ -267,6 +272,24 @@ export function MembersTable({ canImpersonate = false }: { canImpersonate?: bool
           setQuery({ sortBy: key as MemberSortKey, sortDirection: direction })
         }
       />
+
+      {editing ? (
+        <MemberWorkDetailsModal
+          opened
+          onClose={() => setEditing(null)}
+          userId={editing.userId}
+          userName={editing.name}
+          // Read from the live rows, so the status shown follows a change made in the dialog.
+          employmentStatus={
+            members.data?.rows.find((row) => row.userId === editing.userId)?.employmentStatus ??
+            editing.employmentStatus
+          }
+          statuses={statuses}
+          onEmploymentStatusChange={(value) =>
+            employmentStatus.mutate({ userId: editing.userId, employmentStatus: value })
+          }
+        />
+      ) : null}
     </Stack>
   )
 }

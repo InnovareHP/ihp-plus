@@ -4,6 +4,7 @@ import { NavLink } from '@mantine/core'
 import Link from 'next/link'
 import type { Icon } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
+import classes from './nav-link.module.css'
 
 export interface NavItemLinkProps {
   href: string
@@ -35,6 +36,7 @@ export function NavItemLink({
       leftSection={ItemIcon ? <ItemIcon size={18} stroke={1.6} aria-hidden /> : undefined}
       rightSection={badge}
       active={active}
+      classNames={{ root: classes.root, label: classes.label }}
       aria-current={active ? 'page' : undefined}
       onClick={onNavigate}
     />

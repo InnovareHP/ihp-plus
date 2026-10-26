@@ -138,10 +138,15 @@ describe('DirectoryGrid', () => {
   })
 
   it('offers a retry when the directory cannot load', async () => {
-    rpc.listPeople.mockRejectedValue(new Error('You lost connection.'))
+    rpc.listPeople.mockRejectedValue(new Error('fetch failed: ECONNRESET'))
     render(<DirectoryGrid />)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('You lost connection.')
+    const alert = await screen.findByRole('alert')
+    // The cause is said in plain words, never the transport's raw message.
+    expect(alert).toHaveTextContent(
+      'Could not load the directory — check your connection and try again.',
+    )
+    expect(alert).not.toHaveTextContent('ECONNRESET')
     await user().click(screen.getByRole('button', { name: 'Try again' }))
     await waitFor(() => expect(rpc.listPeople.mock.calls.length).toBeGreaterThan(1))
   })

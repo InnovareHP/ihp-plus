@@ -6,8 +6,9 @@ export default function OrgChartLoading() {
   return (
     <PageShell>
       <Stack gap="sm" aria-busy="true">
-        <Skeleton height={32} width="12rem" />
-        <Skeleton height={20} width="24rem" />
+        <Skeleton height={16} width="10rem" maw="100%" />
+        <Skeleton height={32} width="12rem" maw="100%" />
+        <Skeleton height={20} width="24rem" maw="100%" />
       </Stack>
       <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="md">
         {[0, 1, 2, 3, 4, 5].map((card) => (

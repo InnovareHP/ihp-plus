@@ -1,6 +1,7 @@
 'use client'
 
-import { SegmentedControl, Stack, Tabs } from '@mantine/core'
+import { SegmentedControl, Stack, Tabs, useMatches } from '@mantine/core'
+import { ScrollingTabsList } from '@/components/scrolling-tabs-list'
 import { z } from 'zod'
 import { searchParamsParser, useUrlQuery } from '@/lib/url-query'
 import { usePosting } from '../hooks/use-postings'
@@ -35,6 +36,8 @@ export function PostingWorkspace({
   const { query, setQuery } = useUrlQuery(parseWorkspaceQuery, DEFAULT_WORKSPACE_QUERY)
   // Seeded from the server render, then kept fresh by the same cache the editor writes to.
   const current = usePosting(posting.id, posting).data ?? posting
+  // A bigger toggle on a phone, where it is tapped rather than clicked.
+  const toggleSize = useMatches({ base: 'md', sm: 'sm' })
 
   return (
     <Tabs
@@ -42,14 +45,15 @@ export function PostingWorkspace({
       onChange={(value) => setQuery({ tab: value === 'details' ? 'details' : 'pipeline' })}
       keepMounted={false}
     >
-      <Tabs.List mb="lg">
+      <ScrollingTabsList mb="lg">
         <Tabs.Tab value="pipeline">Pipeline ({current.activeCount})</Tabs.Tab>
         <Tabs.Tab value="details">Posting details</Tabs.Tab>
-      </Tabs.List>
+      </ScrollingTabsList>
 
       <Tabs.Panel value="pipeline">
         <Stack gap="md">
           <SegmentedControl
+            size={toggleSize}
             w="fit-content"
             aria-label="How to show the applicants"
             value={query.view}

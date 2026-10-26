@@ -1,0 +1,18 @@
+/* Below sm the description goes, so service, price and actions fit a phone without a side scroll. */
+.table {
+  @media (min-width: $mantine-breakpoint-sm) {
+    min-width: 640px;
+  }
+}
+
+.description {
+  @media (max-width: $mantine-breakpoint-sm) {
+    display: none;
+  }
+}
+
+.price {
+  @media (min-width: $mantine-breakpoint-sm) {
+    width: 220px;
+  }
+}

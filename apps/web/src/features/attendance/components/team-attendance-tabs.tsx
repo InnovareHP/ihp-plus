@@ -1,6 +1,7 @@
 'use client'
 
 import { Badge, Tabs } from '@mantine/core'
+import { ScrollingTabsList } from '@/components/scrolling-tabs-list'
 import {
   IconCalendarMonth,
   IconCalendarTime,
@@ -66,7 +67,7 @@ export function TeamAttendanceTabs() {
 
   return (
     <Tabs value={tab} onChange={openTab} keepMounted={false}>
-      <Tabs.List mb="lg">
+      <ScrollingTabsList mb="lg">
         {TABS.map((entry) => (
           <Tabs.Tab
             key={entry.value}
@@ -88,7 +89,7 @@ export function TeamAttendanceTabs() {
             {entry.label}
           </Tabs.Tab>
         ))}
-      </Tabs.List>
+      </ScrollingTabsList>
 
       {/* keepMounted={false}: an unopened tab must not run its queries. */}
       <Tabs.Panel value="today">

@@ -30,10 +30,17 @@ export function FormAnswers({
     <Stack component="dl" gap="sm" m={0}>
       {fields.map((field) => (
         <Group key={field.id} gap="md" align="baseline" wrap="wrap">
-          <Text component="dt" size="sm" c="dimmed" miw={180}>
+          {/* On a phone the label sits above the answer, and a long answer wraps. */}
+          <Text component="dt" size="sm" c="dimmed" miw={{ base: '100%', sm: 180 }}>
             {field.label}
           </Text>
-          <Text component="dd" size="sm" m={0} style={{ whiteSpace: 'pre-wrap' }}>
+          <Text
+            component="dd"
+            size="sm"
+            m={0}
+            miw={0}
+            style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+          >
             {field.type === 'file' && fileHref && values[field.id] ? (
               <Anchor href={fileHref(field.id)} target="_blank" rel="noopener" size="sm">
                 {String(values[field.id])}

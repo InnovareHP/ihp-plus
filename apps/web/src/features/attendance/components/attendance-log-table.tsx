@@ -75,6 +75,7 @@ export function AttendanceLogTable({
       key: 'break',
       header: 'Breaks',
       align: 'right',
+      hideOnPhone: true,
       render: (day) => formatHours(day.breakSeconds),
     },
     {
@@ -100,6 +101,7 @@ export function AttendanceLogTable({
     {
       key: 'selfies',
       header: 'Photos',
+      hideOnPhone: true,
       render: (day) => <SelfieLinks day={day} />,
     },
     ...(actions

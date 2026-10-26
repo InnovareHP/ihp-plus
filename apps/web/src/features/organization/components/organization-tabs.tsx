@@ -1,6 +1,7 @@
 'use client'
 
 import { Tabs } from '@mantine/core'
+import { ScrollingTabsList } from '@/components/scrolling-tabs-list'
 import {
   IconBuilding,
   IconChecklist,
@@ -76,13 +77,13 @@ export function OrganizationTabs({
 
   return (
     <Tabs value={tab} onChange={openTab} keepMounted={false}>
-      <Tabs.List mb="lg">
+      <ScrollingTabsList mb="lg">
         {TABS.map((entry) => (
           <Tabs.Tab key={entry.value} value={entry.value} leftSection={entry.icon}>
             {entry.label}
           </Tabs.Tab>
         ))}
-      </Tabs.List>
+      </ScrollingTabsList>
 
       {/* keepMounted={false}: an unopened tab must not run its queries. */}
       <Tabs.Panel value="overview">

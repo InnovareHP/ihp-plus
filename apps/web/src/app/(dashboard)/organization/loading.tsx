@@ -17,7 +17,7 @@ export default function OrganizationLoading() {
       <Card padding="lg">
         <Stack gap="md">
           <Skeleton height={24} width="12rem" />
-          <Skeleton height={60} />
+          <Skeleton height={76} />
           <Skeleton height={76} />
           <Skeleton height={76} />
         </Stack>

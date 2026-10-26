@@ -36,6 +36,7 @@ import { spreadAcrossDays, suggestionWindow } from '../utils/interview-time'
 import { FreeTimeSuggestions } from './free-time-suggestions'
 import { DialogActions } from '@/components/dialog-actions'
 import { FieldRow } from '@/components/field-row'
+import touch from '@/components/touch-target.module.css'
 
 // How many free times the form fills in by itself, each on a different day.
 const AUTO_SLOTS = 3
@@ -265,32 +266,33 @@ export function ScheduleInterviewModal({
                 </Text>
               ) : null}
               {slots.fields.map((slot, index) => (
+                // On a phone the day and time stack, and the bin meets the time input's foot.
                 <Group key={slot.id} align="flex-end" gap="sm" wrap="nowrap">
-                  <TextInput
-                    {...register(`slots.${index}.date`)}
-                    type="date"
-                    label={`Day, option ${index + 1}`}
-                    required
-                    aria-required="true"
-                    error={errors.slots?.[index]?.date?.message}
-                    errorProps={{ role: 'alert' }}
-                    flex={1}
-                  />
-                  <TextInput
-                    {...register(`slots.${index}.time`)}
-                    type="time"
-                    label={`Time, option ${index + 1}`}
-                    required
-                    aria-required="true"
-                    error={errors.slots?.[index]?.time?.message}
-                    errorProps={{ role: 'alert' }}
-                    flex={1}
-                  />
+                  <FieldRow flex={1} miw={0}>
+                    <TextInput
+                      {...register(`slots.${index}.date`)}
+                      type="date"
+                      label={`Day, option ${index + 1}`}
+                      required
+                      aria-required="true"
+                      error={errors.slots?.[index]?.date?.message}
+                      errorProps={{ role: 'alert' }}
+                    />
+                    <TextInput
+                      {...register(`slots.${index}.time`)}
+                      type="time"
+                      label={`Time, option ${index + 1}`}
+                      required
+                      aria-required="true"
+                      error={errors.slots?.[index]?.time?.message}
+                      errorProps={{ role: 'alert' }}
+                    />
+                  </FieldRow>
                   <ActionIcon
+                    className={touch.target}
                     variant="subtle"
                     color="gray"
                     size="lg"
-                    mb={4}
                     aria-label={`Remove option ${index + 1}`}
                     disabled={slots.fields.length === 1}
                     onClick={() => slots.remove(index)}
@@ -301,7 +303,8 @@ export function ScheduleInterviewModal({
               ))}
               <Button
                 variant="default"
-                size="compact-sm"
+                size="sm"
+                className={touch.target}
                 w="fit-content"
                 leftSection={<IconPlus size={14} aria-hidden />}
                 disabled={slots.fields.length >= MAX_INTERVIEW_SLOTS}

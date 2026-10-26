@@ -29,7 +29,7 @@ export function TeamCalendarPanel() {
   const personName = people.data?.schedules.find((one) => one.userId === userId)?.userName
 
   return (
-    <Card padding="lg" component="section" aria-labelledby="team-calendar-heading">
+    <Card p={{ base: 'md', sm: 'lg' }} component="section" aria-labelledby="team-calendar-heading">
       <Stack gap="md">
         <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
           <Stack gap={2}>
@@ -42,13 +42,13 @@ export function TeamCalendarPanel() {
                 : 'Everyone at once. Pick a day to see who was in, absent or on leave.'}
             </Text>
           </Stack>
-          <Group gap="sm" align="flex-end" wrap="wrap">
+          <Group gap="sm" align="flex-end" wrap="wrap" w={{ base: '100%', sm: 'auto' }}>
             <Select
               label="Employee"
               placeholder="Everyone"
               clearable
               searchable
-              w={220}
+              w={{ base: '100%', sm: 220 }}
               value={userId || null}
               data={(people.data?.schedules ?? []).map((one) => ({
                 value: one.userId,

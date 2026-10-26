@@ -5,6 +5,7 @@ import { IconChevronDown } from '@tabler/icons-react'
 import { useId, useState } from 'react'
 import { isGroupOpen, isNavItemActive, type NavItem } from '@/lib/navigation'
 import { NavItemLink } from './nav-item-link'
+import classes from './nav-link.module.css'
 
 export interface NavGroupProps {
   item: NavItem
@@ -25,6 +26,7 @@ export function NavGroup({ item, pathname, onNavigate }: NavGroupProps) {
       <NavLink
         component="button"
         type="button"
+        classNames={{ root: classes.root, label: classes.label }}
         label={item.label}
         title={item.description}
         leftSection={<item.icon size={18} stroke={1.6} aria-hidden />}
