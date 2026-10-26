@@ -216,6 +216,29 @@ describe('shareClientFolder', () => {
     expect(graph.shareItem).toHaveBeenCalled()
   })
 
+  it('shares straight to a tenant member, whom Entra will not invite as a guest', async () => {
+    graph.inviteGuest.mockRejectedValueOnce(
+      new TestGraphError(
+        400,
+        'BadRequest',
+        "This user cannot be invited because the domain of the user's email address is a verified domain of this directory.",
+      ),
+    )
+
+    const result = await shareClientFolder({ clientId: CLIENT_ID, email: 'staff@innovarehp.com' })
+
+    expect(graph.shareItem).toHaveBeenCalledWith(
+      'client-drive',
+      'folder-1',
+      ['staff@innovarehp.com'],
+      'read',
+    )
+    expect(service.saveGuest).toHaveBeenCalledWith(
+      expect.objectContaining({ invitedUserId: undefined }),
+    )
+    expect(result).toMatchObject({ ok: true })
+  })
+
   it('reuses the folder already recorded for the client', async () => {
     service.clientDriveFolder.mockResolvedValue({
       driveId: 'client-drive',

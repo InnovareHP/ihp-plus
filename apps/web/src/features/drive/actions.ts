@@ -150,6 +150,28 @@ async function folderFor(organizationId: string, client: { id: string; name: str
   })
 }
 
+/** The B2B guest id, or undefined for a tenant member — Entra refuses to invite its own domains. */
+async function guestIdFor(person: { email: string; name: string | undefined }) {
+  try {
+    const invitation = await inviteGuest(
+      person.email,
+      person.name ?? person.email,
+      inviteRedirectUrl(process.env.GRAPH_INVITE_REDIRECT_URL ?? portalUrl(routes.dashboard)),
+    )
+    return invitation.invitedUser?.id
+  } catch (error) {
+    // shortcut: matches Graph's message text since the code is a bare BadRequest; recheck if Graph rewords it.
+    if (
+      error instanceof GraphError &&
+      error.status === 400 &&
+      /verified domain/i.test(error.message)
+    ) {
+      return undefined
+    }
+    throw error
+  }
+}
+
 type Grant =
   | { ok: true; invitedUserId: string | undefined; permissionId: string | undefined; url: string }
   | { ok: false; message: string }
@@ -177,15 +199,7 @@ async function grantFolder(
     }
   }
 
-  const invitedUserId =
-    person.invitedUserId ??
-    (
-      await inviteGuest(
-        person.email,
-        person.name ?? person.email,
-        inviteRedirectUrl(process.env.GRAPH_INVITE_REDIRECT_URL ?? portalUrl(routes.dashboard)),
-      )
-    ).invitedUser?.id
+  const invitedUserId = person.invitedUserId ?? (await guestIdFor(person))
 
   const shared = await shareItem(folder.driveId, folder.itemId, [person.email], 'read')
   const failure = shared.failed[0]
