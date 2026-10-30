@@ -8,7 +8,7 @@ import {
   type PDFImage,
   type PDFPage,
 } from 'pdf-lib'
-import { LETTERHEAD_ARTWORK } from '@/features/letterhead/utils/letterhead-artwork'
+import { INNOVARE_ARTWORK } from '@/features/letterhead/utils/letterhead-artwork-innovare'
 import type { BillingStatementValues } from '../schema'
 import {
   formatStatementDate,
@@ -102,8 +102,8 @@ interface Kit {
 
 /** Draws top to bottom, starting a fresh letterhead page whenever the next block would not fit. */
 function writer(document: PDFDocument, kit: Kit) {
-  const headerHeight = (WIDTH * LETTERHEAD_ARTWORK.header.height) / LETTERHEAD_ARTWORK.header.width
-  const footerHeight = (WIDTH * LETTERHEAD_ARTWORK.footer.height) / LETTERHEAD_ARTWORK.footer.width
+  const headerHeight = (WIDTH * INNOVARE_ARTWORK.header.height) / INNOVARE_ARTWORK.header.width
+  const footerHeight = (WIDTH * INNOVARE_ARTWORK.footer.height) / INNOVARE_ARTWORK.footer.width
   const top = HEIGHT - headerHeight - GAP
   const bottom = footerHeight + GAP
   const contentWidth = WIDTH - 2 * MARGIN
@@ -238,8 +238,8 @@ export async function billingStatementPdf(
   const kit: Kit = {
     regular: await document.embedFont(StandardFonts.Helvetica),
     bold: await document.embedFont(StandardFonts.HelveticaBold),
-    header: await document.embedPng(LETTERHEAD_ARTWORK.header.base64),
-    footer: await document.embedPng(LETTERHEAD_ARTWORK.footer.base64),
+    header: await document.embedPng(INNOVARE_ARTWORK.header.base64),
+    footer: await document.embedPng(INNOVARE_ARTWORK.footer.base64),
   }
   const draw = writer(document, kit)
   const totals = statementTotals(values)

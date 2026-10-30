@@ -128,15 +128,15 @@ describe('billingStatementHtml', () => {
     expect(html).toContain('&lt;script&gt;x&lt;/script&gt;')
   })
 
-  it('prints on the official letterhead, its bands kept clear of the text', async () => {
+  it('prints on the Innovare HP letterhead, its bands kept clear of the text', async () => {
     const letterhead = await loadStatementLetterhead()
     const html = billingStatementHtml(VALUES, { from: '2026-09-01', to: '2026-09-30' }, letterhead)
 
     expect(letterhead.header.src).toMatch(/^data:image\/png;base64,iVBOR/)
     expect(html).toContain(`<img class="band band-top" src="${letterhead.header.src}" alt="">`)
     expect(html).toContain(`<img class="band band-bottom" src="${letterhead.footer.src}" alt="">`)
-    // 8.5in × 228/1545, the header band's height at the page's width.
-    expect(html).toContain('height: calc(1.254in + 0.35in)')
+    // 8.5in × 248/1545, the header band's height at the page's width.
+    expect(html).toContain('height: calc(1.364in + 0.35in)')
   })
 
   it('leaves the letterhead off when none is given', () => {

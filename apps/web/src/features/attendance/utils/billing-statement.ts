@@ -100,7 +100,7 @@ function row(label: string, value: string, strong = false) {
   return `<tr><${cell} scope="row">${escapeHtml(label)}</${cell}><${cell} class="num">${escapeHtml(value)}</${cell}></tr>`
 }
 
-/** The official letterhead's header band and footer strip, as image sources and their proportions. */
+/** The Innovare HP letterhead's header band and footer strip, as image sources and their proportions. */
 export interface StatementLetterhead {
   header: { src: string; width: number; height: number }
   footer: { src: string; width: number; height: number }
@@ -108,13 +108,14 @@ export interface StatementLetterhead {
 
 // Loaded on print only, so the art does not ride in the time clock's bundle.
 export async function loadStatementLetterhead(): Promise<StatementLetterhead> {
-  const { LETTERHEAD_ARTWORK } = await import('@/features/letterhead/utils/letterhead-artwork')
-  const art = (part: typeof LETTERHEAD_ARTWORK.header) => ({
+  const { INNOVARE_ARTWORK } =
+    await import('@/features/letterhead/utils/letterhead-artwork-innovare')
+  const art = (part: typeof INNOVARE_ARTWORK.header) => ({
     src: `data:image/png;base64,${part.base64}`,
     width: part.width,
     height: part.height,
   })
-  return { header: art(LETTERHEAD_ARTWORK.header), footer: art(LETTERHEAD_ARTWORK.footer) }
+  return { header: art(INNOVARE_ARTWORK.header), footer: art(INNOVARE_ARTWORK.footer) }
 }
 
 // US Letter, which is the page the letterhead's Word original is set on.
