@@ -30,6 +30,20 @@ export class SnapshotUnavailableError extends Error {
   }
 }
 
+// Must match the installed @sparticuz/chromium version, since the pack is that release's browser.
+export const CHROMIUM_PACK_URL =
+  'https://github.com/Sparticuz/chromium/releases/download/v153.0.0/chromium-v153.0.0-pack.x64.tar'
+
+/** The bundled browser, or the same build downloaded when the host left the bundled files behind. */
+export async function chromiumExecutable() {
+  try {
+    return await chromium.executablePath()
+  } catch (error) {
+    console.warn('[websites] bundled Chromium missing, downloading it instead', error)
+    return chromium.executablePath(process.env.SNAPSHOT_CHROMIUM_PACK_URL || CHROMIUM_PACK_URL)
+  }
+}
+
 async function launchBrowser(): Promise<Browser> {
   const localChrome = process.env.SNAPSHOT_CHROME_PATH
   if (localChrome) {
@@ -43,7 +57,7 @@ async function launchBrowser(): Promise<Browser> {
   // The bundled Chromium is a Linux build for serverless hosts; anywhere else needs a local one.
   if (process.platform !== 'linux') throw new SnapshotUnavailableError()
   return puppeteer.launch({
-    executablePath: await chromium.executablePath(),
+    executablePath: await chromiumExecutable(),
     args: await puppeteer.defaultArgs({
       args: [...chromium.args, ...LOCKDOWN_ARGS],
       headless: 'shell',
