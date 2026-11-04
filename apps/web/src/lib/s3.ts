@@ -1,6 +1,8 @@
 import {
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
@@ -92,11 +94,50 @@ export async function deleteObject(key: string) {
   await client.send(new DeleteObjectCommand({ Bucket: config.bucket, Key: key }))
 }
 
+// S3 takes at most 1,000 keys per delete request.
+const DELETE_BATCH = 1000
+
+export async function deleteObjects(keys: readonly string[]) {
+  if (keys.length === 0) return
+  const { client, config } = connect()
+  for (let start = 0; start < keys.length; start += DELETE_BATCH) {
+    const batch = keys.slice(start, start + DELETE_BATCH)
+    await client.send(
+      new DeleteObjectsCommand({
+        Bucket: config.bucket,
+        Delete: { Objects: batch.map((Key) => ({ Key })), Quiet: true },
+      }),
+    )
+  }
+}
+
 export async function objectUrl(key: string) {
   const { publicClient, config } = connect()
   return getSignedUrl(publicClient, new GetObjectCommand({ Bucket: config.bucket, Key: key }), {
     expiresIn: READ_URL_TTL_SECONDS,
   })
+}
+
+export interface ListedObject {
+  key: string
+  lastModified: Date | undefined
+}
+
+/** Every key under a prefix, following S3's 1,000-key pages. */
+export async function listObjects(prefix: string): Promise<ListedObject[]> {
+  const { client, config } = connect()
+  const listed: ListedObject[] = []
+  let token: string | undefined
+  do {
+    const page = await client.send(
+      new ListObjectsV2Command({ Bucket: config.bucket, Prefix: prefix, ContinuationToken: token }),
+    )
+    for (const item of page.Contents ?? []) {
+      if (item.Key) listed.push({ key: item.Key, lastModified: item.LastModified })
+    }
+    token = page.IsTruncated ? page.NextContinuationToken : undefined
+  } while (token)
+  return listed
 }
 
 export interface StoredObject {

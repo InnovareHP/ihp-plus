@@ -34,12 +34,21 @@ const LEAD = {
 const access = vi.hoisted(() => ({ websitesAccess: vi.fn() }))
 const service = vi.hoisted(() => ({
   timeZoneOf: vi.fn(async () => 'UTC'),
-  runRoundFor: vi.fn(async () => ({ today: new Date().toISOString().slice(0, 10), checked: 1 })),
+  runRoundFor: vi.fn(async () => ({
+    today: new Date().toISOString().slice(0, 10),
+    checked: 1,
+    websiteIds: ['site-1'],
+  })),
+  queueSnapshots: vi.fn(async () => undefined),
+  snapshotsOf: vi.fn(async () => new Map()),
+  snapshotsEnabled: vi.fn(() => true),
 }))
+const server = vi.hoisted(() => ({ after: vi.fn((task: () => unknown) => task()) }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./access', () => access)
 vi.mock('./service', () => service)
+vi.mock('next/server', () => server)
 
 const { createWebsite, exportMonth, loadChecklist, recordCheck, runRound, saveItTeam } =
   await import('./actions')
@@ -96,10 +105,16 @@ describe('runRound', () => {
       'clock_in',
       { websiteId: undefined },
     )
+    expect(service.queueSnapshots).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      dateKey: today,
+      round: 'clock_in',
+      websiteIds: ['site-1'],
+    })
   })
 
   it('says so when the one site asked for is gone', async () => {
-    service.runRoundFor.mockResolvedValueOnce({ today, checked: 0 })
+    service.runRoundFor.mockResolvedValueOnce({ today, checked: 0, websiteIds: [] })
 
     expect(await runRound({ round: 'clock_out', websiteId: 'gone' })).toEqual({
       ok: false,

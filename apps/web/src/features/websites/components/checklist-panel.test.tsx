@@ -47,11 +47,12 @@ const SITE = {
       checkedAt: '2026-10-08T01:02:00.000Z',
     },
   },
+  snapshots: {},
 }
 
-const checklist = (websites: unknown[], date = TODAY) => ({
+const checklist = (websites: unknown[], date = TODAY, snapshotsEnabled = true) => ({
   ok: true,
-  data: { date, today: TODAY, timeZone: 'UTC', websites },
+  data: { date, today: TODAY, timeZone: 'UTC', snapshotsEnabled, websites },
 })
 
 beforeEach(() => {
@@ -80,6 +81,21 @@ describe('ChecklistPanel', () => {
     expect(actions.runRound).toHaveBeenCalledWith({ round: 'clock_out' })
 
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('leaves out the snapshot area entirely where pictures are not set up', async () => {
+    actions.loadChecklist.mockResolvedValue(checklist([SITE], TODAY, false))
+    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+
+    await screen.findByRole('heading', { name: 'Riverside site' })
+    expect(screen.queryByText(/Taking snapshot/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/No snapshot for this check/)).not.toBeInTheDocument()
+  })
+
+  it('says a check has no picture once pictures are set up', async () => {
+    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+
+    expect(await screen.findByText(/No snapshot for this check/)).toBeInTheDocument()
   })
 
   it('gives an IT member the list to read, without the controls', async () => {

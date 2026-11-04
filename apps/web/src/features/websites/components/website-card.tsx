@@ -19,6 +19,10 @@ import { RoundCheck } from './round-check'
 export interface WebsiteCardProps {
   website: WebsiteRow
   timeZone: string
+  /** Today's list with pictures switched on; otherwise no snapshot area at all. */
+  showSnapshots: boolean
+  /** When the list was last read; pictures still on their way are judged against it. */
+  now: number
   canCheck: boolean
   canManage: boolean
   /** Which round of this site is being re-read right now, if any. */
@@ -32,6 +36,8 @@ export interface WebsiteCardProps {
 export function WebsiteCard({
   website,
   timeZone,
+  showSnapshots,
+  now,
   canCheck,
   canManage,
   checkingRound,
@@ -83,8 +89,12 @@ export function WebsiteCard({
             key={round}
             round={round}
             check={website.checks[round]}
+            websiteId={website.id}
             websiteName={website.name}
             timeZone={timeZone}
+            snapshotAt={website.snapshots[round]}
+            showSnapshots={showSnapshots}
+            now={now}
             canAct={canCheck}
             isChecking={checkingRound === round}
             onRecheck={() => onRecheck(round)}

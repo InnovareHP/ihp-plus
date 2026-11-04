@@ -11,6 +11,7 @@ function site(id: string, checks: WebsiteRow['checks'] = {}): WebsiteRow {
     clientName: '',
     notes: '',
     checks,
+    snapshots: {},
   }
 }
 

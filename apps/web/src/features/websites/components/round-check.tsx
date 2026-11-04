@@ -3,15 +3,25 @@
 import { ActionIcon, Button, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { IconNote, IconRefresh } from '@tabler/icons-react'
 import { formatTimeOfDay } from '@ihp/clock'
+import { websiteSnapshotHref } from '@/lib/routes'
 import { CHECK_ROUND_LABELS, type CheckRound, type WebsiteCheckRow } from '../schema'
+import { snapshotStateOf } from '../utils/snapshot-state'
 import { describeReading } from '../utils/verdict'
 import { CheckStatusBadge } from './check-status-badge'
+import { SnapshotThumb } from './snapshot-thumb'
 
 export interface RoundCheckProps {
   round: CheckRound
   check: WebsiteCheckRow | undefined
+  websiteId: string
   websiteName: string
   timeZone: string
+  /** When today's picture for this round was taken, if one was. */
+  snapshotAt: string | undefined
+  /** Today's list with pictures switched on; otherwise no snapshot area at all. */
+  showSnapshots: boolean
+  /** When the list was last read, so a picture still on its way is told from a missing one. */
+  now: number
   /** The IT lead, on today's list. */
   canAct: boolean
   isChecking: boolean
@@ -23,14 +33,24 @@ export interface RoundCheckProps {
 export function RoundCheck({
   round,
   check,
+  websiteId,
   websiteName,
   timeZone,
+  snapshotAt,
+  showSnapshots,
+  now,
   canAct,
   isChecking,
   onRecheck,
   onVerdict,
 }: RoundCheckProps) {
   const label = CHECK_ROUND_LABELS[round]
+  const snapshot = snapshotStateOf({
+    shown: showSnapshots,
+    checkedAt: check?.checkedAt,
+    snapshotAt,
+    now,
+  })
 
   return (
     <Stack gap={6} miw={0}>
@@ -79,6 +99,17 @@ export function RoundCheck({
             <Text size="sm" style={{ overflowWrap: 'anywhere' }}>
               {check.note}
             </Text>
+          ) : null}
+          {snapshot !== 'none' ? (
+            <SnapshotThumb
+              state={snapshot}
+              websiteName={websiteName}
+              roundLabel={label}
+              thumbSrc={websiteSnapshotHref(websiteId, round, 'thumb', snapshotAt ?? '')}
+              fullSrc={websiteSnapshotHref(websiteId, round, 'full', snapshotAt ?? '')}
+              takenAt={snapshotAt ? formatTimeOfDay(snapshotAt, timeZone) : ''}
+              canRetry={canAct}
+            />
           ) : null}
         </>
       ) : (

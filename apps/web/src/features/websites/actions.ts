@@ -2,8 +2,16 @@
 
 import { db } from '@ihp/db'
 import { shiftDateKey, workDateKey } from '@ihp/clock'
+import { after } from 'next/server'
 import { websitesAccess, type WebsitesCaller } from './access'
-import { runRoundFor, timeZoneOf } from './service'
+import {
+  queueSnapshots,
+  runRoundFor,
+  snapshotsEnabled,
+  snapshotsOf,
+  timeZoneOf,
+  type SnapshotTimes,
+} from './service'
 import {
   CHECK_ROUNDS,
   dateKeySchema,
@@ -108,6 +116,7 @@ function websiteRowOf(
   site: WebsiteRecord,
   names: Map<string, string>,
   checks: readonly CheckRecord[],
+  snapshots: SnapshotTimes,
 ): WebsiteRow {
   return {
     id: site.id,
@@ -117,6 +126,7 @@ function websiteRowOf(
     clientName: site.clientId ? (names.get(site.clientId) ?? '') : '',
     notes: site.notes,
     checks: checksByRound(checks.filter((check) => check.websiteId === site.id)),
+    snapshots: snapshots.get(site.id) ?? {},
   }
 }
 
@@ -140,7 +150,7 @@ async function checklistFor(caller: Viewer, date: string, today: string, timeZon
     orderBy: { name: 'asc' },
     select: { id: true, name: true, url: true, clientId: true, notes: true },
   })
-  const [checks, names] = await Promise.all([
+  const [checks, names, snapshots] = await Promise.all([
     db.websiteCheck.findMany({
       where: { organizationId: caller.organizationId, workDate: day },
     }),
@@ -148,13 +158,16 @@ async function checklistFor(caller: Viewer, date: string, today: string, timeZon
       caller.organizationId,
       sites.map((site) => site.clientId ?? ''),
     ),
+    // Pictures are only ever shown for today, so a past day never asks storage.
+    isToday ? snapshotsOf(caller.organizationId, date) : Promise.resolve<SnapshotTimes>(new Map()),
   ])
 
   return {
     date,
     today,
     timeZone,
-    websites: sites.map((site) => websiteRowOf(site, names, checks)),
+    snapshotsEnabled: snapshotsEnabled(),
+    websites: sites.map((site) => websiteRowOf(site, names, checks, snapshots)),
   } satisfies Checklist
 }
 
@@ -199,13 +212,15 @@ async function savedRow(caller: Viewer, id: string): Promise<WebsiteRow | undefi
   })
   if (!site) return undefined
   const timeZone = await timeZoneOf(caller.organizationId)
-  const [names, checks] = await Promise.all([
+  const today = workDateKey(new Date(), timeZone)
+  const [names, checks, snapshots] = await Promise.all([
     clientNames(caller.organizationId, [site.clientId ?? '']),
     db.websiteCheck.findMany({
-      where: { websiteId: id, workDate: dateOf(workDateKey(new Date(), timeZone)) },
+      where: { websiteId: id, workDate: dateOf(today) },
     }),
+    snapshotsOf(caller.organizationId, today, id),
   ])
-  return websiteRowOf(site, names, checks)
+  return websiteRowOf(site, names, checks, snapshots)
 }
 
 export async function createWebsite(input: WebsiteDraftInput): Promise<Result<WebsiteRow>> {
@@ -291,10 +306,20 @@ export async function runRound(input: {
     return { ok: false, message: INVALID }
   }
 
-  const { today, checked } = await runRoundFor(caller, input.round, {
+  const { today, checked, websiteIds } = await runRoundFor(caller, input.round, {
     websiteId: input.websiteId,
   })
   if (input.websiteId && checked === 0) return { ok: false, message: GONE }
+
+  // The readings answer now; the pictures follow once the response has gone.
+  after(() =>
+    queueSnapshots({
+      organizationId: caller.organizationId,
+      dateKey: today,
+      round: input.round,
+      websiteIds,
+    }),
+  )
 
   const timeZone = await timeZoneOf(caller.organizationId)
   return { ok: true, data: await checklistFor(caller, today, today, timeZone) }

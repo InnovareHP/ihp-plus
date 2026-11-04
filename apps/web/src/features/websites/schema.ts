@@ -100,12 +100,16 @@ export interface WebsiteRow {
   clientName: string
   notes: string
   checks: Partial<Record<CheckRound, WebsiteCheckRow>>
+  /** When today's picture of each round was taken; past days have none, they are not kept. */
+  snapshots: Partial<Record<CheckRound, string>>
 }
 
 export interface Checklist {
   date: string
   today: string
   timeZone: string
+  /** Off when storage, the secret or a browser is missing, so cards never wait on a picture. */
+  snapshotsEnabled: boolean
   websites: WebsiteRow[]
 }
 
