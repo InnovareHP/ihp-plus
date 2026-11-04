@@ -25,9 +25,8 @@ which Microsoft's own reference does not say — `createLink` succeeds under it.
    development. Production uses `GRAPH_CLIENT_CERT_PRIVATE_KEY` +
    `GRAPH_CLIENT_CERT_THUMBPRINT`, because a secret expires at 24 months and the mirror stops
    without saying why.
-4. Generate `GRAPH_CRON_SECRET` (`openssl rand -hex 32`). It is the bearer token for
-   `POST /app/api/graph/renew`, which an external scheduler calls daily — a drive subscription
-   lapses after 4230 minutes and this repo has no worker process.
+4. Set `CRON_SECRET` (the same one every cron uses). `apps/web/vercel.json` calls
+   `GET /app/api/graph/renew` daily with it — a drive subscription lapses after 4230 minutes.
 
 ## What only a tenant admin can do
 

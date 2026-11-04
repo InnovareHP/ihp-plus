@@ -48,13 +48,13 @@ export async function ensureDriveSubscription(organizationId: string, driveId: s
   })
 }
 
-/**
- * Graph expires a driveItem subscription after 4230 minutes, so this has to run daily. A
- * subscription Graph has already forgotten is recreated rather than renewed.
- */
+/** The cron runs daily, so anything lapsing before the next run (plus slack) renews now. */
+export const RENEW_AHEAD_MS = 26 * 60 * 60_000
+
+/** A subscription Graph has already forgotten is recreated rather than renewed. */
 export async function renewDriveSubscriptions() {
   const due = await db.driveSubscription.findMany({
-    where: { expiresAt: { lte: new Date(Date.now() + 60 * 60_000) } },
+    where: { expiresAt: { lte: new Date(Date.now() + RENEW_AHEAD_MS) } },
   })
 
   const renewed: string[] = []
