@@ -1,9 +1,21 @@
+import { createRequire } from 'node:module'
+import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { NextConfig } from 'next'
 import { routes, withBasePath } from './src/lib/routes'
 
 // Repo root — standalone output must trace files outside apps/web (pnpm workspace links).
 const monorepoRoot = fileURLToPath(new URL('../../', import.meta.url))
+
+// Chromium finds its bin folder from its real path inside node_modules/.pnpm, not pnpm's symlink,
+// so the trace has to include the folder at that real path.
+const appDir = fileURLToPath(new URL('./', import.meta.url))
+const chromiumBin = relative(
+  appDir,
+  join(dirname(createRequire(import.meta.url).resolve('@sparticuz/chromium')), '..', 'bin'),
+)
+  .split('\\')
+  .join('/')
 
 const nextConfig: NextConfig = {
   // Slim Docker image: emits apps/web/.next/standalone with only used deps. Vercel builds its
@@ -33,7 +45,7 @@ const nextConfig: NextConfig = {
 
   // The compressed browser is read from disk, not imported, so file tracing would leave it behind.
   outputFileTracingIncludes: {
-    '/api/websites/snapshots/capture': ['./node_modules/@sparticuz/chromium/bin/**'],
+    '/api/websites/snapshots/capture': [`./${chromiumBin}/**`],
   },
 
   // Bluebook uploads travel through a server action, whose body cap is 1MB by default; nginx
