@@ -1,5 +1,5 @@
 import { lookup } from 'node:dns/promises'
-import { isPrivateAddress, type ProbeReading } from './utils/verdict'
+import { isPrivateAddress, verdictOf, type ProbeReading } from './utils/verdict'
 
 const TIMEOUT_MS = 15_000
 // A redirect could hop to an internal host, so each hop is resolved and checked like the first.
@@ -11,8 +11,15 @@ export async function resolvesPublic(hostname: string) {
   return addresses.length > 0 && addresses.every((entry) => !isPrivateAddress(entry.address))
 }
 
-/** Opens the site the way a visitor would and reports what came back and how fast. */
+// A slow answer gets one more try, since a sleeping host (Netlify, Vercel) is only slow once.
 export async function probeWebsite(url: string): Promise<ProbeReading> {
+  const first = await probeOnce(url)
+  if (verdictOf(first) !== 'issue') return first
+  const second = await probeOnce(url)
+  return verdictOf(second) === 'up' ? second : first
+}
+
+async function probeOnce(url: string): Promise<ProbeReading> {
   const started = performance.now()
   let target = new URL(url)
 
