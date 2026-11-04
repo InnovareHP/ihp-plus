@@ -21,6 +21,7 @@ import {
   type CheckRound,
   type WebsiteRow,
 } from '../schema'
+import { awaitsSnapshots } from '../utils/snapshot-state'
 import { CheckVerdictForm } from './check-verdict-form'
 import { DayNav } from './day-nav'
 import { RoundSummary } from './round-summary'
@@ -35,12 +36,19 @@ export interface ChecklistPanelProps {
 
 type Editing = { kind: 'new' } | { kind: 'edit'; website: WebsiteRow }
 
+// Pictures land a few seconds after a round, so the list looks again until each one is in.
+const SNAPSHOT_POLL_MS = 4000
+
 export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanelProps) {
   // Days are URL state, so a link to "what was down on the 3rd" stands on its own.
   const day = useUrlQueryParam('date', 0)
-  const checklist = useChecklist(day.value)
+  const checklist = useChecklist(day.value, (current) =>
+    current && awaitsSnapshots(current, Date.now()) ? SNAPSHOT_POLL_MS : false,
+  )
   const list = checklist.data
   const isToday = Boolean(list && list.date === list.today)
+  // Every poll refreshes this, so a picture still on its way is judged against a current time.
+  const listedAt = checklist.dataUpdatedAt
   const canAct = canCheck && isToday
 
   const run = useRunRound(day.value)
@@ -137,6 +145,11 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
                 ) : null}
               </Group>
             ))}
+            {!isToday && list.snapshotsEnabled ? (
+              <Text size="sm" c="dimmed">
+                Snapshots are kept for the day they are taken, so past days show none.
+              </Text>
+            ) : null}
             {canCheck && !isToday ? (
               <Text size="sm" c="dimmed">
                 Past days are a record and stay as they were left. Go to today to check.
@@ -174,6 +187,8 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
               key={website.id}
               website={website}
               timeZone={list.timeZone}
+              showSnapshots={isToday && list.snapshotsEnabled}
+              now={listedAt}
               canCheck={canAct}
               canManage={canManage && isToday}
               checkingRound={

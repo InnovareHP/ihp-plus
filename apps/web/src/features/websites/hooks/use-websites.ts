@@ -106,6 +106,7 @@ export function useCreateWebsite(clientNameOf: (clientId: string) => string) {
           clientName: clientNameOf(values.clientId),
           notes: values.notes,
           checks: {},
+          snapshots: {},
         },
       ]),
     settle: (rows, saved, values) => rows.map((row) => (row.id === values.tempId ? saved : row)),

@@ -21,7 +21,20 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@ihp/db', '@ihp/rpc', '@ihp/graph', '@ihp/email', '@ihp/clock'],
 
   // The pg driver and the Redis client open real sockets; bundling them breaks the standalone server.
-  serverExternalPackages: ['@prisma/adapter-pg', 'pg', 'redis', '@redis/client'],
+  serverExternalPackages: [
+    '@prisma/adapter-pg',
+    'pg',
+    'redis',
+    '@redis/client',
+    // Chromium unpacks its own binary at runtime, which a bundled copy cannot find.
+    'puppeteer-core',
+    '@sparticuz/chromium',
+  ],
+
+  // The compressed browser is read from disk, not imported, so file tracing would leave it behind.
+  outputFileTracingIncludes: {
+    '/api/websites/snapshots/capture': ['./node_modules/@sparticuz/chromium/bin/**'],
+  },
 
   // Bluebook uploads travel through a server action, whose body cap is 1MB by default; nginx
   // allows 25m, so the two limits are kept in step.

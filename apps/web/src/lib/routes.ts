@@ -232,3 +232,19 @@ export function publicOfferLetterHref(applicationId: string, signature: string, 
 export function applicationFileHref(attachmentId: string) {
   return withBasePath(`/api/hiring/attachments/${encodeURIComponent(attachmentId)}`)
 }
+
+/** Today's picture of a website for one round; the version busts the private cache on a recheck. */
+export function websiteSnapshotHref(
+  websiteId: string,
+  round: string,
+  size: 'thumb' | 'full',
+  version: string,
+) {
+  const query = new URLSearchParams({ size, v: version })
+  return withBasePath(
+    `/api/websites/snapshots/${encodeURIComponent(websiteId)}/${encodeURIComponent(round)}?${query}`,
+  )
+}
+
+/** Where a round's capture is handed off, so the browser runs in its own function. */
+export const WEBSITE_SNAPSHOT_CAPTURE_PATH = '/api/websites/snapshots/capture'

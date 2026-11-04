@@ -5,7 +5,7 @@ const TIMEOUT_MS = 15_000
 // A redirect could hop to an internal host, so each hop is resolved and checked like the first.
 const MAX_REDIRECTS = 5
 
-async function resolvesPublic(hostname: string) {
+export async function resolvesPublic(hostname: string) {
   if (hostname === 'localhost' || hostname.endsWith('.localhost')) return false
   const addresses = await lookup(hostname, { all: true })
   return addresses.length > 0 && addresses.every((entry) => !isPrivateAddress(entry.address))
