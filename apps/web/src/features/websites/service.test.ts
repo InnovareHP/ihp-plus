@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { websiteDayKey } from './utils/work-day'
 
 const prisma = vi.hoisted(() => ({
   attendanceSettings: { findUnique: vi.fn(async () => ({ timeZone: 'UTC' })) },
@@ -40,7 +41,8 @@ const {
 } = await import('./service')
 
 const LEAD = { organizationId: 'org-1', userId: 'user-1', userName: 'Ada Lovelace' }
-const today = new Date().toISOString().slice(0, 10)
+// The website day starts at noon, so a morning run still belongs to yesterday's shift.
+const today = websiteDayKey(new Date(), 'UTC')
 
 beforeEach(() => {
   vi.clearAllMocks()

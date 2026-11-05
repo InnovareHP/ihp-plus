@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@ihp/db'
-import { shiftDateKey, workDateKey } from '@ihp/clock'
+import { shiftDateKey } from '@ihp/clock'
 import { after } from 'next/server'
 import { websitesAccess, type WebsitesCaller } from './access'
 import {
@@ -34,6 +34,7 @@ import {
   type WebsiteOption,
   type WebsiteRow,
 } from './schema'
+import { websiteDayKey } from './utils/work-day'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
 
@@ -176,7 +177,7 @@ export async function loadChecklist(date?: string): Promise<Result<Checklist>> {
   if (!caller) return { ok: false, message: NOT_FOUND }
 
   const timeZone = await timeZoneOf(caller.organizationId)
-  const today = workDateKey(new Date(), timeZone)
+  const today = websiteDayKey(new Date(), timeZone)
   const parsed = dateKeySchema.safeParse(date)
   // A future date has nothing to show yet, so it falls back to today like a missing one.
   const wanted = parsed.success && parsed.data <= today ? parsed.data : today
@@ -212,7 +213,7 @@ async function savedRow(caller: Viewer, id: string): Promise<WebsiteRow | undefi
   })
   if (!site) return undefined
   const timeZone = await timeZoneOf(caller.organizationId)
-  const today = workDateKey(new Date(), timeZone)
+  const today = websiteDayKey(new Date(), timeZone)
   const [names, checks, snapshots] = await Promise.all([
     clientNames(caller.organizationId, [site.clientId ?? '']),
     db.websiteCheck.findMany({
@@ -345,7 +346,7 @@ export async function recordCheck(input: RecordCheckValues): Promise<Result<Webs
   if (!site) return { ok: false, message: GONE }
 
   const timeZone = await timeZoneOf(caller.organizationId)
-  const workDate = dateOf(workDateKey(new Date(), timeZone))
+  const workDate = dateOf(websiteDayKey(new Date(), timeZone))
   const verdict = {
     status: values.status,
     note: values.note,
@@ -399,7 +400,7 @@ export async function exportMonth(input: ExportMonthValues): Promise<Result<Mont
   const websiteId = parsed.data.websiteId
 
   const timeZone = await timeZoneOf(caller.organizationId)
-  const today = workDateKey(new Date(), timeZone)
+  const today = websiteDayKey(new Date(), timeZone)
   const first = `${month}-01`
   if (first > today) return { ok: false, message: 'That month has not started yet.' }
 
