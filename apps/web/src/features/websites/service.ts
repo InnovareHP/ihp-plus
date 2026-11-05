@@ -1,5 +1,4 @@
 import { db } from '@ihp/db'
-import { workDateKey } from '@ihp/clock'
 import { absoluteUrl } from '@ihp/email'
 import { after } from 'next/server'
 import { isTeamLead } from '@/features/teams/leads'
@@ -17,6 +16,7 @@ import {
   type SnapshotSize,
 } from './utils/snapshot-key'
 import { verdictOf } from './utils/verdict'
+import { websiteDayKey } from './utils/work-day'
 
 // Five sites per capture function keeps each one well inside its time limit.
 const SNAPSHOT_BATCH = 5
@@ -34,7 +34,7 @@ export async function timeZoneOf(organizationId: string) {
 }
 
 export async function todayOf(organizationId: string) {
-  return workDateKey(new Date(), await timeZoneOf(organizationId))
+  return websiteDayKey(new Date(), await timeZoneOf(organizationId))
 }
 
 async function inBatches<T, R>(items: readonly T[], size: number, run: (item: T) => Promise<R>) {

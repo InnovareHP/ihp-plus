@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { websiteDayKey } from './utils/work-day'
 
 const prisma = vi.hoisted(() => ({
   website: {
@@ -61,7 +62,8 @@ const SITE = {
   notes: '',
 }
 
-const today = new Date().toISOString().slice(0, 10)
+// The website day starts at noon, so a morning run still belongs to yesterday's shift.
+const today = websiteDayKey(new Date(), 'UTC')
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -96,6 +98,7 @@ describe('who may do what', () => {
 describe('runRound', () => {
   it('runs the round as the lead and answers with today’s list', async () => {
     prisma.website.findMany.mockResolvedValue([SITE])
+    service.runRoundFor.mockResolvedValueOnce({ today, checked: 1, websiteIds: ['site-1'] })
 
     const result = await runRound({ round: 'clock_in' })
 
