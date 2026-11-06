@@ -12,7 +12,13 @@ const SETTLED: HireFacts = {
 
 const HANDBOOK = { id: 'doc-handbook', title: 'Handbook', teamIds: [] }
 const FINANCE_POLICY = { id: 'doc-finance', title: 'Expense policy', teamIds: ['team-finance'] }
-const LAPTOP = { id: 'task-laptop', title: 'Collect your laptop', description: null }
+const LAPTOP = { id: 'task-laptop', title: 'Collect your laptop', description: null, teamId: null }
+const LEDGER = {
+  id: 'task-ledger',
+  title: 'Open the ledger',
+  description: null,
+  teamId: 'team-finance',
+}
 
 describe('progressOf', () => {
   it('marks every step done for a hire who has finished them', () => {
@@ -63,6 +69,16 @@ describe('progressOf', () => {
     ])
     expect(stuckOnOf(progress)).toBe('shift')
     expect(doneCountOf(progress)).toBe(2)
+  })
+
+  it('gives a hire only the tasks for everyone and for their own department', () => {
+    const support = progressOf(SETTLED, [], [LAPTOP, LEDGER])
+    const finance = progressOf({ ...SETTLED, teamIds: ['team-finance'] }, [], [LAPTOP, LEDGER])
+
+    expect(support.tasks.items.map((item) => item.id)).toEqual(['task-laptop'])
+    expect(support.tasks.done).toBe(true)
+    expect(finance.tasks.items.map((item) => item.id)).toEqual(['task-laptop', 'task-ledger'])
+    expect(finance.tasks.done).toBe(false)
   })
 
   it('counts nothing to read or tick off as done', () => {

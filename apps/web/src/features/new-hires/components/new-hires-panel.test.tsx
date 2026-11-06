@@ -77,7 +77,15 @@ const SETUP: ChecklistSetup = {
     { documentId: 'doc-handbook', title: 'Handbook', audience: 'All departments' },
   ],
   availableDocuments: [{ id: 'doc-safety', title: 'Safety policy' }],
-  tasks: [{ id: 'task-laptop', title: 'Collect your laptop', description: 'From IT' }],
+  tasks: [
+    {
+      id: 'task-laptop',
+      title: 'Collect your laptop',
+      description: 'From IT',
+      audience: 'All departments',
+    },
+  ],
+  departments: [{ id: 'team-finance', name: 'Finance' }],
 }
 
 const user = () => userEvent.setup()
@@ -195,6 +203,26 @@ describe('NewHiresPanel — what the checklist asks', () => {
     )
     const tasks = screen.getByRole('table', { name: 'First-day tasks' })
     expect(within(tasks).queryByText('Meet your lead')).not.toBeInTheDocument()
+  })
+
+  it('adds a task for one department, labelled before the server answers', async () => {
+    actions.createChecklistTask.mockReturnValue(new Promise(() => {}))
+    const person = user()
+    render(<NewHiresPanel />)
+
+    await person.type(await screen.findByRole('textbox', { name: /^Task/ }), 'Open the ledger')
+    await person.selectOptions(screen.getByRole('combobox', { name: /Department/ }), 'Finance')
+    await person.click(screen.getByRole('button', { name: 'Add task' }))
+
+    expect(actions.createChecklistTask).toHaveBeenCalledWith({
+      title: 'Open the ledger',
+      description: '',
+      teamId: 'team-finance',
+    })
+    const row = within(screen.getByRole('table', { name: 'First-day tasks' })).getByRole('row', {
+      name: /Open the ledger/,
+    })
+    expect(within(row).getByText('Finance')).toBeInTheDocument()
   })
 
   it('requires a name before adding a task', async () => {

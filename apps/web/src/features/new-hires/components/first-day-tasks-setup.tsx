@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button, Group, Menu, Stack, Text, TextInput } from '@mantine/core'
+import { Badge, Button, Group, Menu, NativeSelect, Stack, Text, TextInput } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { DataTable, type DataTableColumn } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
@@ -10,18 +10,20 @@ import { offerUndo } from '@/lib/undo'
 import { useAddChecklistTask, useRemoveChecklistTask } from '../hooks/use-checklist-setup'
 import {
   newTaskSchema,
+  type ChecklistSetup,
   type ChecklistTaskRow,
   type NewTaskInput,
   type NewTaskValues,
 } from '../schema'
 
-const EMPTY_TASK: NewTaskInput = { title: '', description: '' }
+const EMPTY_TASK: NewTaskInput = { title: '', description: '', teamId: '' }
 
 export interface FirstDayTasksSetupProps {
   tasks: readonly ChecklistTaskRow[]
+  departments: ChecklistSetup['departments']
 }
 
-export function FirstDayTasksSetup({ tasks }: FirstDayTasksSetupProps) {
+export function FirstDayTasksSetup({ tasks, departments }: FirstDayTasksSetupProps) {
   const add = useAddChecklistTask()
   const remove = useRemoveChecklistTask()
   const {
@@ -38,7 +40,8 @@ export function FirstDayTasksSetup({ tasks }: FirstDayTasksSetupProps) {
 
   function onSubmit(values: NewTaskValues) {
     add.mutate({ ...values, tempId: crypto.randomUUID() })
-    reset(EMPTY_TASK)
+    // The department stays picked, since tasks for one department tend to be added together.
+    reset({ ...EMPTY_TASK, teamId: values.teamId })
   }
 
   function removeWithUndo(row: ChecklistTaskRow) {
@@ -67,6 +70,15 @@ export function FirstDayTasksSetup({ tasks }: FirstDayTasksSetupProps) {
             </Text>
           ) : null}
         </Stack>
+      ),
+    },
+    {
+      key: 'audience',
+      header: 'Who gets it',
+      render: (row) => (
+        <Badge variant="light" color={row.audience === 'All departments' ? 'gray' : 'brand'}>
+          {row.audience}
+        </Badge>
       ),
     },
     {
@@ -103,6 +115,16 @@ export function FirstDayTasksSetup({ tasks }: FirstDayTasksSetupProps) {
             autoComplete="off"
             error={errors.description?.message}
           />
+          <NativeSelect
+            {...register('teamId')}
+            label="Department"
+            description="Only new hires in this department get it."
+            data={[
+              { value: '', label: 'All departments' },
+              ...departments.map((team) => ({ value: team.id, label: team.name })),
+            ]}
+            error={errors.teamId?.message}
+          />
           <Group justify="flex-end">
             <Button type="submit">Add task</Button>
           </Group>
@@ -119,7 +141,7 @@ export function FirstDayTasksSetup({ tasks }: FirstDayTasksSetupProps) {
         empty={
           <EmptyState
             title="No first-day tasks yet"
-            description="Add what every new hire should get done in their first days, such as collecting their user credentials or meeting their lead."
+            description="Add what new hires should get done in their first days, for everyone or for one department, such as collecting their user credentials or meeting their lead."
           />
         }
       />

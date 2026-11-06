@@ -125,7 +125,9 @@ export async function createChecklistTask(input: unknown): Promise<Result<Checkl
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0]?.message ?? 'Check the task and retry.' }
   }
-  return { ok: true, data: await addTask(who.data.organizationId, parsed.data) }
+  const task = await addTask(who.data.organizationId, parsed.data)
+  if (!task) return { ok: false, message: 'That department is no longer in the organization.' }
+  return { ok: true, data: task }
 }
 
 export async function removeChecklistTask(input: unknown): Promise<Result<null>> {

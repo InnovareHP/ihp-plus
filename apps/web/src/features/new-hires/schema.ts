@@ -90,6 +90,8 @@ export interface ChecklistTaskRow {
   id: string
   title: string
   description: string | undefined
+  /** "All departments" or the one department whose hires get it. */
+  audience: string
 }
 
 export interface ChecklistSetup {
@@ -97,6 +99,8 @@ export interface ChecklistSetup {
   /** Documents in the bluebook that are not required reading yet. */
   availableDocuments: { id: string; title: string }[]
   tasks: ChecklistTaskRow[]
+  /** The departments a task can be given to. */
+  departments: { id: string; name: string }[]
 }
 
 export const NEW_HIRE_STATUSES = ['open', 'completed', 'all'] as const
@@ -127,6 +131,8 @@ export const taskIdSchema = z.object({ taskId: z.string().min(1) })
 export const newTaskSchema = z.object({
   title: z.string().trim().min(1, 'Name the task').max(120, 'Keep it under 120 characters'),
   description: z.string().trim().max(500, 'Keep it under 500 characters').default(''),
+  /** Empty for every department. */
+  teamId: z.string().max(200).default(''),
 })
 
 export type NewTaskInput = z.input<typeof newTaskSchema>

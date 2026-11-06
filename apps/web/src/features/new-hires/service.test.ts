@@ -17,6 +17,8 @@ const prisma = vi.hoisted(() => ({
   },
   newHireTaskCompletion: { findMany: vi.fn(), upsert: vi.fn(), deleteMany: vi.fn() },
   user: { findMany: vi.fn() },
+  team: { findMany: vi.fn() },
+  teamMember: { findFirst: vi.fn() },
   attendanceSchedule: { findMany: vi.fn() },
   bluebookAcknowledgement: { findMany: vi.fn() },
   bluebookDocument: { findFirst: vi.fn(), findMany: vi.fn() },
@@ -26,6 +28,7 @@ vi.mock('@ihp/db', () => ({ db: prisma }))
 
 const {
   addRequiredDocument,
+  addTask,
   closeChecklist,
   listNewHires,
   loadChecklistFor,
@@ -44,7 +47,7 @@ const ADA = {
 }
 
 const HANDBOOK = { document: { id: 'doc-handbook', title: 'Handbook', teams: [] } }
-const LAPTOP = { id: 'task-laptop', title: 'Collect your laptop', description: null }
+const LAPTOP = { id: 'task-laptop', title: 'Collect your laptop', description: null, teamId: null }
 
 function settledAda() {
   prisma.user.findMany.mockResolvedValue([ADA])
@@ -180,8 +183,20 @@ describe('setTaskDone', () => {
     expect(prisma.newHireTaskCompletion.upsert).not.toHaveBeenCalled()
   })
 
+  it('refuses another department’s task', async () => {
+    prisma.newHireTask.findFirst.mockResolvedValue({ teamId: 'team-finance' })
+    prisma.teamMember.findFirst.mockResolvedValue(null)
+
+    expect(await setTaskDone('org-1', 'user-ada', 'task-ledger', true)).toBe(false)
+    expect(prisma.teamMember.findFirst).toHaveBeenCalledWith({
+      where: { teamId: 'team-finance', userId: 'user-ada' },
+      select: { id: true },
+    })
+    expect(prisma.newHireTaskCompletion.upsert).not.toHaveBeenCalled()
+  })
+
   it('ticks a task off, and unticking takes the record away', async () => {
-    prisma.newHireTask.findFirst.mockResolvedValue({ id: 'task-laptop' })
+    prisma.newHireTask.findFirst.mockResolvedValue({ teamId: null })
 
     expect(await setTaskDone('org-1', 'user-ada', 'task-laptop', true)).toBe(true)
     expect(prisma.newHireTaskCompletion.upsert).toHaveBeenCalled()
@@ -209,5 +224,40 @@ describe('addRequiredDocument', () => {
 
     expect(await addRequiredDocument('org-1', 'doc-elsewhere')).toBe(false)
     expect(prisma.newHireDocument.upsert).not.toHaveBeenCalled()
+  })
+})
+
+describe('addTask', () => {
+  beforeEach(() => {
+    prisma.team.findMany.mockResolvedValue([{ id: 'team-finance', name: 'Finance' }])
+    prisma.newHireTask.aggregate.mockResolvedValue({ _max: { sortOrder: 1 } })
+    prisma.newHireTask.create.mockResolvedValue({
+      id: 't',
+      title: 'Open the ledger',
+      description: null,
+    })
+  })
+
+  it('files a task under one department and names it as the audience', async () => {
+    const task = await addTask('org-1', {
+      title: 'Open the ledger',
+      description: '',
+      teamId: 'team-finance',
+    })
+
+    expect(prisma.newHireTask.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ teamId: 'team-finance', sortOrder: 2 }),
+      }),
+    )
+    expect(task).toMatchObject({ audience: 'Finance' })
+  })
+
+  it('keeps an unscoped task on every list, and refuses a department from elsewhere', async () => {
+    expect(await addTask('org-1', { title: 'x', description: '', teamId: '' })).toMatchObject({
+      audience: 'All departments',
+    })
+    expect(await addTask('org-1', { title: 'x', description: '', teamId: 'team-other' })).toBeNull()
+    expect(prisma.newHireTask.create).toHaveBeenCalledTimes(1)
   })
 })

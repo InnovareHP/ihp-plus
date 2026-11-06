@@ -43,7 +43,7 @@ async function requiredDocumentsOf(organizationId: string): Promise<RequiredDocu
 async function tasksOf(organizationId: string): Promise<TaskDefinition[]> {
   return db.newHireTask.findMany({
     where: { organizationId, archivedAt: null },
-    select: { id: true, title: true, description: true },
+    select: { id: true, title: true, description: true, teamId: true },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
   })
 }
@@ -237,9 +237,17 @@ export async function setTaskDone(
 ) {
   const task = await db.newHireTask.findFirst({
     where: { id: taskId, organizationId, archivedAt: null },
-    select: { id: true },
+    select: { teamId: true },
   })
   if (!task) return false
+  if (task.teamId) {
+    // Another department's task is not on this hire's list, so it cannot be ticked.
+    const member = await db.teamMember.findFirst({
+      where: { teamId: task.teamId, userId },
+      select: { id: true },
+    })
+    if (!member) return false
+  }
 
   if (done) {
     await db.newHireTaskCompletion.upsert({
@@ -261,8 +269,23 @@ export async function closeChecklist(organizationId: string, userId: string, adm
   return count > 0
 }
 
+export const ALL_DEPARTMENTS = 'All departments'
+
+function departmentsOf(organizationId: string) {
+  return db.team.findMany({
+    where: { organizationId },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
+}
+
+function audienceOf(teamId: string | null, departments: readonly { id: string; name: string }[]) {
+  if (!teamId) return ALL_DEPARTMENTS
+  return departments.find((team) => team.id === teamId)?.name ?? 'A removed department'
+}
+
 export async function loadSetup(organizationId: string): Promise<ChecklistSetup> {
-  const [required, documents, tasks] = await Promise.all([
+  const [required, documents, tasks, departments] = await Promise.all([
     db.newHireDocument.findMany({
       where: { organizationId, document: { archivedAt: null } },
       select: {
@@ -278,6 +301,7 @@ export async function loadSetup(organizationId: string): Promise<ChecklistSetup>
       orderBy: { title: 'asc' },
     }),
     tasksOf(organizationId),
+    departmentsOf(organizationId),
   ])
 
   const requiredIds = new Set(required.map(({ document }) => document.id))
@@ -287,7 +311,7 @@ export async function loadSetup(organizationId: string): Promise<ChecklistSetup>
       title: document.title,
       audience:
         document.teams.length === 0
-          ? 'All departments'
+          ? ALL_DEPARTMENTS
           : document.teams.map((team) => team.teamName).join(', '),
     })),
     availableDocuments: documents.filter((document) => !requiredIds.has(document.id)),
@@ -295,7 +319,9 @@ export async function loadSetup(organizationId: string): Promise<ChecklistSetup>
       id: task.id,
       title: task.title,
       description: task.description ?? undefined,
+      audience: audienceOf(task.teamId, departments),
     })),
+    departments,
   }
 }
 
@@ -319,7 +345,12 @@ export async function removeRequiredDocument(organizationId: string, documentId:
   await db.newHireDocument.deleteMany({ where: { organizationId, documentId } })
 }
 
+/** Null when the department is not in this organization, so a forged id adds nothing. */
 export async function addTask(organizationId: string, values: NewTaskValues) {
+  const departments = await departmentsOf(organizationId)
+  const teamId = values.teamId || null
+  if (teamId && !departments.some((team) => team.id === teamId)) return null
+
   const last = await db.newHireTask.aggregate({
     where: { organizationId, archivedAt: null },
     _max: { sortOrder: true },
@@ -330,10 +361,16 @@ export async function addTask(organizationId: string, values: NewTaskValues) {
       title: values.title,
       description: values.description || null,
       sortOrder: (last._max.sortOrder ?? -1) + 1,
+      teamId,
     },
     select: { id: true, title: true, description: true },
   })
-  return { id: task.id, title: task.title, description: task.description ?? undefined }
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description ?? undefined,
+    audience: audienceOf(teamId, departments),
+  }
 }
 
 export async function archiveTask(organizationId: string, taskId: string) {

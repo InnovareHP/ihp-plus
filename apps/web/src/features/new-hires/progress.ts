@@ -25,6 +25,8 @@ export interface TaskDefinition {
   id: string
   title: string
   description: string | null
+  /** Null for every department. */
+  teamId: string | null
 }
 
 /** A document on the company shelf reaches everyone; one on department shelves, their members. */
@@ -49,12 +51,14 @@ export function progressOf(
       acknowledged: facts.acknowledgedDocumentIds.has(document.id),
     }))
 
-  const items = tasks.map((task) => ({
-    id: task.id,
-    title: task.title,
-    description: task.description ?? undefined,
-    done: facts.completedTaskIds.has(task.id),
-  }))
+  const items = tasks
+    .filter((task) => !task.teamId || facts.teamIds.includes(task.teamId))
+    .map((task) => ({
+      id: task.id,
+      title: task.title,
+      description: task.description ?? undefined,
+      done: facts.completedTaskIds.has(task.id),
+    }))
 
   return {
     profile: { done: missing.length === 0, missing },

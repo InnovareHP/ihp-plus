@@ -94,13 +94,25 @@ export function useRequireDocument() {
 export function useAddChecklistTask() {
   return useSetupMutation({
     mutationFn: (values: NewTaskValues & { tempId: string }) =>
-      unwrap(createChecklistTask({ title: values.title, description: values.description })),
+      unwrap(
+        createChecklistTask({
+          title: values.title,
+          description: values.description,
+          teamId: values.teamId,
+        }),
+      ),
     apply: (values) => (setup) => ({
       ...setup,
       tasks: [
         ...setup.tasks,
         // A temporary id until the refetch brings the server's.
-        { id: values.tempId, title: values.title, description: values.description || undefined },
+        {
+          id: values.tempId,
+          title: values.title,
+          description: values.description || undefined,
+          audience:
+            setup.departments.find((team) => team.id === values.teamId)?.name ?? 'All departments',
+        },
       ],
     }),
     successEvent: newHireEvents.setupTaskAdded,
