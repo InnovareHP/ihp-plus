@@ -32,7 +32,7 @@ const activity = vi.hoisted(() => ({ recordActivity: vi.fn() }))
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./notifications', () => notifications)
 const executives = vi.hoisted(() => ({ executiveUserIds: vi.fn(async () => [] as string[]) }))
-vi.mock('./executives', () => executives)
+vi.mock('@/lib/executives', () => executives)
 vi.mock('@/lib/activity', () => activity)
 // membershipOf is pure, so the real one is kept: how a membership resolves has one definition.
 vi.mock('@/lib/auth-guard', async (importOriginal) => ({

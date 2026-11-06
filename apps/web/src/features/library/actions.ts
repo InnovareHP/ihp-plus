@@ -5,6 +5,7 @@ import { mirrorRemoval, mirrorRename, mirrorWrite } from '@/features/drive/sync'
 import { pathFromRoot } from '@/features/drive/utils/mirror-path'
 import { track } from '@/lib/analytics'
 import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
+import { isExecutive } from '@/lib/executives'
 import { safeLibraryName } from '@/lib/library-name'
 import { libraryEvents } from './events'
 import {
@@ -33,6 +34,12 @@ import {
 } from './service'
 import { openUploadSession, sealUploadSession, UPLOAD_SESSION_MS } from './upload-session'
 import { joinLibraryPath, librarySegments, normalizeLibraryPath } from './utils/library-path'
+import {
+  EXECUTIVE_FOLDER,
+  isExecutivePath,
+  isExecutiveRoot,
+  itemLibraryPath,
+} from './utils/private-folder'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
 export type LibraryResult = ({ ok: true } & LibraryListing) | { ok: false; message: string }
@@ -56,22 +63,37 @@ function messageFor(error: unknown) {
   throw error
 }
 
-/** Reads one folder of the staff library. Everything here is internal, so any member may look. */
+const LOCKED = 'The Executive folder cannot be renamed or deleted.'
+
+/** Who is acting, and whether the Executive folder exists for them. */
+async function viewer() {
+  const { user, profile } = await requireOnboarded()
+  const organizationId = membershipOf(profile).organizationId
+  return { user, organizationId, executive: await isExecutive(organizationId, user.id) }
+}
+
+/** Reads one folder of the staff library; the Executive folder is invisible outside that team. */
 export async function listLibraryFolder(input?: unknown): Promise<LibraryResult> {
-  await requireOnboarded()
+  const { executive } = await viewer()
   const query = libraryQuerySchema.parse(input ?? {})
+  // Answered like a missing folder, so a guessed path reveals nothing.
+  if (!executive && isExecutivePath(query.path)) return { ok: false, message: GONE }
 
   try {
     const listing = await readLibraryFolder(query)
-    return { ok: true, ...listing }
+    if (listing.path) return { ok: true, ...listing }
+    if (!executive) {
+      const entries = listing.entries.filter((entry) => !isExecutivePath(entry.path))
+      return { ok: true, ...listing, entries }
+    }
+    if (listing.entries.some((entry) => isExecutiveRoot(entry.path))) {
+      return { ok: true, ...listing }
+    }
+    const folder = await createLibraryFolder('', EXECUTIVE_FOLDER)
+    return { ok: true, ...listing, entries: [entryOf(folder, ''), ...listing.entries] }
   } catch (error) {
     return { ok: false, message: messageFor(error) }
   }
-}
-
-async function writer() {
-  const { profile } = await requireOnboarded()
-  return membershipOf(profile).organizationId
 }
 
 /**
@@ -99,13 +121,14 @@ function uploadTarget(path: string, folder: string) {
 }
 
 export async function uploadToLibraryFolder(formData: FormData): Promise<Result<LibraryEntry>> {
-  const organizationId = await writer()
+  const { organizationId, executive } = await viewer()
 
   const target = uploadTarget(
     String(formData.get('path') ?? ''),
     String(formData.get('folder') ?? ''),
   )
   if (target === undefined) return { ok: false, message: TOO_DEEP }
+  if (!executive && isExecutivePath(target)) return { ok: false, message: GONE }
   const file = formData.get('file')
   if (!(file instanceof File)) return { ok: false, message: 'Choose a file to upload.' }
 
@@ -128,7 +151,7 @@ export async function uploadToLibraryFolder(formData: FormData): Promise<Result<
 
 /** The first step of a chunked upload; the token it returns carries the session, sealed. */
 export async function startLibraryUpload(input: unknown): Promise<Result<{ token: string }>> {
-  const { user } = await requireOnboarded()
+  const { user, executive } = await viewer()
 
   const parsed = startUploadSchema.safeParse(input)
   if (!parsed.success) return { ok: false, message: INVALID }
@@ -136,6 +159,7 @@ export async function startLibraryUpload(input: unknown): Promise<Result<{ token
   if (problem) return { ok: false, message: problem }
   const target = uploadTarget(parsed.data.path, parsed.data.folder)
   if (target === undefined) return { ok: false, message: TOO_DEEP }
+  if (!executive && isExecutivePath(target)) return { ok: false, message: GONE }
 
   try {
     const uploadUrl = await startLibraryUploadSession(target, parsed.data.name)
@@ -198,12 +222,15 @@ export async function sendLibraryUploadChunk(
 }
 
 export async function addLibraryFolder(input: unknown): Promise<Result<LibraryEntry>> {
-  const organizationId = await writer()
+  const { organizationId, executive } = await viewer()
 
   const parsed = createFolderSchema.safeParse(input)
   if (!parsed.success) return { ok: false, message: INVALID }
 
   const path = normalizeLibraryPath(parsed.data.path)
+  if (!executive && isExecutivePath(joinLibraryPath(path, parsed.data.name))) {
+    return { ok: false, message: GONE }
+  }
   try {
     const folder = await createLibraryFolder(path, parsed.data.name)
     if (organizationId) await mirror(() => mirrorWrite(organizationId, folder))
@@ -214,7 +241,7 @@ export async function addLibraryFolder(input: unknown): Promise<Result<LibraryEn
 }
 
 export async function renameInLibrary(input: unknown): Promise<Result<LibraryEntry>> {
-  const organizationId = await writer()
+  const { organizationId, executive } = await viewer()
 
   const parsed = renameItemSchema.safeParse(input)
   if (!parsed.success) return { ok: false, message: INVALID }
@@ -222,6 +249,12 @@ export async function renameInLibrary(input: unknown): Promise<Result<LibraryEnt
   try {
     // Read first: the client copy is found by the name it was mirrored under.
     const before = await readLibraryItem(parsed.data.itemId)
+    const path = itemLibraryPath(before)
+    const renamed = joinLibraryPath(pathFromRoot(before) ?? '', parsed.data.name)
+    if (!executive && (isExecutivePath(path) || isExecutivePath(renamed))) {
+      return { ok: false, message: GONE }
+    }
+    if (isExecutiveRoot(path)) return { ok: false, message: LOCKED }
     const item = await renameLibraryItem(parsed.data.itemId, parsed.data.name)
     if (organizationId) await mirror(() => mirrorRename(organizationId, item, before.name))
     return { ok: true, data: entryOf(item, pathFromRoot(item) ?? '') }
@@ -231,7 +264,7 @@ export async function renameInLibrary(input: unknown): Promise<Result<LibraryEnt
 }
 
 export async function removeFromLibraryFolder(input: unknown): Promise<Result<{ id: string }>> {
-  const organizationId = await writer()
+  const { organizationId, executive } = await viewer()
 
   const parsed = libraryItemSchema.safeParse(input)
   if (!parsed.success) return { ok: false, message: GONE }
@@ -239,6 +272,9 @@ export async function removeFromLibraryFolder(input: unknown): Promise<Result<{ 
   try {
     // Read first: once it is deleted, Graph can no longer say which client folder it was in.
     const item = await readLibraryItem(parsed.data.itemId)
+    const path = itemLibraryPath(item)
+    if (!executive && isExecutivePath(path)) return { ok: false, message: GONE }
+    if (isExecutiveRoot(path)) return { ok: false, message: LOCKED }
     await deleteLibraryItem(parsed.data.itemId)
     if (organizationId) await mirror(() => mirrorRemoval(organizationId, item))
     return { ok: true, data: { id: parsed.data.itemId } }

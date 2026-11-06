@@ -5,6 +5,7 @@ interface TestItem {
   name: string
   folder?: { childCount?: number }
   file?: { mimeType?: string }
+  parentReference?: { path?: string }
 }
 
 process.env.BETTER_AUTH_SECRET = 'test-secret-long-enough-to-derive-a-key'
@@ -70,6 +71,8 @@ vi.mock('@ihp/graph', () => ({
 vi.mock('@/lib/auth-guard', () => guard)
 vi.mock('@/features/drive/sync', () => sync)
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
+const executives = vi.hoisted(() => ({ isExecutive: vi.fn(async () => false) }))
+vi.mock('@/lib/executives', () => executives)
 
 const { GraphNotConfiguredError } = await import('@ihp/graph')
 const {
@@ -104,6 +107,7 @@ beforeEach(() => {
   graph.getItemByPath.mockResolvedValue({ id: 'clients-item', name: 'Clients', folder: {} })
   graph.getItem.mockResolvedValue({ id: 'file-1', name: 'handbook.pdf' })
   guard.membershipOf.mockReturnValue({ organizationId: 'org-1' })
+  executives.isExecutive.mockResolvedValue(false)
 })
 
 function uploadForm(path: string, file: File, folder = '') {
@@ -407,5 +411,74 @@ describe('removeFromLibraryFolder', () => {
     await removeFromLibraryFolder({ itemId: 'file-1' })
 
     expect(sync.mirrorRemoval).not.toHaveBeenCalled()
+  })
+})
+
+describe('the Executive folder', () => {
+  const executiveFolder = { ...folder('Executive'), parentReference: { path: '/drive/root:' } }
+  const boardFile = {
+    ...file('minutes.pdf', 10, '2026-03-01T10:00:00.000Z'),
+    parentReference: { path: '/drive/root:/Executive' },
+  }
+
+  it('is left out of the root listing for everyone else', async () => {
+    graph.listAllChildren.mockResolvedValue([executiveFolder, folder('Clients')])
+
+    const result = await listLibraryFolder({})
+
+    expect(result).toMatchObject({ ok: true, entries: [{ name: 'Clients' }] })
+  })
+
+  it('answers a guessed path, upload, or new folder as if it did not exist', async () => {
+    const gone = { ok: false, message: 'That folder is no longer in the internal library.' }
+    const upload = new File(['bytes'], 'x.pdf', { type: 'application/pdf' })
+
+    expect(await listLibraryFolder({ path: 'executive/Board' })).toEqual(gone)
+    expect(await uploadToLibraryFolder(uploadForm('Executive', upload))).toEqual(gone)
+    expect(await uploadToLibraryFolder(uploadForm('', upload, 'Executive'))).toEqual(gone)
+    expect(await startLibraryUpload({ path: 'Executive', folder: '', name: 'x', size: 5 })).toEqual(
+      gone,
+    )
+    expect(await addLibraryFolder({ path: '', name: 'Executive' })).toEqual(gone)
+    expect(graph.getItemByPath).not.toHaveBeenCalled()
+    expect(graph.uploadFile).not.toHaveBeenCalled()
+  })
+
+  it('refuses a rename or delete of anything inside it, or a rename onto it', async () => {
+    graph.getItem.mockResolvedValue(boardFile)
+    expect(await renameInLibrary({ itemId: 'file-1', name: 'x.pdf' })).toMatchObject({ ok: false })
+    expect(await removeFromLibraryFolder({ itemId: 'file-1' })).toMatchObject({ ok: false })
+
+    graph.getItem.mockResolvedValue({ ...folder('Old'), parentReference: { path: '/drive/root:' } })
+    expect(await renameInLibrary({ itemId: 'x', name: 'Executive' })).toMatchObject({ ok: false })
+    expect(graph.renameItem).not.toHaveBeenCalled()
+    expect(graph.deleteItem).not.toHaveBeenCalled()
+  })
+
+  it('is created for an executive the first time they open the root', async () => {
+    executives.isExecutive.mockResolvedValue(true)
+    graph.listAllChildren.mockResolvedValue([folder('Clients')])
+    graph.ensureFolder.mockResolvedValueOnce(executiveFolder)
+
+    const result = await listLibraryFolder({})
+
+    expect(graph.ensureFolder).toHaveBeenCalledWith('internal-drive', 'root-item', 'Executive')
+    expect(result).toMatchObject({
+      ok: true,
+      entries: [{ name: 'Executive' }, { name: 'Clients' }],
+    })
+  })
+
+  it('lets an executive work inside it but never rename or delete the folder itself', async () => {
+    executives.isExecutive.mockResolvedValue(true)
+    graph.getItem.mockResolvedValue(boardFile)
+    expect(await removeFromLibraryFolder({ itemId: 'file-1' })).toMatchObject({ ok: true })
+
+    graph.getItem.mockResolvedValue(executiveFolder)
+    expect(await renameInLibrary({ itemId: 'x', name: 'Board' })).toEqual({
+      ok: false,
+      message: 'The Executive folder cannot be renamed or deleted.',
+    })
+    expect(await removeFromLibraryFolder({ itemId: 'x' })).toMatchObject({ ok: false })
   })
 })

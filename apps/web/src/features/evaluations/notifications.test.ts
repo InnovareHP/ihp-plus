@@ -13,7 +13,7 @@ const email = vi.hoisted(() => ({
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/email', () => email)
-vi.mock('./executives', () => executives)
+vi.mock('@/lib/executives', () => executives)
 
 const { notifyEvaluatorCancelled, notifyExecutives } = await import('./notifications')
 

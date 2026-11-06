@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const guard = vi.hoisted(() => ({
   getSession: vi.fn(),
   readProfile: vi.fn(),
+  membershipOf: vi.fn(() => ({ organizationId: 'org-1' })),
 }))
+
+const executives = vi.hoisted(() => ({ isExecutive: vi.fn(async () => false) }))
 
 const service = vi.hoisted(() => ({
   NotAFileError: class NotAFileError extends Error {},
@@ -25,6 +28,7 @@ const graph = vi.hoisted(() => ({
 vi.mock('@ihp/graph', () => graph)
 vi.mock('@/lib/auth-guard', () => guard)
 vi.mock('@/features/library/service', () => service)
+vi.mock('@/lib/executives', () => executives)
 
 const { GET } = await import('./route')
 
@@ -52,6 +56,17 @@ beforeEach(() => {
 })
 
 describe('GET /api/library/files/[itemId]', () => {
+  it('hides a file in the Executive folder from anyone outside that team', async () => {
+    const secret = { ...ITEM, parentReference: { path: '/drive/root:/Executive/Board' } }
+    service.readLibraryFile.mockResolvedValue({ item: secret, open })
+
+    expect((await get()).status).toBe(404)
+    expect(open).not.toHaveBeenCalled()
+
+    executives.isExecutive.mockResolvedValueOnce(true)
+    expect((await get()).status).toBe(200)
+  })
+
   it('streams the file from our origin with a private cache and an ETag', async () => {
     const response = await get()
 
