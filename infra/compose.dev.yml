@@ -38,43 +38,45 @@ services:
     volumes:
       - redis-dev-data:/data
 
-  # S3-compatible object storage for profile photos; prod points S3_ENDPOINT at real S3 instead.
+  # S3-compatible object storage (RustFS, since MinIO stopped publishing images); prod uses real S3.
   minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: rustfs/rustfs:1.0.3
     restart: unless-stopped
-    command: ['server', '/data', '--console-address', ':9001']
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-ihp}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY is required}
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY_ID:-ihp}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY is required}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ENABLE: 'true'
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
     ports:
       - "${S3_PORT:-9000}:9000"
       - "${S3_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - minio-dev-data:/data
-    healthcheck:
-      test: ['CMD', 'mc', 'ready', 'local']
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - s3-dev-data:/data
 
-  # One-shot: MinIO has no auto-create, so the bucket is made on every `up`.
+  # One-shot: the server has no auto-create, so the bucket is made on every `up` once it answers.
   minio-init:
-    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    image: amazon/aws-cli:2.27.0
     depends_on:
-      minio:
-        condition: service_healthy
+      - minio
     entrypoint:
       - sh
       - -c
       - |
-        mc alias set ihp http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" &&
-        mc mb --ignore-existing "ihp/$${S3_BUCKET}"
+        for i in $$(seq 30); do
+          aws --endpoint-url http://minio:9000 s3api head-bucket --bucket "$${S3_BUCKET}" 2>/dev/null && exit 0
+          aws --endpoint-url http://minio:9000 s3 mb "s3://$${S3_BUCKET}" && exit 0
+          sleep 2
+        done
+        exit 1
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-ihp}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY is required}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-ihp}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY is required}
+      AWS_DEFAULT_REGION: ${S3_REGION:-us-east-1}
       S3_BUCKET: ${S3_BUCKET:-ihp-plus}
 
 volumes:
   postgres-dev-data:
   redis-dev-data:
-  minio-dev-data:
+  s3-dev-data:

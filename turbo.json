@@ -62,6 +62,7 @@
         "S3_*",
         "GRAPH_*",
         "CRON_SECRET",
+        "SNAPSHOT_*",
         "ORG_*",
         "LANDING_DEPLOY_HOOK_URL",
         "PORTAL_URL",

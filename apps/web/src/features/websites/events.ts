@@ -6,6 +6,7 @@ export const websiteEvents = {
   roundFailed: 'websites.round.failed',
   checkRecorded: 'websites.check.recorded',
   checkRecordFailed: 'websites.check.record_failed',
+  snapshotViewed: 'websites.snapshot.viewed',
   created: 'websites.website.created',
   createFailed: 'websites.website.create_failed',
   updated: 'websites.website.updated',
