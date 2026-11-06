@@ -10,8 +10,7 @@ import {
   type LibraryRendition,
 } from '@/features/library/utils/library-file'
 import { isExecutivePath, itemLibraryPath } from '@/features/library/utils/private-folder'
-import { getSession, membershipOf, readProfile } from '@/lib/auth-guard'
-import { isExecutive } from '@/lib/executives'
+import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 
 // Answered per viewer, so nothing between the browser and Next may cache it for everyone.
 export const dynamic = 'force-dynamic'
@@ -40,11 +39,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ item
 
   try {
     const { item, open } = await readLibraryFile(itemId)
-    // Refused like a missing file, so an item id outside the Executive team reveals nothing.
-    if (
-      isExecutivePath(itemLibraryPath(item)) &&
-      !(await isExecutive(membershipOf(profile).organizationId, session.user.id))
-    ) {
+    // Refused like a missing file, so an item id reveals nothing to a non-admin.
+    if (isExecutivePath(itemLibraryPath(item)) && !canManageOrganization(membershipOf(profile))) {
       return problem(404, 'That file is no longer in the internal library.')
     }
     const tag = item.cTag ? libraryEntityTag(item.cTag, rendition) : undefined

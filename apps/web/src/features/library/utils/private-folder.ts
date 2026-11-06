@@ -2,7 +2,7 @@ import type { DriveItem } from '@ihp/graph'
 import { pathFromRoot } from '@/features/drive/utils/mirror-path'
 import { joinLibraryPath, librarySegments } from './library-path'
 
-/** A root folder only the Executive department sees; outside Clients/, so it never mirrors. */
+/** A root folder only owners and admins see; outside Clients/, so it never mirrors. */
 export const EXECUTIVE_FOLDER = 'Executive'
 
 // SharePoint names are case-insensitive, so `executive` is the same folder.

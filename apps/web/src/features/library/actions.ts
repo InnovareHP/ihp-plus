@@ -4,8 +4,7 @@ import { GraphError, GraphNotConfiguredError } from '@ihp/graph'
 import { mirrorRemoval, mirrorRename, mirrorWrite } from '@/features/drive/sync'
 import { pathFromRoot } from '@/features/drive/utils/mirror-path'
 import { track } from '@/lib/analytics'
-import { membershipOf, requireOnboarded } from '@/lib/auth-guard'
-import { isExecutive } from '@/lib/executives'
+import { canManageOrganization, membershipOf, requireOnboarded } from '@/lib/auth-guard'
 import { safeLibraryName } from '@/lib/library-name'
 import { libraryEvents } from './events'
 import {
@@ -68,11 +67,15 @@ const LOCKED = 'The Executive folder cannot be renamed or deleted.'
 /** Who is acting, and whether the Executive folder exists for them. */
 async function viewer() {
   const { user, profile } = await requireOnboarded()
-  const organizationId = membershipOf(profile).organizationId
-  return { user, organizationId, executive: await isExecutive(organizationId, user.id) }
+  const membership = membershipOf(profile)
+  return {
+    user,
+    organizationId: membership.organizationId,
+    executive: canManageOrganization(membership),
+  }
 }
 
-/** Reads one folder of the staff library; the Executive folder is invisible outside that team. */
+/** Reads one folder of the staff library; the Executive folder is invisible to non-admins. */
 export async function listLibraryFolder(input?: unknown): Promise<LibraryResult> {
   const { executive } = await viewer()
   const query = libraryQuerySchema.parse(input ?? {})

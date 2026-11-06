@@ -7,7 +7,7 @@ import {
   sendEmail,
 } from '@/lib/email'
 import { evaluationRoute, routes } from '@/lib/routes'
-import { executiveUserIds } from '@/lib/executives'
+import { executiveUserIds } from './executives'
 
 export interface AssignedEvaluations {
   evaluatorId: string

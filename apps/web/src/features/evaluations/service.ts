@@ -10,7 +10,7 @@ import {
   type FormField,
   type RequestValues,
 } from '@/features/requests/schema'
-import { executiveUserIds } from '@/lib/executives'
+import { executiveUserIds } from './executives'
 import { notifyEvaluator, notifyEvaluatorCancelled, notifyExecutives } from './notifications'
 import {
   ANONYMOUS_EVALUATOR,

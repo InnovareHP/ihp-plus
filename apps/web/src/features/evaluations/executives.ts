@@ -18,8 +18,3 @@ export async function executiveUserIds(organizationId: string): Promise<string[]
   })
   return [...new Set(members.map((member) => member.userId))]
 }
-
-export async function isExecutive(organizationId: string | undefined, userId: string) {
-  if (!organizationId) return false
-  return (await executiveUserIds(organizationId)).includes(userId)
-}

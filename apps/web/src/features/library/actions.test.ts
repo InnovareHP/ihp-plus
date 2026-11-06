@@ -45,6 +45,7 @@ const sync = vi.hoisted(() => ({
 const guard = vi.hoisted(() => ({
   requireOnboarded: vi.fn(async () => ({ user: { id: 'user-1' }, profile: {} })),
   membershipOf: vi.fn((): { organizationId: string | undefined } => ({ organizationId: 'org-1' })),
+  canManageOrganization: vi.fn(() => false),
 }))
 
 class TestGraphError extends Error {
@@ -71,8 +72,6 @@ vi.mock('@ihp/graph', () => ({
 vi.mock('@/lib/auth-guard', () => guard)
 vi.mock('@/features/drive/sync', () => sync)
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }))
-const executives = vi.hoisted(() => ({ isExecutive: vi.fn(async () => false) }))
-vi.mock('@/lib/executives', () => executives)
 
 const { GraphNotConfiguredError } = await import('@ihp/graph')
 const {
@@ -107,7 +106,7 @@ beforeEach(() => {
   graph.getItemByPath.mockResolvedValue({ id: 'clients-item', name: 'Clients', folder: {} })
   graph.getItem.mockResolvedValue({ id: 'file-1', name: 'handbook.pdf' })
   guard.membershipOf.mockReturnValue({ organizationId: 'org-1' })
-  executives.isExecutive.mockResolvedValue(false)
+  guard.canManageOrganization.mockReturnValue(false)
 })
 
 function uploadForm(path: string, file: File, folder = '') {
@@ -455,8 +454,8 @@ describe('the Executive folder', () => {
     expect(graph.deleteItem).not.toHaveBeenCalled()
   })
 
-  it('is created for an executive the first time they open the root', async () => {
-    executives.isExecutive.mockResolvedValue(true)
+  it('is created for an owner or admin the first time they open the root', async () => {
+    guard.canManageOrganization.mockReturnValue(true)
     graph.listAllChildren.mockResolvedValue([folder('Clients')])
     graph.ensureFolder.mockResolvedValueOnce(executiveFolder)
 
@@ -469,8 +468,8 @@ describe('the Executive folder', () => {
     })
   })
 
-  it('lets an executive work inside it but never rename or delete the folder itself', async () => {
-    executives.isExecutive.mockResolvedValue(true)
+  it('lets an admin work inside it but never rename or delete the folder itself', async () => {
+    guard.canManageOrganization.mockReturnValue(true)
     graph.getItem.mockResolvedValue(boardFile)
     expect(await removeFromLibraryFolder({ itemId: 'file-1' })).toMatchObject({ ok: true })
 
