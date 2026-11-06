@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
 import {
+  websiteExpiryAlertTemplate,
+  websiteExpiryReportTemplate,
   websiteProblemsTemplate,
   applicationReceivedTemplate,
   applicationRejectedTemplate,
@@ -532,5 +534,43 @@ describe('websiteProblemsTemplate', () => {
     expect(email.text).toContain('Riverside site: Down, HTTP 503')
     expect(email.html).toContain('Main site: Issue, HTTP 200 in 7200 ms')
     expect(email.html).toContain('https://portal.test/app/websites')
+  })
+})
+
+describe('websiteExpiryReportTemplate', () => {
+  it('lists every site’s dates and says in the subject what is close', () => {
+    const email = websiteExpiryReportTemplate({
+      monthLabel: 'November 2026',
+      sites: ['Riverside site: domain Mar 14, 2027 (128 days), SSL Nov 15, 2026 (9 days)'],
+      expiringSoon: 1,
+      url: 'https://portal.test/app/websites',
+    })
+
+    expect(email.subject).toBe('Domains and SSL for November 2026: 1 expiring within 30 days')
+    expect(email.text).toContain('SSL Nov 15, 2026 (9 days)')
+    expect(email.html).toContain('https://portal.test/app/websites')
+  })
+
+  it('says plainly when nothing is close', () => {
+    const email = websiteExpiryReportTemplate({
+      monthLabel: 'November 2026',
+      sites: [],
+      expiringSoon: 0,
+      url: 'https://portal.test/app/websites',
+    })
+
+    expect(email.subject).toBe('Domains and SSL for November 2026: nothing expiring soon')
+  })
+})
+
+describe('websiteExpiryAlertTemplate', () => {
+  it('names each renewal that is due', () => {
+    const email = websiteExpiryAlertTemplate({
+      alerts: ['Riverside site: SSL certificate expires Nov 13, 2026 (7 days)'],
+      url: 'https://portal.test/app/websites',
+    })
+
+    expect(email.subject).toBe('A domain or SSL certificate needs renewing soon')
+    expect(email.text).toContain('SSL certificate expires Nov 13, 2026 (7 days)')
   })
 })

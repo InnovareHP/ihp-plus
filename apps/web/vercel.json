@@ -17,6 +17,8 @@
     { "path": "/app/api/cron/hiring-interviews", "schedule": "15 9 * * *" },
     { "path": "/app/api/cron/website-checks?round=clock_in", "schedule": "0 12 * * 6,0" },
     { "path": "/app/api/cron/website-checks?round=clock_out", "schedule": "0 20 * * 6,0" },
-    { "path": "/app/api/cron/website-snapshots", "schedule": "5 4 * * *" }
+    { "path": "/app/api/cron/website-snapshots", "schedule": "5 4 * * *" },
+    { "path": "/app/api/cron/website-expiry?kind=monthly", "schedule": "0 1 1 * *" },
+    { "path": "/app/api/cron/website-expiry?kind=alerts", "schedule": "30 1 * * *" }
   ]
 }
