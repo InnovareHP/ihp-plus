@@ -16,15 +16,19 @@ const prisma = vi.hoisted(() => ({
     updateMany: vi.fn(),
   },
   newHireTaskCompletion: { findMany: vi.fn(), upsert: vi.fn(), deleteMany: vi.fn() },
-  user: { findMany: vi.fn() },
+  user: { findMany: vi.fn(), findUnique: vi.fn() },
   team: { findMany: vi.fn() },
-  teamMember: { findFirst: vi.fn() },
   attendanceSchedule: { findMany: vi.fn() },
   bluebookAcknowledgement: { findMany: vi.fn() },
   bluebookDocument: { findFirst: vi.fn(), findMany: vi.fn() },
 }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
+
+const lookups = vi.hoisted(() => ({
+  listFor: vi.fn(async () => [{ value: 'Nurse', sortOrder: 0 }]),
+}))
+vi.mock('@/features/lookups/service', () => lookups)
 
 const {
   addRequiredDocument,
@@ -47,7 +51,13 @@ const ADA = {
 }
 
 const HANDBOOK = { document: { id: 'doc-handbook', title: 'Handbook', teams: [] } }
-const LAPTOP = { id: 'task-laptop', title: 'Collect your laptop', description: null, teamId: null }
+const LAPTOP = {
+  id: 'task-laptop',
+  title: 'Collect your laptop',
+  description: null,
+  teamId: null,
+  position: null,
+}
 
 function settledAda() {
   prisma.user.findMany.mockResolvedValue([ADA])
@@ -183,20 +193,27 @@ describe('setTaskDone', () => {
     expect(prisma.newHireTaskCompletion.upsert).not.toHaveBeenCalled()
   })
 
-  it('refuses another department’s task', async () => {
-    prisma.newHireTask.findFirst.mockResolvedValue({ teamId: 'team-finance' })
-    prisma.teamMember.findFirst.mockResolvedValue(null)
-
-    expect(await setTaskDone('org-1', 'user-ada', 'task-ledger', true)).toBe(false)
-    expect(prisma.teamMember.findFirst).toHaveBeenCalledWith({
-      where: { teamId: 'team-finance', userId: 'user-ada' },
-      select: { id: true },
+  it('refuses a task for another department or position', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      jobTitle: 'Accountant',
+      teammembers: [{ teamId: 'team-finance' }],
     })
+
+    prisma.newHireTask.findFirst.mockResolvedValue({ teamId: 'team-clinic', position: null })
+    expect(await setTaskDone('org-1', 'user-ada', 'task-keys', true)).toBe(false)
+    prisma.newHireTask.findFirst.mockResolvedValue({ teamId: null, position: 'Nurse' })
+    expect(await setTaskDone('org-1', 'user-ada', 'task-kit', true)).toBe(false)
     expect(prisma.newHireTaskCompletion.upsert).not.toHaveBeenCalled()
+
+    prisma.newHireTask.findFirst.mockResolvedValue({
+      teamId: 'team-finance',
+      position: 'Accountant',
+    })
+    expect(await setTaskDone('org-1', 'user-ada', 'task-ledger', true)).toBe(true)
   })
 
   it('ticks a task off, and unticking takes the record away', async () => {
-    prisma.newHireTask.findFirst.mockResolvedValue({ teamId: null })
+    prisma.newHireTask.findFirst.mockResolvedValue({ teamId: null, position: null })
 
     expect(await setTaskDone('org-1', 'user-ada', 'task-laptop', true)).toBe(true)
     expect(prisma.newHireTaskCompletion.upsert).toHaveBeenCalled()
@@ -243,21 +260,22 @@ describe('addTask', () => {
       title: 'Open the ledger',
       description: '',
       teamId: 'team-finance',
+      position: 'Nurse',
     })
 
     expect(prisma.newHireTask.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ teamId: 'team-finance', sortOrder: 2 }),
+        data: expect.objectContaining({ teamId: 'team-finance', position: 'Nurse', sortOrder: 2 }),
       }),
     )
-    expect(task).toMatchObject({ audience: 'Finance' })
+    expect(task).toMatchObject({ audience: 'Finance · Nurse' })
   })
 
-  it('keeps an unscoped task on every list, and refuses a department from elsewhere', async () => {
-    expect(await addTask('org-1', { title: 'x', description: '', teamId: '' })).toMatchObject({
-      audience: 'All departments',
-    })
-    expect(await addTask('org-1', { title: 'x', description: '', teamId: 'team-other' })).toBeNull()
+  it('keeps an unscoped task on every list, and refuses an audience not offered', async () => {
+    const task = { title: 'x', description: '', teamId: '', position: '' }
+    expect(await addTask('org-1', task)).toMatchObject({ audience: 'Everyone' })
+    expect(await addTask('org-1', { ...task, teamId: 'team-other' })).toBeNull()
+    expect(await addTask('org-1', { ...task, position: 'Astronaut' })).toBeNull()
     expect(prisma.newHireTask.create).toHaveBeenCalledTimes(1)
   })
 })

@@ -16,14 +16,15 @@ import {
   type NewTaskValues,
 } from '../schema'
 
-const EMPTY_TASK: NewTaskInput = { title: '', description: '', teamId: '' }
+const EMPTY_TASK: NewTaskInput = { title: '', description: '', teamId: '', position: '' }
 
 export interface FirstDayTasksSetupProps {
   tasks: readonly ChecklistTaskRow[]
   departments: ChecklistSetup['departments']
+  positions: ChecklistSetup['positions']
 }
 
-export function FirstDayTasksSetup({ tasks, departments }: FirstDayTasksSetupProps) {
+export function FirstDayTasksSetup({ tasks, departments, positions }: FirstDayTasksSetupProps) {
   const add = useAddChecklistTask()
   const remove = useRemoveChecklistTask()
   const {
@@ -40,8 +41,8 @@ export function FirstDayTasksSetup({ tasks, departments }: FirstDayTasksSetupPro
 
   function onSubmit(values: NewTaskValues) {
     add.mutate({ ...values, tempId: crypto.randomUUID() })
-    // The department stays picked, since tasks for one department tend to be added together.
-    reset({ ...EMPTY_TASK, teamId: values.teamId })
+    // The audience stays picked, since tasks for one group tend to be added together.
+    reset({ ...EMPTY_TASK, teamId: values.teamId, position: values.position })
   }
 
   function removeWithUndo(row: ChecklistTaskRow) {
@@ -76,7 +77,7 @@ export function FirstDayTasksSetup({ tasks, departments }: FirstDayTasksSetupPro
       key: 'audience',
       header: 'Who gets it',
       render: (row) => (
-        <Badge variant="light" color={row.audience === 'All departments' ? 'gray' : 'brand'}>
+        <Badge variant="light" color={row.audience === 'Everyone' ? 'gray' : 'brand'}>
           {row.audience}
         </Badge>
       ),
@@ -125,6 +126,16 @@ export function FirstDayTasksSetup({ tasks, departments }: FirstDayTasksSetupPro
             ]}
             error={errors.teamId?.message}
           />
+          <NativeSelect
+            {...register('position')}
+            label="Position"
+            description="Only new hires in this position get it."
+            data={[
+              { value: '', label: 'All positions' },
+              ...positions.map((position) => ({ value: position, label: position })),
+            ]}
+            error={errors.position?.message}
+          />
           <Group justify="flex-end">
             <Button type="submit">Add task</Button>
           </Group>
@@ -141,7 +152,7 @@ export function FirstDayTasksSetup({ tasks, departments }: FirstDayTasksSetupPro
         empty={
           <EmptyState
             title="No first-day tasks yet"
-            description="Add what new hires should get done in their first days, for everyone or for one department, such as collecting their user credentials or meeting their lead."
+            description="Add what new hires should get done in their first days, for everyone or for one department or position, such as collecting their user credentials or meeting their lead."
           />
         }
       />

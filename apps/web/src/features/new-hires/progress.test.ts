@@ -3,6 +3,7 @@ import { doneCountOf, progressOf, stuckOnOf, type HireFacts } from './progress'
 
 const SETTLED: HireFacts = {
   phone: '+63 917 000 0000',
+  jobTitle: 'Support specialist',
   photoKey: 'photos/a.jpg',
   teamIds: ['team-it'],
   shiftName: 'Morning',
@@ -12,13 +13,28 @@ const SETTLED: HireFacts = {
 
 const HANDBOOK = { id: 'doc-handbook', title: 'Handbook', teamIds: [] }
 const FINANCE_POLICY = { id: 'doc-finance', title: 'Expense policy', teamIds: ['team-finance'] }
-const LAPTOP = { id: 'task-laptop', title: 'Collect your laptop', description: null, teamId: null }
+const LAPTOP = {
+  id: 'task-laptop',
+  title: 'Collect your laptop',
+  description: null,
+  teamId: null,
+  position: null,
+}
 const LEDGER = {
   id: 'task-ledger',
   title: 'Open the ledger',
   description: null,
   teamId: 'team-finance',
+  position: null,
 }
+const FIELD_KIT = {
+  id: 'task-kit',
+  title: 'Collect your field kit',
+  description: null,
+  teamId: null,
+  position: 'Nurse',
+}
+const CLINIC_KEYS = { ...FIELD_KIT, id: 'task-keys', teamId: 'team-clinic' }
 
 describe('progressOf', () => {
   it('marks every step done for a hire who has finished them', () => {
@@ -79,6 +95,25 @@ describe('progressOf', () => {
     expect(support.tasks.done).toBe(true)
     expect(finance.tasks.items.map((item) => item.id)).toEqual(['task-laptop', 'task-ledger'])
     expect(finance.tasks.done).toBe(false)
+  })
+
+  it('gives a position task only to hires in that position, and both filters must match', () => {
+    const nurse = { ...SETTLED, jobTitle: 'Nurse', teamIds: ['team-clinic'] }
+    const nurseElsewhere = { ...nurse, teamIds: ['team-it'] }
+    const tasks = [LAPTOP, FIELD_KIT, CLINIC_KEYS]
+
+    expect(progressOf(SETTLED, [], tasks).tasks.items.map((item) => item.id)).toEqual([
+      'task-laptop',
+    ])
+    expect(progressOf(nurse, [], tasks).tasks.items.map((item) => item.id)).toEqual([
+      'task-laptop',
+      'task-kit',
+      'task-keys',
+    ])
+    expect(progressOf(nurseElsewhere, [], tasks).tasks.items.map((item) => item.id)).toEqual([
+      'task-laptop',
+      'task-kit',
+    ])
   })
 
   it('counts nothing to read or tick off as done', () => {

@@ -99,6 +99,7 @@ export function useAddChecklistTask() {
           title: values.title,
           description: values.description,
           teamId: values.teamId,
+          position: values.position,
         }),
       ),
     apply: (values) => (setup) => ({
@@ -111,7 +112,9 @@ export function useAddChecklistTask() {
           title: values.title,
           description: values.description || undefined,
           audience:
-            setup.departments.find((team) => team.id === values.teamId)?.name ?? 'All departments',
+            [setup.departments.find((team) => team.id === values.teamId)?.name, values.position]
+              .filter(Boolean)
+              .join(' · ') || 'Everyone',
         },
       ],
     }),

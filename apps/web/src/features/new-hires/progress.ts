@@ -7,6 +7,7 @@ import {
 
 export interface HireFacts {
   phone: string | null
+  jobTitle: string | null
   photoKey: string | null
   teamIds: readonly string[]
   shiftName: string | undefined
@@ -27,6 +28,19 @@ export interface TaskDefinition {
   description: string | null
   /** Null for every department. */
   teamId: string | null
+  /** Null for every position. */
+  position: string | null
+}
+
+/** A task reaches a hire who matches every filter it sets; one with none reaches everyone. */
+export function taskReaches(
+  task: Pick<TaskDefinition, 'teamId' | 'position'>,
+  hire: Pick<HireFacts, 'teamIds' | 'jobTitle'>,
+) {
+  return (
+    (!task.teamId || hire.teamIds.includes(task.teamId)) &&
+    (!task.position || task.position === hire.jobTitle)
+  )
 }
 
 /** A document on the company shelf reaches everyone; one on department shelves, their members. */
@@ -52,7 +66,7 @@ export function progressOf(
     }))
 
   const items = tasks
-    .filter((task) => !task.teamId || facts.teamIds.includes(task.teamId))
+    .filter((task) => taskReaches(task, facts))
     .map((task) => ({
       id: task.id,
       title: task.title,

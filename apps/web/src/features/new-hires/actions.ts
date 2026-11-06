@@ -126,7 +126,12 @@ export async function createChecklistTask(input: unknown): Promise<Result<Checkl
     return { ok: false, message: parsed.error.issues[0]?.message ?? 'Check the task and retry.' }
   }
   const task = await addTask(who.data.organizationId, parsed.data)
-  if (!task) return { ok: false, message: 'That department is no longer in the organization.' }
+  if (!task) {
+    return {
+      ok: false,
+      message: 'That department or position is no longer offered — pick another.',
+    }
+  }
   return { ok: true, data: task }
 }
 

@@ -54,7 +54,11 @@ export function NewHiresPanel() {
                 <Title order={3} size="h5" id="first-day-tasks-heading">
                   First-day tasks
                 </Title>
-                <FirstDayTasksSetup tasks={setup.data.tasks} departments={setup.data.departments} />
+                <FirstDayTasksSetup
+                  tasks={setup.data.tasks}
+                  departments={setup.data.departments}
+                  positions={setup.data.positions}
+                />
               </Stack>
             </Card>
           </SimpleGrid>

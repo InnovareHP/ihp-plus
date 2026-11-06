@@ -37,12 +37,14 @@ model NewHireDocument {
   @@schema("onboarding")
 }
 
-// One item on the first-day task list, for every new hire or for one department's.
+// One item on the first-day task list, for every new hire or those in a department and/or position.
 model NewHireTask {
   id             String  @id @default(uuid())
   organizationId String
   /// The department whose hires get it; null for every department. A plain column, as above.
   teamId         String?
+  /// A `position` lookup value, matched against user.jobTitle as text; null for every position.
+  position       String?
   title          String
   description    String?
   sortOrder      Int     @default(0)

@@ -1,8 +1,10 @@
 import { db } from '@ihp/db'
+import { listFor } from '@/features/lookups/service'
 import {
   doneCountOf,
   progressOf,
   stuckOnOf,
+  taskReaches,
   type HireFacts,
   type RequiredDocument,
   type TaskDefinition,
@@ -43,7 +45,7 @@ async function requiredDocumentsOf(organizationId: string): Promise<RequiredDocu
 async function tasksOf(organizationId: string): Promise<TaskDefinition[]> {
   return db.newHireTask.findMany({
     where: { organizationId, archivedAt: null },
-    select: { id: true, title: true, description: true, teamId: true },
+    select: { id: true, title: true, description: true, teamId: true, position: true },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
   })
 }
@@ -120,6 +122,7 @@ async function hiresOf(
         teamName: user.teammembers[0]?.team.name,
         facts: {
           phone: user.phone,
+          jobTitle: user.jobTitle,
           photoKey: user.photoKey,
           teamIds: user.teammembers.map((member) => member.team.id),
           shiftName: shiftOf.get(user.id),
@@ -237,16 +240,18 @@ export async function setTaskDone(
 ) {
   const task = await db.newHireTask.findFirst({
     where: { id: taskId, organizationId, archivedAt: null },
-    select: { teamId: true },
+    select: { teamId: true, position: true },
   })
   if (!task) return false
-  if (task.teamId) {
-    // Another department's task is not on this hire's list, so it cannot be ticked.
-    const member = await db.teamMember.findFirst({
-      where: { teamId: task.teamId, userId },
-      select: { id: true },
+  if (task.teamId || task.position) {
+    // A task for another department or position is not on this hire's list, so it cannot be ticked.
+    const hire = await db.user.findUnique({
+      where: { id: userId },
+      select: { jobTitle: true, teammembers: { select: { teamId: true } } },
     })
-    if (!member) return false
+    if (!hire) return false
+    const teamIds = hire.teammembers.map((member) => member.teamId)
+    if (!taskReaches(task, { jobTitle: hire.jobTitle, teamIds })) return false
   }
 
   if (done) {
@@ -279,13 +284,20 @@ function departmentsOf(organizationId: string) {
   })
 }
 
-function audienceOf(teamId: string | null, departments: readonly { id: string; name: string }[]) {
-  if (!teamId) return ALL_DEPARTMENTS
-  return departments.find((team) => team.id === teamId)?.name ?? 'A removed department'
+export const EVERYONE = 'Everyone'
+
+function audienceOf(
+  task: { teamId: string | null; position: string | null },
+  departments: readonly { id: string; name: string }[],
+) {
+  const department = task.teamId
+    ? (departments.find((team) => team.id === task.teamId)?.name ?? 'A removed department')
+    : undefined
+  return [department, task.position].filter(Boolean).join(' · ') || EVERYONE
 }
 
 export async function loadSetup(organizationId: string): Promise<ChecklistSetup> {
-  const [required, documents, tasks, departments] = await Promise.all([
+  const [required, documents, tasks, departments, positions] = await Promise.all([
     db.newHireDocument.findMany({
       where: { organizationId, document: { archivedAt: null } },
       select: {
@@ -302,6 +314,7 @@ export async function loadSetup(organizationId: string): Promise<ChecklistSetup>
     }),
     tasksOf(organizationId),
     departmentsOf(organizationId),
+    listFor(organizationId, 'position'),
   ])
 
   const requiredIds = new Set(required.map(({ document }) => document.id))
@@ -319,9 +332,10 @@ export async function loadSetup(organizationId: string): Promise<ChecklistSetup>
       id: task.id,
       title: task.title,
       description: task.description ?? undefined,
-      audience: audienceOf(task.teamId, departments),
+      audience: audienceOf(task, departments),
     })),
     departments,
+    positions: positions.map((option) => option.value),
   }
 }
 
@@ -345,11 +359,16 @@ export async function removeRequiredDocument(organizationId: string, documentId:
   await db.newHireDocument.deleteMany({ where: { organizationId, documentId } })
 }
 
-/** Null when the department is not in this organization, so a forged id adds nothing. */
+/** Null for a department or position this organization does not offer, so a forged one adds nothing. */
 export async function addTask(organizationId: string, values: NewTaskValues) {
-  const departments = await departmentsOf(organizationId)
+  const [departments, positions] = await Promise.all([
+    departmentsOf(organizationId),
+    listFor(organizationId, 'position'),
+  ])
   const teamId = values.teamId || null
+  const position = values.position || null
   if (teamId && !departments.some((team) => team.id === teamId)) return null
+  if (position && !positions.some((option) => option.value === position)) return null
 
   const last = await db.newHireTask.aggregate({
     where: { organizationId, archivedAt: null },
@@ -362,6 +381,7 @@ export async function addTask(organizationId: string, values: NewTaskValues) {
       description: values.description || null,
       sortOrder: (last._max.sortOrder ?? -1) + 1,
       teamId,
+      position,
     },
     select: { id: true, title: true, description: true },
   })
@@ -369,7 +389,7 @@ export async function addTask(organizationId: string, values: NewTaskValues) {
     id: task.id,
     title: task.title,
     description: task.description ?? undefined,
-    audience: audienceOf(teamId, departments),
+    audience: audienceOf({ teamId, position }, departments),
   }
 }
 
