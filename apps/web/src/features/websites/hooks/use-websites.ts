@@ -16,13 +16,14 @@ import {
 import { downloadFile } from '@/lib/download'
 import { websiteEvents } from '../events'
 import { websiteKeys } from '../query-keys'
-import type {
-  Checklist,
-  ExportMonthValues,
-  ItTeamValues,
-  UpdateWebsiteValues,
-  WebsiteDraftValues,
-  WebsiteRow,
+import {
+  EMPTY_SHIFT_CHECK,
+  type Checklist,
+  type ExportMonthValues,
+  type ItTeamValues,
+  type UpdateWebsiteValues,
+  type WebsiteDraftValues,
+  type WebsiteRow,
 } from '../schema'
 import { monthCsv, monthCsvName } from '../utils/csv'
 
@@ -107,6 +108,8 @@ export function useCreateWebsite(clientNameOf: (clientId: string) => string) {
           notes: values.notes,
           checks: {},
           snapshots: {},
+          shift: EMPTY_SHIFT_CHECK,
+          formEmail: undefined,
         },
       ]),
     settle: (rows, saved, values) => rows.map((row) => (row.id === values.tempId ? saved : row)),

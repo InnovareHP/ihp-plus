@@ -6,6 +6,9 @@ export const websiteEvents = {
   roundFailed: 'websites.round.failed',
   checkRecorded: 'websites.check.recorded',
   checkRecordFailed: 'websites.check.record_failed',
+  shiftCheckSaved: 'websites.shift_check.saved',
+  shiftCheckSaveFailed: 'websites.shift_check.save_failed',
+  panelOpened: 'websites.panel.opened',
   snapshotViewed: 'websites.snapshot.viewed',
   created: 'websites.website.created',
   createFailed: 'websites.website.create_failed',
@@ -15,6 +18,8 @@ export const websiteEvents = {
   archiveFailed: 'websites.website.archive_failed',
   exported: 'websites.month.exported',
   exportFailed: 'websites.month.export_failed',
+  reportExported: 'websites.day_report.exported',
+  reportExportFailed: 'websites.day_report.export_failed',
   itTeamSaved: 'websites.settings.it_team_saved',
   itTeamSaveFailed: 'websites.settings.it_team_save_failed',
 } as const satisfies Record<string, EventName>

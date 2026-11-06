@@ -73,8 +73,8 @@ export function CheckVerdictForm({ defaults, onSave, onClose }: CheckVerdictForm
         />
         <Textarea
           {...register('note')}
-          label="Note"
-          description="Required unless the site is running. Say what you saw."
+          label="Reason"
+          description="Required unless the site is running. Say what you saw that the checker missed."
           autosize
           minRows={3}
           error={errors.note?.message}
@@ -85,7 +85,7 @@ export function CheckVerdictForm({ defaults, onSave, onClose }: CheckVerdictForm
             Cancel
           </Button>
           <Button type="submit" loading={isSubmitting}>
-            Save check
+            Save status
           </Button>
         </DialogActions>
       </Stack>
