@@ -43,3 +43,8 @@ export function isPrivateAddress(address: string): boolean {
   }
   return PRIVATE_V4.some((range) => range.test(ip))
 }
+
+/** The lead changed what the probe decided, which the report says out loud. */
+export function isOverridden(check: ProbeReading & { status: CheckStatus }) {
+  return check.status !== verdictOf(check)
+}

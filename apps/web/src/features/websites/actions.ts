@@ -3,7 +3,10 @@
 import { db } from '@ihp/db'
 import { shiftDateKey } from '@ihp/clock'
 import { after } from 'next/server'
+import { letterheadPdf } from '@/features/letterhead/utils/letterhead-pdf'
+import { LETTERHEAD_LAYOUTS } from '@/features/letterhead/utils/letterhead-templates'
 import { websitesAccess, type WebsitesCaller } from './access'
+import { expiryOf, type Expiry } from './expiry'
 import {
   queueSnapshots,
   runRoundFor,
@@ -15,6 +18,9 @@ import {
 import {
   CHECK_ROUNDS,
   dateKeySchema,
+  exportDayReportSchema,
+  MANUAL_RESULTS,
+  saveShiftCheckSchema,
   itTeamSchema,
   exportMonthSchema,
   recordCheckSchema,
@@ -24,6 +30,10 @@ import {
   type CheckStatus,
   type Checklist,
   type ClientOption,
+  type DayReportFile,
+  type ExportDayReportValues,
+  type ManualResult,
+  type SaveShiftCheckValues,
   type ExportMonthValues,
   type ItTeamValues,
   type MonthExport,
@@ -34,6 +44,8 @@ import {
   type WebsiteOption,
   type WebsiteRow,
 } from './schema'
+import { buildDayReport, dayReportFileName } from './utils/day-report'
+import { dayReportPdf } from './utils/day-report-pdf'
 import { websiteDayKey } from './utils/work-day'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
@@ -113,12 +125,54 @@ interface WebsiteRecord {
   notes: string
 }
 
+function manualOf(value: string): ManualResult | undefined {
+  return MANUAL_RESULTS.find((result) => result === value)
+}
+
+interface ShiftData {
+  shifts: Map<string, { pagesButtons: string; findings: string; action: string }>
+  forms: Map<string, { formEmail: string; formEmailAt: Date | null }>
+}
+
+const NO_SHIFT_DATA: ShiftData = { shifts: new Map(), forms: new Map() }
+
+async function shiftDataFor(organizationId: string, websiteIds: string[], date: string) {
+  if (websiteIds.length === 0) return NO_SHIFT_DATA
+  const day = dateOf(date)
+  const [shifts, forms] = await Promise.all([
+    db.websiteShiftCheck.findMany({
+      where: { organizationId, workDate: day, websiteId: { in: websiteIds } },
+      select: { websiteId: true, pagesButtons: true, findings: true, action: true },
+    }),
+    // The form is tested once, so the latest result on or before this day still stands.
+    db.websiteShiftCheck.findMany({
+      where: {
+        organizationId,
+        websiteId: { in: websiteIds },
+        workDate: { lte: day },
+        formEmail: { not: '' },
+      },
+      orderBy: { formEmailAt: 'desc' },
+      distinct: ['websiteId'],
+      select: { websiteId: true, formEmail: true, formEmailAt: true },
+    }),
+  ])
+  return {
+    shifts: new Map(shifts.map((row) => [row.websiteId, row])),
+    forms: new Map(forms.map((row) => [row.websiteId, row])),
+  } satisfies ShiftData
+}
+
 function websiteRowOf(
   site: WebsiteRecord,
   names: Map<string, string>,
   checks: readonly CheckRecord[],
   snapshots: SnapshotTimes,
+  shiftData: ShiftData,
 ): WebsiteRow {
+  const shift = shiftData.shifts.get(site.id)
+  const form = shiftData.forms.get(site.id)
+  const formResult = form ? manualOf(form.formEmail) : undefined
   return {
     id: site.id,
     name: site.name,
@@ -128,6 +182,15 @@ function websiteRowOf(
     notes: site.notes,
     checks: checksByRound(checks.filter((check) => check.websiteId === site.id)),
     snapshots: snapshots.get(site.id) ?? {},
+    shift: {
+      pagesButtons: shift ? manualOf(shift.pagesButtons) : undefined,
+      findings: shift?.findings ?? '',
+      action: shift?.action ?? '',
+    },
+    formEmail:
+      formResult && form?.formEmailAt
+        ? { result: formResult, testedAt: form.formEmailAt.toISOString() }
+        : undefined,
   }
 }
 
@@ -151,7 +214,7 @@ async function checklistFor(caller: Viewer, date: string, today: string, timeZon
     orderBy: { name: 'asc' },
     select: { id: true, name: true, url: true, clientId: true, notes: true },
   })
-  const [checks, names, snapshots] = await Promise.all([
+  const [checks, names, snapshots, shiftData] = await Promise.all([
     db.websiteCheck.findMany({
       where: { organizationId: caller.organizationId, workDate: day },
     }),
@@ -161,6 +224,11 @@ async function checklistFor(caller: Viewer, date: string, today: string, timeZon
     ),
     // Pictures are only ever shown for today, so a past day never asks storage.
     isToday ? snapshotsOf(caller.organizationId, date) : Promise.resolve<SnapshotTimes>(new Map()),
+    shiftDataFor(
+      caller.organizationId,
+      sites.map((site) => site.id),
+      date,
+    ),
   ])
 
   return {
@@ -168,7 +236,7 @@ async function checklistFor(caller: Viewer, date: string, today: string, timeZon
     today,
     timeZone,
     snapshotsEnabled: snapshotsEnabled(),
-    websites: sites.map((site) => websiteRowOf(site, names, checks, snapshots)),
+    websites: sites.map((site) => websiteRowOf(site, names, checks, snapshots, shiftData)),
   } satisfies Checklist
 }
 
@@ -214,14 +282,15 @@ async function savedRow(caller: Viewer, id: string): Promise<WebsiteRow | undefi
   if (!site) return undefined
   const timeZone = await timeZoneOf(caller.organizationId)
   const today = websiteDayKey(new Date(), timeZone)
-  const [names, checks, snapshots] = await Promise.all([
+  const [names, checks, snapshots, shiftData] = await Promise.all([
     clientNames(caller.organizationId, [site.clientId ?? '']),
     db.websiteCheck.findMany({
       where: { websiteId: id, workDate: dateOf(today) },
     }),
     snapshotsOf(caller.organizationId, today, id),
+    shiftDataFor(caller.organizationId, [id], today),
   ])
-  return websiteRowOf(site, names, checks, snapshots)
+  return websiteRowOf(site, names, checks, snapshots, shiftData)
 }
 
 export async function createWebsite(input: WebsiteDraftInput): Promise<Result<WebsiteRow>> {
@@ -473,6 +542,85 @@ export async function exportMonth(input: ExportMonthValues): Promise<Result<Mont
   if (websiteId && !picked) return { ok: false, message: 'That website no longer exists.' }
 
   return { ok: true, data: { month, timeZone, websiteName: picked?.name, rows } }
+}
+
+/** The lead's hand checks on one site today; each field saves on its own click. */
+export async function saveShiftCheck(input: SaveShiftCheckValues): Promise<Result<WebsiteRow>> {
+  const caller = await viewer()
+  if (!caller) return { ok: false, message: NOT_FOUND }
+  if (!caller.canCheck) return { ok: false, message: NOT_LEAD }
+
+  const parsed = saveShiftCheckSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, message: INVALID }
+  const values = parsed.data
+
+  const site = await db.website.findFirst({
+    where: { id: values.websiteId, organizationId: caller.organizationId, archivedAt: null },
+    select: { id: true },
+  })
+  if (!site) return { ok: false, message: GONE }
+
+  const timeZone = await timeZoneOf(caller.organizationId)
+  const workDate = dateOf(websiteDayKey(new Date(), timeZone))
+  const patch = {
+    ...(values.pagesButtons ? { pagesButtons: values.pagesButtons } : {}),
+    ...(values.formEmail ? { formEmail: values.formEmail, formEmailAt: new Date() } : {}),
+    ...(values.findings !== undefined ? { findings: values.findings } : {}),
+    ...(values.action !== undefined ? { action: values.action } : {}),
+    checkedById: caller.userId,
+    checkedByName: caller.userName,
+  }
+  await db.websiteShiftCheck.upsert({
+    where: { websiteId_workDate: { websiteId: site.id, workDate } },
+    create: { organizationId: caller.organizationId, websiteId: site.id, workDate, ...patch },
+    update: patch,
+  })
+
+  const row = await savedRow(caller, site.id)
+  return row ? { ok: true, data: row } : { ok: false, message: GONE }
+}
+
+/** When the site's domain and https certificate run out, read live from the registry and the site. */
+export async function loadExpiry({ websiteId }: { websiteId: string }): Promise<Result<Expiry>> {
+  const caller = await viewer()
+  if (!caller) return { ok: false, message: NOT_FOUND }
+
+  const site = await db.website.findFirst({
+    where: { id: websiteId, organizationId: caller.organizationId },
+    select: { url: true },
+  })
+  if (!site) return { ok: false, message: GONE }
+  return { ok: true, data: await expiryOf(site.url) }
+}
+
+/** One shift's checks as a letterheaded PDF for the supervisor; nothing is stored. */
+export async function exportDayReport(
+  input: ExportDayReportValues,
+): Promise<Result<DayReportFile>> {
+  const caller = await viewer()
+  if (!caller) return { ok: false, message: NOT_FOUND }
+
+  const parsed = exportDayReportSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, message: 'Pick a day to download.' }
+  const date = parsed.data.date
+
+  const timeZone = await timeZoneOf(caller.organizationId)
+  const today = websiteDayKey(new Date(), timeZone)
+  if (date > today) return { ok: false, message: 'That shift has not started yet.' }
+
+  const checklist = await checklistFor(caller, date, today, timeZone)
+  // Every site at once, each lookup capped by its own timeout, so twelve sites cost one wait.
+  const lookups = await Promise.all(
+    checklist.websites.map(async (site) => [site.id, await expiryOf(site.url)] as const),
+  )
+  const report = buildDayReport({
+    checklist,
+    preparedBy: caller.userName,
+    generatedAt: new Date(),
+    expiries: new Map(lookups),
+  })
+  const bytes = await letterheadPdf(await dayReportPdf(report), LETTERHEAD_LAYOUTS.innovarehp, '')
+  return { ok: true, data: { fileName: dayReportFileName(date), bytes } }
 }
 
 export async function saveItTeam(input: ItTeamValues): Promise<Result<{ itTeamId: string }>> {

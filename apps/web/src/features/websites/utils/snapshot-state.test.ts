@@ -71,6 +71,8 @@ describe('awaitsSnapshots', () => {
           },
         },
         snapshots: {},
+        shift: { pagesButtons: undefined, findings: '', action: '' },
+        formEmail: undefined,
       },
     ],
   })

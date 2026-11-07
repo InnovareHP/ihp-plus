@@ -1,12 +1,22 @@
 'use client'
 
-import { Alert, Button, Card, Group, Modal, Skeleton, Stack, Text } from '@mantine/core'
-import { IconPlus, IconWorldCheck } from '@tabler/icons-react'
+import { Alert, Button, Card, Drawer, Group, Modal, Skeleton, Stack, Text } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
+import { IconFileTypePdf, IconPlus, IconWorldCheck } from '@tabler/icons-react'
 import { useState } from 'react'
 import { EmptyState } from '@/components/empty-state'
 import { useUrlQueryParam } from '@/lib/use-url-query-param'
 import { offerUndo } from '@/lib/undo'
-import { useChecklist, useRecordCheck, useRunRound } from '../hooks/use-checklist'
+import { track } from '@/lib/analytics'
+import {
+  useChecklist,
+  useExpiry,
+  useExportDayReport,
+  useRecordCheck,
+  useRunRound,
+  useSaveShiftCheck,
+} from '../hooks/use-checklist'
+import { websiteEvents } from '../events'
 import {
   useArchiveWebsite,
   useClientOptions,
@@ -25,7 +35,8 @@ import { awaitsSnapshots } from '../utils/snapshot-state'
 import { CheckVerdictForm } from './check-verdict-form'
 import { DayNav } from './day-nav'
 import { RoundSummary } from './round-summary'
-import { WebsiteCard } from './website-card'
+import { WebsitePanel } from './website-panel'
+import { WebsiteTable } from './website-table'
 import { WebsiteForm } from './website-form'
 
 export interface ChecklistPanelProps {
@@ -53,6 +64,13 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
 
   const run = useRunRound(day.value)
   const record = useRecordCheck(day.value, userName)
+  const saveShift = useSaveShiftCheck(day.value)
+  const report = useExportDayReport()
+  // The open site is URL state, so a link to it opens the panel and Back is never lost.
+  const site = useUrlQueryParam('site', 0)
+  const narrow = useMediaQuery('(max-width: 48em)') ?? false
+  const opened = list?.websites.find((website) => website.id === site.value)
+  const expiry = useExpiry(opened?.id)
   const clients = useClientOptions()
   const clientNameOf = (clientId: string) =>
     clients.data?.find((client) => client.id === clientId)?.name ?? ''
@@ -65,7 +83,13 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
   const [verdictFor, setVerdictFor] = useState<{ website: WebsiteRow; round: CheckRound }>()
   const [editing, setEditing] = useState<Editing>()
 
+  function openSite(websiteId: string) {
+    site.commit(websiteId)
+    track(websiteEvents.panelOpened)
+  }
+
   function removeWebsite(website: WebsiteRow) {
+    site.commit('')
     archive.mutate({ id: website.id })
     offerUndo({
       message: `Removed ${website.name} from the list.`,
@@ -79,8 +103,9 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
     return (
       <Stack gap="md" aria-busy="true" aria-label="Loading the checklist">
         <Skeleton height={36} width="22rem" />
-        {[0, 1, 2].map((row) => (
-          <Skeleton key={row} height={150} radius="md" />
+        <Skeleton height={96} radius="md" />
+        {[0, 1, 2, 3, 4].map((row) => (
+          <Skeleton key={row} height={52} radius="sm" />
         ))}
       </Stack>
     )
@@ -113,15 +138,27 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
           // Today is the empty value, so every edit lands on the one cache key for today.
           onChange={(next) => day.commit(next === list.today ? '' : next)}
         />
-        {canManage && isToday ? (
-          <Button
-            variant="default"
-            leftSection={<IconPlus size={18} aria-hidden />}
-            onClick={() => setEditing({ kind: 'new' })}
-          >
-            Add website
-          </Button>
-        ) : null}
+        <Group gap="sm" wrap="wrap">
+          {list.websites.length > 0 ? (
+            <Button
+              variant="default"
+              leftSection={<IconFileTypePdf size={18} aria-hidden />}
+              loading={report.isPending}
+              onClick={() => report.mutate(list.date)}
+            >
+              Download PDF report
+            </Button>
+          ) : null}
+          {canManage && isToday ? (
+            <Button
+              variant="default"
+              leftSection={<IconPlus size={18} aria-hidden />}
+              onClick={() => setEditing({ kind: 'new' })}
+            >
+              Add website
+            </Button>
+          ) : null}
+        </Group>
       </Group>
 
       {list.websites.length > 0 ? (
@@ -181,30 +218,52 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
           />
         </Card>
       ) : (
-        <Stack component="ul" gap="sm" p={0} m={0} style={{ listStyle: 'none' }}>
-          {list.websites.map((website) => (
-            <WebsiteCard
-              key={website.id}
-              website={website}
-              timeZone={list.timeZone}
-              showSnapshots={isToday && list.snapshotsEnabled}
-              now={listedAt}
-              canCheck={canAct}
-              canManage={canManage && isToday}
-              checkingRound={
-                runningRound ??
-                (run.isPending && run.variables?.websiteId === website.id
-                  ? run.variables.round
-                  : undefined)
-              }
-              onRecheck={(round) => run.mutate({ round, websiteId: website.id })}
-              onVerdict={(round) => setVerdictFor({ website, round })}
-              onEdit={() => setEditing({ kind: 'edit', website })}
-              onArchive={() => removeWebsite(website)}
-            />
-          ))}
-        </Stack>
+        <WebsiteTable
+          websites={list.websites}
+          timeZone={list.timeZone}
+          narrow={narrow}
+          onOpen={openSite}
+        />
       )}
+
+      <Drawer
+        opened={Boolean(opened)}
+        onClose={() => site.commit('')}
+        position="right"
+        size={narrow ? '100%' : 'lg'}
+        title={opened?.name ?? 'Website'}
+      >
+        {opened ? (
+          <WebsitePanel
+            key={opened.id}
+            website={opened}
+            timeZone={list.timeZone}
+            showSnapshots={isToday && list.snapshotsEnabled}
+            now={listedAt}
+            canAct={canAct}
+            canManage={canManage && isToday}
+            checkingRound={
+              runningRound ??
+              (run.isPending && run.variables?.websiteId === opened.id
+                ? run.variables.round
+                : undefined)
+            }
+            expiry={expiry.data}
+            expiryPending={expiry.isPending}
+            onRecheck={(round) => run.mutate({ round, websiteId: opened.id })}
+            onOverride={(round) => setVerdictFor({ website: opened, round })}
+            onPagesButtons={(result) =>
+              saveShift.mutate({ websiteId: opened.id, pagesButtons: result })
+            }
+            onFormEmail={(result) => saveShift.mutate({ websiteId: opened.id, formEmail: result })}
+            onSaveFindings={async (values) => {
+              await saveShift.mutateAsync({ websiteId: opened.id, ...values })
+            }}
+            onEdit={() => setEditing({ kind: 'edit', website: opened })}
+            onArchive={() => removeWebsite(opened)}
+          />
+        ) : null}
+      </Drawer>
 
       <Modal
         opened={Boolean(verdictFor)}
@@ -212,7 +271,7 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
         title={
           verdictFor
             ? `${verdictFor.website.name} · ${CHECK_ROUND_LABELS[verdictFor.round]}`
-            : 'Mark check'
+            : 'Change status'
         }
         centered
       >

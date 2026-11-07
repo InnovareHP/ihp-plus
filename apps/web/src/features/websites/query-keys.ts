@@ -5,4 +5,5 @@ export const websiteKeys = {
   checklist: (date: string) => [...websiteKeys.checklists(), date] as const,
   clientOptions: () => [...websiteKeys.all, 'client-options'] as const,
   websiteOptions: () => [...websiteKeys.all, 'website-options'] as const,
+  expiry: (websiteId: string) => [...websiteKeys.all, 'expiry', websiteId] as const,
 }

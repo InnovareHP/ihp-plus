@@ -16,6 +16,12 @@ const prisma = vi.hoisted(() => ({
     ),
     upsert: vi.fn(),
   },
+  websiteShiftCheck: {
+    findMany: vi.fn<(args: { where: Record<string, unknown> }) => Promise<unknown[]>>(
+      async () => [],
+    ),
+    upsert: vi.fn(),
+  },
   websiteSettings: { upsert: vi.fn() },
   client: { findMany: vi.fn(async (): Promise<unknown[]> => []), findFirst: vi.fn() },
   team: { findFirst: vi.fn() },
@@ -45,14 +51,27 @@ const service = vi.hoisted(() => ({
   snapshotsEnabled: vi.fn(() => true),
 }))
 const server = vi.hoisted(() => ({ after: vi.fn((task: () => unknown) => task()) }))
+const expiry = vi.hoisted(() => ({
+  expiryOf: vi.fn(async () => ({ domain: '2027-03-14T00:00:00.000Z', ssl: undefined })),
+}))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('./access', () => access)
 vi.mock('./service', () => service)
 vi.mock('next/server', () => server)
+vi.mock('./expiry', () => expiry)
 
-const { createWebsite, exportMonth, loadChecklist, recordCheck, runRound, saveItTeam } =
-  await import('./actions')
+const {
+  createWebsite,
+  exportDayReport,
+  exportMonth,
+  loadChecklist,
+  loadExpiry,
+  recordCheck,
+  runRound,
+  saveItTeam,
+  saveShiftCheck,
+} = await import('./actions')
 
 const SITE = {
   id: 'site-1',
@@ -230,5 +249,112 @@ describe('exportMonth', () => {
       ok: false,
       message: 'That website no longer exists.',
     })
+  })
+})
+
+describe('exportDayReport', () => {
+  it('hands back a letterheaded PDF named after the shift, for anyone who can see the list', async () => {
+    access.websitesAccess.mockResolvedValue({ ...LEAD, canCheck: false, canManage: false })
+    prisma.website.findMany.mockResolvedValueOnce([SITE])
+    prisma.websiteCheck.findMany.mockResolvedValueOnce([
+      {
+        websiteId: 'site-1',
+        workDate: new Date(`${today}T00:00:00.000Z`),
+        round: 'clock_in',
+        status: 'down',
+        httpStatus: 502,
+        responseMs: 40,
+        error: '',
+        note: 'Homepage shows a 502',
+        checkedByName: 'Ada Lovelace',
+        checkedAt: new Date(),
+      },
+    ])
+
+    const result = await exportDayReport({ date: today })
+
+    if (!result.ok) throw new Error(result.message)
+    expect(result.data.fileName).toBe(`Daily-Website-Check-${today}.pdf`)
+    expect(new TextDecoder().decode(result.data.bytes.slice(0, 5))).toBe('%PDF-')
+  })
+
+  it('refuses a shift that has not started', async () => {
+    expect(await exportDayReport({ date: '2999-01-01' })).toEqual({
+      ok: false,
+      message: 'That shift has not started yet.',
+    })
+  })
+
+  it('refuses anyone outside IT', async () => {
+    access.websitesAccess.mockResolvedValue({ ...LEAD, canView: false, canCheck: false })
+
+    expect(await exportDayReport({ date: today })).toEqual({
+      ok: false,
+      message: 'This page is only for the IT department.',
+    })
+  })
+})
+
+describe('saveShiftCheck', () => {
+  it('saves only the field that was clicked, against today, as the lead', async () => {
+    prisma.website.findFirst.mockResolvedValue(SITE)
+
+    const result = await saveShiftCheck({ websiteId: 'site-1', pagesButtons: 'fail' })
+
+    expect(result.ok).toBe(true)
+    const call = prisma.websiteShiftCheck.upsert.mock.calls[0]?.[0] as {
+      where: { websiteId_workDate: { websiteId: string; workDate: Date } }
+      update: Record<string, unknown>
+    }
+    expect(call.where.websiteId_workDate.websiteId).toBe('site-1')
+    expect(call.where.websiteId_workDate.workDate.toISOString().slice(0, 10)).toBe(today)
+    expect(call.update).toEqual({
+      pagesButtons: 'fail',
+      checkedById: 'user-1',
+      checkedByName: 'Ada Lovelace',
+    })
+  })
+
+  it('dates a form email test so later reports can carry it', async () => {
+    prisma.website.findFirst.mockResolvedValue(SITE)
+
+    await saveShiftCheck({ websiteId: 'site-1', formEmail: 'pass' })
+
+    const call = prisma.websiteShiftCheck.upsert.mock.calls[0]?.[0] as {
+      update: { formEmail: string; formEmailAt: Date }
+    }
+    expect(call.update.formEmail).toBe('pass')
+    expect(call.update.formEmailAt).toBeInstanceOf(Date)
+  })
+
+  it('leaves the hand checks to the IT lead', async () => {
+    access.websitesAccess.mockResolvedValue({ ...LEAD, canCheck: false })
+
+    expect(await saveShiftCheck({ websiteId: 'site-1', pagesButtons: 'pass' })).toEqual({
+      ok: false,
+      message: 'Only the IT lead runs the time-in and time-out checks.',
+    })
+    expect(prisma.websiteShiftCheck.upsert).not.toHaveBeenCalled()
+  })
+
+  it('refuses a site that is no longer on the list', async () => {
+    prisma.website.findFirst.mockResolvedValue(null)
+
+    expect(await saveShiftCheck({ websiteId: 'gone', findings: 'x' })).toEqual({
+      ok: false,
+      message: 'That website is no longer on the list.',
+    })
+  })
+})
+
+describe('loadExpiry', () => {
+  it('reads the dates for a site in the caller’s organization', async () => {
+    prisma.website.findFirst.mockResolvedValue({ url: SITE.url })
+
+    expect(await loadExpiry({ websiteId: 'site-1' })).toEqual({
+      ok: true,
+      data: { domain: '2027-03-14T00:00:00.000Z', ssl: undefined },
+    })
+    expect(expiry.expiryOf).toHaveBeenCalledWith(SITE.url)
   })
 })

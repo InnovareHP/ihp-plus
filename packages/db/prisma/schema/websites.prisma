@@ -29,7 +29,8 @@ model Website {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  checks WebsiteCheck[]
+  checks      WebsiteCheck[]
+  shiftChecks WebsiteShiftCheck[]
 
   @@index([organizationId, archivedAt])
   @@index([clientId])
@@ -63,5 +64,32 @@ model WebsiteCheck {
   @@unique([websiteId, workDate, round])
   @@index([organizationId, workDate])
   @@map("websiteCheck")
+  @@schema("websites")
+}
+
+// The lead's hand checks on one site for one shift; the probe's readings stay in WebsiteCheck.
+model WebsiteShiftCheck {
+  id             String @id @default(uuid())
+  organizationId String
+
+  websiteId String
+  website   Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  workDate     DateTime  @db.Date
+  // "pass", "fail", or empty while not yet checked.
+  pagesButtons String    @default("")
+  // Tested once per site, so the latest dated result is carried into every later report.
+  formEmail    String    @default("")
+  formEmailAt  DateTime?
+  findings     String    @default("")
+  action       String    @default("")
+
+  checkedById   String
+  checkedByName String
+  updatedAt     DateTime @updatedAt
+
+  @@unique([websiteId, workDate])
+  @@index([organizationId, workDate])
+  @@map("websiteShiftCheck")
   @@schema("websites")
 }
