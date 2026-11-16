@@ -32,6 +32,7 @@ export const ATTENDANCE_TAB_LABELS: Record<AttendanceTab, string> = {
   shifts: 'Shifts',
   kpis: 'KPIs',
   summaries: 'Summaries',
+  monthly: 'Monthly report',
 }
 
 export interface PageTab {

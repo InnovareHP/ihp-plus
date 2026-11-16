@@ -67,6 +67,7 @@ export const ATTENDANCE_TABS = [
   'shifts',
   'kpis',
   'summaries',
+  'monthly',
 ] as const
 
 export type AttendanceTab = (typeof ATTENDANCE_TABS)[number]
