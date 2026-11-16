@@ -25,6 +25,7 @@ import type {
   StatementDefaults,
   AttendanceDayRow,
   DailyTaskKpiRow,
+  EmployeeSummaryRow,
   AttendanceDayValues,
   AttendanceHolidayRow,
   AttendanceLog,
@@ -176,6 +177,28 @@ export async function getDailyTaskKpis(range: {
     planned: row.planned,
     completed: row.completed,
     overdue: row.overdue,
+  }))
+}
+
+export async function listEmployeeSummaries(range: {
+  from: string
+  to: string
+}): Promise<EmployeeSummaryRow[]> {
+  const response = await call(() => browserClients.attendance.listEmployeeSummaries(range))
+  return response.summaries.map((summary) => ({
+    userId: summary.userId,
+    userName: summary.userName,
+    jobTitle: summary.jobTitle,
+    daysWorked: summary.daysWorked,
+    hoursWorked: summary.hoursWorked,
+    paidDaysOff: summary.paidDaysOff,
+    tasks: summary.tasks.map((task) => ({
+      id: task.id,
+      name: task.name,
+      dueDate: task.dueDate,
+      isDone: task.isDone,
+    })),
+    statements: summary.statements.map(statementFromProto),
   }))
 }
 

@@ -22,6 +22,7 @@ import { FormError } from '@/components/form-error'
 import { announceSuccess } from '@/lib/announce'
 import { useSaveStatement } from '../hooks/use-statements'
 import { StatementIdentity } from './statement-identity'
+import { WorkedTime } from './worked-time'
 import { billingStatementSchema, type BillingStatementValues } from '../schema'
 import {
   formatStatementDate,
@@ -39,7 +40,7 @@ export interface BillingStatementModalProps {
   period: StatementPeriod
   /** How many of the seeded days were paid leave rather than clocked, said under the summary. */
   paidDaysOff?: number
-  /** Filled from the timesheet, the session and the last statement; every field stays editable. */
+  /** Filled from the timesheet, the session and the last statement; days and hours are fixed. */
   initial: BillingStatementValues
 }
 
@@ -187,40 +188,9 @@ export function BillingStatementModal({
                 the total.
               </Text>
             ) : null}
-            <SimpleGrid cols={{ base: 1, sm: 3 }}>
-              <Controller
-                control={control}
-                name="daysWorked"
-                render={({ field }) => (
-                  <NumberInput
-                    label="Days worked"
-                    min={0}
-                    max={366}
-                    allowDecimal={false}
-                    value={field.value}
-                    onChange={(value) => field.onChange(Number(value || 0))}
-                    onBlur={field.onBlur}
-                    error={errors.daysWorked?.message}
-                    errorProps={{ role: 'alert' }}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="hoursWorked"
-                render={({ field }) => (
-                  <NumberInput
-                    label="Hours worked"
-                    min={0}
-                    decimalScale={2}
-                    value={field.value}
-                    onChange={(value) => field.onChange(Number(value || 0))}
-                    onBlur={field.onBlur}
-                    error={errors.hoursWorked?.message}
-                    errorProps={{ role: 'alert' }}
-                  />
-                )}
-              />
+            <Stack gap="sm">
+              {/* Read-only: the server recounts both from the timesheet whatever is sent. */}
+              <WorkedTime daysWorked={initial.daysWorked} hoursWorked={initial.hoursWorked} />
               <Controller
                 control={control}
                 name="hourlyRateCents"
@@ -239,7 +209,7 @@ export function BillingStatementModal({
                   />
                 )}
               />
-            </SimpleGrid>
+            </Stack>
           </Fieldset>
 
           <Fieldset legend="Compensation">

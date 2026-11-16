@@ -70,11 +70,14 @@ describe('BillingStatementModal', () => {
     expect(screen.queryByRole('textbox', { name: /Full name|Position/ })).not.toBeInTheDocument()
   })
 
-  it('starts from the timesheet', () => {
+  it('shows days and hours from the timesheet, with nothing to type them into', () => {
     open()
 
-    expect(screen.getByLabelText(/Days worked/)).toHaveValue('20')
-    expect(screen.getByLabelText(/Hours worked/)).toHaveValue('160')
+    expect(screen.getByText('Days worked', { selector: 'dt' }).nextSibling).toHaveTextContent('20')
+    expect(screen.getByText('Hours worked', { selector: 'dt' }).nextSibling).toHaveTextContent(
+      '160',
+    )
+    expect(screen.queryByRole('textbox', { name: /Days worked|Hours worked/ })).toBeNull()
   })
 
   it('says how many of the days were paid leave', () => {

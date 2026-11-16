@@ -19,6 +19,8 @@ export interface BillingStatementsTableProps {
   /** Left out where the viewer is not the statement's author, such as an admin's list. */
   onDelete?: (statement: BillingStatementRow) => void
   emptyHint: string
+  /** Where the table sits in the page outline. */
+  titleOrder?: 3 | 4
 }
 
 /** Saved billing statements, each one printable again exactly as it was issued. */
@@ -32,6 +34,7 @@ export function BillingStatementsTable({
   onOutput,
   onDelete,
   emptyHint,
+  titleOrder = 3,
 }: BillingStatementsTableProps) {
   const columns: DataTableColumn<BillingStatementRow>[] = [
     {
@@ -98,7 +101,7 @@ export function BillingStatementsTable({
 
   return (
     <Stack gap="xs" component="section" aria-label={title}>
-      <Title order={3} size="h6">
+      <Title order={titleOrder} size="h6">
         {title}
       </Title>
       <DataTable

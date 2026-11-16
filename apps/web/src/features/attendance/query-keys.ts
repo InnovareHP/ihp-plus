@@ -7,6 +7,7 @@ export const attendanceKeys = {
   log: (range: AttendanceRange) => [...attendanceKeys.all, 'log', range] as const,
   logs: () => [...attendanceKeys.all, 'log'] as const,
   kpis: (from: string, to: string) => [...attendanceKeys.all, 'kpis', from, to] as const,
+  summaries: (from: string, to: string) => [...attendanceKeys.all, 'summaries', from, to] as const,
   board: (date: string) => [...attendanceKeys.all, 'board', date] as const,
   schedules: () => [...attendanceKeys.all, 'schedules'] as const,
   shifts: () => [...attendanceKeys.all, 'shifts'] as const,

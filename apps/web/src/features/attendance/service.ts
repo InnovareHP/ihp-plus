@@ -19,6 +19,7 @@ import {
   attendanceSettingsSchema,
   clockActionSchema,
   type DailyTaskKpiRow,
+  type EmployeeSummaryRow,
   MIN_DAILY_TASKS,
   holidaySchema,
   importHolidaysSchema,
@@ -68,7 +69,8 @@ import {
 import { fillHolidays, fillUpcomingHolidays, holidaySelect, toHolidayRow } from './holiday-calendar'
 import { absencesOf, personDateKey } from './utils/absences'
 import { dailyTaskKpis } from './utils/daily-task-kpis'
-import { statementTotals } from './utils/billing-statement'
+import { employeeSummaries } from './utils/employee-summaries'
+import { statementTotals, timeWorked } from './utils/billing-statement'
 import { datesOfMonth, isMonthKey, monthOf } from './utils/calendar'
 import { holidayFor } from './utils/holidays'
 import { holidayCountries, isHolidayCountry } from './utils/public-holidays'
@@ -909,6 +911,59 @@ export async function loadDailyTaskKpis(range: {
     })),
     workDateKey(new Date(), settings.timeZone),
   )
+}
+
+export async function loadEmployeeSummaries(range: {
+  from: string
+  to: string
+}): Promise<EmployeeSummaryRow[]> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin reads employee summaries.')
+
+  // Checks the range and reads days and absences by the same rules as the timesheet.
+  const log = await loadAttendance({ from: range.from, to: range.to, everyone: true })
+  const settings = await settingsOf(caller.organizationId)
+  const [roster, tasks, statements] = await Promise.all([
+    rosterOf(caller.organizationId, settings),
+    db.task.findMany({
+      where: {
+        organizationId: caller.organizationId,
+        project: { systemKey: DAILY_TASKS_KEY },
+        parentId: null,
+        dueDate: { gte: dateOf(range.from), lte: dateOf(range.to) },
+      },
+      select: {
+        id: true,
+        name: true,
+        dueDate: true,
+        status: { select: { category: true } },
+        assignees: { select: { userId: true } },
+      },
+    }),
+    db.attendanceStatement.findMany({
+      where: {
+        organizationId: caller.organizationId,
+        periodStart: { lte: dateOf(range.to) },
+        periodEnd: { gte: dateOf(range.from) },
+      },
+      select: statementSelect,
+      orderBy: [{ invoiceDate: 'desc' }, { createdAt: 'desc' }],
+    }),
+  ])
+
+  return employeeSummaries({
+    people: roster,
+    days: log.days,
+    absences: log.absences,
+    tasks: tasks.map((task) => ({
+      id: task.id,
+      name: task.name,
+      dueDate: task.dueDate ? dateKeyOf(task.dueDate) : '',
+      isDone: task.status.category === 'done',
+      assigneeIds: task.assignees.map((one) => one.userId),
+    })),
+    statements: statements.map(toStatementRow),
+  })
 }
 
 export async function loadBoard(date?: string): Promise<AttendanceBoard> {
@@ -1997,9 +2052,13 @@ export async function saveBillingStatement(
     )
   }
 
-  // Who is billing and on which basis come from the record, whatever the form sent.
-  const defaults = await statementDefaultsOf(caller)
-  const statement = { ...parsed.data, ...defaults }
+  // Who is billing, on which basis, and the time worked come from the record, whatever was sent.
+  const [defaults, log] = await Promise.all([
+    statementDefaultsOf(caller),
+    loadAttendance({ from: parsed.data.periodStart, to: parsed.data.periodEnd }),
+  ])
+  const { daysWorked, hoursWorked } = timeWorked(log.days, log.absences)
+  const statement = { ...parsed.data, ...defaults, daysWorked, hoursWorked }
   const data = {
     invoiceDate: dateOf(statement.invoiceDate),
     periodStart: dateOf(statement.periodStart),

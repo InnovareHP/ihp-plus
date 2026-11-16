@@ -576,3 +576,22 @@ export interface BillingStatementRow extends SavedStatementValues {
   totalCents: number
   createdAt: string
 }
+
+export interface SummaryTaskRow {
+  id: string
+  name: string
+  dueDate: string
+  isDone: boolean
+}
+
+/** One employee over a range, as an admin reviews them: nothing on it is editable. */
+export interface EmployeeSummaryRow {
+  userId: string
+  userName: string
+  jobTitle: string | undefined
+  daysWorked: number
+  hoursWorked: number
+  paidDaysOff: number
+  tasks: SummaryTaskRow[]
+  statements: BillingStatementRow[]
+}

@@ -243,6 +243,37 @@ message GetDailyTaskKpisResponse {
   repeated DailyTaskKpi rows = 1;
 }
 
+// An admin's per-employee summary for a range: time worked, daily tasks and the statements filed.
+message ListEmployeeSummariesRequest {
+  // YYYY-MM-DD, both inclusive.
+  string from = 1;
+  string to = 2;
+}
+
+message SummaryTask {
+  string id = 1;
+  string name = 2;
+  // YYYY-MM-DD
+  string due_date = 3;
+  bool is_done = 4;
+}
+
+message EmployeeSummary {
+  string user_id = 1;
+  string user_name = 2;
+  optional string job_title = 3;
+  int32 days_worked = 4;
+  double hours_worked = 5;
+  int32 paid_days_off = 6;
+  repeated SummaryTask tasks = 7;
+  // Statements whose billing period overlaps the range.
+  repeated BillingStatement statements = 8;
+}
+
+message ListEmployeeSummariesResponse {
+  repeated EmployeeSummary summaries = 1;
+}
+
 // An admin correcting a day, or a member writing one up where the rules allow it. The times are
 // wall clock ("09:00"), which the service pins to the work date in the organization's zone.
 message SaveAttendanceDayRequest {
@@ -638,6 +669,7 @@ service AttendanceService {
   rpc ListAttendance(ListAttendanceRequest) returns (ListAttendanceResponse);
   rpc GetAttendanceBoard(GetAttendanceBoardRequest) returns (GetAttendanceBoardResponse);
   rpc GetDailyTaskKpis(GetDailyTaskKpisRequest) returns (GetDailyTaskKpisResponse);
+  rpc ListEmployeeSummaries(ListEmployeeSummariesRequest) returns (ListEmployeeSummariesResponse);
   rpc SaveAttendanceDay(SaveAttendanceDayRequest) returns (SaveAttendanceDayResponse);
   rpc DeleteAttendanceDay(DeleteAttendanceDayRequest) returns (DeleteAttendanceDayResponse);
   rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);

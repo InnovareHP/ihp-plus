@@ -102,6 +102,7 @@ const {
   loadAttendance,
   loadBoard,
   loadDailyTaskKpis,
+  loadEmployeeSummaries,
   assignShift,
   deleteShift,
   deleteHoliday,
@@ -367,6 +368,30 @@ describe('what only an admin may do', () => {
           project: { systemKey: 'daily' },
           dueDate: { gte: new Date('2026-09-01'), lte: new Date('2026-09-22') },
         }),
+      }),
+    )
+  })
+
+  it('keeps employee summaries out of a member’s hands', async () => {
+    await expect(
+      loadEmployeeSummaries({ from: '2026-09-01', to: '2026-09-22' }),
+    ).rejects.toMatchObject({ code: Code.PermissionDenied })
+  })
+
+  it('gives an admin every statement whose period overlaps the range', async () => {
+    signedInAs('admin')
+    prisma.attendanceDay.findMany.mockResolvedValue([])
+    prisma.attendanceStatement.findMany.mockResolvedValue([])
+
+    await loadEmployeeSummaries({ from: '2026-09-01', to: '2026-09-22' })
+
+    expect(prisma.attendanceStatement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          organizationId: 'org-1',
+          periodStart: { lte: new Date('2026-09-22') },
+          periodEnd: { gte: new Date('2026-09-01') },
+        },
       }),
     )
   })
@@ -1568,7 +1593,11 @@ describe('billing statements', () => {
   })
 
   it('keeps the statement under its invoice number with a total the server works out', async () => {
-    const saved = await saveBillingStatement(STATEMENT)
+    // The timesheet says 160 hours over one day; whatever the form sent is ignored.
+    prisma.attendanceDay.findMany.mockResolvedValue([
+      dayRecord({ clockOutAt: new Date('2026-09-22T18:00:00.000Z'), workedSeconds: 160 * 3600 }),
+    ])
+    const saved = await saveBillingStatement({ ...STATEMENT, daysWorked: 99, hoursWorked: 999 })
 
     const call = prisma.attendanceStatement.upsert.mock.calls[0]?.[0]
     expect(call.where).toEqual({
@@ -1579,6 +1608,8 @@ describe('billing statements', () => {
       userId: 'user-1',
       periodStart: new Date('2026-09-01T00:00:00.000Z'),
       sendTo: 'payroll@ihp.test',
+      daysWorked: 1,
+      hoursWorked: 160,
       totalCents: 727_500,
     })
     expect(call.update.totalCents).toBe(727_500)

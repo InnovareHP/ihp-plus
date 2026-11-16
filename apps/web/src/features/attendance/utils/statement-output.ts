@@ -2,7 +2,8 @@ import { track } from '@/lib/analytics'
 import { downloadFile } from '@/lib/download'
 import { openMailto } from '@/lib/mailto'
 import { attendanceEvents } from '../events'
-import type { BillingStatementValues } from '../schema'
+import { announceFailure, announceSuccess } from '@/lib/announce'
+import type { BillingStatementRow, BillingStatementValues } from '../schema'
 import {
   billingStatementHtml,
   loadStatementLetterhead,
@@ -70,4 +71,26 @@ export async function deliverStatement(
     reprint,
   })
   return true
+}
+
+const FAILED: Record<StatementOutput, string> = {
+  print: 'Could not open the print view — allow printing for this site and try again.',
+  pdf: 'Could not create the PDF — try again.',
+  email: 'Could not start the email — try again.',
+}
+
+/** A saved statement produced again, with the outcome announced. */
+export async function reissueStatement(statement: BillingStatementRow, output: StatementOutput) {
+  const period = { from: statement.periodStart, to: statement.periodEnd }
+  if (!(await deliverStatement(output, statement, period, true))) {
+    announceFailure(FAILED[output])
+    return
+  }
+  // The print dialog speaks for itself; a download lands silently, so it is announced.
+  if (output === 'pdf') announceSuccess(`Downloaded ${statementFileName(statement)}.pdf.`)
+  if (output === 'email') {
+    announceSuccess(
+      `Your mail app is opening. Attach the downloaded ${statementFileName(statement)}.pdf and send it.`,
+    )
+  }
 }

@@ -70,8 +70,9 @@ describe('BillingStatementButton', () => {
 
     await user.click(screen.getByRole('button', { name: 'Billing statement' }))
 
-    expect(await screen.findByLabelText(/Days worked/)).toHaveValue('3')
-    expect(screen.getByLabelText(/Hours worked/)).toHaveValue('16')
+    const days = await screen.findByText('Days worked', { selector: 'dt' })
+    expect(days.nextSibling).toHaveTextContent('3')
+    expect(screen.getByText('Hours worked', { selector: 'dt' }).nextSibling).toHaveTextContent('16')
     expect(screen.getByText('Days worked includes 1 paid day off.')).toBeInTheDocument()
     expect(screen.getByLabelText(/Invoice number/)).toHaveValue('INV-20260930')
     // The profile wins over whatever the last statement said.

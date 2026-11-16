@@ -8,6 +8,7 @@ import {
   deleteShift,
   getAttendanceBoard,
   getDailyTaskKpis,
+  listEmployeeSummaries,
   listSchedules,
   listShifts,
   saveAttendanceDay,
@@ -31,6 +32,15 @@ export function useDailyTaskKpis(from: string, to: string) {
   return useQuery({
     queryKey: attendanceKeys.kpis(from, to),
     queryFn: () => getDailyTaskKpis({ from, to }),
+    placeholderData: keepPreviousData,
+    staleTime: 60 * 1000,
+  })
+}
+
+export function useEmployeeSummaries(from: string, to: string) {
+  return useQuery({
+    queryKey: attendanceKeys.summaries(from, to),
+    queryFn: () => listEmployeeSummaries({ from, to }),
     placeholderData: keepPreviousData,
     staleTime: 60 * 1000,
   })
