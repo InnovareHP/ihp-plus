@@ -9,6 +9,8 @@ import { notifyComment } from './notifications'
 import { mentionsEveryone } from '@/lib/mentions'
 import {
   commentFormSchema,
+  DAILY_TASKS_KEY,
+  DAILY_TASKS_PROJECT_NAME,
   DEFAULT_TASK_LIST_NAME,
   DEFAULT_TASK_STATUSES,
   listFormSchema,
@@ -752,29 +754,38 @@ export async function createTask(values: TaskFormValues): Promise<TaskRow> {
   return hydrate(created)
 }
 
-export const DAILY_TASKS_PROJECT_NAME = 'Daily tasks'
-
-/** The plan a member types at clock-in, filed as their own tasks due that day. */
+/** The plan a member types at clock-in, filed in their own list as tasks due that day. */
 export async function createDailyTasks(names: readonly string[], workDate: string): Promise<void> {
   const caller = await requireMember()
 
-  // shortcut: found by name, so a renamed project spawns a new one; add a flag column if that bites.
-  const existing = await db.taskProject.findFirst({
+  // Un-archived on use: the plan has to land somewhere people can see it.
+  const { id: projectId } = await db.taskProject.upsert({
     where: {
-      organizationId: caller.organizationId,
-      name: DAILY_TASKS_PROJECT_NAME,
-      isArchived: false,
+      organizationId_systemKey: {
+        organizationId: caller.organizationId,
+        systemKey: DAILY_TASKS_KEY,
+      },
     },
-    select: { id: true, lists: { select: { id: true }, orderBy: { sortOrder: 'asc' }, take: 1 } },
+    update: { isArchived: false },
+    create: {
+      organizationId: caller.organizationId,
+      createdById: caller.userId,
+      name: DAILY_TASKS_PROJECT_NAME,
+      systemKey: DAILY_TASKS_KEY,
+    },
+    select: { id: true },
   })
-  const projectId =
-    existing?.id ?? (await createProject({ name: DAILY_TASKS_PROJECT_NAME, color: '' })).id
-  const listId =
-    existing?.lists[0]?.id ??
-    (await db.taskList.findFirst({ where: { projectId }, select: { id: true } }))?.id
-  if (!listId) {
-    throw new ConnectError(`The "${DAILY_TASKS_PROJECT_NAME}" project has no list.`, Code.NotFound)
-  }
+  const { id: listId } = await db.taskList.upsert({
+    where: { projectId_ownerId: { projectId, ownerId: caller.userId } },
+    update: {},
+    create: {
+      organizationId: caller.organizationId,
+      projectId,
+      ownerId: caller.userId,
+      name: caller.name,
+    },
+    select: { id: true },
+  })
 
   for (const name of names) {
     await createTask({

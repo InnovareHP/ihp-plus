@@ -15,6 +15,7 @@ import {
   loadAttendance,
   loadAttendanceSettings,
   loadBoard,
+  loadDailyTaskKpis,
   decideCorrection,
   loadCalendar,
   loadCorrections,
@@ -186,6 +187,10 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
       leaveCount: board.leaveCount,
     }
   },
+
+  getDailyTaskKpis: async (request) => ({
+    rows: await loadDailyTaskKpis({ from: request.from, to: request.to }),
+  }),
 
   saveAttendanceDay: async (request) => ({
     day: dayToProto(

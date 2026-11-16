@@ -4,6 +4,7 @@ export const attendanceEvents = {
   clockInStarted: 'attendance.clock.in_started',
   clockedIn: 'attendance.clock.in',
   clockInFailed: 'attendance.clock.in_failed',
+  dailyTasksPlanned: 'attendance.daily_tasks.planned',
   clockedOut: 'attendance.clock.out',
   clockOutFailed: 'attendance.clock.out_failed',
   breakStarted: 'attendance.break.started',

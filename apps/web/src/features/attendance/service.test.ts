@@ -51,6 +51,7 @@ const prisma = vi.hoisted(() => ({
   attendanceStatement: { upsert: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
   attendancePayTerms: { findUnique: vi.fn(), findMany: vi.fn(), upsert: vi.fn() },
   member: { findMany: vi.fn(), findFirst: vi.fn() },
+  task: { findMany: vi.fn(async () => []) },
   user: { findMany: vi.fn(), findUnique: vi.fn() },
 }))
 
@@ -100,6 +101,7 @@ const {
   endBreak,
   loadAttendance,
   loadBoard,
+  loadDailyTaskKpis,
   assignShift,
   deleteShift,
   deleteHoliday,
@@ -344,6 +346,36 @@ describe('what only an admin may do', () => {
     ).rejects.toMatchObject({
       code: Code.PermissionDenied,
     })
+  })
+
+  it('keeps the KPIs out of a member’s hands', async () => {
+    await expect(loadDailyTaskKpis({ from: '2026-09-01', to: '2026-09-22' })).rejects.toMatchObject(
+      { code: Code.PermissionDenied },
+    )
+  })
+
+  it('reads an admin only the daily tasks project, inside the range', async () => {
+    signedInAs('admin')
+    prisma.attendanceDay.findMany.mockResolvedValue([])
+
+    await loadDailyTaskKpis({ from: '2026-09-01', to: '2026-09-22' })
+
+    expect(prisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organizationId: 'org-1',
+          project: { systemKey: 'daily' },
+          dueDate: { gte: new Date('2026-09-01'), lte: new Date('2026-09-22') },
+        }),
+      }),
+    )
+  })
+
+  it('refuses a KPI range that ends before it starts', async () => {
+    signedInAs('admin')
+    await expect(loadDailyTaskKpis({ from: '2026-09-22', to: '2026-09-01' })).rejects.toMatchObject(
+      { code: Code.InvalidArgument },
+    )
   })
 
   it('keeps the board out of a member’s hands', async () => {

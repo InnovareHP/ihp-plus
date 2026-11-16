@@ -17,6 +17,8 @@ model TaskProject {
   // scanning the tasks table under a race.
   taskCounter Int  @default(0)
   isArchived  Boolean @default(false)
+  // Set on a project the app owns ("daily"), so it is found by key whatever it is renamed to.
+  systemKey   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -24,6 +26,7 @@ model TaskProject {
   lists TaskList[]
   tasks Task[]
 
+  @@unique([organizationId, systemKey])
   @@index([organizationId, isArchived])
   @@map("taskProject")
   @@schema("tasks")
@@ -39,12 +42,15 @@ model TaskList {
   organizationId String
   name           String
   sortOrder      Int    @default(0)
+  // The member whose own list this is, in a system project like daily tasks.
+  ownerId        String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   tasks Task[]
 
+  @@unique([projectId, ownerId])
   @@index([projectId])
   @@index([organizationId])
   @@map("taskList")

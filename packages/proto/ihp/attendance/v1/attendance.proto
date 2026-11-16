@@ -221,6 +221,28 @@ message GetAttendanceBoardResponse {
   int32 leave_count = 6;
 }
 
+// Per person over a range: the days they clocked in and how the plans made at clock-in went.
+message GetDailyTaskKpisRequest {
+  // YYYY-MM-DD, both inclusive.
+  string from = 1;
+  string to = 2;
+}
+
+message DailyTaskKpi {
+  string user_id = 1;
+  string user_name = 2;
+  optional string job_title = 3;
+  int32 days_worked = 4;
+  int32 planned = 5;
+  int32 completed = 6;
+  // Planned, not done, and its day already over.
+  int32 overdue = 7;
+}
+
+message GetDailyTaskKpisResponse {
+  repeated DailyTaskKpi rows = 1;
+}
+
 // An admin correcting a day, or a member writing one up where the rules allow it. The times are
 // wall clock ("09:00"), which the service pins to the work date in the organization's zone.
 message SaveAttendanceDayRequest {
@@ -615,6 +637,7 @@ service AttendanceService {
   rpc EndBreak(EndBreakRequest) returns (EndBreakResponse);
   rpc ListAttendance(ListAttendanceRequest) returns (ListAttendanceResponse);
   rpc GetAttendanceBoard(GetAttendanceBoardRequest) returns (GetAttendanceBoardResponse);
+  rpc GetDailyTaskKpis(GetDailyTaskKpisRequest) returns (GetDailyTaskKpisResponse);
   rpc SaveAttendanceDay(SaveAttendanceDayRequest) returns (SaveAttendanceDayResponse);
   rpc DeleteAttendanceDay(DeleteAttendanceDayRequest) returns (DeleteAttendanceDayResponse);
   rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);

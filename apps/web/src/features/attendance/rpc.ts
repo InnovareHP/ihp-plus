@@ -24,6 +24,7 @@ import type {
   PayTermsRow,
   StatementDefaults,
   AttendanceDayRow,
+  DailyTaskKpiRow,
   AttendanceDayValues,
   AttendanceHolidayRow,
   AttendanceLog,
@@ -160,6 +161,22 @@ export async function getAttendanceBoard(date: string): Promise<AttendanceBoard>
     absentCount: response.absentCount,
     leaveCount: response.leaveCount,
   }
+}
+
+export async function getDailyTaskKpis(range: {
+  from: string
+  to: string
+}): Promise<DailyTaskKpiRow[]> {
+  const response = await call(() => browserClients.attendance.getDailyTaskKpis(range))
+  return response.rows.map((row) => ({
+    userId: row.userId,
+    userName: row.userName,
+    jobTitle: row.jobTitle,
+    daysWorked: row.daysWorked,
+    planned: row.planned,
+    completed: row.completed,
+    overdue: row.overdue,
+  }))
 }
 
 export async function saveAttendanceDay(values: AttendanceDayValues): Promise<AttendanceDayRow> {

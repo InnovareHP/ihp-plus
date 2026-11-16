@@ -3,6 +3,8 @@
 import { useClockIn, useClockOut } from './use-time-clock'
 import type { AttendanceShiftRow } from '../schema'
 import { currentLocation } from '../utils/location'
+import { track } from '@/lib/analytics'
+import { attendanceEvents } from '../events'
 
 export type PunchKind = 'in' | 'out'
 
@@ -35,8 +37,10 @@ export function usePunch(shift: AttendanceShiftRow | undefined): Punch {
     }
 
     try {
-      if (which === 'in') await clockIn.mutateAsync(values)
-      else await clockOut.mutateAsync(values)
+      if (which === 'in') {
+        await clockIn.mutateAsync(values)
+        track(attendanceEvents.dailyTasksPlanned, { count: values.dailyTasks.length })
+      } else await clockOut.mutateAsync(values)
       return true
     } catch {
       // The mutation announced the reason; the caller keeps whatever the person typed.

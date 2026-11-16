@@ -339,6 +339,16 @@ export const dailyTasksFormSchema = z.object({
 
 export type DailyTasksFormValues = z.infer<typeof dailyTasksFormSchema>
 
+export interface DailyTaskKpiRow {
+  userId: string
+  userName: string
+  jobTitle: string | undefined
+  daysWorked: number
+  planned: number
+  completed: number
+  overdue: number
+}
+
 export type ClockActionValues = z.infer<typeof clockActionSchema>
 
 export const MAX_SELFIE_BYTES = 5 * 1024 * 1024

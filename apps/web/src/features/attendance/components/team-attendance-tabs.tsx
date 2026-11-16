@@ -6,6 +6,7 @@ import {
   IconCalendarMonth,
   IconCalendarTime,
   IconClockHour4,
+  IconChartBar,
   IconFileSpreadsheet,
 } from '@tabler/icons-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -15,6 +16,7 @@ import { ATTENDANCE_TABS, type AttendanceTab } from '@/lib/routes'
 import { useCorrectionQueue } from '../hooks/use-corrections'
 import { useAttendanceSettings } from '../hooks/use-time-clock'
 import { AttendanceBoardPanel } from './attendance-board-panel'
+import { DailyTaskKpiPanel } from './daily-task-kpi-panel'
 import { ShiftsPanel } from './shifts-panel'
 import { TeamCalendarPanel } from './team-calendar-panel'
 import { TeamTimesheetPanel } from './team-timesheet-panel'
@@ -39,6 +41,11 @@ const TABS: { value: AttendanceTab; label: string; icon: ReactNode }[] = [
     value: 'shifts',
     label: ATTENDANCE_TAB_LABELS.shifts,
     icon: <IconCalendarTime size={16} aria-hidden />,
+  },
+  {
+    value: 'kpis',
+    label: ATTENDANCE_TAB_LABELS.kpis,
+    icon: <IconChartBar size={16} aria-hidden />,
   },
 ]
 
@@ -103,6 +110,9 @@ export function TeamAttendanceTabs() {
       </Tabs.Panel>
       <Tabs.Panel value="shifts">
         <ShiftsPanel />
+      </Tabs.Panel>
+      <Tabs.Panel value="kpis">
+        <DailyTaskKpiPanel />
       </Tabs.Panel>
     </Tabs>
   )

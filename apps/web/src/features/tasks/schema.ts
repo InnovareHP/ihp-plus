@@ -58,6 +58,10 @@ export const DEFAULT_TASK_STATUSES: readonly {
 
 export const DEFAULT_TASK_LIST_NAME = 'Tasks'
 
+// The project clock-in plans land in, found by this key whatever it is renamed to.
+export const DAILY_TASKS_KEY = 'daily'
+export const DAILY_TASKS_PROJECT_NAME = 'Daily tasks'
+
 export const projectFormSchema = z.object({
   name: z.string().trim().min(1, 'Name the project.').max(80, 'Keep the name under 80 characters.'),
   color: z.string().trim().default(''),

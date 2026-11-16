@@ -4,6 +4,7 @@ import { recordActivity } from '@/lib/activity'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { selfieUrl } from '@/lib/attendance-selfie'
 import { deleteObject } from '@/lib/s3'
+import { DAILY_TASKS_KEY } from '@/features/tasks/schema'
 import { createDailyTasks } from '@/features/tasks/service'
 import { queueLeadRound } from '@/features/websites/service'
 import { notifyCorrectionDecided } from './notifications'
@@ -17,6 +18,7 @@ import {
   grantedDayOffName,
   attendanceSettingsSchema,
   clockActionSchema,
+  type DailyTaskKpiRow,
   MIN_DAILY_TASKS,
   holidaySchema,
   importHolidaysSchema,
@@ -65,6 +67,7 @@ import {
 } from './schema'
 import { fillHolidays, fillUpcomingHolidays, holidaySelect, toHolidayRow } from './holiday-calendar'
 import { absencesOf, personDateKey } from './utils/absences'
+import { dailyTaskKpis } from './utils/daily-task-kpis'
 import { statementTotals } from './utils/billing-statement'
 import { datesOfMonth, isMonthKey, monthOf } from './utils/calendar'
 import { holidayFor } from './utils/holidays'
@@ -853,6 +856,59 @@ function missingStateOf(input: {
   const due = person.shift.shiftStartMinutes + person.shift.graceMinutes
   const stillDue = date > input.today || (date === input.today && input.nowMinutes < due)
   return { state: stillDue ? 'expected' : 'absent', offReason: undefined }
+}
+
+export async function loadDailyTaskKpis(range: {
+  from: string
+  to: string
+}): Promise<DailyTaskKpiRow[]> {
+  const caller = await requireMember()
+  requireAdmin(caller, 'Only an admin reads the team’s KPIs.')
+
+  const span = daysBetween(range.from, range.to)
+  if (!(span >= 0)) {
+    throw new ConnectError(
+      'The range has to end on or after the day it starts.',
+      Code.InvalidArgument,
+    )
+  }
+  if (span >= MAX_RANGE_DAYS) {
+    throw new ConnectError('Pick a range of a year or less.', Code.InvalidArgument)
+  }
+
+  const settings = await settingsOf(caller.organizationId)
+  const between = { gte: dateOf(range.from), lte: dateOf(range.to) }
+  const [roster, days, tasks] = await Promise.all([
+    rosterOf(caller.organizationId, settings),
+    db.attendanceDay.findMany({
+      where: { organizationId: caller.organizationId, workDate: between },
+      select: { userId: true },
+    }),
+    db.task.findMany({
+      where: {
+        organizationId: caller.organizationId,
+        project: { systemKey: DAILY_TASKS_KEY },
+        parentId: null,
+        dueDate: between,
+      },
+      select: {
+        dueDate: true,
+        status: { select: { category: true } },
+        assignees: { select: { userId: true } },
+      },
+    }),
+  ])
+
+  return dailyTaskKpis(
+    roster,
+    days.map((day) => day.userId),
+    tasks.map((task) => ({
+      dueDate: task.dueDate?.toISOString().slice(0, 10) ?? '',
+      isDone: task.status.category === 'done',
+      assigneeIds: task.assignees.map((one) => one.userId),
+    })),
+    workDateKey(new Date(), settings.timeZone),
+  )
 }
 
 export async function loadBoard(date?: string): Promise<AttendanceBoard> {

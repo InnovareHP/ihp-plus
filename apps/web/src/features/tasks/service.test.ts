@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const prisma = vi.hoisted(() => ({
   taskProject: {
+    upsert: vi.fn(),
     findFirst: vi.fn(),
     findMany: vi.fn(),
     count: vi.fn(),
@@ -10,6 +11,7 @@ const prisma = vi.hoisted(() => ({
     update: vi.fn(),
   },
   taskList: {
+    upsert: vi.fn(),
     findFirst: vi.fn(),
     findMany: vi.fn(),
     count: vi.fn(),
@@ -776,50 +778,45 @@ describe('statuses', () => {
 
 describe('createDailyTasks', () => {
   beforeEach(() => {
-    prisma.taskList.findFirst.mockResolvedValue({ id: 'list-1' })
+    prisma.taskProject.upsert.mockResolvedValue({ id: 'project-daily' })
+    prisma.taskList.upsert.mockResolvedValue({ id: 'list-dana' })
+    prisma.taskList.findFirst.mockResolvedValue({ id: 'list-dana' })
     prisma.member.findMany.mockResolvedValue([{ userId: 'user-1' }])
     prisma.taskProject.update.mockResolvedValue({ taskCounter: 7 })
     prisma.task.aggregate.mockResolvedValue({ _max: { position: null } })
     prisma.task.create.mockResolvedValue(TASK_RECORD)
   })
 
-  it('files each line as a task assigned to the caller, due that day', async () => {
-    prisma.taskProject.findFirst.mockResolvedValue({ id: 'project-1', lists: [{ id: 'list-1' }] })
-
+  it('finds the project by key, not by a name someone can change', async () => {
     await createDailyTasks(['One', 'Two', 'Three'], '2026-11-16')
 
-    expect(prisma.taskProject.create).not.toHaveBeenCalled()
+    expect(prisma.taskProject.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { organizationId_systemKey: { organizationId: 'org-1', systemKey: 'daily' } },
+        update: { isArchived: false },
+      }),
+    )
+  })
+
+  it('files each line in the caller’s own list, assigned to them and due that day', async () => {
+    await createDailyTasks(['One', 'Two', 'Three'], '2026-11-16')
+
+    expect(prisma.taskList.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { projectId_ownerId: { projectId: 'project-daily', ownerId: 'user-1' } },
+      }),
+    )
     expect(prisma.task.create).toHaveBeenCalledTimes(3)
     expect(prisma.task.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          projectId: 'project-1',
-          listId: 'list-1',
+          projectId: 'project-daily',
+          listId: 'list-dana',
           name: 'One',
           dueDate: new Date('2026-11-16'),
           assignees: { create: [{ userId: 'user-1' }] },
         }),
       }),
-    )
-  })
-
-  it('opens the daily tasks project the first time anyone plans a day', async () => {
-    prisma.taskProject.findFirst.mockResolvedValueOnce(null)
-    prisma.taskProject.count.mockResolvedValue(2)
-    prisma.taskProject.create.mockResolvedValue({
-      id: 'project-daily',
-      name: 'Daily tasks',
-      color: null,
-      isArchived: false,
-    })
-
-    await createDailyTasks(['One', 'Two', 'Three'], '2026-11-16')
-
-    expect(prisma.taskProject.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ name: 'Daily tasks' }) }),
-    )
-    expect(prisma.task.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ projectId: 'project-daily' }) }),
     )
   })
 })

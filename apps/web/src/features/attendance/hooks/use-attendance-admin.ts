@@ -1,12 +1,13 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { attendanceEvents } from '../events'
 import {
   assignShift,
   deleteAttendanceDay,
   deleteShift,
   getAttendanceBoard,
+  getDailyTaskKpis,
   listSchedules,
   listShifts,
   saveAttendanceDay,
@@ -23,6 +24,15 @@ export function useAttendanceBoard(date: string) {
     queryFn: () => getAttendanceBoard(date),
     refetchInterval: 60 * 1000,
     staleTime: 15 * 1000,
+  })
+}
+
+export function useDailyTaskKpis(from: string, to: string) {
+  return useQuery({
+    queryKey: attendanceKeys.kpis(from, to),
+    queryFn: () => getDailyTaskKpis({ from, to }),
+    placeholderData: keepPreviousData,
+    staleTime: 60 * 1000,
   })
 }
 
