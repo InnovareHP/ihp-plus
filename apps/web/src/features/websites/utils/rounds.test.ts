@@ -12,6 +12,8 @@ function site(id: string, checks: WebsiteRow['checks'] = {}): WebsiteRow {
     notes: '',
     checks,
     snapshots: {},
+    shift: { pagesButtons: undefined, findings: '', action: '' },
+    formEmail: undefined,
   }
 }
 

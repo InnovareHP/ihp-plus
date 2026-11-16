@@ -922,6 +922,56 @@ export function websiteProblemsTemplate(options: {
   }
 }
 
+export function websiteExpiryReportTemplate(options: {
+  monthLabel: string
+  /** One line per site, e.g. "Riverside site: domain Mar 14, 2027 (128 days), SSL Jan 2, 2027 (58 days)". */
+  sites: readonly string[]
+  /** How many of those run out within the warning window, so the subject can say so. */
+  expiringSoon: number
+  url: string
+}): PreparedEmail {
+  const soon =
+    options.expiringSoon === 0
+      ? 'nothing expiring soon'
+      : `${options.expiringSoon} expiring within 30 days`
+  return {
+    subject: `Domains and SSL for ${options.monthLabel}: ${soon}`,
+    ...renderEmail({
+      preheader: `When each client website's domain and SSL certificate run out.`,
+      heading: `Domains and SSL, ${options.monthLabel}`,
+      body: [
+        'When each client website’s domain registration and SSL certificate run out, read from the domain registry and the site itself this morning:',
+      ],
+      steps: options.sites,
+      action: { label: 'Open website checks', url: options.url },
+      footnote: 'You get this on the 1st of each month because you lead the IT department.',
+    }),
+  }
+}
+
+export function websiteExpiryAlertTemplate(options: {
+  /** One line per renewal due, e.g. "Riverside site: SSL certificate expires Nov 13, 2026 (7 days)". */
+  alerts: readonly string[]
+  url: string
+}): PreparedEmail {
+  const count = options.alerts.length
+  const what = count === 1 ? 'A domain or SSL certificate' : `${count} domains or SSL certificates`
+  return {
+    subject: `${what} ${count === 1 ? 'needs' : 'need'} renewing soon`,
+    ...renderEmail({
+      preheader: options.alerts[0] ?? 'A client website needs renewing.',
+      heading: 'Renew before it runs out',
+      body: [
+        'These client websites will stop working, or show a security warning, unless they are renewed in time:',
+      ],
+      steps: options.alerts,
+      action: { label: 'Open website checks', url: options.url },
+      footnote:
+        'You get this because you lead the IT department. Each renewal is mentioned 30, 14, 7, 3 and 1 days before, and on the day.',
+    }),
+  }
+}
+
 export function contactEnquiryTemplate(options: {
   name: string
   email: string

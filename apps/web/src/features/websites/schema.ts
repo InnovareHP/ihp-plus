@@ -24,6 +24,15 @@ export const CHECK_STATUS_COLORS: Record<CheckStatus, string> = {
   down: 'red',
 }
 
+/** The lead's hand checks: pages and buttons each shift, the form email once per site. */
+export const MANUAL_RESULTS = ['pass', 'fail'] as const
+export type ManualResult = (typeof MANUAL_RESULTS)[number]
+
+export const MANUAL_RESULT_LABELS: Record<ManualResult, string> = {
+  pass: 'Pass',
+  fail: 'Fail',
+}
+
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
 const MONTH_KEY = /^\d{4}-(0[1-9]|1[0-2])$/
 
@@ -79,6 +88,30 @@ export type CheckNoteFormInput = z.input<typeof checkNoteFormSchema>
 export const exportMonthSchema = z.object({ month: monthKeySchema, websiteId: z.string() })
 export type ExportMonthValues = z.output<typeof exportMonthSchema>
 
+// Every field is optional so one click saves one thing without resending the rest.
+export const saveShiftCheckSchema = z.object({
+  websiteId: z.string().min(1),
+  pagesButtons: z.enum(MANUAL_RESULTS).optional(),
+  formEmail: z.enum(MANUAL_RESULTS).optional(),
+  findings: z.string().trim().max(1000, 'Keep findings under 1,000 characters.').optional(),
+  action: z.string().trim().max(1000, 'Keep this under 1,000 characters.').optional(),
+})
+export type SaveShiftCheckValues = z.output<typeof saveShiftCheckSchema>
+
+export const findingsFormSchema = z.object({
+  findings: z.string().trim().max(1000, 'Keep findings under 1,000 characters.'),
+  action: z.string().trim().max(1000, 'Keep this under 1,000 characters.'),
+})
+export type FindingsFormInput = z.input<typeof findingsFormSchema>
+
+export const exportDayReportSchema = z.object({ date: dateKeySchema })
+export type ExportDayReportValues = z.output<typeof exportDayReportSchema>
+
+export interface DayReportFile {
+  fileName: string
+  bytes: Uint8Array
+}
+
 export const itTeamSchema = z.object({ itTeamId: z.string() })
 export type ItTeamValues = z.output<typeof itTeamSchema>
 
@@ -92,6 +125,23 @@ export interface WebsiteCheckRow {
   checkedAt: string
 }
 
+export interface ShiftCheckRow {
+  pagesButtons: ManualResult | undefined
+  findings: string
+  action: string
+}
+
+export interface FormEmailRow {
+  result: ManualResult
+  testedAt: string
+}
+
+export const EMPTY_SHIFT_CHECK: ShiftCheckRow = {
+  pagesButtons: undefined,
+  findings: '',
+  action: '',
+}
+
 export interface WebsiteRow {
   id: string
   name: string
@@ -102,6 +152,9 @@ export interface WebsiteRow {
   checks: Partial<Record<CheckRound, WebsiteCheckRow>>
   /** When today's picture of each round was taken; past days have none, they are not kept. */
   snapshots: Partial<Record<CheckRound, string>>
+  shift: ShiftCheckRow
+  /** The latest form test up to this day, since it is done once rather than every shift. */
+  formEmail: FormEmailRow | undefined
 }
 
 export interface Checklist {
