@@ -4,6 +4,7 @@ import { recordActivity } from '@/lib/activity'
 import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
 import { selfieUrl } from '@/lib/attendance-selfie'
 import { deleteObject } from '@/lib/s3'
+import { createDailyTasks } from '@/features/tasks/service'
 import { queueLeadRound } from '@/features/websites/service'
 import { notifyCorrectionDecided } from './notifications'
 import {
@@ -16,6 +17,7 @@ import {
   grantedDayOffName,
   attendanceSettingsSchema,
   clockActionSchema,
+  MIN_DAILY_TASKS,
   holidaySchema,
   importHolidaysSchema,
   DEFAULT_ATTENDANCE_SETTINGS,
@@ -512,6 +514,13 @@ export async function clockIn(values: ClockActionValues): Promise<AttendanceDayR
   const settings = await settingsOf(caller.organizationId)
   const shift = await shiftFor(caller.organizationId, caller.userId, settings)
   const parsed = checkedClockValues(values, shift)
+  const dailyTasks = parsed.dailyTasks.filter(Boolean)
+  if (dailyTasks.length < MIN_DAILY_TASKS) {
+    throw new ConnectError(
+      `List at least ${MIN_DAILY_TASKS} tasks for today before clocking in.`,
+      Code.InvalidArgument,
+    )
+  }
 
   const open = await openDayOf(caller, shift)
   if (open) throw new ConnectError('You are already clocked in.', Code.FailedPrecondition)
@@ -528,6 +537,9 @@ export async function clockIn(values: ClockActionValues): Promise<AttendanceDayR
       Code.FailedPrecondition,
     )
   }
+
+  // Before the day is written, so a failure leaves the person free to retry the whole punch.
+  await createDailyTasks(dailyTasks, workDate)
 
   const day = await db.attendanceDay.create({
     data: {

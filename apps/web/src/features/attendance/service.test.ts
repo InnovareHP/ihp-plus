@@ -63,11 +63,15 @@ const storage = vi.hoisted(() => ({
 }))
 
 const mail = vi.hoisted(() => ({ notifyCorrectionDecided: vi.fn() }))
+const tasks = vi.hoisted(() => ({ createDailyTasks: vi.fn(async () => undefined) }))
 const websites = vi.hoisted(() => ({ queueLeadRound: vi.fn(async () => false) }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
+
+const PLAN = ['Reply to emails', 'Ship the report', 'Review PRs']
 vi.mock('./notifications', () => mail)
 vi.mock('@/features/websites/service', () => websites)
+vi.mock('@/features/tasks/service', () => tasks)
 vi.mock('@/lib/activity', () => activity)
 vi.mock('@/lib/s3', () => storage)
 const calendar = vi.hoisted(() => ({ fillHolidays: vi.fn(), fillUpcomingHolidays: vi.fn() }))
@@ -212,10 +216,11 @@ describe('the clock', () => {
       Promise.resolve(dayRecord({ lateSeconds: data.lateSeconds })),
     )
 
-    const day = await clockIn({ selfieKey: '', location: '', note: '' })
+    const day = await clockIn({ selfieKey: '', location: '', note: '', dailyTasks: PLAN })
 
     expect(day.isOpen).toBe(true)
     expect(day.lateSeconds).toBe(40 * 60)
+    expect(tasks.createDailyTasks).toHaveBeenCalledWith(PLAN, expect.any(String))
     // Whether it runs is the websites feature's call: it starts only for the IT lead.
     expect(websites.queueLeadRound).toHaveBeenCalledWith(
       expect.objectContaining({ organizationId: 'org-1', userId: 'user-1' }),
@@ -224,12 +229,22 @@ describe('the clock', () => {
     vi.useRealTimers()
   })
 
+  it('refuses a clock in with fewer than three tasks planned', async () => {
+    await expect(
+      clockIn({ selfieKey: '', location: '', note: '', dailyTasks: ['One', ' ', 'Two'] }),
+    ).rejects.toMatchObject({ code: Code.InvalidArgument })
+    expect(tasks.createDailyTasks).not.toHaveBeenCalled()
+    expect(prisma.attendanceDay.create).not.toHaveBeenCalled()
+  })
+
   it('refuses a second clock in while one is running', async () => {
     // Pinned inside the auto-close window, or the running day is closed before the refusal.
     vi.setSystemTime(new Date('2026-09-22T10:00:00.000Z'))
     prisma.attendanceDay.findFirst.mockResolvedValue(dayRecord())
 
-    await expect(clockIn({ selfieKey: '', location: '', note: '' })).rejects.toMatchObject({
+    await expect(
+      clockIn({ selfieKey: '', location: '', note: '', dailyTasks: PLAN }),
+    ).rejects.toMatchObject({
       code: Code.FailedPrecondition,
     })
     vi.useRealTimers()
@@ -238,7 +253,9 @@ describe('the clock', () => {
   it('asks for the selfie the company requires', async () => {
     everybodyOn({ ...SHIFT, requireSelfie: true })
 
-    await expect(clockIn({ selfieKey: '', location: '', note: '' })).rejects.toMatchObject({
+    await expect(
+      clockIn({ selfieKey: '', location: '', note: '', dailyTasks: PLAN }),
+    ).rejects.toMatchObject({
       code: Code.InvalidArgument,
     })
     expect(prisma.attendanceDay.create).not.toHaveBeenCalled()
@@ -248,7 +265,9 @@ describe('the clock', () => {
     everybodyOn({ ...SHIFT, requireNote: true })
     prisma.attendanceDay.findFirst.mockResolvedValue(dayRecord())
 
-    await expect(clockOut({ selfieKey: '', location: '', note: '' })).rejects.toMatchObject({
+    await expect(
+      clockOut({ selfieKey: '', location: '', note: '', dailyTasks: [] }),
+    ).rejects.toMatchObject({
       code: Code.InvalidArgument,
     })
   })
@@ -271,7 +290,7 @@ describe('the clock', () => {
       Promise.resolve(dayRecord({ ...data, breaks: [] })),
     )
 
-    const day = await clockOut({ selfieKey: '', location: '', note: 'Stock count' })
+    const day = await clockOut({ selfieKey: '', location: '', note: 'Stock count', dailyTasks: [] })
 
     expect(prisma.attendanceBreak.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'break-1' } }),

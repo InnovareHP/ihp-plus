@@ -11,7 +11,10 @@ export interface Punch {
   needsSelfie: boolean
   isPending: boolean
   /** Resolves true when the day moved; the mutation announces its own failure. */
-  punch: (which: PunchKind, input: { selfieKey?: string; note?: string }) => Promise<boolean>
+  punch: (
+    which: PunchKind,
+    input: { selfieKey?: string; note?: string; dailyTasks?: string[] },
+  ) => Promise<boolean>
 }
 
 /** The mechanics behind both clocks — the card on the page and the chip in the header. */
@@ -19,12 +22,16 @@ export function usePunch(shift: AttendanceShiftRow | undefined): Punch {
   const clockIn = useClockIn()
   const clockOut = useClockOut()
 
-  async function punch(which: PunchKind, input: { selfieKey?: string; note?: string }) {
+  async function punch(
+    which: PunchKind,
+    input: { selfieKey?: string; note?: string; dailyTasks?: string[] },
+  ) {
     const location = shift?.captureLocation ? await currentLocation() : ''
     const values = {
       selfieKey: input.selfieKey ?? '',
       location,
       note: input.note?.trim() ?? '',
+      dailyTasks: input.dailyTasks ?? [],
     }
 
     try {

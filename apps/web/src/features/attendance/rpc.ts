@@ -98,6 +98,7 @@ export async function clockIn(values: ClockActionValues): Promise<AttendanceDayR
       selfieKey: values.selfieKey,
       location: values.location,
       note: values.note,
+      dailyTasks: values.dailyTasks,
     }),
   )
   return requiredDay(response.day)

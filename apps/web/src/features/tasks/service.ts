@@ -752,6 +752,45 @@ export async function createTask(values: TaskFormValues): Promise<TaskRow> {
   return hydrate(created)
 }
 
+export const DAILY_TASKS_PROJECT_NAME = 'Daily tasks'
+
+/** The plan a member types at clock-in, filed as their own tasks due that day. */
+export async function createDailyTasks(names: readonly string[], workDate: string): Promise<void> {
+  const caller = await requireMember()
+
+  // shortcut: found by name, so a renamed project spawns a new one; add a flag column if that bites.
+  const existing = await db.taskProject.findFirst({
+    where: {
+      organizationId: caller.organizationId,
+      name: DAILY_TASKS_PROJECT_NAME,
+      isArchived: false,
+    },
+    select: { id: true, lists: { select: { id: true }, orderBy: { sortOrder: 'asc' }, take: 1 } },
+  })
+  const projectId =
+    existing?.id ?? (await createProject({ name: DAILY_TASKS_PROJECT_NAME, color: '' })).id
+  const listId =
+    existing?.lists[0]?.id ??
+    (await db.taskList.findFirst({ where: { projectId }, select: { id: true } }))?.id
+  if (!listId) {
+    throw new ConnectError(`The "${DAILY_TASKS_PROJECT_NAME}" project has no list.`, Code.NotFound)
+  }
+
+  for (const name of names) {
+    await createTask({
+      projectId,
+      listId,
+      name,
+      description: '',
+      priority: 'normal',
+      startDate: workDate,
+      dueDate: workDate,
+      assigneeIds: [caller.userId],
+      parentId: '',
+    })
+  }
+}
+
 // Assigning someone who has left, or who was never in this organization, would put a name on a
 // board that nobody can act on.
 async function knownTeammates(caller: Caller, userIds: readonly string[]) {

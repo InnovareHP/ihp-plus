@@ -317,7 +317,27 @@ export const clockActionSchema = z.object({
   selfieKey: z.string().trim().default(''),
   location: z.string().trim().max(120).default(''),
   note: z.string().trim().max(200, 'Keep the note under 200 characters.').default(''),
+  dailyTasks: z.array(z.string().trim().max(200)).max(20).default([]),
 })
+
+export const MIN_DAILY_TASKS = 3
+
+export const dailyTasksFormSchema = z.object({
+  tasks: z
+    .array(
+      z.object({
+        name: z
+          .string()
+          .trim()
+          .min(1, 'Say what has to be done.')
+          .max(200, 'Keep the title shorter.'),
+      }),
+    )
+    .min(MIN_DAILY_TASKS, `List at least ${MIN_DAILY_TASKS} tasks for today.`)
+    .max(20),
+})
+
+export type DailyTasksFormValues = z.infer<typeof dailyTasksFormSchema>
 
 export type ClockActionValues = z.infer<typeof clockActionSchema>
 

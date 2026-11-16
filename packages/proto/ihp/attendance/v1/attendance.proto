@@ -146,6 +146,8 @@ message ClockInRequest {
   optional string selfie_key = 1;
   optional string location = 2;
   optional string note = 3;
+  // What the member plans to get done today; each becomes a task assigned to them.
+  repeated string daily_tasks = 4;
 }
 
 message ClockInResponse {

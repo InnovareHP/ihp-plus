@@ -87,6 +87,7 @@ const {
   markAllMentionsRead,
   markMentionRead,
   createTask,
+  createDailyTasks,
   deleteList,
   deleteStatus,
   loadConversation,
@@ -770,6 +771,56 @@ describe('statuses', () => {
       updateStatus({ statusId: 'status-todo', color: 'url(https://evil.example/p.png)' }),
     ).rejects.toMatchObject({ code: Code.InvalidArgument })
     expect(prisma.taskStatus.update).not.toHaveBeenCalled()
+  })
+})
+
+describe('createDailyTasks', () => {
+  beforeEach(() => {
+    prisma.taskList.findFirst.mockResolvedValue({ id: 'list-1' })
+    prisma.member.findMany.mockResolvedValue([{ userId: 'user-1' }])
+    prisma.taskProject.update.mockResolvedValue({ taskCounter: 7 })
+    prisma.task.aggregate.mockResolvedValue({ _max: { position: null } })
+    prisma.task.create.mockResolvedValue(TASK_RECORD)
+  })
+
+  it('files each line as a task assigned to the caller, due that day', async () => {
+    prisma.taskProject.findFirst.mockResolvedValue({ id: 'project-1', lists: [{ id: 'list-1' }] })
+
+    await createDailyTasks(['One', 'Two', 'Three'], '2026-11-16')
+
+    expect(prisma.taskProject.create).not.toHaveBeenCalled()
+    expect(prisma.task.create).toHaveBeenCalledTimes(3)
+    expect(prisma.task.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          projectId: 'project-1',
+          listId: 'list-1',
+          name: 'One',
+          dueDate: new Date('2026-11-16'),
+          assignees: { create: [{ userId: 'user-1' }] },
+        }),
+      }),
+    )
+  })
+
+  it('opens the daily tasks project the first time anyone plans a day', async () => {
+    prisma.taskProject.findFirst.mockResolvedValueOnce(null)
+    prisma.taskProject.count.mockResolvedValue(2)
+    prisma.taskProject.create.mockResolvedValue({
+      id: 'project-daily',
+      name: 'Daily tasks',
+      color: null,
+      isArchived: false,
+    })
+
+    await createDailyTasks(['One', 'Two', 'Three'], '2026-11-16')
+
+    expect(prisma.taskProject.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ name: 'Daily tasks' }) }),
+    )
+    expect(prisma.task.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ projectId: 'project-daily' }) }),
+    )
   })
 })
 

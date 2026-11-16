@@ -92,6 +92,12 @@ function withCamera(available: boolean) {
   return getUserMedia
 }
 
+async function planDay(user: ReturnType<typeof userEvent.setup>) {
+  for (const n of [1, 2, 3]) {
+    await user.type(await screen.findByRole('textbox', { name: `Task ${n}` }), `Task number ${n}`)
+  }
+}
+
 function view(today: AttendanceDayRow | undefined, shift: AttendanceShiftRow = SHIFT) {
   return { today, settings: RULES, schedule: SCHEDULE, canManage: false, shift }
 }
@@ -140,10 +146,16 @@ describe('TimeClockCard', () => {
     const user = userEvent.setup()
     render(<TimeClockCard />)
 
+    await planDay(user)
     await user.click(await screen.findByRole('button', { name: 'Clock in' }))
 
     await waitFor(() =>
-      expect(rpc.clockIn).toHaveBeenCalledWith({ selfieKey: '', location: '', note: '' }),
+      expect(rpc.clockIn).toHaveBeenCalledWith({
+        selfieKey: '',
+        location: '',
+        note: '',
+        dailyTasks: ['Task number 1', 'Task number 2', 'Task number 3'],
+      }),
     )
   })
 
@@ -153,6 +165,7 @@ describe('TimeClockCard', () => {
     rpc.getTimeClock.mockResolvedValue(view(undefined, { ...SHIFT, requireSelfie: true }))
     render(<TimeClockCard />)
 
+    await planDay(user)
     await user.click(await screen.findByRole('button', { name: 'Clock in' }))
 
     expect(await screen.findByRole('button', { name: 'Take photo' })).toBeInTheDocument()
@@ -165,6 +178,7 @@ describe('TimeClockCard', () => {
     rpc.getTimeClock.mockResolvedValue(view(undefined, { ...SHIFT, requireSelfie: true }))
     render(<TimeClockCard />)
 
+    await planDay(user)
     await user.click(await screen.findByRole('button', { name: 'Clock in' }))
 
     expect(await screen.findByRole('button', { name: 'Choose a photo' })).toBeInTheDocument()
@@ -222,6 +236,7 @@ describe('TimeClockCard', () => {
     rpc.clockIn.mockRejectedValue(new Error('You are already clocked in.'))
     render(<TimeClockCard />)
 
+    await planDay(user)
     await user.click(await screen.findByRole('button', { name: 'Clock in' }))
 
     await waitFor(() =>

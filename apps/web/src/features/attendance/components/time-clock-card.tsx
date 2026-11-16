@@ -12,8 +12,8 @@ import {
   Textarea,
   Title,
 } from '@mantine/core'
-import { IconCoffee, IconPlayerStop, IconPlayerPlay } from '@tabler/icons-react'
-import { useState } from 'react'
+import { IconCoffee, IconPlayerStop } from '@tabler/icons-react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useEndBreak, useStartBreak, useTimeClock } from '../hooks/use-time-clock'
 import { useNow } from '../hooks/use-now'
@@ -24,6 +24,7 @@ import { formatHours, minutesToClock } from '@ihp/clock'
 import { dayState, liveBreakSeconds, liveWorkedSeconds } from '../utils/day'
 import { ClockReading } from './clock-reading'
 import { ClockStateBadge } from './clock-state-badge'
+import { DailyTasksForm } from './daily-tasks-form'
 import { DayOffNotice } from './day-off-notice'
 import { DayTotals } from './day-totals'
 import { SelfieCapture } from './selfie-capture'
@@ -39,6 +40,8 @@ export function TimeClockCard() {
   const startBreak = useStartBreak()
   const endBreak = useEndBreak()
   const [selfieFor, setSelfieFor] = useState<PunchKind | undefined>(undefined)
+  // Held across the selfie step; nothing renders it.
+  const dailyTasks = useRef<string[]>([])
 
   const {
     register,
@@ -86,7 +89,11 @@ export function TimeClockCard() {
       return
     }
 
-    const done = await punch.punch(which, { selfieKey, note })
+    const done = await punch.punch(which, {
+      selfieKey,
+      note,
+      dailyTasks: which === 'in' ? dailyTasks.current : undefined,
+    })
     setSelfieFor(undefined)
     if (done) reset({ note: '' })
   }
@@ -150,19 +157,18 @@ export function TimeClockCard() {
           />
         ) : null}
 
-        <Box className={actions.row}>
-          {state === 'absent' ? (
-            <Button
-              leftSection={<IconPlayerPlay size={18} />}
-              onClick={() => press('in')}
-              loading={punch.isPending}
-              disabled={isBusy}
-              size="md"
-            >
-              {punch.isPending ? 'Clocking in…' : 'Clock in'}
-            </Button>
-          ) : null}
+        {state === 'absent' ? (
+          <DailyTasksForm
+            isPending={punch.isPending}
+            disabled={isBusy}
+            onSubmit={(names) => {
+              dailyTasks.current = names
+              press('in')
+            }}
+          />
+        ) : null}
 
+        <Box className={actions.row}>
           {state === 'in' ? (
             <>
               <Button
