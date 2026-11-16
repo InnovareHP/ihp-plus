@@ -94,7 +94,7 @@ export function BulletinBoard() {
   }
 
   return (
-    <Stack gap="xl" maw="44rem" w="100%" mx="auto">
+    <Stack gap="xl" maw="72rem" w="100%" mx="auto">
       {canModerate ? (
         <Group justify="flex-end">
           <Button
