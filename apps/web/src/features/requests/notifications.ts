@@ -8,6 +8,7 @@ import {
   requestWithdrawnTemplate,
   sendEmail,
 } from '@/lib/email'
+import { PORTAL_ADMIN_ROLES } from '@/lib/portal-access'
 import { requestRoute } from '@/lib/routes'
 import type { Decision } from './schema'
 
@@ -167,7 +168,7 @@ async function adminIds(organizationId: string) {
       where: { organizationId, role: { in: ADMIN_ROLES } },
       select: { userId: true },
     }),
-    db.user.findMany({ where: { role: 'admin' }, select: { id: true } }),
+    db.user.findMany({ where: { role: { in: [...PORTAL_ADMIN_ROLES] } }, select: { id: true } }),
   ])
   return [...members.map((row) => row.userId), ...portalAdmins.map((row) => row.id)]
 }

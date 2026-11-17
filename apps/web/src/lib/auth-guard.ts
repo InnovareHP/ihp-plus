@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { cache } from 'react'
 import { auth } from './auth'
+import { PORTAL_ADMIN_ROLES } from './portal-access'
 import { routes } from './routes'
 
 // cache() dedupes the lookup across the layout and the page of a single request.
@@ -67,10 +68,15 @@ export function membershipOf(profile: OnboardingProfile): Membership {
 // Portal admins manage the company too, so the two role systems are collapsed in one place.
 export function canManageOrganization(membership: Membership) {
   return (
-    membership.portalRole === 'admin' ||
+    PORTAL_ADMIN_ROLES.includes(membership.portalRole) ||
     membership.organizationRole === 'owner' ||
     membership.organizationRole === 'admin'
   )
+}
+
+// Company-wide pay figures (summaries, the monthly report) stop at the superadmin, not every admin.
+export function isSuperadmin(membership: Membership) {
+  return membership.portalRole === 'superadmin'
 }
 
 // proxy.ts only sniffs the cookie, so every protected segment revalidates here.

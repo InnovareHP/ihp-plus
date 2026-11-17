@@ -15,6 +15,7 @@ enum PortalRole {
   PORTAL_ROLE_UNSPECIFIED = 0;
   PORTAL_ROLE_ADMIN = 1;
   PORTAL_ROLE_USER = 2;
+  PORTAL_ROLE_SUPERADMIN = 3;
 }
 
 enum MemberStatus {

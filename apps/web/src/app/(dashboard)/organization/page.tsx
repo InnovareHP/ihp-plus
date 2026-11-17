@@ -5,6 +5,7 @@ import { PageShell } from '@/components/page-shell'
 import { PageHeader } from '@/components/page-header'
 import { OrganizationTabs } from '@/features/organization/components/organization-tabs'
 import { requireOrganizationManager } from '@/lib/auth-guard'
+import { PORTAL_ADMIN_ROLES } from '@/lib/portal-access'
 
 export const metadata: Metadata = { title: 'Organization' }
 
@@ -28,7 +29,7 @@ export default async function OrganizationPage() {
       >
         <OrganizationTabs
           invitedBy={profile.preferredName ?? user.name}
-          canImpersonate={membership.portalRole === 'admin'}
+          canImpersonate={PORTAL_ADMIN_ROLES.includes(membership.portalRole)}
         />
       </Suspense>
     </PageShell>

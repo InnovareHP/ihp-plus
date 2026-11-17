@@ -34,6 +34,7 @@ const ORG_ROLE_FROM_PROTO: Record<OrganizationRole, OrgRole> = {
 }
 
 const PORTAL_ROLE_TO_PROTO: Record<Portal, PortalRole> = {
+  superadmin: PortalRole.SUPERADMIN,
   admin: PortalRole.ADMIN,
   user: PortalRole.USER,
 }
@@ -42,6 +43,7 @@ const PORTAL_ROLE_FROM_PROTO: Record<PortalRole, Portal> = {
   [PortalRole.UNSPECIFIED]: 'user',
   [PortalRole.ADMIN]: 'admin',
   [PortalRole.USER]: 'user',
+  [PortalRole.SUPERADMIN]: 'superadmin',
 }
 
 const STATUS_TO_PROTO: Record<Status, MemberStatus> = {

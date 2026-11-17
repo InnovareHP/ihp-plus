@@ -1,7 +1,13 @@
 import { db } from '@ihp/db'
 import { Code, ConnectError } from '@ihp/rpc'
 import { recordActivity } from '@/lib/activity'
-import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
+import {
+  canManageOrganization,
+  getSession,
+  isSuperadmin,
+  membershipOf,
+  readProfile,
+} from '@/lib/auth-guard'
 import { selfieUrl } from '@/lib/attendance-selfie'
 import { deleteObject } from '@/lib/s3'
 import { DAILY_TASKS_KEY } from '@/features/tasks/schema'
@@ -119,6 +125,7 @@ async function requireMember() {
     organizationId: membership.organizationId,
     // Admins are the exception throughout: the rules, other people's days, every correction.
     canManage: canManageOrganization(membership),
+    isSuperadmin: isSuperadmin(membership),
   }
 }
 
@@ -918,7 +925,9 @@ export async function loadEmployeeSummaries(range: {
   to: string
 }): Promise<EmployeeSummaryRow[]> {
   const caller = await requireMember()
-  requireAdmin(caller, 'Only an admin reads employee summaries.')
+  if (!caller.isSuperadmin) {
+    throw new ConnectError('Only a superadmin reads employee summaries.', Code.PermissionDenied)
+  }
 
   // Checks the range and reads days and absences by the same rules as the timesheet.
   const log = await loadAttendance({ from: range.from, to: range.to, everyone: true })

@@ -168,11 +168,11 @@ beforeEach(() => {
   prisma.attendanceLeave.findMany.mockResolvedValue([])
 })
 
-function signedInAs(role: string) {
+function signedInAs(role: string, portalRole = 'user') {
   guard.getSession.mockResolvedValue({ user: { id: 'user-1', name: 'Grace Reyes' } })
   guard.readProfile.mockResolvedValue({
     preferredName: 'Grace',
-    role: 'user',
+    role: portalRole,
     members: [{ role, organizationId: 'org-1', organization: { id: 'org-1' } }],
     teammembers: [],
   })
@@ -378,8 +378,15 @@ describe('what only an admin may do', () => {
     ).rejects.toMatchObject({ code: Code.PermissionDenied })
   })
 
-  it('gives an admin every statement whose period overlaps the range', async () => {
-    signedInAs('admin')
+  it('keeps employee summaries from an admin who is not a superadmin', async () => {
+    signedInAs('admin', 'admin')
+    await expect(
+      loadEmployeeSummaries({ from: '2026-09-01', to: '2026-09-22' }),
+    ).rejects.toMatchObject({ code: Code.PermissionDenied })
+  })
+
+  it('gives a superadmin every statement whose period overlaps the range', async () => {
+    signedInAs('member', 'superadmin')
     prisma.attendanceDay.findMany.mockResolvedValue([])
     prisma.attendanceStatement.findMany.mockResolvedValue([])
 

@@ -63,25 +63,34 @@ const TABS: { value: AttendanceTab; label: string; icon: ReactNode }[] = [
   },
 ]
 
-function tabOf(value: string | null): AttendanceTab {
-  return (ATTENDANCE_TABS as readonly string[]).includes(value ?? '')
+// Pay-level reports are a superadmin's; anyone else asking for them by URL lands on Today.
+const REPORT_TABS: readonly AttendanceTab[] = ['summaries', 'monthly']
+
+function tabOf(value: string | null, canReadReports: boolean): AttendanceTab {
+  const tab = (ATTENDANCE_TABS as readonly string[]).includes(value ?? '')
     ? (value as AttendanceTab)
     : 'today'
+  return !canReadReports && REPORT_TABS.includes(tab) ? 'today' : tab
+}
+
+export interface TeamAttendanceTabsProps {
+  canReadReports: boolean
 }
 
 /** The admin half: who is in now, the hours to sign off, and the shifts they are judged by. */
-export function TeamAttendanceTabs() {
+export function TeamAttendanceTabs({ canReadReports }: TeamAttendanceTabsProps) {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
   const settings = useAttendanceSettings()
   // The waiting count rides on the Timesheets tab, so a request is seen from any tab.
   const waiting = useCorrectionQueue().data?.length ?? 0
-  const tab = tabOf(searchParams.get('tab'))
+  const tab = tabOf(searchParams.get('tab'), canReadReports)
+  const tabs = canReadReports ? TABS : TABS.filter((entry) => !REPORT_TABS.includes(entry.value))
   const timeZone = settings.data?.settings.timeZone ?? 'UTC'
 
   function openTab(next: string | null) {
-    const value = tabOf(next)
+    const value = tabOf(next, canReadReports)
     // Only the tab survives the switch: each panel keeps its own range in the query string.
     router.replace(value === 'today' ? pathname : `${pathname}?tab=${value}`, { scroll: false })
   }
@@ -89,7 +98,7 @@ export function TeamAttendanceTabs() {
   return (
     <Tabs value={tab} onChange={openTab} keepMounted={false}>
       <ScrollingTabsList mb="lg">
-        {TABS.map((entry) => (
+        {tabs.map((entry) => (
           <Tabs.Tab
             key={entry.value}
             value={entry.value}
@@ -128,12 +137,16 @@ export function TeamAttendanceTabs() {
       <Tabs.Panel value="kpis">
         <DailyTaskKpiPanel />
       </Tabs.Panel>
-      <Tabs.Panel value="summaries">
-        <EmployeeSummariesPanel />
-      </Tabs.Panel>
-      <Tabs.Panel value="monthly">
-        <MonthlyReportPanel />
-      </Tabs.Panel>
+      {canReadReports && (
+        <>
+          <Tabs.Panel value="summaries">
+            <EmployeeSummariesPanel />
+          </Tabs.Panel>
+          <Tabs.Panel value="monthly">
+            <MonthlyReportPanel />
+          </Tabs.Panel>
+        </>
+      )}
     </Tabs>
   )
 }

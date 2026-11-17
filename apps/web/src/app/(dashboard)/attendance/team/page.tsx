@@ -4,12 +4,12 @@ import { Suspense } from 'react'
 import { PageHeader } from '@/components/page-header'
 import { PageShell } from '@/components/page-shell'
 import { TeamAttendanceTabs } from '@/features/attendance/components/team-attendance-tabs'
-import { requireOrganizationManager } from '@/lib/auth-guard'
+import { isSuperadmin, requireOrganizationManager } from '@/lib/auth-guard'
 
 export const metadata: Metadata = { title: 'Team attendance' }
 
 export default async function TeamAttendancePage() {
-  await requireOrganizationManager()
+  const { membership } = await requireOrganizationManager()
 
   return (
     <PageShell>
@@ -26,7 +26,7 @@ export default async function TeamAttendancePage() {
           </Stack>
         }
       >
-        <TeamAttendanceTabs />
+        <TeamAttendanceTabs canReadReports={isSuperadmin(membership)} />
       </Suspense>
     </PageShell>
   )

@@ -4,7 +4,14 @@ import { Code, ConnectError } from '@ihp/rpc'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { isKnownOption, listFor } from '@/features/lookups/service'
-import { canManageOrganization, getSession, membershipOf, readProfile } from '@/lib/auth-guard'
+import {
+  canManageOrganization,
+  getSession,
+  isSuperadmin,
+  membershipOf,
+  readProfile,
+} from '@/lib/auth-guard'
+import { PORTAL_ADMIN_ROLES } from '@/lib/portal-access'
 import { pageInfoOf, skipTake, type SortDirection } from '@/lib/pagination'
 import { notifyAccessChanged, notifyRoleChanged } from './notifications'
 import { ORGANIZATION_ROLE_LABELS, PORTAL_ROLE_LABELS } from './schema'
@@ -38,7 +45,11 @@ async function requireManager() {
     throw new ConnectError('You do not have permission to manage members.', Code.PermissionDenied)
   }
 
-  return { user: session.user, organizationId: membership.organizationId }
+  return {
+    user: session.user,
+    organizationId: membership.organizationId,
+    isSuperadmin: isSuperadmin(membership),
+  }
 }
 
 const SEARCH_FIELDS = ['name', 'email', 'jobTitle', 'ihpId'] as const
@@ -219,11 +230,25 @@ export async function applyOrganizationRole(values: SetOrganizationRoleValues): 
 }
 
 export async function applyPortalRole(values: SetPortalRoleValues): Promise<MemberRow> {
-  const { user, organizationId } = await requireManager()
+  const { user, organizationId, isSuperadmin: callerIsSuperadmin } = await requireManager()
 
   // Removing your own admin rights would lock you out of this page with no way back.
-  if (values.userId === user.id && values.role !== 'admin') {
+  if (values.userId === user.id && !PORTAL_ADMIN_ROLES.includes(values.role)) {
     throw new ConnectError('You cannot remove your own portal admin role.', Code.FailedPrecondition)
+  }
+
+  // Otherwise any admin could promote themselves into the company-wide reports.
+  if (!callerIsSuperadmin) {
+    const target = await db.user.findUnique({
+      where: { id: values.userId },
+      select: { role: true },
+    })
+    if (values.role === 'superadmin' || target?.role === 'superadmin') {
+      throw new ConnectError(
+        'Only a superadmin can grant or remove the superadmin role.',
+        Code.PermissionDenied,
+      )
+    }
   }
 
   try {

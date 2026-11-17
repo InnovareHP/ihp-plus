@@ -5,7 +5,7 @@ import { memberQuerySchema } from './schema'
 const prisma = vi.hoisted(() => ({
   member: { count: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
   team: { findMany: vi.fn() },
-  user: { update: vi.fn() },
+  user: { update: vi.fn(), findUnique: vi.fn() },
   lookupOption: { findMany: vi.fn(), findFirst: vi.fn() },
 }))
 
@@ -303,6 +303,32 @@ describe('telling people their own access changed', () => {
       roleLabel: 'Admin',
       changedByName: 'Ada Lovelace',
     })
+  })
+
+  it('keeps an admin from granting the superadmin role', async () => {
+    expect(await codeOf(() => applyPortalRole({ userId: 'user-1', role: 'superadmin' }))).toBe(
+      Code.PermissionDenied,
+    )
+    expect(authApi.setRole).not.toHaveBeenCalled()
+  })
+
+  it('keeps an admin from demoting a superadmin', async () => {
+    prisma.user.findUnique.mockResolvedValueOnce({ role: 'superadmin' })
+
+    expect(await codeOf(() => applyPortalRole({ userId: 'user-1', role: 'user' }))).toBe(
+      Code.PermissionDenied,
+    )
+  })
+
+  it('lets a superadmin grant the superadmin role', async () => {
+    signedInAs({ portalRole: 'superadmin' })
+    guard.getSession.mockResolvedValue({ user: { id: 'user-9', name: 'Ada Lovelace' } })
+
+    await applyPortalRole({ userId: 'user-1', role: 'superadmin' })
+
+    expect(authApi.setRole).toHaveBeenCalledWith(
+      expect.objectContaining({ body: { userId: 'user-1', role: 'superadmin' } }),
+    )
   })
 
   it('tells a suspended member, since sign-in itself will not explain why', async () => {

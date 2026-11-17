@@ -3,10 +3,14 @@ import { paginationSchema, sortDirectionSchema, type PageInfo } from '@/lib/pagi
 
 // Mirrors the roles configured on the plugins in lib/auth.ts.
 export const ORGANIZATION_ROLES = ['owner', 'admin', 'member'] as const
-// The admin plugin types set-role as 'admin' | 'user'; "Member" is the label for 'user'.
-export const PORTAL_ROLES = ['admin', 'user'] as const
+// Mirrors portalAccess.roles in lib/portal-access.ts; "Member" is the label for 'user'.
+export const PORTAL_ROLES = ['superadmin', 'admin', 'user'] as const
 
-export const PORTAL_ROLE_LABELS: Record<PortalRole, string> = { admin: 'Admin', user: 'Member' }
+export const PORTAL_ROLE_LABELS: Record<PortalRole, string> = {
+  superadmin: 'Superadmin',
+  admin: 'Admin',
+  user: 'Member',
+}
 
 export const ORGANIZATION_ROLE_LABELS: Record<OrganizationRole, string> = {
   owner: 'Owner',

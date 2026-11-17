@@ -5,6 +5,7 @@ import { nextCookies } from 'better-auth/next-js'
 import { admin, organization } from 'better-auth/plugins'
 import { invitationTemplate, resetPasswordTemplate, sendEmail, verifyEmailTemplate } from './email'
 import { invitationGuard, organizationAccess } from './invitation-policy'
+import { portalAccess } from './portal-access'
 import { isRedisConfigured, redisRateLimitStorage } from './redis'
 import { AUTH_BASE_PATH, invitationRoute, withBasePath } from './routes'
 
@@ -149,7 +150,7 @@ export const auth = betterAuth({
     // the members page labels it "Member".
     admin({
       defaultRole: 'user',
-      adminRoles: ['admin'],
+      ...portalAccess,
     }),
     nextCookies(),
   ],
