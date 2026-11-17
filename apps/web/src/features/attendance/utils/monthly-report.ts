@@ -1,4 +1,4 @@
-import type { EmployeeSummaryRow, SummaryTaskRow } from '../schema'
+import type { BillingStatementRow, EmployeeSummaryRow, SummaryTaskRow } from '../schema'
 import { datesOfMonth } from './calendar'
 
 export interface MonthlyReportRow {
@@ -9,6 +9,8 @@ export interface MonthlyReportRow {
   hoursWorked: number
   tasksPlanned: number
   accomplished: SummaryTaskRow[]
+  outstanding: SummaryTaskRow[]
+  statements: BillingStatementRow[]
   salaryCents: number
   statementCount: number
 }
@@ -39,6 +41,8 @@ export function monthlyReport(summaries: readonly EmployeeSummaryRow[], month: s
       hoursWorked: summary.hoursWorked,
       tasksPlanned: summary.tasks.length,
       accomplished: summary.tasks.filter((task) => task.isDone),
+      outstanding: summary.tasks.filter((task) => !task.isDone),
+      statements,
       salaryCents: statements.reduce((sum, row) => sum + row.totalCents, 0),
       statementCount: statements.length,
     }

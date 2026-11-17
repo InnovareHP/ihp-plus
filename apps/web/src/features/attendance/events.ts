@@ -35,6 +35,8 @@ export const attendanceEvents = {
   statementPdfDownloaded: 'attendance.statement.pdf_downloaded',
   statementEmailOpened: 'attendance.statement.email_opened',
   monthlyReportEmailOpened: 'attendance.monthly_report.email_opened',
+  monthlyReportPdfDownloaded: 'attendance.monthly_report.pdf_downloaded',
+  monthlyReportExportFailed: 'attendance.monthly_report.export_failed',
   statementExportFailed: 'attendance.statement.export_failed',
   statementSaved: 'attendance.statement.saved',
   payTermsSet: 'attendance.pay_terms.set',

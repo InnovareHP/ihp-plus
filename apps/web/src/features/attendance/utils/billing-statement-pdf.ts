@@ -34,9 +34,9 @@ function colorOf(hex: string) {
   return rgb(((value >> 16) & 255) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255)
 }
 
-const INK = colorOf('222222')
-const BRAND = colorOf('1346c5')
-const NAVY = colorOf('0b286b')
+export const INK = colorOf('222222')
+export const BRAND = colorOf('1346c5')
+export const NAVY = colorOf('0b286b')
 const TINT = colorOf('dce7ff')
 const WHITE = rgb(1, 1, 1)
 
@@ -82,13 +82,13 @@ function addLink(page: PDFPage, rect: [number, number, number, number], url: str
   page.node.addAnnot(annotation)
 }
 
-interface Detail {
+export interface Detail {
   label: string
   value: string
   href?: string
 }
 
-interface TableRow {
+export interface TableRow {
   label: string
   value: string
 }
@@ -100,8 +100,18 @@ interface Kit {
   footer: PDFImage
 }
 
+/** Fonts and letterhead art embedded once per document. */
+export async function letterheadKit(document: PDFDocument): Promise<Kit> {
+  return {
+    regular: await document.embedFont(StandardFonts.Helvetica),
+    bold: await document.embedFont(StandardFonts.HelveticaBold),
+    header: await document.embedPng(INNOVARE_ARTWORK.header.base64),
+    footer: await document.embedPng(INNOVARE_ARTWORK.footer.base64),
+  }
+}
+
 /** Draws top to bottom, starting a fresh letterhead page whenever the next block would not fit. */
-function writer(document: PDFDocument, kit: Kit) {
+export function letterheadWriter(document: PDFDocument, kit: Kit) {
   const headerHeight = (WIDTH * INNOVARE_ARTWORK.header.height) / INNOVARE_ARTWORK.header.width
   const footerHeight = (WIDTH * INNOVARE_ARTWORK.footer.height) / INNOVARE_ARTWORK.footer.width
   const top = HEIGHT - headerHeight - GAP
@@ -235,13 +245,7 @@ export async function billingStatementPdf(
   document.setSubject(`Billing statement ${values.invoiceNumber}`)
   document.setCreator(STATEMENT_COMPANY)
 
-  const kit: Kit = {
-    regular: await document.embedFont(StandardFonts.Helvetica),
-    bold: await document.embedFont(StandardFonts.HelveticaBold),
-    header: await document.embedPng(INNOVARE_ARTWORK.header.base64),
-    footer: await document.embedPng(INNOVARE_ARTWORK.footer.base64),
-  }
-  const draw = writer(document, kit)
+  const draw = letterheadWriter(document, await letterheadKit(document))
   const totals = statementTotals(values)
 
   draw.heading('BILLING STATEMENT', 20, BRAND, 0)

@@ -1,19 +1,16 @@
 'use client'
 
 import { Alert, Button, Card, Group, SimpleGrid, Skeleton, Stack, Text, Title } from '@mantine/core'
-import { IconMail } from '@tabler/icons-react'
+import { IconFileTypePdf, IconMail } from '@tabler/icons-react'
+import { useMutation } from '@tanstack/react-query'
 import { StatCard } from '@/components/stat-card'
-import { track } from '@/lib/analytics'
-import { announceSuccess } from '@/lib/announce'
-import { openMailto } from '@/lib/mailto'
-import { attendanceEvents } from '../events'
+import { announceFailure, announceSuccess } from '@/lib/announce'
 import { useEmployeeSummaries } from '../hooks/use-attendance-admin'
 import { useCalendarParams } from '../hooks/use-calendar'
 import { formatUsd } from '../utils/billing-statement'
 import { formatMonth, monthOf } from '../utils/calendar'
 import { monthRange, monthlyReport } from '../utils/monthly-report'
-import { monthlyReportEmail } from '../utils/monthly-report-email'
-import { statementMailto } from '../utils/statement-email'
+import { exportMonthlyReport, type MonthlyReportOutput } from '../utils/monthly-report-output'
 import { MonthNav } from './month-nav'
 import { MonthlyReportTable } from './monthly-report-table'
 import { SummaryTasks } from './summary-tasks'
@@ -30,16 +27,18 @@ export function MonthlyReportPanel() {
   const report = monthlyReport(summaries.data ?? [], month)
   const title = formatMonth(month)
 
-  function emailReport() {
-    const email = monthlyReportEmail(report, title)
-    openMailto(statementMailto(email))
-    // Some mail apps cut a long mailto body short, so the full text is on the clipboard too.
-    void navigator.clipboard?.writeText(email.body).catch(() => undefined)
-    track(attendanceEvents.monthlyReportEmailOpened, { people: report.rows.length })
-    announceSuccess(
-      'Your mail app is opening with the report. It is also copied, in case the message comes up short.',
-    )
-  }
+  const exporter = useMutation({
+    mutationFn: (output: MonthlyReportOutput) =>
+      exportMonthlyReport({ output, report, month, title }),
+    onSuccess: (fileName, output) =>
+      announceSuccess(
+        output === 'email'
+          ? `Your mail app is opening. Attach the downloaded ${fileName} and send it.`
+          : `Downloaded ${fileName}.`,
+      ),
+    onError: () => announceFailure('Could not create the report PDF — try again.'),
+  })
+  const canExport = summaries.isSuccess && report.rows.length > 0
 
   return (
     <Stack gap="md">
@@ -58,9 +57,19 @@ export function MonthlyReportPanel() {
           <Group gap="sm" wrap="wrap">
             <Button
               variant="default"
+              leftSection={<IconFileTypePdf size={16} aria-hidden />}
+              onClick={() => exporter.mutate('pdf')}
+              disabled={!canExport || exporter.isPending}
+              loading={exporter.isPending && exporter.variables === 'pdf'}
+            >
+              Download PDF
+            </Button>
+            <Button
+              variant="default"
               leftSection={<IconMail size={16} aria-hidden />}
-              onClick={emailReport}
-              disabled={!summaries.isSuccess || report.rows.length === 0}
+              onClick={() => exporter.mutate('email')}
+              disabled={!canExport || exporter.isPending}
+              loading={exporter.isPending && exporter.variables === 'email'}
             >
               Email report
             </Button>

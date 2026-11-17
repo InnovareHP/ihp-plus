@@ -7,10 +7,12 @@ import { MonthlyReportPanel } from './monthly-report-panel'
 const rpc = vi.hoisted(() => ({ listEmployeeSummaries: vi.fn() }))
 const nav = vi.hoisted(() => ({ replace: vi.fn() }))
 const mail = vi.hoisted(() => ({ openMailto: vi.fn() }))
+const download = vi.hoisted(() => ({ downloadFile: vi.fn() }))
 const announce = vi.hoisted(() => ({ announceFailure: vi.fn(), announceSuccess: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
 vi.mock('@/lib/mailto', () => mail)
+vi.mock('@/lib/download', () => download)
 vi.mock('@/lib/announce', () => announce)
 vi.mock('next/navigation', () => ({
   usePathname: () => '/attendance/team',
@@ -30,7 +32,14 @@ const SUMMARIES: EmployeeSummaryRow[] = [
       { id: 't1', name: 'Chart reviews', dueDate: '2026-10-03', isDone: true },
       { id: 't2', name: 'Call families', dueDate: '2026-10-03', isDone: false },
     ],
-    statements: [{ periodEnd: '2026-10-31', totalCents: 420_000 } as BillingStatementRow],
+    statements: [
+      {
+        invoiceNumber: 'INV-20261031',
+        periodStart: '2026-10-01',
+        periodEnd: '2026-10-31',
+        totalCents: 420_000,
+      } as BillingStatementRow,
+    ],
   },
   {
     userId: 'eli',
@@ -71,19 +80,49 @@ describe('MonthlyReportPanel', () => {
     expect(screen.getByText('Total salary').parentElement).toHaveTextContent('$4,200.00')
   })
 
-  it('opens an email holding the whole report', async () => {
+  it('downloads the report as a PDF', async () => {
+    render(<MonthlyReportPanel />)
+    await screen.findByText('Total salary')
+    await userEvent.click(screen.getByRole('button', { name: 'Download PDF' }))
+
+    await vi.waitFor(() =>
+      expect(announce.announceSuccess).toHaveBeenCalledWith(
+        'Downloaded monthly-report-2026-10.pdf.',
+      ),
+    )
+    expect(download.downloadFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileName: 'monthly-report-2026-10.pdf',
+        contentType: 'application/pdf',
+      }),
+    )
+    expect(mail.openMailto).not.toHaveBeenCalled()
+  })
+
+  it('downloads the PDF and opens a cover email to attach it to', async () => {
     render(<MonthlyReportPanel />)
     await screen.findByText('Total salary')
     await userEvent.click(screen.getByRole('button', { name: 'Email report' }))
 
+    await vi.waitFor(() => expect(mail.openMailto).toHaveBeenCalled())
+    expect(download.downloadFile).toHaveBeenCalled()
     const url = new URL(mail.openMailto.mock.calls[0]?.[0] as string)
     expect(url.searchParams.get('subject')).toBe('Monthly report — October 2026')
-    const body = url.searchParams.get('body') ?? ''
-    expect(body).toContain('Dana Reyes (Nurse)')
-    expect(body).toContain('Chart reviews')
-    expect(body).toContain('Eli Cruz')
-    expect(announce.announceSuccess).toHaveBeenCalledWith(
-      expect.stringContaining('mail app is opening with the report'),
+    expect(url.searchParams.get('body')).toContain('monthly-report-2026-10.pdf')
+  })
+
+  it('says so when the PDF cannot be made', async () => {
+    download.downloadFile.mockImplementationOnce(() => {
+      throw new Error('blocked')
+    })
+    render(<MonthlyReportPanel />)
+    await screen.findByText('Total salary')
+    await userEvent.click(screen.getByRole('button', { name: 'Download PDF' }))
+
+    await vi.waitFor(() =>
+      expect(announce.announceFailure).toHaveBeenCalledWith(
+        'Could not create the report PDF — try again.',
+      ),
     )
   })
 
