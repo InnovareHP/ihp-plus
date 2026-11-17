@@ -10,6 +10,9 @@ export interface KpiTask {
   /** YYYY-MM-DD */
   dueDate: string
   isDone: boolean
+  /** Closed as dropped at clock-in: planned, never overdue. */
+  isDropped: boolean
+  rollovers: number
   assigneeIds: readonly string[]
 }
 
@@ -23,7 +26,7 @@ export function dailyTaskKpis(
   const rows = new Map<string, DailyTaskKpiRow>(
     people.map((person) => [
       person.userId,
-      { ...person, daysWorked: 0, planned: 0, completed: 0, overdue: 0 },
+      { ...person, daysWorked: 0, planned: 0, completed: 0, overdue: 0, carriedOver: 0 },
     ]),
   )
 
@@ -37,8 +40,9 @@ export function dailyTaskKpis(
       const row = rows.get(userId)
       if (!row) continue
       row.planned += 1
+      row.carriedOver += task.rollovers
       if (task.isDone) row.completed += 1
-      else if (task.dueDate < today) row.overdue += 1
+      else if (!task.isDropped && task.dueDate < today) row.overdue += 1
     }
   }
 

@@ -34,6 +34,7 @@ const columns: DataTableColumn<DailyTaskKpiRow>[] = [
   { key: 'planned', header: 'Planned', align: 'right', render: (row) => row.planned },
   { key: 'completed', header: 'Completed', align: 'right', render: (row) => row.completed },
   { key: 'overdue', header: 'Overdue', align: 'right', render: (row) => row.overdue },
+  { key: 'carried', header: 'Carried over', align: 'right', render: (row) => row.carriedOver },
   {
     key: 'rate',
     header: 'Completion',

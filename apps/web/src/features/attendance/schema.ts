@@ -127,6 +127,16 @@ export interface TimeClockView {
   holidayName: string | undefined
   /** Today's approved time off, named after the form it came through. */
   leaveName: string | undefined
+  /** Unfinished daily tasks from earlier days, oldest first; empty once today is clocked. */
+  backlog: BacklogTaskRow[]
+}
+
+export interface BacklogTaskRow {
+  id: string
+  name: string
+  /** YYYY-MM-DD */
+  dueDate: string
+  rollovers: number
 }
 
 export interface AttendanceSettingsView {
@@ -313,31 +323,58 @@ export const importHolidaysSchema = z.object({
 
 export type ImportHolidaysValues = z.infer<typeof importHolidaysSchema>
 
+export const MIN_DAILY_TASKS = 3
+
+// The clock-in screen offers at most this many leftovers, oldest first, so it stays a form.
+export const MAX_BACKLOG = 20
+
 export const clockActionSchema = z.object({
   selfieKey: z.string().trim().default(''),
   location: z.string().trim().max(120).default(''),
   note: z.string().trim().max(200, 'Keep the note under 200 characters.').default(''),
   dailyTasks: z.array(z.string().trim().max(200)).max(20).default([]),
+  carriedTaskIds: z.array(z.string()).max(MAX_BACKLOG).default([]),
+  doneTaskIds: z.array(z.string()).max(MAX_BACKLOG).default([]),
+  droppedTaskIds: z.array(z.string()).max(MAX_BACKLOG).default([]),
 })
 
-export const MIN_DAILY_TASKS = 3
+export const BACKLOG_ACTIONS = ['carry', 'done', 'drop'] as const
 
-export const dailyTasksFormSchema = z.object({
-  tasks: z
-    .array(
-      z.object({
-        name: z
-          .string()
-          .trim()
-          .min(1, 'Say what has to be done.')
-          .max(200, 'Keep the title shorter.'),
-      }),
-    )
-    .min(MIN_DAILY_TASKS, `List at least ${MIN_DAILY_TASKS} tasks for today.`)
-    .max(20),
-})
+export type BacklogAction = (typeof BACKLOG_ACTIONS)[number]
+
+export const BACKLOG_ACTION_LABELS: Record<BacklogAction, string> = {
+  carry: 'Carry over',
+  done: 'Done',
+  drop: 'Drop',
+}
+
+export const dailyTasksFormSchema = z
+  .object({
+    backlog: z.array(z.object({ id: z.string(), action: z.enum(BACKLOG_ACTIONS) })),
+    tasks: z
+      .array(z.object({ name: z.string().trim().max(200, 'Keep the title shorter.') }))
+      .max(20),
+  })
+  .superRefine((values, ctx) => {
+    const planned =
+      values.tasks.filter((task) => task.name).length +
+      values.backlog.filter((task) => task.action === 'carry').length
+    if (planned < MIN_DAILY_TASKS) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['tasks'],
+        message: `Plan at least ${MIN_DAILY_TASKS} tasks for today — carried-over ones count.`,
+      })
+    }
+  })
 
 export type DailyTasksFormValues = z.infer<typeof dailyTasksFormSchema>
+
+/** What the clock-in form hands to the punch: today's new lines and a choice per leftover. */
+export type DailyPlan = Pick<
+  ClockActionValues,
+  'dailyTasks' | 'carriedTaskIds' | 'doneTaskIds' | 'droppedTaskIds'
+>
 
 export interface DailyTaskKpiRow {
   userId: string
@@ -347,6 +384,7 @@ export interface DailyTaskKpiRow {
   planned: number
   completed: number
   overdue: number
+  carriedOver: number
 }
 
 export type ClockActionValues = z.infer<typeof clockActionSchema>

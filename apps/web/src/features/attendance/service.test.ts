@@ -64,7 +64,13 @@ const storage = vi.hoisted(() => ({
 }))
 
 const mail = vi.hoisted(() => ({ notifyCorrectionDecided: vi.fn() }))
-const tasks = vi.hoisted(() => ({ createDailyTasks: vi.fn(async () => undefined) }))
+const tasks = vi.hoisted(() => ({
+  createDailyTasks: vi.fn(async () => undefined),
+  settleDailyBacklog: vi.fn(async () => undefined),
+  loadDailyBacklog: vi.fn(async () => []),
+}))
+
+const NO_BACKLOG = { carriedTaskIds: [], doneTaskIds: [], droppedTaskIds: [] }
 const websites = vi.hoisted(() => ({ queueLeadRound: vi.fn(async () => false) }))
 
 vi.mock('@ihp/db', () => ({ db: prisma }))
@@ -219,7 +225,13 @@ describe('the clock', () => {
       Promise.resolve(dayRecord({ lateSeconds: data.lateSeconds })),
     )
 
-    const day = await clockIn({ selfieKey: '', location: '', note: '', dailyTasks: PLAN })
+    const day = await clockIn({
+      selfieKey: '',
+      location: '',
+      note: '',
+      dailyTasks: PLAN,
+      ...NO_BACKLOG,
+    })
 
     expect(day.isOpen).toBe(true)
     expect(day.lateSeconds).toBe(40 * 60)
@@ -234,10 +246,49 @@ describe('the clock', () => {
 
   it('refuses a clock in with fewer than three tasks planned', async () => {
     await expect(
-      clockIn({ selfieKey: '', location: '', note: '', dailyTasks: ['One', ' ', 'Two'] }),
+      clockIn({
+        selfieKey: '',
+        location: '',
+        note: '',
+        dailyTasks: ['One', ' ', 'Two'],
+        ...NO_BACKLOG,
+      }),
     ).rejects.toMatchObject({ code: Code.InvalidArgument })
     expect(tasks.createDailyTasks).not.toHaveBeenCalled()
     expect(prisma.attendanceDay.create).not.toHaveBeenCalled()
+  })
+
+  it('counts carried-over tasks toward the plan and settles them before writing the day', async () => {
+    prisma.attendanceDay.create.mockResolvedValue(dayRecord())
+    const backlog = {
+      carriedTaskIds: ['task-1', 'task-2'],
+      doneTaskIds: ['task-3'],
+      droppedTaskIds: [],
+    }
+
+    await clockIn({ selfieKey: '', location: '', note: '', dailyTasks: ['One'], ...backlog })
+
+    expect(tasks.settleDailyBacklog).toHaveBeenCalledWith(
+      expect.objectContaining(backlog),
+      expect.any(String),
+    )
+    expect(tasks.createDailyTasks).toHaveBeenCalledWith(['One'], expect.any(String))
+    expect(prisma.attendanceDay.create).toHaveBeenCalled()
+  })
+
+  it('does not count closed leftovers toward the plan', async () => {
+    await expect(
+      clockIn({
+        selfieKey: '',
+        location: '',
+        note: '',
+        dailyTasks: ['One'],
+        carriedTaskIds: ['task-1'],
+        doneTaskIds: ['task-2', 'task-3'],
+        droppedTaskIds: [],
+      }),
+    ).rejects.toMatchObject({ code: Code.InvalidArgument })
+    expect(tasks.settleDailyBacklog).not.toHaveBeenCalled()
   })
 
   it('refuses a second clock in while one is running', async () => {
@@ -246,7 +297,7 @@ describe('the clock', () => {
     prisma.attendanceDay.findFirst.mockResolvedValue(dayRecord())
 
     await expect(
-      clockIn({ selfieKey: '', location: '', note: '', dailyTasks: PLAN }),
+      clockIn({ selfieKey: '', location: '', note: '', dailyTasks: PLAN, ...NO_BACKLOG }),
     ).rejects.toMatchObject({
       code: Code.FailedPrecondition,
     })
@@ -257,7 +308,7 @@ describe('the clock', () => {
     everybodyOn({ ...SHIFT, requireSelfie: true })
 
     await expect(
-      clockIn({ selfieKey: '', location: '', note: '', dailyTasks: PLAN }),
+      clockIn({ selfieKey: '', location: '', note: '', dailyTasks: PLAN, ...NO_BACKLOG }),
     ).rejects.toMatchObject({
       code: Code.InvalidArgument,
     })
@@ -269,7 +320,7 @@ describe('the clock', () => {
     prisma.attendanceDay.findFirst.mockResolvedValue(dayRecord())
 
     await expect(
-      clockOut({ selfieKey: '', location: '', note: '', dailyTasks: [] }),
+      clockOut({ selfieKey: '', location: '', note: '', dailyTasks: [], ...NO_BACKLOG }),
     ).rejects.toMatchObject({
       code: Code.InvalidArgument,
     })
@@ -293,7 +344,13 @@ describe('the clock', () => {
       Promise.resolve(dayRecord({ ...data, breaks: [] })),
     )
 
-    const day = await clockOut({ selfieKey: '', location: '', note: 'Stock count', dailyTasks: [] })
+    const day = await clockOut({
+      selfieKey: '',
+      location: '',
+      note: 'Stock count',
+      dailyTasks: [],
+      ...NO_BACKLOG,
+    })
 
     expect(prisma.attendanceBreak.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'break-1' } }),

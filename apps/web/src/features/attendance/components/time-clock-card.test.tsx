@@ -99,7 +99,7 @@ async function planDay(user: ReturnType<typeof userEvent.setup>) {
 }
 
 function view(today: AttendanceDayRow | undefined, shift: AttendanceShiftRow = SHIFT) {
-  return { today, settings: RULES, schedule: SCHEDULE, canManage: false, shift }
+  return { today, settings: RULES, schedule: SCHEDULE, canManage: false, shift, backlog: [] }
 }
 
 describe('TimeClockCard', () => {
@@ -155,6 +155,9 @@ describe('TimeClockCard', () => {
         location: '',
         note: '',
         dailyTasks: ['Task number 1', 'Task number 2', 'Task number 3'],
+        carriedTaskIds: [],
+        doneTaskIds: [],
+        droppedTaskIds: [],
       }),
     )
   })

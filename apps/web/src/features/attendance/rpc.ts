@@ -91,6 +91,12 @@ export async function getTimeClock(): Promise<TimeClockView> {
     shift: shiftFromProto(response.shift),
     holidayName: response.holidayName,
     leaveName: response.leaveName,
+    backlog: response.backlog.map((task) => ({
+      id: task.id,
+      name: task.name,
+      dueDate: task.dueDate,
+      rollovers: task.rollovers,
+    })),
   }
 }
 
@@ -101,6 +107,9 @@ export async function clockIn(values: ClockActionValues): Promise<AttendanceDayR
       location: values.location,
       note: values.note,
       dailyTasks: values.dailyTasks,
+      carriedTaskIds: values.carriedTaskIds,
+      doneTaskIds: values.doneTaskIds,
+      droppedTaskIds: values.droppedTaskIds,
     }),
   )
   return requiredDay(response.day)
@@ -177,6 +186,7 @@ export async function getDailyTaskKpis(range: {
     planned: row.planned,
     completed: row.completed,
     overdue: row.overdue,
+    carriedOver: row.carriedOver,
   }))
 }
 

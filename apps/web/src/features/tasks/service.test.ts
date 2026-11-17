@@ -91,6 +91,8 @@ const {
   createTask,
   createDailyTasks,
   deleteList,
+  loadDailyBacklog,
+  settleDailyBacklog,
   deleteStatus,
   loadConversation,
   loadTasks,
@@ -1175,5 +1177,106 @@ describe('task files', () => {
       ConnectError.from(thrown),
     )
     expect(error).toMatchObject({ code: Code.Unauthenticated })
+  })
+})
+
+describe('daily backlog', () => {
+  const BACKLOG_STATUSES = [
+    ...STATUSES,
+    {
+      id: 'status-cancelled',
+      name: 'Cancelled',
+      color: '#b91c1c',
+      category: 'cancelled',
+      sortOrder: 3,
+    },
+  ]
+
+  beforeEach(() => {
+    prisma.taskStatus.findMany.mockResolvedValue(BACKLOG_STATUSES)
+    prisma.$transaction.mockResolvedValue([])
+  })
+
+  it('offers only the caller’s own open daily tasks from before today, oldest first', async () => {
+    prisma.task.findMany.mockResolvedValue([
+      {
+        id: 'task-1',
+        name: 'Call the supplier',
+        dueDate: new Date('2026-11-13T00:00:00.000Z'),
+        rollovers: 2,
+      },
+    ])
+
+    expect(await loadDailyBacklog('2026-11-18', 20)).toEqual([
+      { id: 'task-1', name: 'Call the supplier', dueDate: '2026-11-13', rollovers: 2 },
+    ])
+    expect(prisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organizationId: 'org-1',
+          project: { systemKey: 'daily' },
+          list: { ownerId: 'user-1' },
+          status: { category: 'active' },
+          dueDate: { lt: new Date('2026-11-18') },
+        }),
+        orderBy: [{ dueDate: 'asc' }, { position: 'asc' }],
+        take: 20,
+      }),
+    )
+  })
+
+  it('moves carried tasks to today and closes the rest as done or cancelled', async () => {
+    prisma.task.count.mockResolvedValue(3)
+
+    await settleDailyBacklog(
+      { carriedTaskIds: ['task-1'], doneTaskIds: ['task-2'], droppedTaskIds: ['task-3'] },
+      '2026-11-18',
+    )
+
+    expect(prisma.task.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['task-1'] } },
+      data: { dueDate: new Date('2026-11-18'), rollovers: { increment: 1 } },
+    })
+    expect(prisma.task.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['task-2'] } },
+      data: { statusId: 'status-done', completedAt: expect.any(Date) },
+    })
+    expect(prisma.task.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['task-3'] } },
+      data: { statusId: 'status-cancelled' },
+    })
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1)
+  })
+
+  it('refuses an id that is not in the caller’s open backlog', async () => {
+    prisma.task.count.mockResolvedValue(1)
+
+    const error = await settleDailyBacklog(
+      { carriedTaskIds: ['task-1', 'someone-elses'], doneTaskIds: [], droppedTaskIds: [] },
+      '2026-11-18',
+    ).catch((thrown: unknown) => ConnectError.from(thrown))
+
+    expect(error).toMatchObject({ code: Code.FailedPrecondition })
+    expect(prisma.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('refuses two choices for one task', async () => {
+    const error = await settleDailyBacklog(
+      { carriedTaskIds: ['task-1'], doneTaskIds: ['task-1'], droppedTaskIds: [] },
+      '2026-11-18',
+    ).catch((thrown: unknown) => ConnectError.from(thrown))
+
+    expect(error).toMatchObject({ code: Code.InvalidArgument })
+    expect(prisma.task.count).not.toHaveBeenCalled()
+  })
+
+  it('does nothing when there are no leftovers', async () => {
+    await settleDailyBacklog(
+      { carriedTaskIds: [], doneTaskIds: [], droppedTaskIds: [] },
+      '2026-11-18',
+    )
+
+    expect(prisma.task.count).not.toHaveBeenCalled()
+    expect(prisma.$transaction).not.toHaveBeenCalled()
   })
 })

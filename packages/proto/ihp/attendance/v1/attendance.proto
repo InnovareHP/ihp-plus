@@ -129,6 +129,15 @@ message UpdateAttendanceSettingsResponse {
 // Everything the clock screen needs in one call: today's row, the rules, and this person's shift.
 message GetTimeClockRequest {}
 
+// An open daily task from an earlier day, offered at clock-in.
+message BacklogTask {
+  string id = 1;
+  string name = 2;
+  // YYYY-MM-DD
+  string due_date = 3;
+  int32 rollovers = 4;
+}
+
 message GetTimeClockResponse {
   optional AttendanceDay today = 1;
   AttendanceSettings settings = 2;
@@ -140,6 +149,8 @@ message GetTimeClockResponse {
   optional string holiday_name = 6;
   // Set when today is approved leave, named after the form it came through.
   optional string leave_name = 7;
+  // Empty once today is clocked; the oldest first.
+  repeated BacklogTask backlog = 8;
 }
 
 message ClockInRequest {
@@ -148,6 +159,10 @@ message ClockInRequest {
   optional string note = 3;
   // What the member plans to get done today; each becomes a task assigned to them.
   repeated string daily_tasks = 4;
+  // Unfinished daily tasks from earlier days: carried moves to today, the rest close.
+  repeated string carried_task_ids = 5;
+  repeated string done_task_ids = 6;
+  repeated string dropped_task_ids = 7;
 }
 
 message ClockInResponse {
@@ -237,6 +252,8 @@ message DailyTaskKpi {
   int32 completed = 6;
   // Planned, not done, and its day already over.
   int32 overdue = 7;
+  // Times this person's tasks were carried to a later day.
+  int32 carried_over = 8;
 }
 
 message GetDailyTaskKpisResponse {

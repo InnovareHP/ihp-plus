@@ -3,47 +3,104 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ActionIcon, Box, Button, Fieldset, Group, Stack, Text, TextInput } from '@mantine/core'
 import { IconPlayerPlay, IconPlus, IconTrash } from '@tabler/icons-react'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import actions from '@/components/action-row.module.css'
-import { dailyTasksFormSchema, MIN_DAILY_TASKS, type DailyTasksFormValues } from '../schema'
+import {
+  dailyTasksFormSchema,
+  MIN_DAILY_TASKS,
+  type BacklogTaskRow,
+  type DailyPlan,
+  type DailyTasksFormValues,
+} from '../schema'
+import { BacklogTaskChoice } from './backlog-task-choice'
 
 export interface DailyTasksFormProps {
+  /** Unfinished daily tasks from earlier days, each carried over unless the person says otherwise. */
+  backlog: readonly BacklogTaskRow[]
   isPending: boolean
   disabled: boolean
-  onSubmit: (names: string[]) => void
+  onSubmit: (plan: DailyPlan) => void
+}
+
+function planOf(values: DailyTasksFormValues): DailyPlan {
+  const idsFor = (action: string) =>
+    values.backlog.filter((task) => task.action === action).map((task) => task.id)
+  return {
+    dailyTasks: values.tasks.map((task) => task.name).filter(Boolean),
+    carriedTaskIds: idsFor('carry'),
+    doneTaskIds: idsFor('done'),
+    droppedTaskIds: idsFor('drop'),
+  }
 }
 
 /** The plan for the day, asked at every clock-in; each line becomes a task on the board. */
-export function DailyTasksForm({ isPending, disabled, onSubmit }: DailyTasksFormProps) {
+export function DailyTasksForm({ backlog, isPending, disabled, onSubmit }: DailyTasksFormProps) {
   const {
     register,
     control,
     handleSubmit,
+    setFocus,
     formState: { errors },
   } = useForm<DailyTasksFormValues>({
     resolver: zodResolver(dailyTasksFormSchema),
     mode: 'onTouched',
     reValidateMode: 'onChange',
-    defaultValues: { tasks: Array.from({ length: MIN_DAILY_TASKS }, () => ({ name: '' })) },
+    defaultValues: {
+      backlog: backlog.map((task) => ({ id: task.id, action: 'carry' })),
+      tasks: Array.from({ length: MIN_DAILY_TASKS }, () => ({ name: '' })),
+    },
   })
   const { fields, append, remove } = useFieldArray({ control, name: 'tasks' })
+  const [choices = [], tasks = []] = useWatch({ control, name: ['backlog', 'tasks'] })
+  const carried = choices.filter((choice) => choice.action === 'carry').length
+  const stillNeeded = Math.max(0, MIN_DAILY_TASKS - carried)
 
   return (
-    <form noValidate onSubmit={handleSubmit((values) => onSubmit(values.tasks.map((t) => t.name)))}>
+    <form
+      noValidate
+      onSubmit={handleSubmit(
+        (values) => onSubmit(planOf(values)),
+        () => {
+          const empty = tasks.findIndex((task) => !task.name.trim())
+          if (empty >= 0) setFocus(`tasks.${empty}.name`)
+        },
+      )}
+    >
       <Stack gap="sm">
+        {backlog.length > 0 ? (
+          <Fieldset variant="unstyled" legend="Left over from before">
+            <Stack gap="xs">
+              <Text size="sm" c="dimmed">
+                These are still open. Carried-over tasks move to today and count toward your plan.
+              </Text>
+              {backlog.map((task, index) => (
+                <Controller
+                  key={task.id}
+                  control={control}
+                  name={`backlog.${index}.action`}
+                  render={({ field }) => (
+                    <BacklogTaskChoice task={task} value={field.value} onChange={field.onChange} />
+                  )}
+                />
+              ))}
+            </Stack>
+          </Fieldset>
+        ) : null}
+
         <Fieldset variant="unstyled" legend="What will you get done today?">
           <Stack gap="xs">
             <Text size="sm" c="dimmed">
-              List at least {MIN_DAILY_TASKS}. Each one lands in Tasks, assigned to you and due
-              today.
+              {stillNeeded > 0
+                ? `Add at least ${stillNeeded}. Each one lands in Tasks, assigned to you and due today.`
+                : 'Your carried-over tasks cover the minimum; add more if you like.'}
             </Text>
             {fields.map((field, index) => (
               <Group key={field.id} align="flex-end" wrap="nowrap" gap="xs">
                 <TextInput
                   flex={1}
                   label={`Task ${index + 1}`}
-                  required={index < MIN_DAILY_TASKS}
-                  aria-required={index < MIN_DAILY_TASKS}
+                  required={index < stillNeeded}
+                  aria-required={index < stillNeeded}
                   error={errors.tasks?.[index]?.name?.message}
                   errorProps={{ role: 'alert' }}
                   {...register(`tasks.${index}.name`)}

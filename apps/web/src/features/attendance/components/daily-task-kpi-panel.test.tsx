@@ -22,6 +22,7 @@ const ROWS: DailyTaskKpiRow[] = [
     planned: 30,
     completed: 24,
     overdue: 3,
+    carriedOver: 4,
   },
   {
     userId: 'eli',
@@ -31,6 +32,7 @@ const ROWS: DailyTaskKpiRow[] = [
     planned: 0,
     completed: 0,
     overdue: 0,
+    carriedOver: 0,
   },
 ]
 

@@ -11,7 +11,7 @@ import {
 import { selfieUrl } from '@/lib/attendance-selfie'
 import { deleteObject } from '@/lib/s3'
 import { DAILY_TASKS_KEY } from '@/features/tasks/schema'
-import { createDailyTasks } from '@/features/tasks/service'
+import { createDailyTasks, loadDailyBacklog, settleDailyBacklog } from '@/features/tasks/service'
 import { queueLeadRound } from '@/features/websites/service'
 import { notifyCorrectionDecided } from './notifications'
 import {
@@ -26,6 +26,7 @@ import {
   clockActionSchema,
   type DailyTaskKpiRow,
   type EmployeeSummaryRow,
+  MAX_BACKLOG,
   MIN_DAILY_TASKS,
   holidaySchema,
   importHolidaysSchema,
@@ -472,8 +473,9 @@ export async function loadTimeClock(): Promise<TimeClockView> {
     }))
 
   const names = new Map([[caller.userId, caller.name]])
-  const todayKey = dateOf(workDateKey(new Date(), settings.timeZone))
-  const [holidays, leave] = await Promise.all([
+  const workDate = workDateKey(new Date(), settings.timeZone)
+  const todayKey = dateOf(workDate)
+  const [holidays, leave, backlog] = await Promise.all([
     db.attendanceHoliday.findMany({
       where: {
         organizationId: caller.organizationId,
@@ -486,6 +488,7 @@ export async function loadTimeClock(): Promise<TimeClockView> {
       where: { userId_date: { userId: caller.userId, date: todayKey } },
       select: { name: true },
     }),
+    today ? [] : loadDailyBacklog(workDate, MAX_BACKLOG),
   ])
 
   return {
@@ -505,6 +508,7 @@ export async function loadTimeClock(): Promise<TimeClockView> {
       shift.holidayCountry,
     )?.name,
     leaveName: leave?.name,
+    backlog,
   }
 }
 
@@ -527,9 +531,9 @@ export async function clockIn(values: ClockActionValues): Promise<AttendanceDayR
   const shift = await shiftFor(caller.organizationId, caller.userId, settings)
   const parsed = checkedClockValues(values, shift)
   const dailyTasks = parsed.dailyTasks.filter(Boolean)
-  if (dailyTasks.length < MIN_DAILY_TASKS) {
+  if (dailyTasks.length + parsed.carriedTaskIds.length < MIN_DAILY_TASKS) {
     throw new ConnectError(
-      `List at least ${MIN_DAILY_TASKS} tasks for today before clocking in.`,
+      `Plan at least ${MIN_DAILY_TASKS} tasks for today before clocking in.`,
       Code.InvalidArgument,
     )
   }
@@ -551,6 +555,7 @@ export async function clockIn(values: ClockActionValues): Promise<AttendanceDayR
   }
 
   // Before the day is written, so a failure leaves the person free to retry the whole punch.
+  await settleDailyBacklog(parsed, workDate)
   await createDailyTasks(dailyTasks, workDate)
 
   const day = await db.attendanceDay.create({
@@ -902,6 +907,7 @@ export async function loadDailyTaskKpis(range: {
       },
       select: {
         dueDate: true,
+        rollovers: true,
         status: { select: { category: true } },
         assignees: { select: { userId: true } },
       },
@@ -914,6 +920,8 @@ export async function loadDailyTaskKpis(range: {
     tasks.map((task) => ({
       dueDate: task.dueDate?.toISOString().slice(0, 10) ?? '',
       isDone: task.status.category === 'done',
+      isDropped: task.status.category === 'cancelled',
+      rollovers: task.rollovers,
       assigneeIds: task.assignees.map((one) => one.userId),
     })),
     workDateKey(new Date(), settings.timeZone),

@@ -18,7 +18,7 @@ import { useForm } from 'react-hook-form'
 import { useEndBreak, useStartBreak, useTimeClock } from '../hooks/use-time-clock'
 import { useNow } from '../hooks/use-now'
 import { usePunch, type PunchKind } from '../hooks/use-punch'
-import type { AttendanceSettingsRow, AttendanceShiftRow } from '../schema'
+import type { AttendanceSettingsRow, AttendanceShiftRow, DailyPlan } from '../schema'
 import actions from '@/components/action-row.module.css'
 import { formatHours, minutesToClock } from '@ihp/clock'
 import { dayState, liveBreakSeconds, liveWorkedSeconds } from '../utils/day'
@@ -41,7 +41,7 @@ export function TimeClockCard() {
   const endBreak = useEndBreak()
   const [selfieFor, setSelfieFor] = useState<PunchKind | undefined>(undefined)
   // Held across the selfie step; nothing renders it.
-  const dailyTasks = useRef<string[]>([])
+  const plan = useRef<DailyPlan | undefined>(undefined)
 
   const {
     register,
@@ -92,7 +92,7 @@ export function TimeClockCard() {
     const done = await punch.punch(which, {
       selfieKey,
       note,
-      dailyTasks: which === 'in' ? dailyTasks.current : undefined,
+      plan: which === 'in' ? plan.current : undefined,
     })
     setSelfieFor(undefined)
     if (done) reset({ note: '' })
@@ -159,10 +159,11 @@ export function TimeClockCard() {
 
         {state === 'absent' ? (
           <DailyTasksForm
+            backlog={clock.data.backlog}
             isPending={punch.isPending}
             disabled={isBusy}
-            onSubmit={(names) => {
-              dailyTasks.current = names
+            onSubmit={(next) => {
+              plan.current = next
               press('in')
             }}
           />

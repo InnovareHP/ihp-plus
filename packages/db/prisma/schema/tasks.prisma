@@ -108,6 +108,9 @@ model Task {
   position    Float
   completedAt DateTime?
   isArchived  Boolean   @default(false)
+  // Times a daily task was carried over at clock-in, so a slipping plan stays visible after its
+  // due date moves.
+  rollovers   Int       @default(0)
 
   createdById String?
   createdAt   DateTime @default(now())

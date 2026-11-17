@@ -6,23 +6,26 @@ const PEOPLE = [
   { userId: 'eli', userName: 'Eli', jobTitle: 'Nurse' },
 ]
 
+const OPEN = { isDone: false, isDropped: false, rollovers: 0 }
+
 describe('dailyTaskKpis', () => {
-  it('counts days, plans, completions and overdue per person', () => {
+  it('counts days, plans, completions, overdue and carry-overs per person; dropped is never overdue', () => {
     const rows = dailyTaskKpis(
       PEOPLE,
       ['dana', 'dana', 'stranger'],
       [
-        { dueDate: '2026-11-14', isDone: true, assigneeIds: ['dana'] },
-        { dueDate: '2026-11-14', isDone: false, assigneeIds: ['dana'] },
-        { dueDate: '2026-11-16', isDone: false, assigneeIds: ['dana'] },
-        { dueDate: '2026-11-14', isDone: true, assigneeIds: ['stranger'] },
+        { ...OPEN, dueDate: '2026-11-14', isDone: true, assigneeIds: ['dana'] },
+        { ...OPEN, dueDate: '2026-11-14', assigneeIds: ['dana'] },
+        { ...OPEN, dueDate: '2026-11-16', rollovers: 2, assigneeIds: ['dana'] },
+        { ...OPEN, dueDate: '2026-11-13', isDropped: true, assigneeIds: ['dana'] },
+        { ...OPEN, dueDate: '2026-11-14', isDone: true, assigneeIds: ['stranger'] },
       ],
       '2026-11-16',
     )
 
     expect(rows).toEqual([
-      { ...PEOPLE[0], daysWorked: 2, planned: 3, completed: 1, overdue: 1 },
-      { ...PEOPLE[1], daysWorked: 0, planned: 0, completed: 0, overdue: 0 },
+      { ...PEOPLE[0], daysWorked: 2, planned: 4, completed: 1, overdue: 1, carriedOver: 2 },
+      { ...PEOPLE[1], daysWorked: 0, planned: 0, completed: 0, overdue: 0, carriedOver: 0 },
     ])
   })
 })

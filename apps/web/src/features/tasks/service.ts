@@ -802,6 +802,91 @@ export async function createDailyTasks(names: readonly string[], workDate: strin
   }
 }
 
+function dailyBacklogWhere(caller: Caller, workDate: string): Prisma.TaskWhereInput {
+  return {
+    organizationId: caller.organizationId,
+    project: { systemKey: DAILY_TASKS_KEY },
+    list: { ownerId: caller.userId },
+    parentId: null,
+    isArchived: false,
+    status: { category: 'active' },
+    dueDate: { lt: new Date(workDate) },
+  }
+}
+
+/** The caller's daily tasks still open after their day, offered back at the next clock-in. */
+export async function loadDailyBacklog(workDate: string, take: number) {
+  const caller = await requireMember()
+  const rows = await db.task.findMany({
+    where: dailyBacklogWhere(caller, workDate),
+    select: { id: true, name: true, dueDate: true, rollovers: true },
+    orderBy: [{ dueDate: 'asc' }, { position: 'asc' }],
+    take,
+  })
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    dueDate: row.dueDate?.toISOString().slice(0, 10) ?? '',
+    rollovers: row.rollovers,
+  }))
+}
+
+export interface BacklogDecisions {
+  carriedTaskIds: readonly string[]
+  doneTaskIds: readonly string[]
+  droppedTaskIds: readonly string[]
+}
+
+/** Carries leftovers to today or closes them; an id that is not the caller's open backlog is refused. */
+export async function settleDailyBacklog(decisions: BacklogDecisions, workDate: string) {
+  const caller = await requireMember()
+  const ids = [...decisions.carriedTaskIds, ...decisions.doneTaskIds, ...decisions.droppedTaskIds]
+  if (ids.length === 0) return
+  if (new Set(ids).size !== ids.length) {
+    throw new ConnectError('Each leftover task takes one choice.', Code.InvalidArgument)
+  }
+
+  const found = await db.task.count({
+    where: { ...dailyBacklogWhere(caller, workDate), id: { in: ids } },
+  })
+  if (found !== ids.length) {
+    throw new ConnectError(
+      'Your leftover tasks changed — reload and choose again.',
+      Code.FailedPrecondition,
+    )
+  }
+
+  const [done, cancelled] = await Promise.all([
+    decisions.doneTaskIds.length ? statusOfCategory(caller.organizationId, 'done') : undefined,
+    decisions.droppedTaskIds.length
+      ? statusOfCategory(caller.organizationId, 'cancelled')
+      : undefined,
+  ])
+
+  await db.$transaction([
+    db.task.updateMany({
+      where: { id: { in: [...decisions.carriedTaskIds] } },
+      data: { dueDate: new Date(workDate), rollovers: { increment: 1 } },
+    }),
+    ...(done
+      ? [
+          db.task.updateMany({
+            where: { id: { in: [...decisions.doneTaskIds] } },
+            data: { statusId: done.id, completedAt: new Date() },
+          }),
+        ]
+      : []),
+    ...(cancelled
+      ? [
+          db.task.updateMany({
+            where: { id: { in: [...decisions.droppedTaskIds] } },
+            data: { statusId: cancelled.id },
+          }),
+        ]
+      : []),
+  ])
+}
+
 // Assigning someone who has left, or who was never in this organization, would put a name on a
 // board that nobody can act on.
 async function knownTeammates(caller: Caller, userIds: readonly string[]) {

@@ -132,6 +132,7 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
       shift: shiftToProto(view.shift),
       holidayName: view.holidayName,
       leaveName: view.leaveName,
+      backlog: view.backlog,
     }
   },
 
@@ -142,6 +143,9 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
         location: request.location ?? '',
         note: request.note ?? '',
         dailyTasks: request.dailyTasks,
+        carriedTaskIds: request.carriedTaskIds,
+        doneTaskIds: request.doneTaskIds,
+        droppedTaskIds: request.droppedTaskIds,
       }),
     ),
   }),
@@ -153,6 +157,9 @@ export const attendance: ServiceImpl<typeof AttendanceService> = {
         location: request.location ?? '',
         note: request.note ?? '',
         dailyTasks: [],
+        carriedTaskIds: [],
+        doneTaskIds: [],
+        droppedTaskIds: [],
       }),
     ),
   }),
