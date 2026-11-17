@@ -34,6 +34,7 @@ export const attendanceEvents = {
   statementPrintFailed: 'attendance.statement.print_failed',
   statementPdfDownloaded: 'attendance.statement.pdf_downloaded',
   statementEmailOpened: 'attendance.statement.email_opened',
+  monthlyReportEmailOpened: 'attendance.monthly_report.email_opened',
   statementExportFailed: 'attendance.statement.export_failed',
   statementSaved: 'attendance.statement.saved',
   payTermsSet: 'attendance.pay_terms.set',

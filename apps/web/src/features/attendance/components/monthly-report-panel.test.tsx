@@ -6,8 +6,12 @@ import { MonthlyReportPanel } from './monthly-report-panel'
 
 const rpc = vi.hoisted(() => ({ listEmployeeSummaries: vi.fn() }))
 const nav = vi.hoisted(() => ({ replace: vi.fn() }))
+const mail = vi.hoisted(() => ({ openMailto: vi.fn() }))
+const announce = vi.hoisted(() => ({ announceFailure: vi.fn(), announceSuccess: vi.fn() }))
 
 vi.mock('../rpc', () => rpc)
+vi.mock('@/lib/mailto', () => mail)
+vi.mock('@/lib/announce', () => announce)
 vi.mock('next/navigation', () => ({
   usePathname: () => '/attendance/team',
   useRouter: () => nav,
@@ -65,6 +69,22 @@ describe('MonthlyReportPanel', () => {
     expect(within(done).getByRole('rowheader', { name: 'Chart reviews' })).toBeInTheDocument()
     expect(within(done).queryByText('Call families')).toBeNull()
     expect(screen.getByText('Total salary').parentElement).toHaveTextContent('$4,200.00')
+  })
+
+  it('opens an email holding the whole report', async () => {
+    render(<MonthlyReportPanel />)
+    await screen.findByText('Total salary')
+    await userEvent.click(screen.getByRole('button', { name: 'Email report' }))
+
+    const url = new URL(mail.openMailto.mock.calls[0]?.[0] as string)
+    expect(url.searchParams.get('subject')).toBe('Monthly report — October 2026')
+    const body = url.searchParams.get('body') ?? ''
+    expect(body).toContain('Dana Reyes (Nurse)')
+    expect(body).toContain('Chart reviews')
+    expect(body).toContain('Eli Cruz')
+    expect(announce.announceSuccess).toHaveBeenCalledWith(
+      expect.stringContaining('mail app is opening with the report'),
+    )
   })
 
   it('pages to the previous month in the URL', async () => {

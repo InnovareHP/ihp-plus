@@ -1,19 +1,26 @@
 'use client'
 
 import { Alert, Button, Card, Group, SimpleGrid, Skeleton, Stack, Text, Title } from '@mantine/core'
+import { IconMail } from '@tabler/icons-react'
 import { StatCard } from '@/components/stat-card'
+import { track } from '@/lib/analytics'
+import { announceSuccess } from '@/lib/announce'
+import { openMailto } from '@/lib/mailto'
+import { attendanceEvents } from '../events'
 import { useEmployeeSummaries } from '../hooks/use-attendance-admin'
 import { useCalendarParams } from '../hooks/use-calendar'
 import { formatUsd } from '../utils/billing-statement'
 import { formatMonth, monthOf } from '../utils/calendar'
 import { monthRange, monthlyReport } from '../utils/monthly-report'
+import { monthlyReportEmail } from '../utils/monthly-report-email'
+import { statementMailto } from '../utils/statement-email'
 import { MonthNav } from './month-nav'
 import { MonthlyReportTable } from './monthly-report-table'
 import { SummaryTasks } from './summary-tasks'
 
 const hours = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 })
 
-/** The month-end report an admin will be emailed: tasks accomplished and pay, viewed in app for now. */
+/** The month-end report: tasks accomplished and pay, viewable here and sent on by email. */
 export function MonthlyReportPanel() {
   const params = useCalendarParams()
   const thisMonth = monthOf(new Date().toISOString())
@@ -22,6 +29,17 @@ export function MonthlyReportPanel() {
   const summaries = useEmployeeSummaries(from, to)
   const report = monthlyReport(summaries.data ?? [], month)
   const title = formatMonth(month)
+
+  function emailReport() {
+    const email = monthlyReportEmail(report, title)
+    openMailto(statementMailto(email))
+    // Some mail apps cut a long mailto body short, so the full text is on the clipboard too.
+    void navigator.clipboard?.writeText(email.body).catch(() => undefined)
+    track(attendanceEvents.monthlyReportEmailOpened, { people: report.rows.length })
+    announceSuccess(
+      'Your mail app is opening with the report. It is also copied, in case the message comes up short.',
+    )
+  }
 
   return (
     <Stack gap="md">
@@ -37,7 +55,17 @@ export function MonthlyReportPanel() {
                 : 'Salary counts statements whose billing period ends this month.'}
             </Text>
           </Stack>
-          <MonthNav month={month} thisMonth={thisMonth} onChange={params.setMonth} />
+          <Group gap="sm" wrap="wrap">
+            <Button
+              variant="default"
+              leftSection={<IconMail size={16} aria-hidden />}
+              onClick={emailReport}
+              disabled={!summaries.isSuccess || report.rows.length === 0}
+            >
+              Email report
+            </Button>
+            <MonthNav month={month} thisMonth={thisMonth} onChange={params.setMonth} />
+          </Group>
         </Group>
       </Card>
 
