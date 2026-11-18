@@ -23,9 +23,17 @@ import { DigestStatusBadge } from './digest-status-badge'
 export interface IssuePreviewProps {
   issue: IssueRow
   canManage: boolean
-  pending: { approve: boolean; reject: boolean; send: boolean; test: boolean }
+  pending: {
+    approve: boolean
+    reject: boolean
+    reopen: boolean
+    send: boolean
+    test: boolean
+  }
   onApprove: () => void
   onReject: () => void
+  onReopen: () => void
+  onDelete: () => void
   onSendNow: () => void
   onSendTest: () => void
 }
@@ -37,10 +45,13 @@ export function IssuePreview({
   pending,
   onApprove,
   onReject,
+  onReopen,
+  onDelete,
   onSendNow,
   onSendTest,
 }: IssuePreviewProps) {
   const hasContent = Boolean(issue.title)
+  const canReopen = hasContent && ['approved', 'rejected', 'failed'].includes(issue.status)
   return (
     <Card withBorder padding="lg" component="section" aria-labelledby="issue-preview-title">
       <Stack gap="md">
@@ -97,11 +108,21 @@ export function IssuePreview({
           </>
         ) : null}
 
-        {canManage && hasContent ? (
+        {canManage && issue.status !== 'sent' ? (
           <Group justify="flex-end" gap="xs">
-            <Button variant="default" onClick={onSendTest} loading={pending.test}>
-              Send me a test
+            <Button variant="subtle" color="red" onClick={onDelete}>
+              Delete issue
             </Button>
+            {hasContent ? (
+              <Button variant="default" onClick={onSendTest} loading={pending.test}>
+                Send me a test
+              </Button>
+            ) : null}
+            {canReopen ? (
+              <Button variant="default" onClick={onReopen} loading={pending.reopen}>
+                Move back to draft
+              </Button>
+            ) : null}
             {issue.status === 'draft' || issue.status === 'approved' ? (
               <Button variant="default" color="red" onClick={onReject} loading={pending.reject}>
                 Reject issue

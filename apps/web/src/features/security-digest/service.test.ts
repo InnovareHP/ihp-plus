@@ -223,6 +223,15 @@ describe('draftIssueFor', () => {
     expect(ai.generateIssue).not.toHaveBeenCalled()
   })
 
+  it('writes another draft for that Monday when IT asks by hand', async () => {
+    prisma.securityDigestIssue.findFirst.mockResolvedValue({ id: 'waiting' })
+
+    expect(await draftIssueFor('org-1', THURSDAY, true)).toEqual({
+      id: 'new-issue',
+      created: true,
+    })
+  })
+
   it('records a model failure as a failed issue IT can see', async () => {
     ai.generateIssue.mockRejectedValue(new ai.DigestAiError('The AI could not be reached.'))
 

@@ -73,7 +73,7 @@ export async function generateDigestDraft(): Promise<
   return safely(async () => {
     const who = await caller(true)
     if (!who.ok) return who
-    const result = await draftIssueFor(who.access.organizationId)
+    const result = await draftIssueFor(who.access.organizationId, new Date(), true)
     return { ok: true, data: { issueId: result.id, created: result.created } }
   })
 }
@@ -81,7 +81,7 @@ export async function generateDigestDraft(): Promise<
 async function decide(
   values: IssueIdValues,
   from: string[],
-  to: 'approved' | 'rejected',
+  to: 'approved' | 'rejected' | 'draft',
 ): Promise<Result<{ issueId: string }>> {
   const who = await caller(true)
   if (!who.ok) return who
@@ -93,13 +93,18 @@ async function decide(
       id: parsed.data.issueId,
       organizationId: who.access.organizationId,
       status: { in: from },
+      // A draft that never got written has nothing to reopen.
+      title: { not: '' },
     },
-    data: {
-      status: to,
-      decidedById: who.access.userId,
-      decidedByName: who.access.userName,
-      decidedAt: new Date(),
-    },
+    data:
+      to === 'draft'
+        ? { status: to, error: '', decidedById: null, decidedByName: '', decidedAt: null }
+        : {
+            status: to,
+            decidedById: who.access.userId,
+            decidedByName: who.access.userName,
+            decidedAt: new Date(),
+          },
   })
   if (changed.count === 0) return { ok: false, message: GONE }
   return { ok: true, data: { issueId: parsed.data.issueId } }
@@ -111,6 +116,31 @@ export async function approveDigestIssue(values: IssueIdValues) {
 
 export async function rejectDigestIssue(values: IssueIdValues) {
   return safely(() => decide(values, ['draft', 'approved'], 'rejected'))
+}
+
+export async function reopenDigestIssue(values: IssueIdValues) {
+  return safely(() => decide(values, ['approved', 'rejected', 'failed'], 'draft'))
+}
+
+// A sent issue stays as the record of who got which email.
+export async function deleteDigestIssue(
+  values: IssueIdValues,
+): Promise<Result<{ issueId: string }>> {
+  return safely(async () => {
+    const who = await caller(true)
+    if (!who.ok) return who
+    const parsed = issueIdSchema.safeParse(values)
+    if (!parsed.success) return { ok: false, message: GONE }
+    const removed = await db.securityDigestIssue.deleteMany({
+      where: {
+        id: parsed.data.issueId,
+        organizationId: who.access.organizationId,
+        status: { not: 'sent' },
+      },
+    })
+    if (removed.count === 0) return { ok: false, message: GONE }
+    return { ok: true, data: { issueId: parsed.data.issueId } }
+  })
 }
 
 export async function sendDigestIssueNow(

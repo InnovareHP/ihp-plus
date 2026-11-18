@@ -5,9 +5,11 @@ import { track } from '@/lib/analytics'
 import { announceFailure, announceSuccess } from '@/lib/announce'
 import {
   approveDigestIssue,
+  deleteDigestIssue,
   generateDigestDraft,
   getDigestOverview,
   rejectDigestIssue,
+  reopenDigestIssue,
   saveDigestSettings,
   sendDigestIssueNow,
   sendDigestTest,
@@ -61,10 +63,7 @@ export function useGenerateDigestDraft() {
       track(digestEvents.draftRequested)
       return unwrap(generateDigestDraft())
     },
-    onSuccess: (data) => {
-      track(digestEvents.draftCreated, { created: data.created })
-      if (!data.created) announceSuccess('Next week’s issue is already drafted.')
-    },
+    onSuccess: (data) => track(digestEvents.draftCreated, { created: data.created }),
     onError: (error: Error) => {
       track(digestEvents.draftFailed, { reason: error.message })
       announceFailure(error.message)
@@ -120,6 +119,37 @@ export function useRejectDigestIssue() {
   return useDecision(rejectDigestIssue, 'rejected', {
     success: digestEvents.rejected,
     failure: digestEvents.rejectFailed,
+  })
+}
+
+export function useReopenDigestIssue() {
+  return useDecision(reopenDigestIssue, 'draft', {
+    success: digestEvents.reopened,
+    failure: digestEvents.reopenFailed,
+  })
+}
+
+export function useDeleteDigestIssue() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (values: IssueIdValues) => unwrap(deleteDigestIssue(values)),
+    onMutate: async ({ issueId }) => {
+      await queryClient.cancelQueries({ queryKey: digestKeys.overview() })
+      const previous = queryClient.getQueryData<DigestOverview>(digestKeys.overview())
+      queryClient.setQueryData<DigestOverview>(digestKeys.overview(), (overview) =>
+        overview
+          ? { ...overview, issues: overview.issues.filter((issue) => issue.id !== issueId) }
+          : overview,
+      )
+      return { previous }
+    },
+    onSuccess: (_data, { issueId }) => track(digestEvents.deleted, { issueId }),
+    onError: (error: Error, { issueId }, context) => {
+      queryClient.setQueryData(digestKeys.overview(), context?.previous)
+      track(digestEvents.deleteFailed, { issueId, reason: error.message })
+      announceFailure(error.message)
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: digestKeys.overview() }),
   })
 }
 

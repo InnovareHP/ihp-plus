@@ -6,13 +6,16 @@ import { EmptyState } from '@/components/empty-state'
 import { useUrlQueryParam } from '@/lib/use-url-query-param'
 import {
   useApproveDigestIssue,
+  useDeleteDigestIssue,
   useDigestOverview,
   useGenerateDigestDraft,
   useRejectDigestIssue,
+  useReopenDigestIssue,
   useSaveDigestSettings,
   useSendDigestNow,
   useSendDigestTest,
 } from '../use-security-digest'
+import { DeleteIssueDialog } from './delete-issue-dialog'
 import { DigestSettingsForm } from './digest-settings-form'
 import { IssueList } from './issue-list'
 import { IssuePreview } from './issue-preview'
@@ -27,9 +30,12 @@ export function SecurityDigestWorkspace() {
   const generate = useGenerateDigestDraft()
   const approve = useApproveDigestIssue()
   const reject = useRejectDigestIssue()
+  const reopen = useReopenDigestIssue()
+  const remove = useDeleteDigestIssue()
   const sendNow = useSendDigestNow()
   const sendTest = useSendDigestTest()
   const [confirming, confirm] = useDisclosure(false)
+  const [deleting, confirmDelete] = useDisclosure(false)
 
   if (overview.isPending) return <SecurityDigestSkeleton />
   if (overview.isError) {
@@ -74,7 +80,7 @@ export function SecurityDigestWorkspace() {
                   onClick={() => generate.mutate()}
                   loading={generate.isPending}
                 >
-                  Draft next issue
+                  Draft new issue
                 </Button>
               ) : null}
             </Group>
@@ -120,11 +126,14 @@ export function SecurityDigestWorkspace() {
               pending={{
                 approve: approve.isPending,
                 reject: reject.isPending,
+                reopen: reopen.isPending,
                 send: sendNow.isPending,
                 test: sendTest.isPending,
               }}
               onApprove={() => approve.mutate(issueId)}
               onReject={() => reject.mutate(issueId)}
+              onReopen={() => reopen.mutate(issueId)}
+              onDelete={confirmDelete.open}
               onSendNow={confirm.open}
               onSendTest={() => sendTest.mutate(issueId)}
             />
@@ -138,6 +147,19 @@ export function SecurityDigestWorkspace() {
               pending={sendNow.isPending}
               onClose={confirm.close}
               onConfirm={() => sendNow.mutate(issueId, { onSettled: confirm.close })}
+            />
+          ) : null}
+          {issue ? (
+            <DeleteIssueDialog
+              opened={deleting}
+              title={issue.title}
+              pending={remove.isPending}
+              onClose={confirmDelete.close}
+              onConfirm={() => {
+                // The row leaves the list at once, so the dialog closes with it.
+                remove.mutate(issueId)
+                confirmDelete.close()
+              }}
             />
           ) : null}
         </Grid.Col>

@@ -136,10 +136,10 @@ export async function overviewOf(
 }
 
 /**
- * Writes next Monday's draft unless one is already waiting. A model failure is stored as a
- * failed issue, so the page shows IT what went wrong instead of the week going quiet.
+ * Writes next Monday's draft; the cron skips a week already covered, IT asking by hand never does.
+ * A model failure is stored as a failed issue, so the page shows IT what went wrong.
  */
-export async function draftIssueFor(organizationId: string, now = new Date()) {
+export async function draftIssueFor(organizationId: string, now = new Date(), always = false) {
   const today = workDateKey(now, await timeZoneOf(organizationId))
   const sendOn = new Date(`${nextSendOn(today)}T00:00:00.000Z`)
 
@@ -147,7 +147,7 @@ export async function draftIssueFor(organizationId: string, now = new Date()) {
     where: { organizationId, sendOn, status: { in: ['draft', 'approved', 'sent'] } },
     select: { id: true },
   })
-  if (waiting) return { id: waiting.id, created: false as const }
+  if (waiting && !always) return { id: waiting.id, created: false as const }
 
   const recent = await db.securityDigestIssue.findMany({
     where: { organizationId, title: { not: '' } },

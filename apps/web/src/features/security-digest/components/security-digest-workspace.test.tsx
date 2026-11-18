@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import { render, screen, userEvent, waitFor } from '@/test/render'
+import { render, screen, userEvent, waitFor, within } from '@/test/render'
 import type { DigestOverview, IssueRow } from '../schema'
 
 const actions = vi.hoisted(() => ({
@@ -9,6 +9,8 @@ const actions = vi.hoisted(() => ({
   generateDigestDraft: vi.fn(),
   approveDigestIssue: vi.fn(),
   rejectDigestIssue: vi.fn(),
+  reopenDigestIssue: vi.fn(),
+  deleteDigestIssue: vi.fn(),
   sendDigestIssueNow: vi.fn(),
   sendDigestTest: vi.fn(),
 }))
@@ -122,6 +124,71 @@ describe('SecurityDigestWorkspace', () => {
 
     expect(actions.sendDigestIssueNow).toHaveBeenCalledWith({ issueId: 'issue-1' })
     await waitFor(() => expect(notify.announceSuccess).toHaveBeenCalledWith('Sent to 2 people.'))
+  })
+
+  it('drafts another issue even while one is waiting', async () => {
+    const user = userEvent.setup()
+    actions.generateDigestDraft.mockResolvedValue({
+      ok: true,
+      data: { issueId: 'issue-2', created: true },
+    })
+    render(<SecurityDigestWorkspace />)
+
+    await user.click(await screen.findByRole('button', { name: 'Draft new issue' }))
+
+    expect(actions.generateDigestDraft).toHaveBeenCalled()
+  })
+
+  it('moves an approved issue back to draft', async () => {
+    const user = userEvent.setup()
+    actions.getDigestOverview.mockResolvedValue({
+      ok: true,
+      data: overview([{ ...DRAFT, status: 'approved', decidedByName: 'Ada' }]),
+    })
+    actions.reopenDigestIssue.mockImplementation(async () => {
+      actions.getDigestOverview.mockResolvedValue({ ok: true, data: overview([DRAFT]) })
+      return { ok: true, data: { issueId: 'issue-1' } }
+    })
+    render(<SecurityDigestWorkspace />)
+
+    await user.click(await screen.findByRole('button', { name: 'Move back to draft' }))
+
+    expect(actions.reopenDigestIssue).toHaveBeenCalledWith({ issueId: 'issue-1' })
+    expect(await screen.findByRole('button', { name: /Approve for/ })).toBeInTheDocument()
+  })
+
+  it('deletes an issue once IT confirms, and puts it back if the server refuses', async () => {
+    const user = userEvent.setup()
+    actions.deleteDigestIssue.mockResolvedValue({
+      ok: false,
+      message: 'That issue is no longer waiting for this — refresh the page.',
+    })
+    render(<SecurityDigestWorkspace />)
+
+    await user.click(await screen.findByRole('button', { name: 'Delete issue' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Delete this issue?' })
+    await user.click(within(dialog).getByRole('button', { name: 'Delete issue' }))
+
+    expect(actions.deleteDigestIssue).toHaveBeenCalledWith({ issueId: 'issue-1' })
+    await waitFor(() =>
+      expect(notify.announceFailure).toHaveBeenCalledWith(
+        'That issue is no longer waiting for this — refresh the page.',
+      ),
+    )
+    expect(
+      await screen.findByRole('heading', { name: 'Spot a fake invoice', level: 2 }),
+    ).toBeInTheDocument()
+  })
+
+  it('offers no delete for an issue already sent', async () => {
+    actions.getDigestOverview.mockResolvedValue({
+      ok: true,
+      data: overview([{ ...DRAFT, status: 'sent' }]),
+    })
+    render(<SecurityDigestWorkspace />)
+
+    await screen.findByRole('heading', { name: 'Spot a fake invoice', level: 2 })
+    expect(screen.queryByRole('button', { name: 'Delete issue' })).not.toBeInTheDocument()
   })
 
   it('sends nothing when IT keeps the issue scheduled', async () => {

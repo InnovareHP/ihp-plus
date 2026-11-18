@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const prisma = vi.hoisted(() => ({
-  securityDigestIssue: { updateMany: vi.fn(), findFirst: vi.fn() },
+  securityDigestIssue: { updateMany: vi.fn(), findFirst: vi.fn(), deleteMany: vi.fn() },
 }))
 const access = vi.hoisted(() => ({ websitesAccess: vi.fn() }))
 const guard = vi.hoisted(() => ({ requireOnboarded: vi.fn() }))
@@ -111,7 +111,12 @@ describe('approveDigestIssue', () => {
       data: { issueId: ISSUE_ID },
     })
     expect(prisma.securityDigestIssue.updateMany).toHaveBeenCalledWith({
-      where: { id: ISSUE_ID, organizationId: 'org-1', status: { in: ['draft'] } },
+      where: {
+        id: ISSUE_ID,
+        organizationId: 'org-1',
+        status: { in: ['draft'] },
+        title: { not: '' },
+      },
       data: expect.objectContaining({
         status: 'approved',
         decidedById: 'user-1',
@@ -148,6 +153,38 @@ describe('sendDigestIssueNow', () => {
       data: expect.objectContaining({ status: 'approved', decidedByName: 'Ada Lovelace' }),
     })
     expect(service.sendIssue).toHaveBeenCalledWith(ISSUE_ID)
+  })
+
+  it('drafts by hand even when the week is already covered', async () => {
+    service.draftIssueFor.mockResolvedValue({ id: 'new', created: true })
+
+    expect((await actions.generateDigestDraft()).ok).toBe(true)
+    expect(service.draftIssueFor).toHaveBeenCalledWith('org-1', expect.any(Date), true)
+  })
+
+  it('reopens a decided issue as a draft and clears who decided', async () => {
+    expect((await actions.reopenDigestIssue({ issueId: ISSUE_ID })).ok).toBe(true)
+    expect(prisma.securityDigestIssue.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: ISSUE_ID,
+        organizationId: 'org-1',
+        status: { in: ['approved', 'rejected', 'failed'] },
+        title: { not: '' },
+      },
+      data: expect.objectContaining({ status: 'draft', decidedById: null, decidedByName: '' }),
+    })
+  })
+
+  it('deletes only an unsent issue in the caller’s organization', async () => {
+    prisma.securityDigestIssue.deleteMany.mockResolvedValue({ count: 0 })
+
+    expect(await actions.deleteDigestIssue({ issueId: ISSUE_ID })).toEqual({
+      ok: false,
+      message: 'That issue is no longer waiting for this — refresh the page.',
+    })
+    expect(prisma.securityDigestIssue.deleteMany).toHaveBeenCalledWith({
+      where: { id: ISSUE_ID, organizationId: 'org-1', status: { not: 'sent' } },
+    })
   })
 
   it('refuses another organization’s issue', async () => {
