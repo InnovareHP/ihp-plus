@@ -146,7 +146,6 @@ export function TimeClockCard() {
         {state !== 'absent' && today?.isOpen ? (
           <Textarea
             label="What are you working on today?"
-            description={shift.requireNote ? undefined : 'Optional — it lands on today’s row.'}
             required={shift.requireNote}
             aria-required={shift.requireNote}
             error={errors.note?.message}
@@ -207,8 +206,7 @@ export function TimeClockCard() {
 
           {state === 'out' && today ? (
             <Text size="sm" c="dimmed">
-              Today is recorded — {formatHours(today.workedSeconds)} worked. Your admin can correct
-              it if something is off.
+              Today is recorded — {formatHours(today.workedSeconds)} worked.
             </Text>
           ) : null}
         </Box>
@@ -219,5 +217,5 @@ export function TimeClockCard() {
 
 function shiftLine(settings: AttendanceSettingsRow, shift: AttendanceShiftRow) {
   const hours = `${minutesToClock(shift.shiftStartMinutes)}–${minutesToClock(shift.shiftEndMinutes)}`
-  return `${shift.name}: ${hours} (${settings.timeZone}), with ${shift.graceMinutes} minutes' grace.`
+  return `${shift.name}: ${hours} (${settings.timeZone})`
 }

@@ -67,12 +67,10 @@ export function ClockOutModal({ opened, onClose, day, settings, shift }: ClockOu
           You have been on the clock since {formatTimeOfDay(day.clockInAt, settings.timeZone)} —{' '}
           {formatHours(liveWorkedSeconds(day, now))} worked
           {day.breaks.length > 0 ? `, ${formatHours(liveBreakSeconds(day, now))} on breaks` : ''}.
-          Clocking out closes today; only an admin can reopen it.
         </Text>
 
         <Textarea
           label="What did you work on?"
-          description={shift.requireNote ? undefined : 'Optional — it lands on today’s row.'}
           required={shift.requireNote}
           aria-required={shift.requireNote}
           error={errors.note?.message}

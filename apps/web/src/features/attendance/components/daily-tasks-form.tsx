@@ -70,9 +70,6 @@ export function DailyTasksForm({ backlog, isPending, disabled, onSubmit }: Daily
         {backlog.length > 0 ? (
           <Fieldset variant="unstyled" legend="Left over from before">
             <Stack gap="xs">
-              <Text size="sm" c="dimmed">
-                These are still open. Carried-over tasks move to today and count toward your plan.
-              </Text>
               {backlog.map((task, index) => (
                 <Controller
                   key={task.id}
@@ -89,11 +86,11 @@ export function DailyTasksForm({ backlog, isPending, disabled, onSubmit }: Daily
 
         <Fieldset variant="unstyled" legend="What will you get done today?">
           <Stack gap="xs">
-            <Text size="sm" c="dimmed">
-              {stillNeeded > 0
-                ? `Add at least ${stillNeeded}. Each one lands in Tasks, assigned to you and due today.`
-                : 'Your carried-over tasks cover the minimum; add more if you like.'}
-            </Text>
+            {stillNeeded > 0 ? (
+              <Text size="sm" c="dimmed">
+                Add at least {stillNeeded}.
+              </Text>
+            ) : null}
             {fields.map((field, index) => (
               <Group key={field.id} align="flex-end" wrap="nowrap" gap="xs">
                 <TextInput

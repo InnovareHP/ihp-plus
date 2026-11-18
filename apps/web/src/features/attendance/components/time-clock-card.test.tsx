@@ -117,9 +117,7 @@ describe('TimeClockCard', () => {
     render(<TimeClockCard />)
 
     expect(
-      await screen.findByText(
-        'Today is Christmas Day, a company holiday. Clock in only if you are working it.',
-      ),
+      await screen.findByText('Today is Christmas Day, a company holiday.'),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Clock in' })).toBeInTheDocument()
   })
@@ -129,9 +127,7 @@ describe('TimeClockCard', () => {
     render(<TimeClockCard />)
 
     expect(
-      await screen.findByText(
-        'You are on approved leave today (Vacation leave). Clock in only if you are working it.',
-      ),
+      await screen.findByText('You are on approved leave today (Vacation leave).'),
     ).toBeInTheDocument()
   })
 

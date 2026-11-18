@@ -363,7 +363,7 @@ export const dailyTasksFormSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['tasks'],
-        message: `Plan at least ${MIN_DAILY_TASKS} tasks for today — carried-over ones count.`,
+        message: `Plan at least ${MIN_DAILY_TASKS} tasks for today.`,
       })
     }
   })

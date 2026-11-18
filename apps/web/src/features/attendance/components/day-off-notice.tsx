@@ -15,7 +15,7 @@ export function DayOffNotice({ holidayName, leaveName }: DayOffNoticeProps) {
 
   return (
     <Alert color="blue" variant="light" icon={<IconBeach size={18} aria-hidden />}>
-      <Text size="sm">{reason} Clock in only if you are working it.</Text>
+      <Text size="sm">{reason}</Text>
     </Alert>
   )
 }
