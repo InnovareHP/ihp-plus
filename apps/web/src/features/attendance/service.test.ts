@@ -1657,9 +1657,9 @@ describe('billing statements', () => {
   })
 
   it('keeps the statement under its invoice number with a total the server works out', async () => {
-    // The timesheet says 160 hours over one day; whatever the form sent is ignored.
+    // 10 hours on the timesheet bills 8; whatever the form sent is ignored.
     prisma.attendanceDay.findMany.mockResolvedValue([
-      dayRecord({ clockOutAt: new Date('2026-09-22T18:00:00.000Z'), workedSeconds: 160 * 3600 }),
+      dayRecord({ clockOutAt: new Date('2026-09-22T18:00:00.000Z'), workedSeconds: 10 * 3600 }),
     ])
     const saved = await saveBillingStatement({ ...STATEMENT, daysWorked: 99, hoursWorked: 999 })
 
@@ -1673,10 +1673,10 @@ describe('billing statements', () => {
       periodStart: new Date('2026-09-01T00:00:00.000Z'),
       sendTo: 'payroll@ihp.test',
       daysWorked: 1,
-      hoursWorked: 160,
-      totalCents: 727_500,
+      hoursWorked: 8,
+      totalCents: 43_500,
     })
-    expect(call.update.totalCents).toBe(727_500)
+    expect(call.update.totalCents).toBe(43_500)
     expect(saved).toMatchObject({
       id: 'st-1',
       invoiceDate: '2026-09-30',

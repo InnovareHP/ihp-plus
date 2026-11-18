@@ -47,6 +47,17 @@ describe('timeWorked', () => {
     ).toEqual({ daysWorked: 2, hoursWorked: 8, paidDaysOff: 1 })
   })
 
+  it('bills no overtime: a long day, even across punches, pays 8 hours', () => {
+    expect(
+      timeWorked([
+        day('2026-09-01', 11 * 3600),
+        day('2026-09-02', 6 * 3600),
+        day('2026-09-02', 5 * 3600),
+        day('2026-09-03', 6 * 3600),
+      ]).hoursWorked,
+    ).toBe(22)
+  })
+
   it('rounds hours to two decimals', () => {
     expect(timeWorked([day('2026-09-01', 1000)]).hoursWorked).toBe(0.28)
   })

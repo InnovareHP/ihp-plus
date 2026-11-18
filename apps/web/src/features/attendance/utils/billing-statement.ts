@@ -8,6 +8,8 @@ export interface StatementPeriod {
   to: string
 }
 
+export const PAID_DAY_SECONDS = 8 * 3600
+
 export interface StatementTotals {
   regularCents: number
   expensesCents: number
@@ -30,7 +32,15 @@ export function timeWorked(
       )
       .map((absence) => absence.workDate),
   )
-  const seconds = days.reduce((sum, day) => sum + day.workedSeconds, 0)
+  const perDay = new Map<string, number>()
+  for (const day of days) {
+    perDay.set(day.workDate, (perDay.get(day.workDate) ?? 0) + day.workedSeconds)
+  }
+  // Overtime is not billed: each day pays at most a regular day, however long it ran.
+  const seconds = [...perDay.values()].reduce(
+    (sum, daySeconds) => sum + Math.min(daySeconds, PAID_DAY_SECONDS),
+    0,
+  )
   return {
     daysWorked: worked.size + paidOff.size,
     hoursWorked: Math.round((seconds / 3600) * 100) / 100,
