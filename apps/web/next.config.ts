@@ -46,6 +46,15 @@ const nextConfig: NextConfig = {
   // The compressed browser is read from disk, not imported, so file tracing would leave it behind.
   outputFileTracingIncludes: {
     '/api/websites/snapshots/capture': [`./${chromiumBin}/**`],
+    // The security email's header picture reads Poppins from disk at runtime.
+    ...Object.fromEntries(
+      ['/api/cron/security-digest', '/api/security-digest/images/*', '/security-emails'].map(
+        (route) => [
+          route,
+          ['./node_modules/@fontsource/poppins/files/poppins-latin-*-normal.woff'],
+        ],
+      ),
+    ),
   },
 
   // Bluebook uploads travel through a server action, whose body cap is 1MB by default; nginx

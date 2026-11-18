@@ -69,6 +69,12 @@ describe('navigation', () => {
     expect(hrefsIn(ADMIN, 'workspace')).toContain(routes.websites)
   })
 
+  it('shows security emails to the IT department and admins, and to nobody else', () => {
+    expect(hrefsIn(HR, 'workspace')).not.toContain(routes.securityDigest)
+    expect(hrefsIn(IT, 'workspace')).toContain(routes.securityDigest)
+    expect(hrefsIn(ADMIN, 'workspace')).toContain(routes.securityDigest)
+  })
+
   it('shows hiring under Admin to owners, admins and HR, and to nobody else', () => {
     expect(itemIn(NOBODY, 'admin', 'Hiring')).toBeUndefined()
     expect(itemIn(APPROVER, 'admin', 'Hiring')).toBeUndefined()

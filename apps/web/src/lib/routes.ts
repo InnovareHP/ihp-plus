@@ -12,6 +12,7 @@ export const routes = {
   drafts: '/drafts',
   library: '/library',
   websites: '/websites',
+  securityDigest: '/security-emails',
   tasks: '/tasks',
   attendance: '/attendance',
   attendanceTeam: '/attendance/team',
@@ -252,6 +253,11 @@ export function websiteSnapshotHref(
   return withBasePath(
     `/api/websites/snapshots/${encodeURIComponent(websiteId)}/${encodeURIComponent(round)}?${query}`,
   )
+}
+
+/** A security issue's header picture, as IT previews it before it goes out. */
+export function securityDigestImageHref(issueId: string) {
+  return withBasePath(`/api/security-digest/images/${encodeURIComponent(issueId)}`)
 }
 
 /** Where a round's capture is handed off, so the browser runs in its own function. */

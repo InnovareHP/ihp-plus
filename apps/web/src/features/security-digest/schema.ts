@@ -1,0 +1,107 @@
+import { z } from 'zod'
+
+export const DIGEST_TOPICS = ['phishing', 'passwords', 'patient_data', 'devices'] as const
+export type DigestTopic = (typeof DIGEST_TOPICS)[number]
+
+export const DIGEST_TOPIC_LABELS: Record<DigestTopic, string> = {
+  phishing: 'Phishing & scams',
+  passwords: 'Passwords & MFA',
+  patient_data: 'HIPAA & patient data',
+  devices: 'Devices & remote work',
+}
+
+// What the model is told each topic covers, so a rotation stays varied inside its lane.
+export const DIGEST_TOPIC_BRIEFS: Record<DigestTopic, string> = {
+  phishing:
+    'phishing emails and texts, fake invoices and payment changes, impersonation of leaders or vendors, QR-code and phone scams',
+  passwords:
+    'password managers, passphrases, never reusing passwords, passkeys, MFA prompts nobody asked for (MFA fatigue), sharing credentials',
+  patient_data:
+    'HIPAA basics, protected health information (PHI), the minimum-necessary rule, sending PHI securely, reporting a possible breach quickly',
+  devices:
+    'software updates, locking screens, public Wi-Fi and VPN, lost or stolen devices, USB drives, working from home and public places',
+}
+
+export const DIGEST_STATUSES = ['draft', 'approved', 'sent', 'rejected', 'failed'] as const
+export type DigestStatus = (typeof DIGEST_STATUSES)[number]
+
+export const DIGEST_STATUS_LABELS: Record<DigestStatus, string> = {
+  draft: 'Needs review',
+  approved: 'Approved',
+  sent: 'Sent',
+  rejected: 'Rejected',
+  failed: 'Failed',
+}
+
+export const DIGEST_STATUS_COLORS: Record<DigestStatus, string> = {
+  draft: 'yellow',
+  approved: 'blue',
+  sent: 'teal',
+  rejected: 'gray',
+  failed: 'red',
+}
+
+export const DELIVERY_STATUSES = ['sent', 'failed', 'not_configured'] as const
+export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number]
+
+/** What the model must hand back; checked again here because the tool call is not forced. */
+export const generatedIssueSchema = z.object({
+  title: z.string().trim().min(5).max(80),
+  preheader: z.string().trim().min(10).max(140),
+  intro: z.array(z.string().trim().min(1).max(600)).min(1).max(3),
+  tips: z.array(z.string().trim().min(1).max(300)).min(3).max(6),
+  takeaway: z.string().trim().min(5).max(200),
+})
+export type GeneratedIssue = z.infer<typeof generatedIssueSchema>
+
+export const settingsSchema = z.object({
+  enabled: z.boolean(),
+  recipients: z
+    .array(z.email('Each recipient must be an email address, such as name@company.com.'))
+    .max(50, 'Up to 50 addresses; add more later as client contacts instead.'),
+  includeClients: z.boolean(),
+  reportTo: z.union([
+    z.literal(''),
+    z.email('Enter the address people should report to, such as it@company.com.'),
+  ]),
+})
+export type SettingsValues = z.infer<typeof settingsSchema>
+
+export const issueIdSchema = z.object({ issueId: z.uuid() })
+export type IssueIdValues = z.infer<typeof issueIdSchema>
+
+export interface DeliveryRow {
+  id: string
+  email: string
+  status: DeliveryStatus
+  at: string
+}
+
+export interface IssueRow {
+  id: string
+  topic: DigestTopic
+  title: string
+  preheader: string
+  intro: string[]
+  tips: string[]
+  takeaway: string
+  status: DigestStatus
+  /** The local date it goes out, as YYYY-MM-DD. */
+  sendOn: string
+  error: string
+  decidedByName: string
+  decidedAt: string | null
+  sentAt: string | null
+  createdAt: string
+  deliveries: DeliveryRow[]
+}
+
+export interface DigestOverview {
+  settings: SettingsValues
+  /** How many client contacts includeClients would add right now. */
+  clientContacts: number
+  issues: IssueRow[]
+  canManage: boolean
+  aiConfigured: boolean
+  emailConfigured: boolean
+}

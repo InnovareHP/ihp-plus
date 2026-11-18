@@ -14,6 +14,7 @@ import {
   IconLayoutDashboard,
   IconListCheck,
   IconSpeakerphone,
+  IconShieldLock,
   IconWorldCheck,
   type Icon,
 } from '@tabler/icons-react'
@@ -148,6 +149,13 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Website checks',
         description: 'Client websites checked at time in and time out',
         icon: IconWorldCheck,
+        itOnly: true,
+      },
+      {
+        href: routes.securityDigest,
+        label: 'Security emails',
+        description: 'Weekly AI-written security tips, reviewed by IT',
+        icon: IconShieldLock,
         itOnly: true,
       },
     ],
