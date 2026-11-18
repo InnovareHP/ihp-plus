@@ -7,6 +7,7 @@ import {
   SECURITY_DIGEST_HERO_ID,
 } from '@/lib/email'
 import { timeZoneOf } from '@/features/websites/service'
+import { fetchPublicAlerts } from './alerts'
 import { DigestAiError, generateIssue, isAiConfigured } from './generate'
 import { digestGraphicBytes } from './graphic'
 import {
@@ -25,6 +26,8 @@ const DEFAULT_SETTINGS: SettingsValues = {
   recipients: [],
   includeClients: false,
   reportTo: '',
+  topics: [...DIGEST_TOPICS],
+  useAlerts: true,
 }
 
 export const NO_RECIPIENTS = 'Nobody to send to — add a recipient.'
@@ -40,6 +43,11 @@ export async function settingsOf(organizationId: string): Promise<SettingsValues
     recipients: row.recipients,
     includeClients: row.includeClients,
     reportTo: row.reportTo,
+    // A topic retired from the app since it was saved is simply dropped.
+    topics: row.topics.filter((topic): topic is DigestTopic =>
+      (DIGEST_TOPICS as readonly string[]).includes(topic),
+    ),
+    useAlerts: row.useAlerts,
   }
 }
 
@@ -89,6 +97,7 @@ function issueRowOf(issue: IssueRecord): IssueRow {
     intro: issue.intro,
     tips: issue.tips,
     takeaway: issue.takeaway,
+    source: issue.sourceUrl ? { title: issue.sourceTitle, url: issue.sourceUrl } : null,
     status: issue.status as DigestStatus,
     sendOn: dateKey(issue.sendOn),
     error: issue.error,
@@ -142,14 +151,21 @@ export async function draftIssueFor(organizationId: string, now = new Date()) {
     where: { organizationId, title: { not: '' } },
     orderBy: { createdAt: 'desc' },
     take: RECENT_TITLES,
-    select: { title: true, topic: true },
+    select: { title: true, topic: true, sourceUrl: true },
   })
-  const topic = nextTopic(recent[0]?.topic)
+  const settings = await settingsOf(organizationId)
+  const topic = nextTopic(recent[0]?.topic, settings.topics)
+  // An alert already written about stays out, so a busy month does not repeat itself.
+  const used = new Set(recent.map((issue) => issue.sourceUrl).filter(Boolean))
+  const alerts = settings.useAlerts
+    ? (await fetchPublicAlerts(now)).filter((alert) => !used.has(alert.url))
+    : []
 
   try {
     const draft = await generateIssue(
       topic,
       recent.map((issue) => issue.title),
+      alerts,
     )
     const issue = await db.securityDigestIssue.create({
       data: {
@@ -157,6 +173,8 @@ export async function draftIssueFor(organizationId: string, now = new Date()) {
         topic,
         sendOn,
         ...draft.issue,
+        sourceTitle: draft.source?.title ?? '',
+        sourceUrl: draft.source?.url ?? '',
         model: draft.model,
         inputTokens: draft.inputTokens,
         outputTokens: draft.outputTokens,
@@ -183,6 +201,8 @@ interface SendableIssue {
   intro: string[]
   tips: string[]
   takeaway: string
+  sourceTitle: string
+  sourceUrl: string
 }
 
 async function prepared(issue: SendableIssue, reportTo: string) {
@@ -192,6 +212,7 @@ async function prepared(issue: SendableIssue, reportTo: string) {
   const hero = await digestGraphicBytes({ topic, title: issue.title })
   const email = securityDigestTemplate({
     ...issue,
+    source: issue.sourceUrl ? { title: issue.sourceTitle, url: issue.sourceUrl } : undefined,
     reportTo: reportTo || 'the IT department',
     hasHero: Boolean(hero),
   })

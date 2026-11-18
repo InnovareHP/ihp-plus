@@ -32,6 +32,7 @@ const DRAFT: IssueRow = {
   intro: ['A vendor emails a new bank account.'],
   tips: ['Call the vendor on a number you already have.'],
   takeaway: 'Pause before you pay.',
+  source: null,
   status: 'draft',
   sendOn: '2026-11-23',
   error: '',
@@ -44,7 +45,14 @@ const DRAFT: IssueRow = {
 
 function overview(issues: IssueRow[]): DigestOverview {
   return {
-    settings: { enabled: true, recipients: ['me@ihp.test'], includeClients: false, reportTo: '' },
+    settings: {
+      enabled: true,
+      recipients: ['me@ihp.test'],
+      includeClients: false,
+      reportTo: '',
+      topics: ['phishing'],
+      useAlerts: true,
+    },
     clientContacts: 0,
     issues,
     canManage: true,

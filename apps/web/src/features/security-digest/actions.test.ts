@@ -29,7 +29,14 @@ const LEAD = {
   canManage: true,
 }
 const ISSUE_ID = '6f1c2b8e-4a3d-4e5f-9a1b-2c3d4e5f6a7b'
-const SETTINGS = { enabled: true, recipients: ['me@ihp.test'], includeClients: false, reportTo: '' }
+const SETTINGS = {
+  enabled: true,
+  recipients: ['me@ihp.test'],
+  includeClients: false,
+  reportTo: '',
+  topics: ['phishing' as const, 'marketing_accounts' as const],
+  useAlerts: true,
+}
 
 beforeEach(() => {
   vi.clearAllMocks()

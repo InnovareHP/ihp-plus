@@ -595,6 +595,24 @@ describe('securityDigestTemplate', () => {
     expect(email.html).not.toContain('cid:security-digest-hero')
   })
 
+  it('links the CISA alert an issue is about', () => {
+    const email = securityDigestTemplate({
+      ...ISSUE,
+      hasHero: false,
+      source: { title: 'Critical Java vulnerability', url: 'https://www.cisa.gov/a?x=1&y=2' },
+    })
+
+    expect(email.text).toContain('Source: CISA, “Critical Java vulnerability”.')
+    expect(email.text).toContain('Read the CISA alert: https://www.cisa.gov/a?x=1&y=2')
+    expect(email.html).toContain('href="https://www.cisa.gov/a?x=1&amp;y=2"')
+  })
+
+  it('has no button when the issue is not about an alert', () => {
+    expect(securityDigestTemplate({ ...ISSUE, hasHero: false }).text).not.toContain(
+      'Read the CISA alert',
+    )
+  })
+
   it('references the inline header picture with alt text', () => {
     const email = securityDigestTemplate({ ...ISSUE, hasHero: true })
 

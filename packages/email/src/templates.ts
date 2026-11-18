@@ -1005,6 +1005,8 @@ export function securityDigestTemplate(options: {
   reportTo: string
   /** Set when the branded header picture travels with the message. */
   hasHero: boolean
+  /** The public alert the issue is about, linked so readers can check it themselves. */
+  source?: { title: string; url: string }
 }): PreparedEmail {
   return {
     subject: `Security tip: ${options.title}`,
@@ -1014,8 +1016,15 @@ export function securityDigestTemplate(options: {
       hero: options.hasHero
         ? { contentId: SECURITY_DIGEST_HERO_ID, alt: options.title, width: 496, height: 248 }
         : undefined,
-      body: [...options.intro, 'What to do:'],
+      body: [
+        ...options.intro,
+        ...(options.source ? [`Source: CISA, “${options.source.title}”.`] : []),
+        'What to do:',
+      ],
       steps: options.tips,
+      action: options.source
+        ? { label: 'Read the CISA alert', url: options.source.url }
+        : undefined,
       footnote: `${options.takeaway} Something look off? Tell ${options.reportTo} before you click, reply or pay.`,
     }),
   }

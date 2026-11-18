@@ -27,6 +27,8 @@ const ai = vi.hoisted(() => {
 vi.mock('@ihp/db', () => ({ db: prisma }))
 vi.mock('@/lib/email', () => email)
 vi.mock('./generate', () => ai)
+const feed = vi.hoisted(() => ({ fetchPublicAlerts: vi.fn() }))
+vi.mock('./alerts', () => feed)
 vi.mock('./graphic', () => ({ digestGraphicBytes: vi.fn(async () => new Uint8Array([1])) }))
 vi.mock('@/features/websites/service', () => ({ timeZoneOf: vi.fn(async () => 'UTC') }))
 
@@ -38,6 +40,14 @@ const SETTINGS = {
   recipients: ['me@ihp.test'],
   includeClients: false,
   reportTo: 'it@ihp.test',
+  topics: ['phishing', 'passwords', 'patient_data', 'devices', 'marketing_accounts'],
+  useAlerts: true,
+}
+const ALERT = {
+  title: 'Critical Java vulnerability',
+  url: 'https://www.cisa.gov/news-events/alerts/java',
+  publishedAt: new Date('2026-11-17T12:00:00.000Z'),
+  summary: 'Patch now.',
 }
 const ISSUE = {
   id: 'issue-1',
@@ -48,6 +58,8 @@ const ISSUE = {
   intro: ['A vendor emails.'],
   tips: ['Call them.', 'Check the sender.', 'Ask IT.'],
   takeaway: 'Pause first.',
+  sourceTitle: '',
+  sourceUrl: '',
 }
 // A Thursday, so the draft is for Monday the 23rd.
 const THURSDAY = new Date('2026-11-19T14:00:00.000Z')
@@ -63,6 +75,14 @@ beforeEach(() => {
   prisma.securityDigestIssue.findMany.mockResolvedValue([])
   prisma.client.findMany.mockResolvedValue([{ email: 'client@acme.test' }])
   email.sendEmail.mockResolvedValue({ delivered: true })
+  feed.fetchPublicAlerts.mockResolvedValue([])
+  ai.generateIssue.mockResolvedValue({
+    issue: { title: 'Use a passphrase' },
+    source: null,
+    model: 'model-1',
+    inputTokens: 1,
+    outputTokens: 2,
+  })
 })
 
 describe('sendIssue', () => {
@@ -138,17 +158,11 @@ describe('sendIssue', () => {
 describe('draftIssueFor', () => {
   it('drafts the next topic for the coming Monday', async () => {
     prisma.securityDigestIssue.findMany.mockResolvedValue([
-      { title: 'Last week', topic: 'phishing' },
+      { title: 'Last week', topic: 'phishing', sourceUrl: '' },
     ])
-    ai.generateIssue.mockResolvedValue({
-      issue: { title: 'Use a passphrase' },
-      model: 'model-1',
-      inputTokens: 1,
-      outputTokens: 2,
-    })
 
     expect(await draftIssueFor('org-1', THURSDAY)).toEqual({ id: 'new-issue', created: true })
-    expect(ai.generateIssue).toHaveBeenCalledWith('passwords', ['Last week'])
+    expect(ai.generateIssue).toHaveBeenCalledWith('passwords', ['Last week'], [])
     expect(prisma.securityDigestIssue.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -158,6 +172,48 @@ describe('draftIssueFor', () => {
         }),
       }),
     )
+  })
+
+  it('moves from the security basics into the marketing topics IT switched on', async () => {
+    prisma.securityDigestIssue.findMany.mockResolvedValue([
+      { title: 'Last week', topic: 'devices', sourceUrl: '' },
+    ])
+
+    await draftIssueFor('org-1', THURSDAY)
+
+    expect(ai.generateIssue).toHaveBeenCalledWith('marketing_accounts', ['Last week'], [])
+  })
+
+  it('offers fresh CISA alerts and stores the one the issue cites', async () => {
+    const used = { ...ALERT, url: 'https://www.cisa.gov/news-events/alerts/old' }
+    prisma.securityDigestIssue.findMany.mockResolvedValue([
+      { title: 'Last week', topic: 'phishing', sourceUrl: used.url },
+    ])
+    feed.fetchPublicAlerts.mockResolvedValue([ALERT, used])
+    ai.generateIssue.mockResolvedValue({
+      issue: { title: 'Update Java today' },
+      source: { title: ALERT.title, url: ALERT.url },
+      model: 'model-1',
+      inputTokens: 1,
+      outputTokens: 2,
+    })
+
+    await draftIssueFor('org-1', THURSDAY)
+
+    expect(ai.generateIssue).toHaveBeenCalledWith('passwords', ['Last week'], [ALERT])
+    expect(prisma.securityDigestIssue.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ sourceTitle: ALERT.title, sourceUrl: ALERT.url }),
+      }),
+    )
+  })
+
+  it('does not read the feed when IT turned alerts off', async () => {
+    prisma.securityDigestSettings.findUnique.mockResolvedValue({ ...SETTINGS, useAlerts: false })
+
+    await draftIssueFor('org-1', THURSDAY)
+
+    expect(feed.fetchPublicAlerts).not.toHaveBeenCalled()
   })
 
   it('leaves an issue already waiting for that Monday alone', async () => {

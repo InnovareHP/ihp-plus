@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Alert,
   Button,
+  Checkbox,
   Fieldset,
+  SimpleGrid,
   Group,
   Stack,
   Switch,
@@ -13,7 +15,12 @@ import {
   TextInput,
 } from '@mantine/core'
 import { Controller, useForm } from 'react-hook-form'
-import { settingsSchema, type SettingsValues } from '../schema'
+import {
+  DIGEST_TOPIC_GROUPS,
+  DIGEST_TOPIC_LABELS,
+  settingsSchema,
+  type SettingsValues,
+} from '../schema'
 
 export interface DigestSettingsFormProps {
   settings: SettingsValues
@@ -74,6 +81,53 @@ export function DigestSettingsForm({
               <Switch
                 label="Send weekly security emails"
                 description="A draft is written every Thursday for the next Monday, and goes out only once it is approved."
+                checked={field.value}
+                onChange={(event) => field.onChange(event.currentTarget.checked)}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="topics"
+            render={({ field }) => (
+              <Checkbox.Group
+                label="Topics"
+                description="The weekly issue takes these in turn."
+                value={field.value}
+                onChange={(value) => field.onChange(value)}
+                error={errors.topics?.message}
+                errorProps={{ role: 'alert' }}
+              >
+                <Stack gap="sm" mt="xs">
+                  {DIGEST_TOPIC_GROUPS.map((group) => (
+                    <Stack key={group.label} gap={6}>
+                      <Text size="sm" fw={600}>
+                        {group.label}
+                      </Text>
+                      <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="xs" verticalSpacing={6}>
+                        {group.topics.map((topic) => (
+                          <Checkbox
+                            key={topic}
+                            value={topic}
+                            label={DIGEST_TOPIC_LABELS[topic]}
+                            onBlur={field.onBlur}
+                          />
+                        ))}
+                      </SimpleGrid>
+                    </Stack>
+                  ))}
+                </Stack>
+              </Checkbox.Group>
+            )}
+          />
+          <Controller
+            control={control}
+            name="useAlerts"
+            render={({ field }) => (
+              <Switch
+                label="Write about urgent CISA alerts"
+                description="When a recent government alert matters to staff, that week covers it instead, with a link."
                 checked={field.value}
                 onChange={(event) => field.onChange(event.currentTarget.checked)}
                 onBlur={field.onBlur}

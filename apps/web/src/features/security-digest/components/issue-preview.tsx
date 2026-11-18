@@ -1,6 +1,19 @@
 'use client'
 
-import { Alert, Button, Card, Divider, Group, Image, List, Stack, Text, Title } from '@mantine/core'
+import {
+  Alert,
+  Anchor,
+  Button,
+  Card,
+  Divider,
+  Group,
+  Image,
+  List,
+  Stack,
+  Text,
+  Title,
+  VisuallyHidden,
+} from '@mantine/core'
 import { securityDigestImageHref } from '@/lib/routes'
 import { DIGEST_TOPIC_LABELS, type IssueRow } from '../schema'
 import { formatSendOn } from '../utils/format-date'
@@ -63,6 +76,15 @@ export function IssuePreview({
             {issue.intro.map((paragraph, index) => (
               <Text key={index}>{paragraph}</Text>
             ))}
+            {issue.source ? (
+              <Text size="sm">
+                Source: CISA,{' '}
+                <Anchor href={issue.source.url} target="_blank" rel="noreferrer">
+                  {issue.source.title}
+                  <VisuallyHidden> (opens in a new tab)</VisuallyHidden>
+                </Anchor>
+              </Text>
+            ) : null}
             <Text fw={600}>What to do:</Text>
             <List type="ordered" spacing="xs">
               {issue.tips.map((tip, index) => (

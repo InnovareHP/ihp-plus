@@ -42,6 +42,7 @@ describe('generateIssue', () => {
 
     expect(await generateIssue('phishing', ['Old title'])).toEqual({
       issue: ISSUE,
+      source: null,
       model: 'model-1',
       inputTokens: 400,
       outputTokens: 300,
@@ -49,6 +50,29 @@ describe('generateIssue', () => {
     const prompt = send.mock.calls[0]?.[0].input.messages[0].content[0].text
     expect(prompt).toContain('Phishing & scams')
     expect(prompt).toContain('- Old title')
+  })
+
+  it('keeps a cited alert only when it was one the prompt offered', async () => {
+    const alert = {
+      title: 'Critical Java vulnerability',
+      url: 'https://www.cisa.gov/news-events/alerts/java',
+      publishedAt: new Date('2026-11-17T12:00:00.000Z'),
+      summary: 'Patch now.',
+    }
+    send.mockResolvedValue(reply({ ...ISSUE, source_url: alert.url }))
+
+    const draft = await generateIssue('devices', [], [alert])
+
+    expect(draft.source).toEqual({ title: alert.title, url: alert.url })
+    expect(draft.issue).not.toHaveProperty('source_url')
+    const prompt = send.mock.calls[0]?.[0].input.messages[0].content[0].text
+    expect(prompt).toContain('<alert url="' + alert.url + '"')
+  })
+
+  it('drops a url the model made up', async () => {
+    send.mockResolvedValue(reply({ ...ISSUE, source_url: 'https://evil.example/fake' }))
+
+    expect((await generateIssue('devices', [], [])).source).toBeNull()
   })
 
   it('refuses a draft with too few tips', async () => {

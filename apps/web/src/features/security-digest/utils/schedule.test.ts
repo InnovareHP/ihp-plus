@@ -19,8 +19,15 @@ describe('nextTopic', () => {
   it('starts with phishing and rotates through every topic', () => {
     expect(nextTopic(undefined)).toBe('phishing')
     expect(nextTopic('phishing')).toBe('passwords')
-    expect(nextTopic('patient_data')).toBe('devices')
-    expect(nextTopic('devices')).toBe('phishing')
+    expect(nextTopic('devices')).toBe('marketing_accounts')
+    expect(nextTopic('cloud_sharing')).toBe('phishing')
+  })
+
+  it('skips topics IT switched off and wraps round', () => {
+    const marketingOnly = ['marketing_accounts', 'ai_tools'] as const
+    expect(nextTopic('phishing', marketingOnly)).toBe('marketing_accounts')
+    expect(nextTopic('marketing_accounts', marketingOnly)).toBe('ai_tools')
+    expect(nextTopic('ai_tools', marketingOnly)).toBe('marketing_accounts')
   })
 
   it('restarts the rotation after an unknown topic', () => {

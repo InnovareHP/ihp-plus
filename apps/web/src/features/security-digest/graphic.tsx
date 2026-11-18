@@ -1,10 +1,14 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
+  IconCloudLock,
   IconDeviceLaptop,
   IconKey,
   IconMailExclamation,
   IconShieldHeart,
+  IconSparkles,
+  IconSpeakerphone,
+  IconWorldExclamation,
   type Icon,
 } from '@tabler/icons-react'
 import { ImageResponse } from 'next/og'
@@ -18,6 +22,10 @@ const TOPIC_ICONS: Record<DigestTopic, Icon> = {
   passwords: IconKey,
   patient_data: IconShieldHeart,
   devices: IconDeviceLaptop,
+  marketing_accounts: IconSpeakerphone,
+  brand_spoofing: IconWorldExclamation,
+  ai_tools: IconSparkles,
+  cloud_sharing: IconCloudLock,
 }
 
 type LoadedFont = { name: string; data: Buffer; weight: 600 | 700; style: 'normal' }

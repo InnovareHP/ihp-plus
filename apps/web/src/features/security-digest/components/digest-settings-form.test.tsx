@@ -1,9 +1,17 @@
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { render, screen, userEvent } from '@/test/render'
+import { DIGEST_TOPICS } from '../schema'
 import { DigestSettingsForm } from './digest-settings-form'
 
-const SETTINGS = { enabled: false, recipients: [], includeClients: false, reportTo: '' }
+const SETTINGS = {
+  enabled: false,
+  recipients: [],
+  includeClients: false,
+  reportTo: '',
+  topics: [...DIGEST_TOPICS],
+  useAlerts: true,
+}
 
 function renderForm(overrides: Partial<Parameters<typeof DigestSettingsForm>[0]> = {}) {
   const onSave = vi.fn(async () => undefined)
@@ -34,9 +42,26 @@ describe('DigestSettingsForm', () => {
       recipients: ['me@ihp.test'],
       includeClients: false,
       reportTo: 'it@ihp.test',
+      topics: [...DIGEST_TOPICS],
+      useAlerts: true,
     })
     expect(await screen.findByRole('status')).toHaveTextContent('Saved.')
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('switches the marketing topics off and refuses to save with none left', async () => {
+    const user = userEvent.setup()
+    const { onSave } = renderForm({
+      settings: { ...SETTINGS, topics: ['marketing_accounts'] },
+    })
+
+    expect(screen.getByRole('checkbox', { name: 'Ad & social accounts' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Phishing & scams' })).not.toBeChecked()
+    await user.click(screen.getByRole('checkbox', { name: 'Ad & social accounts' }))
+    await user.click(screen.getByRole('button', { name: 'Save settings' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Keep at least one topic')
+    expect(onSave).not.toHaveBeenCalled()
   })
 
   it('says how many client contacts would be added', () => {

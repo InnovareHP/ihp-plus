@@ -8,10 +8,16 @@ export function nextSendOn(todayKey: string): string {
   return today.toISOString().slice(0, 10)
 }
 
-/** Round-robin from the last issue's topic, so four weeks cover all four. */
-export function nextTopic(lastTopic: string | undefined): DigestTopic {
+/** Round-robin through the switched-on topics in the app's order, after the last issue's. */
+export function nextTopic(
+  lastTopic: string | undefined,
+  enabled: readonly DigestTopic[] = DIGEST_TOPICS,
+): DigestTopic {
+  const order = DIGEST_TOPICS.filter((topic) => enabled.includes(topic))
+  if (order.length === 0) return 'phishing'
   const last = DIGEST_TOPICS.indexOf(lastTopic as DigestTopic)
-  return DIGEST_TOPICS[(last + 1) % DIGEST_TOPICS.length] ?? 'phishing'
+  // The first switched-on topic that comes after the last one, wrapping round.
+  return order.find((topic) => DIGEST_TOPICS.indexOf(topic) > last) ?? order[0] ?? 'phishing'
 }
 
 /** Typed addresses first, then client contacts, each once regardless of case. */
