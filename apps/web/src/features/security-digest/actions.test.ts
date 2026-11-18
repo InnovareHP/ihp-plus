@@ -62,6 +62,29 @@ describe('who may use the security emails', () => {
   })
 })
 
+describe('when the server itself fails', () => {
+  it('answers in words instead of throwing, so production does not show a bare React code', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    service.overviewOf.mockRejectedValue(
+      new Error('The table `security.securityDigestSettings` does not exist'),
+    )
+
+    const result = await actions.getDigestOverview()
+
+    expect(result.ok).toBe(false)
+    expect(result.ok ? '' : result.message).toMatch(/latest migration/)
+  })
+
+  it('still lets a sign-in redirect through', async () => {
+    const redirect = Object.assign(new Error('NEXT_REDIRECT'), {
+      digest: 'NEXT_REDIRECT;replace;/app/login;307;',
+    })
+    access.websitesAccess.mockRejectedValue(redirect)
+
+    await expect(actions.getDigestOverview()).rejects.toBe(redirect)
+  })
+})
+
 describe('saveDigestSettings', () => {
   it('saves valid settings for the caller’s organization', async () => {
     expect(await actions.saveDigestSettings(SETTINGS)).toEqual({ ok: true, data: SETTINGS })
