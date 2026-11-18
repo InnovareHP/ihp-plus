@@ -68,4 +68,17 @@ describe('sendEmail', () => {
     })
     expect(new TextDecoder().decode(invite.RawContent)).toBe('BEGIN:VCALENDAR')
   })
+  it('sends picture bytes inline under their content id', async () => {
+    const bytes = new Uint8Array([137, 80, 78, 71])
+    await sendEmail({
+      ...MESSAGE,
+      attachments: [
+        { fileName: 'hero.png', contentType: 'image/png', content: bytes, contentId: 'hero' },
+      ],
+    })
+
+    const [, hero] = ses.send.mock.calls[0]?.[0].input.Content.Simple.Attachments
+    expect(hero).toMatchObject({ ContentDisposition: 'INLINE', ContentId: 'hero' })
+    expect(hero.RawContent).toBe(bytes)
+  })
 })

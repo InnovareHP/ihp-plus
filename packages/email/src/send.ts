@@ -5,8 +5,10 @@ import type { PreparedEmail } from './templates'
 export interface EmailAttachment {
   fileName: string
   contentType: string
-  /** Text content, such as an iCalendar invite; sent as UTF-8. */
-  content: string
+  /** Text, such as an iCalendar invite, is sent as UTF-8; bytes go as they are. */
+  content: string | Uint8Array
+  /** Set to show the file inside the message, referenced from the HTML as `cid:<contentId>`. */
+  contentId?: string
 }
 
 export interface OutboundEmail extends PreparedEmail {
@@ -103,9 +105,15 @@ export async function sendEmail({ to, subject, html, text, attachments = [] }: O
               ...attachments.map((attachment) => ({
                 FileName: attachment.fileName,
                 ContentType: attachment.contentType,
-                ContentDisposition: 'ATTACHMENT' as const,
+                ContentDisposition: attachment.contentId
+                  ? ('INLINE' as const)
+                  : ('ATTACHMENT' as const),
+                ContentId: attachment.contentId,
                 ContentTransferEncoding: 'BASE64' as const,
-                RawContent: new TextEncoder().encode(attachment.content),
+                RawContent:
+                  typeof attachment.content === 'string'
+                    ? new TextEncoder().encode(attachment.content)
+                    : attachment.content,
               })),
             ],
           },

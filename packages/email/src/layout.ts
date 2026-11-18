@@ -25,6 +25,8 @@ export interface EmailLayout {
   /** Shown in the inbox preview line, so a reader knows what it is before opening it. */
   preheader: string
   heading: string
+  /** A picture above the heading, sent inline with the message under this content id. */
+  hero?: { contentId: string; alt: string; width: number; height: number }
   /** Sentences, rendered as separate paragraphs. */
   body: readonly string[]
   /** An ordered how-to, rendered as a numbered list between the body and the button. */
@@ -92,6 +94,15 @@ ${layout.steps.map((step) => `<li style="margin:0 0 8px;">${escapeHtml(step)}</l
               <img src="${LOGO_SRC}" width="66" height="40" alt="IHP+" style="display:block;border:0;outline:none;text-decoration:none;font-family:${FONT};font-size:17px;font-weight:700;color:${BRAND};">
             </td>
           </tr>
+          ${
+            layout.hero
+              ? `<tr>
+            <td style="padding:24px 32px 0;">
+              <img src="cid:${escapeHtml(layout.hero.contentId)}" width="${layout.hero.width}" height="${layout.hero.height}" alt="${escapeHtml(layout.hero.alt)}" style="display:block;width:100%;max-width:${layout.hero.width}px;height:auto;border:0;border-radius:8px;outline:none;text-decoration:none;">
+            </td>
+          </tr>`
+              : ''
+          }
           <tr>
             <td style="padding:24px 32px 32px;">
               <h1 style="margin:0 0 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:22px;line-height:30px;font-weight:650;color:${INK};">${escapeHtml(layout.heading)}</h1>

@@ -992,3 +992,31 @@ export function contactEnquiryTemplate(options: {
     }),
   }
 }
+
+export const SECURITY_DIGEST_HERO_ID = 'security-digest-hero'
+
+export function securityDigestTemplate(options: {
+  title: string
+  preheader: string
+  intro: readonly string[]
+  tips: readonly string[]
+  takeaway: string
+  /** Who to tell about something suspicious, e.g. the IT inbox. */
+  reportTo: string
+  /** Set when the branded header picture travels with the message. */
+  hasHero: boolean
+}): PreparedEmail {
+  return {
+    subject: `Security tip: ${options.title}`,
+    ...renderEmail({
+      preheader: options.preheader,
+      heading: options.title,
+      hero: options.hasHero
+        ? { contentId: SECURITY_DIGEST_HERO_ID, alt: options.title, width: 496, height: 248 }
+        : undefined,
+      body: [...options.intro, 'What to do:'],
+      steps: options.tips,
+      footnote: `${options.takeaway} Something look off? Tell ${options.reportTo} before you click, reply or pay.`,
+    }),
+  }
+}

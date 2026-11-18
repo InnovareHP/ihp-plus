@@ -1,8 +1,5 @@
-import {
-  BedrockRuntimeClient,
-  ConverseCommand,
-  type Message,
-} from '@aws-sdk/client-bedrock-runtime'
+import { ConverseCommand, type Message } from '@aws-sdk/client-bedrock-runtime'
+import { bedrock } from '@/lib/bedrock'
 import {
   aiTurnSchema,
   type AiTurn,
@@ -15,16 +12,6 @@ import {
 export class DraftAiError extends Error {}
 
 const TOOL = 'update_draft'
-
-let client: BedrockRuntimeClient | undefined
-
-// No keys passed: the SDK's own chain reads AWS_* locally and the task role in production.
-function bedrock() {
-  client ??= new BedrockRuntimeClient({
-    region: process.env.BEDROCK_REGION ?? process.env.AWS_REGION ?? 'us-east-1',
-  })
-  return client
-}
 
 const PROPOSAL_RULE = `
 - The admin attached their proposal for this client. Base the contract on it: take the scope, Schedule A deliverables, fees, milestone amounts, recurring fees, timeline and other terms from what it says. Rewrite, add or remove editable sections and Schedule A items so the contract matches what the proposal offers, keeping the contract's style and renumbering where needed. Use only values the proposal or the admin states.`

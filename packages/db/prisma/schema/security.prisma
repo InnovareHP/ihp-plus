@@ -1,0 +1,70 @@
+// The weekly security-awareness email: Claude drafts an issue, IT approves it, and the send cron
+// mails it to the recipients below. Its own Postgres schema because `pnpm db:auth-schema`
+// rewrites auth.prisma wholesale.
+
+// One row per organization; nothing is drafted or sent until IT turns it on.
+model SecurityDigestSettings {
+  organizationId String   @id
+  enabled        Boolean  @default(false)
+  // Addresses typed on the page; client contacts join only when includeClients is on.
+  recipients     String[] @default([])
+  includeClients Boolean  @default(false)
+  // Named in every issue as where to report something suspicious.
+  reportTo       String   @default("")
+  updatedAt      DateTime @updatedAt
+
+  @@map("securityDigestSettings")
+  @@schema("security")
+}
+
+model SecurityDigestIssue {
+  id             String @id @default(uuid())
+  organizationId String
+
+  topic     String
+  title     String   @default("")
+  preheader String   @default("")
+  intro     String[] @default([])
+  tips      String[] @default([])
+  takeaway  String   @default("")
+
+  // draft | approved | sent | rejected | failed — a failed draft keeps its error for the page.
+  status String   @default("draft")
+  sendOn DateTime @db.Date
+  error  String   @default("")
+
+  model        String @default("")
+  inputTokens  Int    @default(0)
+  outputTokens Int    @default(0)
+
+  // Snapshot of who approved or rejected it, so the history survives them leaving.
+  decidedById   String?
+  decidedByName String    @default("")
+  decidedAt     DateTime?
+  sentAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  deliveries SecurityDigestDelivery[]
+
+  @@index([organizationId, createdAt])
+  @@index([status, sendOn])
+  @@map("securityDigestIssue")
+  @@schema("security")
+}
+
+// One recipient of one issue, so the page can show exactly who got it and who bounced.
+model SecurityDigestDelivery {
+  id      String              @id @default(uuid())
+  issueId String
+  issue   SecurityDigestIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  email     String
+  // sent | failed | not_configured
+  status    String
+  createdAt DateTime @default(now())
+
+  @@index([issueId])
+  @@map("securityDigestDelivery")
+  @@schema("security")
+}

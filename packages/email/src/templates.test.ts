@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { renderEmail } from './layout'
 import {
   websiteExpiryAlertTemplate,
+  securityDigestTemplate,
   websiteExpiryReportTemplate,
   websiteProblemsTemplate,
   applicationReceivedTemplate,
@@ -572,5 +573,32 @@ describe('websiteExpiryAlertTemplate', () => {
 
     expect(email.subject).toBe('A domain or SSL certificate needs renewing soon')
     expect(email.text).toContain('SSL certificate expires Nov 13, 2026 (7 days)')
+  })
+})
+
+describe('securityDigestTemplate', () => {
+  const ISSUE = {
+    title: 'Spot a fake invoice',
+    preheader: 'Three checks before you pay.',
+    intro: ['Fake invoices copy real vendors.'],
+    tips: ['Call the vendor on a number you already have.'],
+    takeaway: 'Pause before you pay.',
+    reportTo: 'it@innovare.test',
+  }
+
+  it('puts the tips in a numbered list and says who to tell', () => {
+    const email = securityDigestTemplate({ ...ISSUE, hasHero: false })
+
+    expect(email.subject).toBe('Security tip: Spot a fake invoice')
+    expect(email.text).toContain('1. Call the vendor on a number you already have.')
+    expect(email.text).toContain('Tell it@innovare.test')
+    expect(email.html).not.toContain('cid:security-digest-hero')
+  })
+
+  it('references the inline header picture with alt text', () => {
+    const email = securityDigestTemplate({ ...ISSUE, hasHero: true })
+
+    expect(email.html).toContain('src="cid:security-digest-hero"')
+    expect(email.html).toContain('alt="Spot a fake invoice"')
   })
 })
