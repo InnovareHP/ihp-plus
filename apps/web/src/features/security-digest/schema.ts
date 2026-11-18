@@ -136,6 +136,8 @@ export interface DigestOverview {
   settings: SettingsValues
   /** How many client contacts includeClients would add right now. */
   clientContacts: number
+  /** Everyone an issue would go to if it were sent now, client contacts included when on. */
+  recipientCount: number
   issues: IssueRow[]
   canManage: boolean
   aiConfigured: boolean

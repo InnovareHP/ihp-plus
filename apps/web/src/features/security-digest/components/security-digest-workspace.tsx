@@ -1,6 +1,7 @@
 'use client'
 
 import { Alert, Button, Card, Grid, Group, Stack, Title } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import { EmptyState } from '@/components/empty-state'
 import { useUrlQueryParam } from '@/lib/use-url-query-param'
 import {
@@ -16,6 +17,7 @@ import { DigestSettingsForm } from './digest-settings-form'
 import { IssueList } from './issue-list'
 import { IssuePreview } from './issue-preview'
 import { SecurityDigestSkeleton } from './security-digest-skeleton'
+import { SendNowDialog } from './send-now-dialog'
 
 /** IT's monitoring view: what is queued, what went out, who got it, and the switch for all of it. */
 export function SecurityDigestWorkspace() {
@@ -27,6 +29,7 @@ export function SecurityDigestWorkspace() {
   const reject = useRejectDigestIssue()
   const sendNow = useSendDigestNow()
   const sendTest = useSendDigestTest()
+  const [confirming, confirm] = useDisclosure(false)
 
   if (overview.isPending) return <SecurityDigestSkeleton />
   if (overview.isError) {
@@ -122,8 +125,19 @@ export function SecurityDigestWorkspace() {
               }}
               onApprove={() => approve.mutate(issueId)}
               onReject={() => reject.mutate(issueId)}
-              onSendNow={() => sendNow.mutate(issueId)}
+              onSendNow={confirm.open}
               onSendTest={() => sendTest.mutate(issueId)}
+            />
+          ) : null}
+          {issue ? (
+            <SendNowDialog
+              opened={confirming}
+              title={issue.title}
+              recipientCount={data.recipientCount}
+              isDraft={issue.status === 'draft'}
+              pending={sendNow.isPending}
+              onClose={confirm.close}
+              onConfirm={() => sendNow.mutate(issueId, { onSettled: confirm.close })}
             />
           ) : null}
         </Grid.Col>

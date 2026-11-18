@@ -54,6 +54,7 @@ function overview(issues: IssueRow[]): DigestOverview {
       useAlerts: true,
     },
     clientContacts: 0,
+    recipientCount: 2,
     issues,
     canManage: true,
     aiConfigured: true,
@@ -107,6 +108,30 @@ describe('SecurityDigestWorkspace', () => {
       ),
     )
     expect(screen.getAllByText('Needs review').length).toBeGreaterThan(0)
+  })
+
+  it('sends a draft straight away once IT confirms who it goes to', async () => {
+    const user = userEvent.setup()
+    actions.sendDigestIssueNow.mockResolvedValue({ ok: true, data: { sent: 2, failed: 0 } })
+    render(<SecurityDigestWorkspace />)
+
+    await user.click(await screen.findByRole('button', { name: 'Send now' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Send this issue now?' })
+    expect(dialog).toHaveTextContent('also approves it in your name')
+    await user.click(screen.getByRole('button', { name: 'Send to 2 people' }))
+
+    expect(actions.sendDigestIssueNow).toHaveBeenCalledWith({ issueId: 'issue-1' })
+    await waitFor(() => expect(notify.announceSuccess).toHaveBeenCalledWith('Sent to 2 people.'))
+  })
+
+  it('sends nothing when IT keeps the issue scheduled', async () => {
+    const user = userEvent.setup()
+    render(<SecurityDigestWorkspace />)
+
+    await user.click(await screen.findByRole('button', { name: 'Send now' }))
+    await user.click(await screen.findByRole('button', { name: 'Keep it scheduled' }))
+
+    expect(actions.sendDigestIssueNow).not.toHaveBeenCalled()
   })
 
   it('offers to draft the first issue when there are none', async () => {

@@ -126,6 +126,8 @@ export async function overviewOf(
   return {
     settings,
     clientContacts: clients.length,
+    recipientCount: recipientsOf(settings.recipients, settings.includeClients ? clients : [])
+      .length,
     issues: issues.map(issueRowOf),
     canManage,
     aiConfigured: isAiConfigured(),

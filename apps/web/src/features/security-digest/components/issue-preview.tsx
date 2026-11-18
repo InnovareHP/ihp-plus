@@ -108,9 +108,14 @@ export function IssuePreview({
               </Button>
             ) : null}
             {issue.status === 'draft' ? (
-              <Button onClick={onApprove} loading={pending.approve}>
-                Approve for {formatSendOn(issue.sendOn)}
-              </Button>
+              <>
+                <Button variant="default" onClick={onSendNow} loading={pending.send}>
+                  Send now
+                </Button>
+                <Button onClick={onApprove} loading={pending.approve}>
+                  Approve for {formatSendOn(issue.sendOn)}
+                </Button>
+              </>
             ) : null}
             {issue.status === 'approved' ? (
               <Button onClick={onSendNow} loading={pending.send}>

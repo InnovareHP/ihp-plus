@@ -138,6 +138,18 @@ describe('sendDigestIssueNow', () => {
     })
   })
 
+  it('approves a draft in the caller’s name before sending it', async () => {
+    prisma.securityDigestIssue.findFirst.mockResolvedValue({ id: ISSUE_ID, status: 'draft' })
+    service.sendIssue.mockResolvedValue({ claimed: true, sent: 1, failed: 0 })
+
+    expect((await actions.sendDigestIssueNow({ issueId: ISSUE_ID })).ok).toBe(true)
+    expect(prisma.securityDigestIssue.updateMany).toHaveBeenCalledWith({
+      where: { id: ISSUE_ID, status: 'draft' },
+      data: expect.objectContaining({ status: 'approved', decidedByName: 'Ada Lovelace' }),
+    })
+    expect(service.sendIssue).toHaveBeenCalledWith(ISSUE_ID)
+  })
+
   it('refuses another organization’s issue', async () => {
     prisma.securityDigestIssue.findFirst.mockResolvedValue(null)
 

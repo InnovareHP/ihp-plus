@@ -123,9 +123,21 @@ export async function sendDigestIssueNow(
     if (!parsed.success) return { ok: false, message: GONE }
     const issue = await db.securityDigestIssue.findFirst({
       where: { id: parsed.data.issueId, organizationId: who.access.organizationId },
-      select: { id: true },
+      select: { id: true, status: true },
     })
     if (!issue) return { ok: false, message: GONE }
+    // Sending a draft straight away is IT approving it, so the record says who did.
+    if (issue.status === 'draft') {
+      await db.securityDigestIssue.updateMany({
+        where: { id: issue.id, status: 'draft' },
+        data: {
+          status: 'approved',
+          decidedById: who.access.userId,
+          decidedByName: who.access.userName,
+          decidedAt: new Date(),
+        },
+      })
+    }
     const result = await sendIssue(issue.id)
     if (!result.claimed) return { ok: false, message: GONE }
     if (result.sent + result.failed === 0) return { ok: false, message: NO_RECIPIENTS }
