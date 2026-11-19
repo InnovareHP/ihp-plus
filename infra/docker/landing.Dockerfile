@@ -18,12 +18,13 @@ COPY packages/rpc/package.json packages/rpc/
 COPY packages/graph/package.json packages/graph/
 COPY packages/email/package.json packages/email/
 COPY packages/clock/package.json packages/clock/
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm config set store-dir /pnpm/store && \
-    pnpm install --frozen-lockfile
+# No pnpm cache mount: Railway rejects one whose id is not prefixed with its service id.
+RUN pnpm install --frozen-lockfile
 
 FROM deps AS builder
 COPY . .
+# Read by Astro at build time; Railway and compose only pass build-time values declared here.
+ARG PORTAL_URL PUBLIC_TURNSTILE_SITE_KEY
 RUN pnpm --filter @ihp/landing build
 
 # ---- runner: static files on nginx, no Node at runtime ----
