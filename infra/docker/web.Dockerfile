@@ -28,7 +28,10 @@ COPY . .
 # Baked into the client bundle; Railway and compose only pass build-time values declared here.
 ARG NEXT_PUBLIC_POSTHOG_KEY NEXT_PUBLIC_POSTHOG_HOST
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm --filter @ihp/db build && pnpm --filter @ihp/web build
+# Build-only placeholders: prisma generate never connects, and Better Auth refuses to import
+# without a secret; neither reaches the runtime image, which gets the real values.
+RUN DATABASE_URL=postgresql://build@localhost/build pnpm --filter @ihp/db build && \
+    BETTER_AUTH_SECRET=build-only-placeholder-never-used-at-runtime pnpm --filter @ihp/web build
 
 # ---- runner: only the standalone bundle ----
 FROM base AS runner

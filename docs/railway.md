@@ -35,7 +35,8 @@ Vercel Cron and the scheduler must not both run — the jobs send email.
    show the schedule firing.
 2. Add the custom domains and move DNS, set `CRON_SECRET` on `ihp-plus` and
    `CRON_SECRET=${{ihp-plus.CRON_SECRET}}` on `cron`, then delete `apps/web/vercel.json` (its
-   rewrite now lives in `next.config.ts`) and the Vercel projects.
+   rewrite is now a redirect in `next.config.ts`) and the Vercel projects. If Entra rejects the
+   redirect when re-verifying the publisher domain, serve the file from the landing service.
 3. Update `BETTER_AUTH_URL`, the Microsoft Entra redirect URIs, and `GRAPH_NOTIFICATION_URL` if the
    origin changed.
 4. `LANDING_DEPLOY_HOOK_URL` is a Vercel deploy hook; Railway has none, so the careers page only

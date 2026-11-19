@@ -10,10 +10,10 @@ const globalForStripe = globalThis as unknown as { ihpStripe?: Stripe }
  */
 export const STRIPE_API_VERSION = '2026-08-26.dahlia'
 
-// No throw on a missing key: the Docker build stage has no env and must still compile, and a
-// portal with no billing configured has to start.
+// The SDK throws on an empty key, yet the Docker build has no env and an unbilled portal must
+// start, so a dead key stands in and isStripeConfigured() keeps every call off it.
 function createClient() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
+  return new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_unconfigured', {
     apiVersion: STRIPE_API_VERSION,
     appInfo: { name: 'IHP Plus' },
   })

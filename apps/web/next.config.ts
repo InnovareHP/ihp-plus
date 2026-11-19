@@ -61,21 +61,17 @@ const nextConfig: NextConfig = {
   // allows 25m, so the two limits are kept in step.
   experimental: { serverActions: { bodySizeLimit: '25mb' } },
 
-  // Nothing is served outside basePath, so the bare origin root 404s; send it to sign-in.
-  // Entra fetches this at the bare origin, outside basePath.
-  async rewrites() {
+  // Nothing is served outside basePath, so the bare origin root 404s; send it to sign-in. Entra's
+  // file is redirected too, since Next cannot rewrite outside basePath to an internal route.
+  async redirects() {
     return [
+      { source: '/', destination: withBasePath(routes.login), basePath: false, permanent: false },
       {
         source: '/.well-known/microsoft-identity-association.json',
         destination: withBasePath('/api/microsoft-identity-association'),
         basePath: false,
+        permanent: false,
       },
-    ]
-  },
-
-  async redirects() {
-    return [
-      { source: '/', destination: withBasePath(routes.login), basePath: false, permanent: false },
     ]
   },
 
