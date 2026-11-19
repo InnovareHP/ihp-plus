@@ -1,0 +1,16 @@
+# Mirrors the crons in apps/web/vercel.json, in UTC; drop those when Railway takes over.
+0 2 * * * /usr/local/bin/hit /app/api/cron/attendance-reminders
+0 11 * * * /usr/local/bin/hit /app/api/cron/attendance-reminders
+0 3 1 12 * /usr/local/bin/hit /app/api/cron/holidays
+45 3 * * * /usr/local/bin/hit /app/api/graph/renew
+30 0 * * * /usr/local/bin/hit /app/api/cron/celebrations
+0 4 * * * /usr/local/bin/hit /app/api/cron/hiring-retention
+15 1 * * * /usr/local/bin/hit /app/api/cron/hiring-interviews
+15 9 * * * /usr/local/bin/hit /app/api/cron/hiring-interviews
+0 12 * * 6,0 /usr/local/bin/hit '/app/api/cron/website-checks?round=clock_in'
+0 20 * * 6,0 /usr/local/bin/hit '/app/api/cron/website-checks?round=clock_out'
+5 4 * * * /usr/local/bin/hit /app/api/cron/website-snapshots
+0 1 1 * * /usr/local/bin/hit '/app/api/cron/website-expiry?kind=monthly'
+30 1 * * * /usr/local/bin/hit '/app/api/cron/website-expiry?kind=alerts'
+0 2 * * 4 /usr/local/bin/hit '/app/api/cron/security-digest?step=draft'
+0 1 * * * /usr/local/bin/hit '/app/api/cron/security-digest?step=send'

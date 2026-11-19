@@ -19,9 +19,8 @@ COPY packages/rpc/package.json packages/rpc/
 COPY packages/graph/package.json packages/graph/
 COPY packages/email/package.json packages/email/
 COPY packages/clock/package.json packages/clock/
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm config set store-dir /pnpm/store && \
-    pnpm install --frozen-lockfile
+# No pnpm cache mount: Railway rejects one whose id is not prefixed with its service id.
+RUN pnpm install --frozen-lockfile
 
 # ---- builder ----
 FROM deps AS builder
@@ -31,10 +30,13 @@ RUN pnpm --filter @ihp/db build && pnpm --filter @ihp/web build
 
 # ---- runner: only the standalone bundle ----
 FROM base AS runner
+# @sparticuz/chromium is a glibc build that cannot run on alpine, so website snapshots use this one.
+RUN apk add --no-cache chromium font-noto
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    SNAPSHOT_CHROME_PATH=/usr/bin/chromium-browser
 WORKDIR /app
 RUN addgroup -S -g 1001 nodejs && adduser -S -u 1001 -G nodejs nextjs
 

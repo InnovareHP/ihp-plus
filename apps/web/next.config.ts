@@ -62,6 +62,17 @@ const nextConfig: NextConfig = {
   experimental: { serverActions: { bodySizeLimit: '25mb' } },
 
   // Nothing is served outside basePath, so the bare origin root 404s; send it to sign-in.
+  // Entra fetches this at the bare origin, outside basePath.
+  async rewrites() {
+    return [
+      {
+        source: '/.well-known/microsoft-identity-association.json',
+        destination: withBasePath('/api/microsoft-identity-association'),
+        basePath: false,
+      },
+    ]
+  },
+
   async redirects() {
     return [
       { source: '/', destination: withBasePath(routes.login), basePath: false, permanent: false },

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "infra/docker/cron.Dockerfile",
+    "watchPatterns": ["infra/cron/**", "infra/docker/cron.Dockerfile"]
+  },
+  "deploy": {
+    "restartPolicyType": "ALWAYS"
+  }
+}

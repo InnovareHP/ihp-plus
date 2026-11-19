@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 
-// Vercel Cron sends CRON_SECRET as a bearer token; with no secret set, nothing may trigger a job.
+// The scheduler (infra/cron) sends CRON_SECRET as a bearer token; with no secret set, nothing may trigger a job.
 export function isAuthorizedCron(request: Request) {
   const expected = process.env.CRON_SECRET
   if (!expected) return false

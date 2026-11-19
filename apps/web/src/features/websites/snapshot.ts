@@ -51,7 +51,8 @@ async function launchBrowser(): Promise<Browser> {
       executablePath: localChrome,
       headless: true,
       defaultViewport: VIEWPORT,
-      args: LOCKDOWN_ARGS,
+      // A container has no user namespaces for the sandbox, as @sparticuz/chromium's args assume too.
+      args: process.platform === 'linux' ? [...LOCKDOWN_ARGS, '--no-sandbox'] : LOCKDOWN_ARGS,
     })
   }
   // The bundled Chromium is a Linux build for serverless hosts; anywhere else needs a local one.

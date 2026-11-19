@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-// Served at the bare origin by the vercel.json rewrite; read per request so it names the live app.
+// Served at the bare origin by the next.config rewrite; read per request so it names the live app.
 export const dynamic = 'force-dynamic'
 
 export function GET() {
