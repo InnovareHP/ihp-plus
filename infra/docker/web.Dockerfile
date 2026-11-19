@@ -25,6 +25,8 @@ RUN pnpm install --frozen-lockfile
 # ---- builder ----
 FROM deps AS builder
 COPY . .
+# Baked into the client bundle; Railway and compose only pass build-time values declared here.
+ARG NEXT_PUBLIC_POSTHOG_KEY NEXT_PUBLIC_POSTHOG_HOST
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @ihp/db build && pnpm --filter @ihp/web build
 
