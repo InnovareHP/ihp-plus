@@ -15,6 +15,7 @@ const prisma = vi.hoisted(() => ({
       async () => [],
     ),
     upsert: vi.fn(),
+    updateMany: vi.fn(),
   },
   websiteShiftCheck: {
     findMany: vi.fn<(args: { where: Record<string, unknown> }) => Promise<unknown[]>>(
@@ -35,6 +36,7 @@ const LEAD = {
   canCheck: true,
   canManage: true,
   canConfigure: false,
+  canEditTimes: false,
   itTeamId: 'team-it',
 }
 
@@ -63,6 +65,7 @@ vi.mock('./expiry', () => expiry)
 
 const {
   createWebsite,
+  editCheckTime,
   exportDayReport,
   exportMonth,
   loadChecklist,
@@ -172,6 +175,70 @@ describe('recordCheck', () => {
     expect(prisma.websiteCheck.upsert.mock.calls[0]?.[0].update).toMatchObject({
       status: 'issue',
       note: 'Contact form returns a blank page',
+    })
+  })
+})
+
+describe('editCheckTime', () => {
+  const ADMIN = { ...LEAD, canCheck: false, canConfigure: true, canEditTimes: true }
+  const EDIT = { websiteId: 'site-1', date: '2026-11-04', round: 'clock_in' as const }
+  it('turns away the lead, who is not an admin', async () => {
+    expect(await editCheckTime({ ...EDIT, time: '20:15' })).toEqual({
+      ok: false,
+      message: 'Only an admin can change when a check ran.',
+    })
+    expect(prisma.websiteCheck.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('moves a morning time to the day after the shift began', async () => {
+    access.websitesAccess.mockResolvedValue(ADMIN)
+    prisma.websiteCheck.updateMany.mockResolvedValue({ count: 1 })
+
+    const result = await editCheckTime({ ...EDIT, time: '03:30' })
+
+    expect(prisma.websiteCheck.updateMany).toHaveBeenCalledWith({
+      where: {
+        organizationId: 'org-1',
+        workDate: new Date('2026-11-04T00:00:00.000Z'),
+        round: 'clock_in',
+        websiteId: 'site-1',
+      },
+      data: { checkedAt: new Date('2026-11-05T03:30:00.000Z') },
+    })
+    expect(result).toEqual({ ok: true, data: { updated: 1 } })
+  })
+
+  it('sets the time on every site in the round when no site is named', async () => {
+    access.websitesAccess.mockResolvedValue(ADMIN)
+    prisma.websiteCheck.updateMany.mockResolvedValue({ count: 12 })
+
+    const result = await editCheckTime({ date: '2026-11-04', round: 'clock_out', time: '04:00' })
+
+    const where = prisma.websiteCheck.updateMany.mock.calls[0]?.[0].where
+    expect(where).toEqual({
+      organizationId: 'org-1',
+      workDate: new Date('2026-11-04T00:00:00.000Z'),
+      round: 'clock_out',
+    })
+    expect(result).toEqual({ ok: true, data: { updated: 12 } })
+  })
+
+  it('refuses a time that has not happened yet', async () => {
+    access.websitesAccess.mockResolvedValue(ADMIN)
+
+    const result = await editCheckTime({ ...EDIT, date: '2999-01-01', time: '20:00' })
+
+    expect(result).toMatchObject({ ok: false })
+    expect(prisma.websiteCheck.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('says so when the check never ran', async () => {
+    access.websitesAccess.mockResolvedValue(ADMIN)
+    prisma.websiteCheck.updateMany.mockResolvedValue({ count: 0 })
+
+    expect(await editCheckTime({ ...EDIT, time: '20:15' })).toEqual({
+      ok: false,
+      message: 'That check has not run, so it has no time to change.',
     })
   })
 })

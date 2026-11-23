@@ -11,6 +11,7 @@ export interface WebsitesWorkspaceProps {
   canCheck: boolean
   canManage: boolean
   canConfigure: boolean
+  canEditTimes: boolean
   itTeamId: string
   thisMonth: string
   userName: string
@@ -20,6 +21,7 @@ export function WebsitesWorkspace({
   canCheck,
   canManage,
   canConfigure,
+  canEditTimes,
   itTeamId,
   thisMonth,
   userName,
@@ -35,7 +37,12 @@ export function WebsitesWorkspace({
         title="Daily checklist"
         description="Every client website, checked when the IT lead clocks in and again when they clock out."
       >
-        <ChecklistPanel canCheck={canCheck} canManage={canManage} userName={userName} />
+        <ChecklistPanel
+          canCheck={canCheck}
+          canManage={canManage}
+          canEditTimes={canEditTimes}
+          userName={userName}
+        />
       </PageSection>
 
       <PageSection

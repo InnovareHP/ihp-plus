@@ -104,6 +104,20 @@ export const findingsFormSchema = z.object({
 })
 export type FindingsFormInput = z.input<typeof findingsFormSchema>
 
+// A native time input always answers in 24-hour HH:mm, whatever the reader's locale shows.
+export const checkTimeFormSchema = z.object({
+  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Enter the time the check ran.'),
+})
+export type CheckTimeFormInput = z.input<typeof checkTimeFormSchema>
+
+// No websiteId is every site checked in that round, the way a round runs.
+export const editCheckTimeSchema = checkTimeFormSchema.extend({
+  websiteId: z.string().min(1).optional(),
+  date: dateKeySchema,
+  round: z.enum(CHECK_ROUNDS),
+})
+export type EditCheckTimeValues = z.output<typeof editCheckTimeSchema>
+
 export const exportDayReportSchema = z.object({ date: dateKeySchema })
 export type ExportDayReportValues = z.output<typeof exportDayReportSchema>
 

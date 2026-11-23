@@ -25,6 +25,8 @@ export interface WebsitesRole {
   canManage: boolean
   /** Picking the IT department decides who sees the page, which is an admin's call. */
   canConfigure: boolean
+  /** Correcting when a check ran rewrites the record, so only an admin may. */
+  canEditTimes: boolean
   itTeamId: string | undefined
 }
 
@@ -40,6 +42,7 @@ export function websitesRoleOf(
     canCheck: leadsIt,
     canManage: isAdmin || leadsIt,
     canConfigure: isAdmin,
+    canEditTimes: isAdmin,
     itTeamId,
   }
 }

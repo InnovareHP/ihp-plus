@@ -1,7 +1,7 @@
 'use client'
 
 import { ActionIcon, Group, Stack, Text, Tooltip } from '@mantine/core'
-import { IconRefresh } from '@tabler/icons-react'
+import { IconClockEdit, IconRefresh } from '@tabler/icons-react'
 import { websiteSnapshotHref } from '@/lib/routes'
 import { CHECK_ROUND_LABELS, type CheckRound, type WebsiteCheckRow } from '../schema'
 import { formatTime } from '../utils/day-report'
@@ -21,7 +21,10 @@ export interface PanelRoundProps {
   now: number
   canAct: boolean
   isChecking: boolean
+  /** An admin, who may correct when the check ran. */
+  canEditTime: boolean
   onRecheck: () => void
+  onEditTime: () => void
 }
 
 /** What the automatic check found at one end of the shift, with its picture. */
@@ -36,7 +39,9 @@ export function PanelRound({
   now,
   canAct,
   isChecking,
+  canEditTime,
   onRecheck,
+  onEditTime,
 }: PanelRoundProps) {
   const label = CHECK_ROUND_LABELS[round]
   const snapshot = snapshotStateOf({
@@ -61,19 +66,33 @@ export function PanelRound({
             </Text>
           )}
         </Group>
-        {canAct ? (
-          <Tooltip label="Check again">
-            <ActionIcon
-              variant="subtle"
-              size={44}
-              loading={isChecking}
-              aria-label={`Check ${websiteName} again for ${label.toLowerCase()}`}
-              onClick={onRecheck}
-            >
-              <IconRefresh size={18} aria-hidden />
-            </ActionIcon>
-          </Tooltip>
-        ) : null}
+        <Group gap={0} wrap="nowrap">
+          {canEditTime && check ? (
+            <Tooltip label="Edit time">
+              <ActionIcon
+                variant="subtle"
+                size={44}
+                aria-label={`Edit when ${websiteName} was checked for ${label.toLowerCase()}`}
+                onClick={onEditTime}
+              >
+                <IconClockEdit size={18} aria-hidden />
+              </ActionIcon>
+            </Tooltip>
+          ) : null}
+          {canAct ? (
+            <Tooltip label="Check again">
+              <ActionIcon
+                variant="subtle"
+                size={44}
+                loading={isChecking}
+                aria-label={`Check ${websiteName} again for ${label.toLowerCase()}`}
+                onClick={onRecheck}
+              >
+                <IconRefresh size={18} aria-hidden />
+              </ActionIcon>
+            </Tooltip>
+          ) : null}
+        </Group>
       </Group>
       {check ? (
         <Text size="xs" c="dimmed">

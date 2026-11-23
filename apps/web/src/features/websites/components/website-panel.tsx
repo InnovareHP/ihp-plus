@@ -38,11 +38,14 @@ export interface WebsitePanelProps {
   /** The IT lead, on today's list. */
   canAct: boolean
   canManage: boolean
+  /** An admin, on any day, since a wrong time is as wrong in last week's record. */
+  canEditTimes: boolean
   checkingRound: CheckRound | undefined
   expiry: { domain: string | undefined; ssl: string | undefined } | undefined
   expiryPending: boolean
   onRecheck: (round: CheckRound) => void
   onOverride: (round: CheckRound) => void
+  onEditTime: (round: CheckRound) => void
   onPagesButtons: (result: ManualResult) => void
   onFormEmail: (result: ManualResult) => void
   onSaveFindings: (values: FindingsFormInput) => Promise<void>
@@ -69,11 +72,13 @@ export function WebsitePanel({
   now,
   canAct,
   canManage,
+  canEditTimes,
   checkingRound,
   expiry,
   expiryPending,
   onRecheck,
   onOverride,
+  onEditTime,
   onPagesButtons,
   onFormEmail,
   onSaveFindings,
@@ -135,7 +140,9 @@ export function WebsitePanel({
             now={now}
             canAct={canAct}
             isChecking={checkingRound === round}
+            canEditTime={canEditTimes}
             onRecheck={() => onRecheck(round)}
+            onEditTime={() => onEditTime(round)}
           />
         ))}
         {canAct ? (
