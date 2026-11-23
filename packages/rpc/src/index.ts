@@ -6,4 +6,10 @@ export { createFetchRouter, type FetchRouter, type RegisterRoutes } from './fetc
 
 // Re-exported so call sites map service errors without depending on Connect directly.
 export { Code, ConnectError, createClient, createRouterTransport } from '@connectrpc/connect'
-export type { Client, ConnectRouter, ServiceImpl, Transport } from '@connectrpc/connect'
+export type {
+  Client,
+  ConnectRouter,
+  Interceptor,
+  ServiceImpl,
+  Transport,
+} from '@connectrpc/connect'
