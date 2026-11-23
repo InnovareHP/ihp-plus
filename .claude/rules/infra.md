@@ -86,6 +86,12 @@ one without applying it (`migrate dev --create-only`), `pnpm db:migrate` applies
 them (`migrate deploy`). `pnpm db:auth-schema` regenerates the Better Auth models
 into `prisma/schema.prisma`.
 
+**Never `prisma db push`** — there is no script for it on purpose. A push changes tables
+without writing `_prisma_migrations`, so the next `migrate deploy` replays a migration whose
+tables already exist, fails, and blocks every migration after it (P3009). It also skips the
+data backfills inside migration SQL. Schema changes reach any shared database only through
+`pnpm db:migrate`.
+
 Prisma Client is **generated, not committed** — `pnpm --filter @ihp/db build` runs
 `prisma generate` into `packages/db/src/generated/`, which is gitignored because the
 output is coupled to the installed `@prisma/client` version. `prisma` and

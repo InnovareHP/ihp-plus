@@ -15,7 +15,6 @@
     "db:seed:clients": "tsx prisma/seed-clients.ts",
     "db:backfill:websites": "tsx prisma/backfill-website-checks.ts",
     "db:studio": "prisma studio",
-    "db:push": "prisma db push",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf src/generated .turbo tsconfig.tsbuildinfo"
   },
