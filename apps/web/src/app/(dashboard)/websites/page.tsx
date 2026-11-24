@@ -32,6 +32,7 @@ export default async function WebsitesPage() {
           canCheck={access.canCheck}
           canManage={access.canManage}
           canConfigure={access.canConfigure}
+          canEditTimes={access.canEditTimes}
           itTeamId={access.itTeamId ?? ''}
           thisMonth={today.slice(0, 7)}
           userName={access.userName}

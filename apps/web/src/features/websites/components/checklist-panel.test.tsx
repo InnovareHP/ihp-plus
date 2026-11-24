@@ -7,6 +7,7 @@ const actions = vi.hoisted(() => ({
   loadChecklist: vi.fn(),
   runRound: vi.fn(),
   recordCheck: vi.fn(),
+  editCheckTime: vi.fn(),
   saveShiftCheck: vi.fn(),
   loadExpiry: vi.fn(),
   listClientOptions: vi.fn(),
@@ -62,6 +63,8 @@ const checklist = (websites: unknown[], date = TODAY, snapshotsEnabled = true) =
   data: { date, today: TODAY, timeZone: 'UTC', snapshotsEnabled, websites },
 })
 
+const EDIT_TIME_IN = 'Edit when Riverside site was checked for time in'
+
 function panel() {
   return screen.getByRole('dialog', { name: 'Riverside site' })
 }
@@ -84,7 +87,9 @@ describe('ChecklistPanel list', () => {
   it('shows every site as one row and lets the lead run a round', async () => {
     actions.runRound.mockResolvedValue(checklist([SITE]))
     const user = userEvent.setup()
-    const { container } = render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    const { container } = render(
+      <ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />,
+    )
 
     const row = (await screen.findByRole('rowheader', { name: /Riverside site/ })).closest('tr')
     if (!row) throw new Error('no row')
@@ -100,7 +105,7 @@ describe('ChecklistPanel list', () => {
 
   it('opens a site’s panel through the URL', async () => {
     const user = userEvent.setup()
-    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
 
     await user.click(await screen.findByRole('button', { name: 'Riverside site, open details' }))
 
@@ -110,7 +115,14 @@ describe('ChecklistPanel list', () => {
   })
 
   it('gives an IT member the list to read, without the controls', async () => {
-    render(<ChecklistPanel canCheck={false} canManage={false} userName="Grace Hopper" />)
+    render(
+      <ChecklistPanel
+        canCheck={false}
+        canManage={false}
+        canEditTimes={false}
+        userName="Grace Hopper"
+      />,
+    )
 
     await screen.findByRole('rowheader', { name: /Riverside site/ })
     expect(screen.queryByRole('button', { name: /Run time in check/ })).not.toBeInTheDocument()
@@ -121,7 +133,7 @@ describe('ChecklistPanel list', () => {
   it('keeps a past day read-only even for the lead', async () => {
     nav.search = 'date=2026-10-01&site=site-1'
     actions.loadChecklist.mockResolvedValue(checklist([SITE], '2026-10-01'))
-    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
 
     await screen.findByRole('dialog', { name: 'Riverside site' })
     expect(screen.queryByRole('button', { name: /Run time in check/ })).not.toBeInTheDocument()
@@ -137,7 +149,14 @@ describe('ChecklistPanel list', () => {
       data: { fileName: `Daily-Website-Check-${TODAY}.pdf`, bytes },
     })
     const user = userEvent.setup()
-    render(<ChecklistPanel canCheck={false} canManage={false} userName="Grace Hopper" />)
+    render(
+      <ChecklistPanel
+        canCheck={false}
+        canManage={false}
+        canEditTimes={false}
+        userName="Grace Hopper"
+      />,
+    )
 
     await user.click(await screen.findByRole('button', { name: 'Download PDF report' }))
 
@@ -154,7 +173,7 @@ describe('ChecklistPanel list', () => {
   it('says why the report could not be made', async () => {
     actions.exportDayReport.mockResolvedValue({ ok: false, message: 'The server is busy.' })
     const user = userEvent.setup()
-    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
 
     await user.click(await screen.findByRole('button', { name: 'Download PDF report' }))
 
@@ -168,7 +187,7 @@ describe('ChecklistPanel list', () => {
 
   it('invites adding the first site when the list is empty', async () => {
     actions.loadChecklist.mockResolvedValue(checklist([]))
-    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
 
     expect(await screen.findByText('No websites yet')).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Add website' }).length).toBeGreaterThan(0)
@@ -177,7 +196,7 @@ describe('ChecklistPanel list', () => {
   it('says what went wrong and offers a retry when the list will not load', async () => {
     actions.loadChecklist.mockResolvedValue({ ok: false, message: 'The server is busy.' })
     const user = userEvent.setup()
-    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('The server is busy.')
     actions.loadChecklist.mockResolvedValue(checklist([SITE]))
@@ -192,7 +211,9 @@ describe('ChecklistPanel side panel', () => {
   })
 
   it('shows the automatic checks, the lead’s checks and the expiry dates', async () => {
-    const { container } = render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    const { container } = render(
+      <ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />,
+    )
 
     const drawer = await screen.findByRole('dialog', { name: 'Riverside site' })
     expect(within(drawer).getByText(/HTTP 200 in 310 ms/)).toBeInTheDocument()
@@ -210,7 +231,7 @@ describe('ChecklistPanel side panel', () => {
     let answer: (value: unknown) => void = () => undefined
     actions.saveShiftCheck.mockReturnValue(new Promise((resolve) => (answer = resolve)))
     const user = userEvent.setup()
-    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
 
     const group = within(await screen.findByRole('dialog', { name: 'Riverside site' })).getByRole(
       'group',
@@ -244,7 +265,7 @@ describe('ChecklistPanel side panel', () => {
   it('records the form email once and offers a retest after', async () => {
     actions.saveShiftCheck.mockReturnValue(new Promise(() => undefined))
     const user = userEvent.setup()
-    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
 
     const drawer = await screen.findByRole('dialog', { name: 'Riverside site' })
     expect(within(drawer).getByText('Tested once per site')).toBeInTheDocument()
@@ -259,7 +280,7 @@ describe('ChecklistPanel side panel', () => {
   it('saves what was found and what was done', async () => {
     actions.saveShiftCheck.mockResolvedValue({ ok: true, data: SITE })
     const user = userEvent.setup()
-    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
 
     const drawer = await screen.findByRole('dialog', { name: 'Riverside site' })
     await user.type(within(drawer).getByLabelText('What you found'), 'Book button does nothing')
@@ -278,7 +299,7 @@ describe('ChecklistPanel side panel', () => {
   it('shows a save failure next to the findings without losing them', async () => {
     actions.saveShiftCheck.mockResolvedValue({ ok: false, message: 'The server is busy.' })
     const user = userEvent.setup()
-    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
 
     const drawer = await screen.findByRole('dialog', { name: 'Riverside site' })
     await user.type(within(drawer).getByLabelText('What you found'), 'Slow form')
@@ -290,7 +311,7 @@ describe('ChecklistPanel side panel', () => {
 
   it('lets the lead correct the checker, with a reason for anything but running', async () => {
     const user = userEvent.setup()
-    render(<ChecklistPanel canCheck canManage userName="Ada Lovelace" />)
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
 
     const drawer = await screen.findByRole('dialog', { name: 'Riverside site' })
     const toggle = within(drawer).getByRole('button', { name: 'Checker is wrong? Change status' })
@@ -316,5 +337,92 @@ describe('ChecklistPanel side panel', () => {
       status: 'issue',
       note: 'Homepage is blank',
     })
+  })
+})
+
+describe('ChecklistPanel check times', () => {
+  beforeEach(() => {
+    nav.search = 'site=site-1'
+  })
+
+  it('offers no time edit to anyone but an admin', async () => {
+    render(<ChecklistPanel canCheck canManage canEditTimes={false} userName="Ada Lovelace" />)
+
+    const drawer = await screen.findByRole('dialog', { name: 'Riverside site' })
+    expect(within(drawer).queryByRole('button', { name: /^Edit when/ })).not.toBeInTheDocument()
+  })
+
+  it('shows the admin’s new time before the server answers', async () => {
+    const user = userEvent.setup()
+    actions.editCheckTime.mockReturnValue(new Promise(() => undefined))
+    render(
+      <ChecklistPanel canCheck={false} canManage={false} canEditTimes userName="Grace Hopper" />,
+    )
+
+    const drawer = await screen.findByRole('dialog', { name: 'Riverside site' })
+    await user.click(within(drawer).getByRole('button', { name: EDIT_TIME_IN }))
+    const dialog = await screen.findByRole('dialog', { name: 'Riverside site · Time in time' })
+    const input = within(dialog).getByLabelText(/Checked at/)
+    expect(input).toHaveValue('01:02')
+
+    await user.clear(input)
+    await user.type(input, '20:30')
+    await user.click(within(dialog).getByRole('button', { name: 'Save time' }))
+
+    expect(actions.editCheckTime).toHaveBeenCalledWith({
+      websiteId: 'site-1',
+      date: TODAY,
+      round: 'clock_in',
+      time: '20:30',
+    })
+    expect(await within(drawer).findByText(/8:30 PM/)).toBeInTheDocument()
+  })
+
+  it('puts the old time back and says why when the save fails', async () => {
+    const user = userEvent.setup()
+    actions.editCheckTime.mockResolvedValue({ ok: false, message: 'The server is busy.' })
+    render(
+      <ChecklistPanel canCheck={false} canManage={false} canEditTimes userName="Grace Hopper" />,
+    )
+
+    const drawer = await screen.findByRole('dialog', { name: 'Riverside site' })
+    await user.click(within(drawer).getByRole('button', { name: EDIT_TIME_IN }))
+    const dialog = await screen.findByRole('dialog', { name: 'Riverside site · Time in time' })
+    const input = within(dialog).getByLabelText(/Checked at/)
+    await user.clear(input)
+    await user.type(input, '20:30')
+    await user.click(within(dialog).getByRole('button', { name: 'Save time' }))
+
+    await waitFor(() => expect(within(drawer).getByText(/1:02 AM/)).toBeInTheDocument())
+    expect(toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('The server is busy.') }),
+    )
+  })
+
+  it('sets one time on every checked site from the round summary', async () => {
+    const user = userEvent.setup()
+    nav.search = ''
+    const OTHER = { ...SITE, id: 'site-2', name: 'Hillside site' }
+    actions.loadChecklist.mockResolvedValue(checklist([SITE, OTHER]))
+    actions.editCheckTime.mockReturnValue(new Promise(() => undefined))
+    render(
+      <ChecklistPanel canCheck={false} canManage={false} canEditTimes userName="Grace Hopper" />,
+    )
+
+    await user.click(await screen.findByRole('button', { name: 'Edit time in time' }))
+    expect(screen.queryByRole('button', { name: 'Edit time out time' })).not.toBeInTheDocument()
+    const dialog = await screen.findByRole('dialog', { name: 'Every site \u00b7 Time in time' })
+    const input = within(dialog).getByLabelText(/Checked at/)
+    await user.clear(input)
+    await user.type(input, '20:30')
+    await user.click(within(dialog).getByRole('button', { name: 'Save time' }))
+
+    expect(actions.editCheckTime).toHaveBeenCalledWith({
+      websiteId: undefined,
+      date: TODAY,
+      round: 'clock_in',
+      time: '20:30',
+    })
+    expect(await screen.findAllByText(/8:30 PM/)).toHaveLength(2)
   })
 })

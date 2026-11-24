@@ -18,6 +18,7 @@ import {
 import {
   CHECK_ROUNDS,
   dateKeySchema,
+  editCheckTimeSchema,
   exportDayReportSchema,
   MANUAL_RESULTS,
   saveShiftCheckSchema,
@@ -31,6 +32,7 @@ import {
   type Checklist,
   type ClientOption,
   type DayReportFile,
+  type EditCheckTimeValues,
   type ExportDayReportValues,
   type ManualResult,
   type SaveShiftCheckValues,
@@ -46,7 +48,7 @@ import {
 } from './schema'
 import { buildDayReport, dayReportFileName } from './utils/day-report'
 import { dayReportPdf } from './utils/day-report-pdf'
-import { websiteDayKey } from './utils/work-day'
+import { shiftInstant, websiteDayKey } from './utils/work-day'
 
 export type Result<T> = { ok: true; data: T } | { ok: false; message: string }
 
@@ -55,6 +57,7 @@ const NOT_LEAD = 'Only the IT lead runs the time-in and time-out checks.'
 const NOT_MANAGER = 'Only the IT lead or an admin can change the website list.'
 const INVALID = 'Check the highlighted fields and try again.'
 const GONE = 'That website is no longer on the list.'
+const NOT_ADMIN = 'Only an admin can change when a check ran.'
 
 type Viewer = WebsitesCaller & { organizationId: string }
 
@@ -437,6 +440,46 @@ export async function recordCheck(input: RecordCheckValues): Promise<Result<Webs
 
   const row = await savedRow(caller, site.id)
   return row ? { ok: true, data: row } : { ok: false, message: GONE }
+}
+
+/** An admin's correction of when a check ran, kept inside that check's own shift. */
+export async function editCheckTime(
+  input: EditCheckTimeValues,
+): Promise<Result<{ updated: number }>> {
+  const caller = await viewer()
+  if (!caller) return { ok: false, message: NOT_FOUND }
+  if (!caller.canEditTimes) return { ok: false, message: NOT_ADMIN }
+
+  const parsed = editCheckTimeSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, message: INVALID }
+  const values = parsed.data
+
+  const timeZone = await timeZoneOf(caller.organizationId)
+  const checkedAt = shiftInstant(values.date, values.time, timeZone)
+  if (!checkedAt) return { ok: false, message: INVALID }
+  if (checkedAt.getTime() > Date.now()) {
+    return { ok: false, message: 'That time has not happened yet. Pick a time that has passed.' }
+  }
+
+  // Only checkedAt is written, so status, note and who checked stay as they were.
+  const { count } = await db.websiteCheck.updateMany({
+    where: {
+      organizationId: caller.organizationId,
+      workDate: dateOf(values.date),
+      round: values.round,
+      ...(values.websiteId ? { websiteId: values.websiteId } : {}),
+    },
+    data: { checkedAt },
+  })
+  if (count === 0) {
+    return {
+      ok: false,
+      message: values.websiteId
+        ? 'That check has not run, so it has no time to change.'
+        : 'No site has been checked in this round yet, so there is no time to change.',
+    }
+  }
+  return { ok: true, data: { updated: count } }
 }
 
 /** Every site ever watched, removed ones too, so last month's report can still pick them. */

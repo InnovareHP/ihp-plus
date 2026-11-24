@@ -2,7 +2,7 @@
 
 import { Alert, Button, Card, Drawer, Group, Modal, Skeleton, Stack, Text } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { IconFileTypePdf, IconPlus, IconWorldCheck } from '@tabler/icons-react'
+import { IconClockEdit, IconFileTypePdf, IconPlus, IconWorldCheck } from '@tabler/icons-react'
 import { useState } from 'react'
 import { EmptyState } from '@/components/empty-state'
 import { useUrlQueryParam } from '@/lib/use-url-query-param'
@@ -10,6 +10,7 @@ import { offerUndo } from '@/lib/undo'
 import { track } from '@/lib/analytics'
 import {
   useChecklist,
+  useEditCheckTime,
   useExpiry,
   useExportDayReport,
   useRecordCheck,
@@ -32,6 +33,8 @@ import {
   type WebsiteRow,
 } from '../schema'
 import { awaitsSnapshots } from '../utils/snapshot-state'
+import { shiftClock } from '../utils/work-day'
+import { CheckTimeForm } from './check-time-form'
 import { CheckVerdictForm } from './check-verdict-form'
 import { DayNav } from './day-nav'
 import { RoundSummary } from './round-summary'
@@ -42,6 +45,7 @@ import { WebsiteForm } from './website-form'
 export interface ChecklistPanelProps {
   canCheck: boolean
   canManage: boolean
+  canEditTimes: boolean
   userName: string
 }
 
@@ -50,7 +54,12 @@ type Editing = { kind: 'new' } | { kind: 'edit'; website: WebsiteRow }
 // Pictures land a few seconds after a round, so the list looks again until each one is in.
 const SNAPSHOT_POLL_MS = 4000
 
-export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanelProps) {
+export function ChecklistPanel({
+  canCheck,
+  canManage,
+  canEditTimes,
+  userName,
+}: ChecklistPanelProps) {
   // Days are URL state, so a link to "what was down on the 3rd" stands on its own.
   const day = useUrlQueryParam('date', 0)
   const checklist = useChecklist(day.value, (current) =>
@@ -65,6 +74,7 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
   const run = useRunRound(day.value)
   const record = useRecordCheck(day.value, userName)
   const saveShift = useSaveShiftCheck(day.value)
+  const editTime = useEditCheckTime(day.value, list?.timeZone ?? 'UTC')
   const report = useExportDayReport()
   // The open site is URL state, so a link to it opens the panel and Back is never lost.
   const site = useUrlQueryParam('site', 0)
@@ -81,6 +91,8 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
 
   // Only which dialog is open lives here; every field inside is react-hook-form's.
   const [verdictFor, setVerdictFor] = useState<{ website: WebsiteRow; round: CheckRound }>()
+  // No website means the whole round, every site at once.
+  const [timeFor, setTimeFor] = useState<{ website?: WebsiteRow; round: CheckRound }>()
   const [editing, setEditing] = useState<Editing>()
 
   function openSite(websiteId: string) {
@@ -167,19 +179,30 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
             {CHECK_ROUNDS.map((round) => (
               <Group key={round} justify="space-between" wrap="wrap" gap="sm">
                 <RoundSummary round={round} websites={list.websites} />
-                {canAct ? (
-                  <Button
-                    leftSection={<IconWorldCheck size={18} aria-hidden />}
-                    variant={round === 'clock_in' ? 'filled' : 'light'}
-                    loading={runningRound === round}
-                    disabled={run.isPending && runningRound !== round}
-                    onClick={() => run.mutate({ round })}
-                  >
-                    {runningRound === round
-                      ? 'Checking every site…'
-                      : `Run ${CHECK_ROUND_LABELS[round].toLowerCase()} check`}
-                  </Button>
-                ) : null}
+                <Group gap="sm" wrap="wrap">
+                  {canEditTimes && list.websites.some((site) => site.checks[round]) ? (
+                    <Button
+                      variant="default"
+                      leftSection={<IconClockEdit size={18} aria-hidden />}
+                      onClick={() => setTimeFor({ round })}
+                    >
+                      Edit {CHECK_ROUND_LABELS[round].toLowerCase()} time
+                    </Button>
+                  ) : null}
+                  {canAct ? (
+                    <Button
+                      leftSection={<IconWorldCheck size={18} aria-hidden />}
+                      variant={round === 'clock_in' ? 'filled' : 'light'}
+                      loading={runningRound === round}
+                      disabled={run.isPending && runningRound !== round}
+                      onClick={() => run.mutate({ round })}
+                    >
+                      {runningRound === round
+                        ? 'Checking every site…'
+                        : `Run ${CHECK_ROUND_LABELS[round].toLowerCase()} check`}
+                    </Button>
+                  ) : null}
+                </Group>
               </Group>
             ))}
             {!isToday && list.snapshotsEnabled ? (
@@ -242,6 +265,7 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
             now={listedAt}
             canAct={canAct}
             canManage={canManage && isToday}
+            canEditTimes={canEditTimes}
             checkingRound={
               runningRound ??
               (run.isPending && run.variables?.websiteId === opened.id
@@ -252,6 +276,7 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
             expiryPending={expiry.isPending}
             onRecheck={(round) => run.mutate({ round, websiteId: opened.id })}
             onOverride={(round) => setVerdictFor({ website: opened, round })}
+            onEditTime={(round) => setTimeFor({ website: opened, round })}
             onPagesButtons={(result) =>
               saveShift.mutate({ websiteId: opened.id, pagesButtons: result })
             }
@@ -291,6 +316,45 @@ export function ChecklistPanel({ canCheck, canManage, userName }: ChecklistPanel
               })
             }}
             onClose={() => setVerdictFor(undefined)}
+          />
+        ) : null}
+      </Modal>
+
+      <Modal
+        opened={Boolean(timeFor)}
+        onClose={() => setTimeFor(undefined)}
+        title={
+          timeFor
+            ? `${timeFor.website?.name ?? 'Every site'} · ${CHECK_ROUND_LABELS[timeFor.round]} time`
+            : 'Edit time'
+        }
+        centered
+      >
+        {timeFor ? (
+          <CheckTimeForm
+            defaults={{
+              time: shiftClock(
+                (timeFor.website ? [timeFor.website] : list.websites).find(
+                  (site) => site.checks[timeFor.round],
+                )?.checks[timeFor.round]?.checkedAt ?? new Date(),
+                list.timeZone,
+              ),
+            }}
+            note={
+              timeFor.website
+                ? undefined
+                : `Sets the ${CHECK_ROUND_LABELS[timeFor.round].toLowerCase()} time on every site checked that round. Sites not checked yet stay unchecked.`
+            }
+            // Not awaited: the panel already shows the new time, and a failure is announced and rolled back.
+            onSave={async (values) => {
+              editTime.mutate({
+                websiteId: timeFor.website?.id,
+                date: list.date,
+                round: timeFor.round,
+                time: values.time,
+              })
+            }}
+            onClose={() => setTimeFor(undefined)}
           />
         ) : null}
       </Modal>

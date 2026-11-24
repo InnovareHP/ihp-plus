@@ -6,6 +6,8 @@ export const websiteEvents = {
   roundFailed: 'websites.round.failed',
   checkRecorded: 'websites.check.recorded',
   checkRecordFailed: 'websites.check.record_failed',
+  checkTimeEdited: 'websites.check.time_edited',
+  checkTimeEditFailed: 'websites.check.time_edit_failed',
   shiftCheckSaved: 'websites.shift_check.saved',
   shiftCheckSaveFailed: 'websites.shift_check.save_failed',
   panelOpened: 'websites.panel.opened',

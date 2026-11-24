@@ -5,6 +5,7 @@ import { track } from '@/lib/analytics'
 import { announceFailure } from '@/lib/announce'
 import { downloadFile } from '@/lib/download'
 import {
+  editCheckTime,
   exportDayReport,
   loadChecklist,
   loadExpiry,
@@ -14,7 +15,14 @@ import {
 } from '../actions'
 import { websiteEvents } from '../events'
 import { websiteKeys } from '../query-keys'
-import type { CheckRound, Checklist, RecordCheckValues, SaveShiftCheckValues } from '../schema'
+import type {
+  CheckRound,
+  Checklist,
+  EditCheckTimeValues,
+  RecordCheckValues,
+  SaveShiftCheckValues,
+} from '../schema'
+import { shiftInstant } from '../utils/work-day'
 
 export function useChecklist(
   date: string,
@@ -113,6 +121,52 @@ export function useRecordCheck(date: string, checkedByName: string) {
     onError: (error: Error, values, context) => {
       queryClient.setQueryData(key, context?.previous)
       track(websiteEvents.checkRecordFailed, { round: values.round, reason: error.message })
+      announceFailure(error.message)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: websiteKeys.checklists() })
+    },
+  })
+}
+
+export function useEditCheckTime(date: string, timeZone: string) {
+  const queryClient = useQueryClient()
+  const key = websiteKeys.checklist(date)
+
+  return useMutation({
+    mutationFn: async (values: EditCheckTimeValues) => {
+      const result = await editCheckTime(values)
+      if (!result.ok) throw new Error(result.message)
+      return result.data
+    },
+    onMutate: async (values) => {
+      // An in-flight refetch would land on top of the optimistic time.
+      await queryClient.cancelQueries({ queryKey: key })
+      const previous = queryClient.getQueryData<Checklist>(key)
+      const checkedAt = shiftInstant(values.date, values.time, timeZone)?.toISOString()
+      queryClient.setQueryData<Checklist>(key, (list) =>
+        list && checkedAt
+          ? {
+              ...list,
+              websites: list.websites.map((site) => {
+                const before = site.checks[values.round]
+                if (!before || (values.websiteId && site.id !== values.websiteId)) return site
+                return {
+                  ...site,
+                  checks: { ...site.checks, [values.round]: { ...before, checkedAt } },
+                }
+              }),
+            }
+          : list,
+      )
+      return { previous }
+    },
+    onSuccess: (_row, values) => {
+      track(websiteEvents.checkTimeEdited, { round: values.round, all: !values.websiteId })
+    },
+    onError: (error: Error, values, context) => {
+      queryClient.setQueryData(key, context?.previous)
+      track(websiteEvents.checkTimeEditFailed, { round: values.round, reason: error.message })
       announceFailure(error.message)
     },
     onSettled: () => {

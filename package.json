@@ -27,7 +27,6 @@
     "db:seed:clients": "dotenv -e .env -- pnpm --filter @ihp/db db:seed:clients",
     "db:backfill:websites": "dotenv -e .env -- pnpm --filter @ihp/db db:backfill:websites",
     "db:studio": "pnpm --filter @ihp/db db:studio",
-    "db:push": "pnpm --filter @ihp/db db:push",
     "infra:up": "docker compose --env-file .env -f infra/compose.dev.yml up -d",
     "infra:down": "docker compose --env-file .env -f infra/compose.dev.yml down",
     "infra:pg": "docker compose --env-file .env -f infra/compose.dev.yml up -d postgres",

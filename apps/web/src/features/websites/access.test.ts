@@ -45,7 +45,12 @@ describe('websitesRoleOf', () => {
     expect(websitesRoleOf(member(undefined, 'admin'), undefined, false)).toMatchObject({
       canView: true,
       canConfigure: true,
+      canEditTimes: true,
       canCheck: false,
     })
+  })
+
+  it('keeps editing check times from the IT lead', () => {
+    expect(websitesRoleOf(member('it'), 'it', true).canEditTimes).toBe(false)
   })
 })
