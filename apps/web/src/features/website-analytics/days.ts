@@ -55,3 +55,18 @@ export function lastDays(count: number, now: Date, timeZone: string): string[] {
   const today = dayKeyOf(now, timeZone)
   return Array.from({ length: count }, (_, index) => shiftDay(today, index - count))
 }
+
+export interface DayRange {
+  start: string
+  end: string
+}
+
+/** Days in a range, both ends included. */
+export function daysIn(range: DayRange): number {
+  return Math.round((Date.parse(range.end) - Date.parse(range.start)) / DAY_MS) + 1
+}
+
+/** The same number of days just before the range, which every comparison measures against. */
+export function previousRange(range: DayRange): DayRange {
+  return { start: shiftDay(range.start, -daysIn(range)), end: shiftDay(range.start, -1) }
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dayKeyOf, dayStart, lastDays, offsetOf, shiftDay } from './days'
+import { dayKeyOf, dayStart, daysIn, lastDays, offsetOf, previousRange, shiftDay } from './days'
 
 const DETROIT = 'America/Detroit'
 
@@ -44,5 +44,19 @@ describe('lastDays', () => {
       '2026-11-23',
       '2026-11-24',
     ])
+  })
+})
+
+describe('previousRange', () => {
+  it('is the same length, ending the day before', () => {
+    expect(daysIn({ start: '2026-11-01', end: '2026-11-30' })).toBe(30)
+    expect(previousRange({ start: '2026-11-01', end: '2026-11-30' })).toEqual({
+      start: '2026-10-02',
+      end: '2026-10-31',
+    })
+    expect(previousRange({ start: '2026-11-25', end: '2026-11-25' })).toEqual({
+      start: '2026-11-24',
+      end: '2026-11-24',
+    })
   })
 })
