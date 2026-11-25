@@ -3,11 +3,15 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { PageHeader } from '@/components/page-header'
 import { PageShell } from '@/components/page-shell'
+import { AnalyticsView } from '@/features/website-analytics/components/analytics-view'
+import { dayKeyOf } from '@/features/website-analytics/days'
+import { REPORT_TIME_ZONE } from '@/features/website-analytics/sites'
 import { requireWebsitesPage } from '@/features/websites/access'
+import { WebsitesTabs } from '@/features/websites/components/websites-tabs'
 import { WebsitesWorkspace } from '@/features/websites/components/websites-workspace'
 import { todayOf } from '@/features/websites/service'
 
-export const metadata: Metadata = { title: 'Website checks' }
+export const metadata: Metadata = { title: 'Websites' }
 
 export default async function WebsitesPage() {
   const access = await requireWebsitesPage()
@@ -16,10 +20,10 @@ export default async function WebsitesPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Website checks"
+        title="Websites"
         description="Client websites the IT department keeps running, checked at time in and time out."
       />
-      {/* The day on screen lives in the URL, which needs a boundary. */}
+      {/* The tab, the day and the report range live in the URL, which needs a boundary. */}
       <Suspense
         fallback={
           <Stack gap="md" aria-busy="true">
@@ -28,14 +32,23 @@ export default async function WebsitesPage() {
           </Stack>
         }
       >
-        <WebsitesWorkspace
-          canCheck={access.canCheck}
-          canManage={access.canManage}
-          canConfigure={access.canConfigure}
-          canEditTimes={access.canEditTimes}
-          itTeamId={access.itTeamId ?? ''}
-          thisMonth={today.slice(0, 7)}
-          userName={access.userName}
+        <WebsitesTabs
+          checks={
+            <WebsitesWorkspace
+              canCheck={access.canCheck}
+              canManage={access.canManage}
+              canConfigure={access.canConfigure}
+              canEditTimes={access.canEditTimes}
+              itTeamId={access.itTeamId ?? ''}
+              thisMonth={today.slice(0, 7)}
+              userName={access.userName}
+            />
+          }
+          analytics={
+            access.canViewAnalytics ? (
+              <AnalyticsView today={dayKeyOf(new Date(), REPORT_TIME_ZONE)} />
+            ) : null
+          }
         />
       </Suspense>
     </PageShell>
