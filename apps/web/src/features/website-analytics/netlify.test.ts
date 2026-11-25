@@ -48,6 +48,26 @@ describe('readDailyTotals', () => {
     ])
   })
 
+  it('leaves visitors unknown for a day Netlify no longer keeps them', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url.includes('/bandwidth?')
+        ? answer([])
+        : answer(
+            url.includes('/visitors?')
+              ? [[NOV_24, 59]]
+              : [
+                  [NOV_23, 51],
+                  [NOV_24, 91],
+                ],
+          ),
+    )
+
+    expect(await readDailyTotals('site-1', '2026-11-23', '2026-11-24', DETROIT)).toEqual([
+      { day: '2026-11-23', pageviews: 51, visitors: null, bandwidthBytes: 0 },
+      { day: '2026-11-24', pageviews: 91, visitors: 59, bandwidthBytes: 0 },
+    ])
+  })
+
   it('asks for local days with the token and the zone offset', async () => {
     fetchMock.mockImplementation(async () => answer([]))
 

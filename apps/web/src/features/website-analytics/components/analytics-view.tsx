@@ -1,14 +1,17 @@
 'use client'
 
 import { Box, Stack, Text } from '@mantine/core'
+import type { ReactNode } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { PageSection } from '@/components/page-section'
 import { daysIn, type DayRange } from '../days'
 import { rangeLabel, reportQueryOf, reportViewOf, type RangePreset } from '../report-range'
 import type { ReportSite } from '../sites'
-import { useGa4Report } from '../use-ga4-report'
+import { useGa4Report } from '../hooks/use-ga4-report'
+import { useNetlifyReport } from '../hooks/use-netlify-report'
 import { AnalyticsControls } from './analytics-controls'
 import { Ga4ReportBody } from './ga4-report-body'
+import { NetlifyReportBody } from './netlify-report-body'
 import { ReportError } from './report-error'
 import { ReportSkeleton } from './report-skeleton'
 
@@ -39,6 +42,7 @@ export function AnalyticsView({ today }: { today: string }) {
 
   const days = daysIn(view.range)
   const ga4 = useGa4Report(view.site.key, view.range, view.site.source === 'ga4')
+  const netlify = useNetlifyReport(view.site.key, view.range, view.site.source === 'netlify')
 
   return (
     <Stack gap="lg">
@@ -60,28 +64,57 @@ export function AnalyticsView({ today }: { today: string }) {
           </>
         }
       >
-        <ReportBody site={view.site} ga4={ga4} />
+        {view.site.source === 'ga4' ? (
+          <Ga4Body site={view.site} query={ga4} />
+        ) : (
+          <NetlifyBody site={view.site} query={netlify} />
+        )}
       </PageSection>
     </Stack>
   )
 }
 
-function ReportBody({ site, ga4 }: { site: ReportSite; ga4: ReturnType<typeof useGa4Report> }) {
-  if (site.source === 'netlify') {
-    return <Text size="sm">Netlify numbers arrive in the next step.</Text>
-  }
-  if (ga4.isPending) return <ReportSkeleton />
-  if (ga4.isError) {
+// The last report stays readable but dimmed while the next site or range loads.
+function Faded({ fading, children }: { fading: boolean; children: ReactNode }) {
+  return (
+    <Box
+      aria-busy={fading}
+      opacity={fading ? 0.5 : 1}
+      style={{ transition: 'opacity 150ms ease-out' }}
+    >
+      {children}
+    </Box>
+  )
+}
+
+interface ReportQuery<T> {
+  isPending: boolean
+  isError: boolean
+  isFetching: boolean
+  isPlaceholderData: boolean
+  error: Error | null
+  data: T | undefined
+  refetch: () => unknown
+}
+
+/** The loading and error screens both sources share, or null once there is a report. */
+function waiting<T>(query: ReportQuery<T>): ReactNode {
+  if (query.isPending) return <ReportSkeleton />
+  if (query.isError || !query.data) {
     return (
       <ReportError
-        message={ga4.error.message}
-        retrying={ga4.isFetching}
-        onRetry={() => ga4.refetch()}
+        message={query.error?.message ?? 'The report did not load.'}
+        retrying={query.isFetching}
+        onRetry={() => query.refetch()}
       />
     )
   }
+  return null
+}
 
-  const report = ga4.data
+function Ga4Body({ site, query }: { site: ReportSite; query: ReturnType<typeof useGa4Report> }) {
+  const report = query.data
+  if (!report || query.isError) return waiting(query)
   if (report.totals.sessions === 0 && report.previousTotals.sessions === 0) {
     return (
       <Text size="sm">
@@ -90,15 +123,33 @@ function ReportBody({ site, ga4 }: { site: ReportSite; ga4: ReturnType<typeof us
       </Text>
     )
   }
-
-  // The last report stays readable but dimmed while the next site or range loads.
   return (
-    <Box
-      aria-busy={ga4.isPlaceholderData}
-      opacity={ga4.isPlaceholderData ? 0.5 : 1}
-      style={{ transition: 'opacity 150ms ease-out' }}
-    >
+    <Faded fading={query.isPlaceholderData}>
       <Ga4ReportBody site={site} report={report} />
-    </Box>
+    </Faded>
+  )
+}
+
+function NetlifyBody({
+  site,
+  query,
+}: {
+  site: ReportSite
+  query: ReturnType<typeof useNetlifyReport>
+}) {
+  const report = query.data
+  if (!report || query.isError) return waiting(query)
+  if (report.coverage.savedDays === 0) {
+    return (
+      <Text size="sm">
+        No Netlify numbers are saved for {site.name} in this range. The nightly job saves page views
+        from Sep 1, 2026 on, so pick a range after that.
+      </Text>
+    )
+  }
+  return (
+    <Faded fading={query.isPlaceholderData}>
+      <NetlifyReportBody report={report} />
+    </Faded>
   )
 }

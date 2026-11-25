@@ -15,7 +15,8 @@ export type Ranked = {
 export interface NetlifyDayTotals {
   day: string
   pageviews: number
-  visitors: number
+  /** Null once Netlify has dropped the day, which it does for visitors after about 30 days. */
+  visitors: number | null
   bandwidthBytes: number
 }
 
@@ -123,7 +124,7 @@ export async function readDailyTotals(
     .map((day) => ({
       day,
       pageviews: views.get(day) ?? 0,
-      visitors: visitors.get(day) ?? 0,
+      visitors: visitors.get(day) ?? null,
       bandwidthBytes: bytes.get(day) ?? 0,
     }))
 }

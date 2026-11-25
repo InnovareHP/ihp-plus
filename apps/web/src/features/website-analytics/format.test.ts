@@ -4,6 +4,7 @@ import {
   formatChange,
   formatCount,
   formatDuration,
+  formatMegabytes,
   formatPercent,
   formatShortDay,
 } from './format'
@@ -15,6 +16,8 @@ describe('format', () => {
     expect(formatDuration(92.5)).toBe('1m 32s')
     expect(formatDuration(41)).toBe('41s')
     expect(formatShortDay('2026-11-03')).toBe('Nov 3')
+    expect(formatMegabytes(310_400_000)).toBe('310 MB')
+    expect(formatMegabytes(145_000)).toBe('0.15 MB')
   })
 
   it('compares against the period before, and says nothing when it was empty', () => {

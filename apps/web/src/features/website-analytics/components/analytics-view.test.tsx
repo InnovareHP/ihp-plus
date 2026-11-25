@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import { render, screen, userEvent, waitFor } from '@/test/render'
+import { render, screen, userEvent } from '@/test/render'
 import type { Ga4Report } from '../ga4'
+import { buildNetlifyReport } from '../netlify-report'
 import { AnalyticsView } from './analytics-view'
 
 const nav = vi.hoisted(() => ({ query: '', replace: vi.fn() }))
@@ -12,7 +13,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(nav.query),
 }))
 
-const actions = vi.hoisted(() => ({ loadGa4Report: vi.fn() }))
+const actions = vi.hoisted(() => ({ loadGa4Report: vi.fn(), loadNetlifyReport: vi.fn() }))
 vi.mock('../actions', () => actions)
 
 const TODAY = '2026-11-26'
@@ -52,10 +53,36 @@ const REPORT: Ga4Report = {
   },
 }
 
+const NETLIFY_RANGE = { start: '2026-10-27', end: '2026-11-25' }
+const NETLIFY_PREVIOUS = { start: '2026-09-27', end: '2026-10-26' }
+const SAVED = Array.from({ length: 30 }, (_, index) => {
+  const day = new Date(Date.UTC(2026, 9, 27 + index)).toISOString().slice(0, 10)
+  // The first week was saved after Netlify had already dropped its visitors and top lists.
+  const forgotten = index < 7
+  return {
+    day,
+    pageviews: index === 10 ? 130 : 60,
+    visitors: forgotten ? 0 : 40,
+    bandwidthBytes: 9_000_000,
+    sources: forgotten
+      ? []
+      : [
+          { resource: '', count: 45 },
+          { resource: 'google.com', count: 2 },
+        ],
+    pages: forgotten ? [] : [{ resource: '/', count: 50 }],
+    countries: forgotten ? [] : [{ resource: 'US', label: 'United States', count: 40 }],
+  }
+})
+
 beforeEach(() => {
   nav.query = 'tab=analytics'
   nav.replace.mockReset()
   actions.loadGa4Report.mockReset().mockResolvedValue({ ok: true, data: REPORT })
+  actions.loadNetlifyReport.mockReset().mockResolvedValue({
+    ok: true,
+    data: buildNetlifyReport(SAVED, NETLIFY_RANGE, NETLIFY_PREVIOUS),
+  })
 })
 
 describe('AnalyticsView', () => {
@@ -153,11 +180,38 @@ describe('AnalyticsView', () => {
     expect(screen.queryByRole('heading', { name: 'Google search' })).not.toBeInTheDocument()
   })
 
-  it('does not ask Google about a Netlify site', async () => {
+  it('shows a Netlify site from its saved days and names the gaps', async () => {
+    nav.query = 'tab=analytics&site=helping-with-moms-home'
+    const { container } = render(<AnalyticsView today={TODAY} />)
+
+    expect(await screen.findByText('Busiest day')).toBeInTheDocument()
+    expect(actions.loadGa4Report).not.toHaveBeenCalled()
+    expect(actions.loadNetlifyReport).toHaveBeenCalledWith(
+      'helping-with-moms-home',
+      '2026-10-27',
+      '2026-11-25',
+    )
+    expect(screen.getByText('1,870')).toBeInTheDocument()
+    expect(screen.getByText('Counted for 23 of 30 days')).toBeInTheDocument()
+    expect(screen.queryByText('Pages per visitor')).not.toBeInTheDocument()
+    expect(screen.getByText('Nov 6')).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Direct' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'United States' })).toBeInTheDocument()
+    expect(screen.getByText(/cover 23 of the 30 days/)).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /Page views per day: 1,870/ })).toBeInTheDocument()
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('says when nothing is saved for a Netlify range', async () => {
     nav.query = 'tab=analytics&site=rivers-residence'
+    actions.loadNetlifyReport.mockResolvedValue({
+      ok: true,
+      data: buildNetlifyReport([], NETLIFY_RANGE, NETLIFY_PREVIOUS),
+    })
     render(<AnalyticsView today={TODAY} />)
 
-    await waitFor(() => expect(screen.getByText(/Netlify numbers/)).toBeInTheDocument())
-    expect(actions.loadGa4Report).not.toHaveBeenCalled()
+    expect(
+      await screen.findByText(/No Netlify numbers are saved for Rivers Residence/),
+    ).toBeInTheDocument()
   })
 })

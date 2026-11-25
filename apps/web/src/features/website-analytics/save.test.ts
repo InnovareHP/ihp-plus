@@ -91,6 +91,22 @@ describe('saveNetlifyDays', () => {
     expect(oldest.update).not.toHaveProperty('sources')
   })
 
+  it('keeps saved visitors and rankings once Netlify has dropped them', async () => {
+    netlify.readDailyTotals.mockResolvedValue([
+      { day: '2026-11-24', pageviews: 10, visitors: null, bandwidthBytes: 1000 },
+    ])
+    netlify.readDayRankings.mockResolvedValue({ sources: [], pages: [], countries: [] })
+
+    await saveNetlifyDays(1, now)
+
+    const call = prisma.websiteAnalyticsDay.upsert.mock.calls[0]?.[0] as {
+      create: Record<string, unknown>
+      update: Record<string, unknown>
+    }
+    expect(call.update).toEqual({ pageviews: 10, bandwidthBytes: 1000n, savedAt: now })
+    expect(call.create).toMatchObject({ visitors: 0, pageviews: 10 })
+  })
+
   it('carries on past a site Netlify refuses and names it', async () => {
     netlify.readDailyTotals.mockImplementation(async (id: string, first: string, last: string) => {
       if (id === 'site-a') throw new Error('Netlify answered 500 for pageviews.')

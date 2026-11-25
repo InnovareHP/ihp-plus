@@ -18,6 +18,15 @@ export const formatPercent = (ratio: number) => percent.format(ratio)
 
 export const formatDecimal = (value: number) => decimal.format(value)
 
+const megabytes = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
+const smallMegabytes = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 })
+
+/** Bandwidth in decimal megabytes, as Netlify's dashboard counts it. */
+export function formatMegabytes(bytes: number): string {
+  const mb = bytes / 1_000_000
+  return `${(mb < 10 ? smallMegabytes : megabytes).format(mb)} MB`
+}
+
 /** Time on site the way people say it, such as "1m 32s". */
 export function formatDuration(seconds: number): string {
   // Rounded down, as Looker Studio shows it, so the two reports agree to the second.

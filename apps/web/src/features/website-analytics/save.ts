@@ -76,18 +76,22 @@ export async function saveNetlifyDays(
 
       for (const total of totals) {
         const ranked = rankings.get(total.day)
+        // Netlify forgets visitors and rankings after a month, so an empty answer for a busy day
+        // must never overwrite what an earlier night saved.
+        const rankedKept =
+          ranked && (total.pageviews === 0 || ranked.pages.length > 0 || ranked.sources.length > 0)
         const data = {
           pageviews: total.pageviews,
-          visitors: total.visitors,
+          ...(total.visitors === null ? {} : { visitors: total.visitors }),
           bandwidthBytes: BigInt(total.bandwidthBytes),
-          ...(ranked
+          ...(rankedKept
             ? { sources: ranked.sources, pages: ranked.pages, countries: ranked.countries }
             : {}),
         }
         const day = new Date(`${total.day}T00:00:00.000Z`)
         await db.websiteAnalyticsDay.upsert({
           where: { netlifySiteId_day: { netlifySiteId: site.sourceId, day } },
-          create: { organizationId, netlifySiteId: site.sourceId, day, ...data },
+          create: { organizationId, netlifySiteId: site.sourceId, day, visitors: 0, ...data },
           update: { ...data, savedAt: now },
         })
         summary.saved += 1

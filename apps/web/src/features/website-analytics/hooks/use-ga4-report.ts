@@ -2,10 +2,10 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { track } from '@/lib/analytics'
-import { loadGa4Report } from './actions'
-import type { DayRange } from './days'
-import { analyticsEvents } from './events'
-import { analyticsKeys } from './query-keys'
+import { loadGa4Report } from '../actions'
+import type { DayRange } from '../days'
+import { analyticsEvents } from '../events'
+import { analyticsKeys } from '../query-keys'
 
 export function useGa4Report(siteKey: string, range: DayRange, enabled: boolean) {
   return useQuery({

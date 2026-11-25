@@ -6,8 +6,8 @@ import { changeOf, formatCount, formatDuration, formatPercent } from '../format'
 import type { ReportSite } from '../sites'
 import { ChannelsChart } from './channels-chart'
 import { ReportTable } from './report-table'
+import { PeriodChart } from './period-chart'
 import { SeoSection } from './seo-section'
-import { SessionsChart } from './sessions-chart'
 import { StatTile } from './stat-tile'
 
 const ROW_COLUMNS = (first: string) => [
@@ -83,8 +83,13 @@ export function Ga4ReportBody({ site, report }: Ga4ReportBodyProps) {
       </SimpleGrid>
 
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
-        <SessionsChart
-          days={report.sessionsByDay}
+        <PeriodChart
+          metric="Sessions"
+          days={report.sessionsByDay.map((one) => ({
+            day: one.day,
+            current: one.sessions,
+            previous: one.previousSessions,
+          }))}
           total={totals.sessions}
           previousTotal={before.sessions}
         />

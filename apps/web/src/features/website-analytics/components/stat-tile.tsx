@@ -7,6 +7,8 @@ export interface StatTileProps {
   value: string
   /** Change against the period before as a ratio; null when there is nothing to compare. */
   change?: number | null
+  /** A short qualifier under the value, such as how many days a number covers. */
+  note?: string
 }
 
 function ChangeLine({ change }: { change: number | null }) {
@@ -23,7 +25,7 @@ function ChangeLine({ change }: { change: number | null }) {
   )
 }
 
-export function StatTile({ label, value, change }: StatTileProps) {
+export function StatTile({ label, value, change, note }: StatTileProps) {
   return (
     <Card withBorder padding="md" radius="md">
       <Stack gap={4}>
@@ -34,6 +36,7 @@ export function StatTile({ label, value, change }: StatTileProps) {
           {value}
         </Text>
         {change === undefined ? null : <ChangeLine change={change} />}
+        {note ? <Text size="sm">{note}</Text> : null}
       </Stack>
     </Card>
   )
