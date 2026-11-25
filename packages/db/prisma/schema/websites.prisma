@@ -93,3 +93,26 @@ model WebsiteShiftCheck {
   @@map("websiteShiftCheck")
   @@schema("websites")
 }
+
+// One Netlify site on one day, saved nightly because Netlify forgets its analytics after 30 to 89
+// days. Keyed by Netlify's site id, not Website, so the report sites need no row in that table.
+model WebsiteAnalyticsDay {
+  id             String @id @default(uuid())
+  organizationId String
+  netlifySiteId  String
+
+  day            DateTime @db.Date
+  pageviews      Int
+  visitors       Int
+  bandwidthBytes BigInt
+  // That day's top 50 of each, as [{ resource, count }], summed when a range runs past 30 days.
+  sources        Json     @default("[]")
+  pages          Json     @default("[]")
+  countries      Json     @default("[]")
+  savedAt        DateTime @default(now())
+
+  @@unique([netlifySiteId, day])
+  @@index([organizationId, day])
+  @@map("websiteAnalyticsDay")
+  @@schema("websites")
+}
