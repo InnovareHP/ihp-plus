@@ -46,11 +46,18 @@ describe('websitesRoleOf', () => {
       canView: true,
       canConfigure: true,
       canEditTimes: true,
+      canViewAnalytics: true,
       canCheck: false,
     })
   })
 
   it('keeps editing check times from the IT lead', () => {
     expect(websitesRoleOf(member('it'), 'it', true).canEditTimes).toBe(false)
+  })
+
+  it('shows client traffic to admins only, not the IT department', () => {
+    expect(websitesRoleOf(member('it'), 'it', true).canViewAnalytics).toBe(false)
+    expect(websitesRoleOf(member('it'), 'it', false).canViewAnalytics).toBe(false)
+    expect(websitesRoleOf(member('it', 'admin'), 'it', false).canViewAnalytics).toBe(true)
   })
 })

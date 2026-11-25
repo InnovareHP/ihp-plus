@@ -8,6 +8,7 @@ import {
   type AttendanceTab,
   type ClientTab,
   type OrganizationTab,
+  type WebsiteTab,
 } from './routes'
 
 // A Record, not a list, so a tab id added to routes.ts fails typecheck until it is named here.
@@ -15,6 +16,11 @@ export const CLIENT_TAB_LABELS: Record<ClientTab, string> = {
   clients: 'Clients',
   contracts: 'Contracts',
   rates: 'Rate card',
+}
+
+export const WEBSITE_TAB_LABELS: Record<WebsiteTab, string> = {
+  checks: 'Daily checks',
+  analytics: 'Analytics',
 }
 
 export const ORGANIZATION_TAB_LABELS: Record<OrganizationTab, string> = {

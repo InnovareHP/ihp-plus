@@ -146,8 +146,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       },
       {
         href: routes.websites,
-        label: 'Website checks',
-        description: 'Client websites checked at time in and time out',
+        label: 'Websites',
+        description: 'Daily checks of client websites, and their traffic for admins',
         icon: IconWorldCheck,
         itOnly: true,
       },

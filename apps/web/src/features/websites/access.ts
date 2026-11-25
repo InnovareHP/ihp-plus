@@ -27,6 +27,8 @@ export interface WebsitesRole {
   canConfigure: boolean
   /** Correcting when a check ran rewrites the record, so only an admin may. */
   canEditTimes: boolean
+  /** Client traffic numbers go into reports the admins send, so only admins read them. */
+  canViewAnalytics: boolean
   itTeamId: string | undefined
 }
 
@@ -43,6 +45,7 @@ export function websitesRoleOf(
     canManage: isAdmin || leadsIt,
     canConfigure: isAdmin,
     canEditTimes: isAdmin,
+    canViewAnalytics: isAdmin,
     itTeamId,
   }
 }

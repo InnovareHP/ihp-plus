@@ -78,6 +78,11 @@ export const CLIENT_TABS = ['clients', 'contracts', 'rates'] as const
 
 export type ClientTab = (typeof CLIENT_TABS)[number]
 
+/** Websites keeps the IT department's daily checks and the admins' traffic reports side by side. */
+export const WEBSITE_TABS = ['checks', 'analytics'] as const
+
+export type WebsiteTab = (typeof WEBSITE_TABS)[number]
+
 export function clientTab(tab: ClientTab) {
   return tab === 'clients' ? routes.clients : `${routes.clients}?tab=${tab}`
 }
