@@ -1,7 +1,7 @@
 import { daysIn, previousRange, shiftDay, type DayRange } from './days'
 import { REPORT_SITES, type ReportSite } from './sites'
 
-export const RANGE_PRESETS = ['7d', '30d', '60d', 'last-month', 'custom'] as const
+export const RANGE_PRESETS = ['report-month', '7d', '30d', '60d', 'last-month', 'custom'] as const
 export type RangePreset = (typeof RANGE_PRESETS)[number]
 
 // Netlify's daily totals reach back to here, and GA4 tagging started later still.
@@ -12,6 +12,7 @@ export const MAX_RANGE_DAYS = 366
 export type FixedPreset = Exclude<RangePreset, 'custom'>
 
 export const PRESET_LABELS: Record<RangePreset, string> = {
+  'report-month': 'Report month',
   '7d': 'Last 7 days',
   '30d': 'Last 30 days',
   '60d': 'Last 60 days',
@@ -42,6 +43,13 @@ function isDayKey(value: string | null): value is string {
 
 /** The whole days a preset covers, ending yesterday at the latest because today is still being counted. */
 export function presetRange(preset: FixedPreset, today: string): DayRange {
+  if (preset === 'report-month') {
+    // Client reports run the 25th to the 24th, so the latest finished one ends on the last 24th.
+    const thisMonth24 = `${today.slice(0, 7)}-24`
+    const lastMonth = shiftDay(`${today.slice(0, 7)}-01`, -1).slice(0, 7)
+    const end = today > thisMonth24 ? thisMonth24 : `${lastMonth}-24`
+    return { start: `${shiftDay(`${end.slice(0, 7)}-01`, -1).slice(0, 7)}-25`, end }
+  }
   if (preset === 'last-month') {
     const end = shiftDay(`${today.slice(0, 7)}-01`, -1)
     return { start: `${end.slice(0, 7)}-01`, end }

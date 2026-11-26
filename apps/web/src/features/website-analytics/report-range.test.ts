@@ -17,6 +17,22 @@ describe('presetRange', () => {
     expect(presetRange('7d', TODAY)).toEqual({ start: '2026-11-19', end: '2026-11-25' })
   })
 
+  it('takes the report month as the last finished 25th to 24th', () => {
+    expect(presetRange('report-month', TODAY)).toEqual({ start: '2026-10-25', end: '2026-11-24' })
+    expect(presetRange('report-month', '2026-11-25')).toEqual({
+      start: '2026-10-25',
+      end: '2026-11-24',
+    })
+    expect(presetRange('report-month', '2026-11-24')).toEqual({
+      start: '2026-09-25',
+      end: '2026-10-24',
+    })
+    expect(presetRange('report-month', '2027-01-10')).toEqual({
+      start: '2026-11-25',
+      end: '2026-12-24',
+    })
+  })
+
   it('takes last month as the whole calendar month before this one', () => {
     expect(presetRange('last-month', TODAY)).toEqual({ start: '2026-10-01', end: '2026-10-31' })
     expect(presetRange('last-month', '2027-01-01')).toEqual({

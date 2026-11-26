@@ -16,7 +16,7 @@ export interface AnalyticsSaveSummary {
   failed: string[]
 }
 
-async function reportOrganizationId(): Promise<string> {
+export async function reportOrganizationId(): Promise<string> {
   const slug = process.env.ORG_SLUG
   const named = slug
     ? await db.organization.findFirst({ where: { slug }, select: { id: true } })

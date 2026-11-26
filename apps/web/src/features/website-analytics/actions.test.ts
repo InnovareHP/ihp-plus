@@ -6,20 +6,35 @@ const ga4 = vi.hoisted(() => {
   return { Ga4Error, readGa4Report: vi.fn() }
 })
 
-const prisma = vi.hoisted(() => ({ websiteAnalyticsDay: { findMany: vi.fn() } }))
+const prisma = vi.hoisted(() => ({
+  websiteAnalyticsDay: { findMany: vi.fn() },
+  websiteReportTakeaways: { findUnique: vi.fn(), upsert: vi.fn(), findMany: vi.fn() },
+}))
 
 vi.mock('@/features/websites/access', () => access)
 vi.mock('./ga4', () => ga4)
 vi.mock('@ihp/db', () => ({ db: prisma }))
 
-const { loadGa4Report, loadNetlifyReport } = await import('./actions')
+const { loadGa4Report, loadNetlifyReport, loadTakeawayStatus, saveTakeaways } =
+  await import('./actions')
+
+const TAKEAWAYS = {
+  observations: 'Traffic volume: 1,975 page views.',
+  strengths: 'Fast pages.',
+  improvements: '',
+  recommendations: 'Grow search.',
+}
 
 beforeEach(() => {
   vi.useFakeTimers({ now: new Date('2026-11-26T15:00:00Z') })
   access.websitesAccess
     .mockReset()
-    .mockResolvedValue({ canViewAnalytics: true, organizationId: 'org-1' })
+    .mockResolvedValue({ canViewAnalytics: true, organizationId: 'org-1', userId: 'user-1' })
   prisma.websiteAnalyticsDay.findMany.mockReset().mockResolvedValue([])
+  prisma.websiteReportTakeaways.upsert
+    .mockReset()
+    .mockResolvedValue({ updatedAt: new Date('2026-11-26T10:00:00Z') })
+  prisma.websiteReportTakeaways.findMany.mockReset().mockResolvedValue([])
   ga4.readGa4Report.mockReset().mockResolvedValue({ totals: { sessions: 96 } })
 })
 
@@ -118,6 +133,54 @@ describe('loadNetlifyReport', () => {
       ok: false,
       message:
         'Could not read the saved Netlify numbers for Rivers Residence. Try again in a minute.',
+    })
+  })
+})
+
+describe('takeaways', () => {
+  it('saves an admin’s takeaways against this organization, site and exact range', async () => {
+    const result = await saveTakeaways('palm-grove', '2026-10-25', '2026-11-24', TAKEAWAYS)
+
+    expect(result).toEqual({
+      ok: true,
+      data: { ...TAKEAWAYS, updatedAt: '2026-11-26T10:00:00.000Z' },
+    })
+    expect(prisma.websiteReportTakeaways.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          organizationId_siteKey_start_end: {
+            organizationId: 'org-1',
+            siteKey: 'palm-grove',
+            start: new Date('2026-10-25T00:00:00Z'),
+            end: new Date('2026-11-24T00:00:00Z'),
+          },
+        },
+        update: { ...TAKEAWAYS, updatedById: 'user-1' },
+      }),
+    )
+  })
+
+  it('refuses a non-admin, an unknown site and an oversized section', async () => {
+    expect((await saveTakeaways('nope', '2026-10-25', '2026-11-24', TAKEAWAYS)).ok).toBe(false)
+    expect(
+      await saveTakeaways('palm-grove', '2026-10-25', '2026-11-24', {
+        ...TAKEAWAYS,
+        strengths: 'x'.repeat(4001),
+      }),
+    ).toEqual({ ok: false, message: 'Keep this section under 4,000 characters.' })
+    access.websitesAccess.mockResolvedValue({ canViewAnalytics: false, organizationId: 'org-1' })
+    expect((await saveTakeaways('palm-grove', '2026-10-25', '2026-11-24', TAKEAWAYS)).ok).toBe(
+      false,
+    )
+    expect(prisma.websiteReportTakeaways.upsert).not.toHaveBeenCalled()
+  })
+
+  it('lists which sites have takeaways for the range', async () => {
+    prisma.websiteReportTakeaways.findMany.mockResolvedValue([{ siteKey: 'palm-grove' }])
+
+    expect(await loadTakeawayStatus('2026-10-25', '2026-11-24')).toEqual({
+      ok: true,
+      data: ['palm-grove'],
     })
   })
 })

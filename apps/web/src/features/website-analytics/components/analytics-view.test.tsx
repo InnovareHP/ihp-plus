@@ -13,8 +13,18 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(nav.query),
 }))
 
-const actions = vi.hoisted(() => ({ loadGa4Report: vi.fn(), loadNetlifyReport: vi.fn() }))
+const actions = vi.hoisted(() => ({
+  loadGa4Report: vi.fn(),
+  loadNetlifyReport: vi.fn(),
+  loadTakeaways: vi.fn(),
+  loadTakeawayStatus: vi.fn(),
+  saveTakeaways: vi.fn(),
+  downloadReportPdf: vi.fn(),
+  downloadAllReports: vi.fn(),
+}))
 vi.mock('../actions', () => actions)
+const download = vi.hoisted(() => ({ downloadFile: vi.fn() }))
+vi.mock('@/lib/download', () => download)
 
 const TODAY = '2026-11-26'
 
@@ -79,6 +89,8 @@ beforeEach(() => {
   nav.query = 'tab=analytics'
   nav.replace.mockReset()
   actions.loadGa4Report.mockReset().mockResolvedValue({ ok: true, data: REPORT })
+  actions.loadTakeaways.mockReset().mockResolvedValue({ ok: true, data: null })
+  actions.loadTakeawayStatus.mockReset().mockResolvedValue({ ok: true, data: ['palm-grove'] })
   actions.loadNetlifyReport.mockReset().mockResolvedValue({
     ok: true,
     data: buildNetlifyReport(SAVED, NETLIFY_RANGE, NETLIFY_PREVIOUS),
@@ -213,5 +225,25 @@ describe('AnalyticsView', () => {
     expect(
       await screen.findByText(/No Netlify numbers are saved for Rivers Residence/),
     ).toBeInTheDocument()
+  })
+
+  it('downloads this site’s PDF and offers takeaways and the zip for the same dates', async () => {
+    const user = userEvent.setup()
+    nav.query = 'tab=analytics&range=report-month'
+    actions.downloadReportPdf.mockResolvedValue({
+      ok: true,
+      data: { fileName: 'Palm Grove.pdf', bytes: new Uint8Array([1]) },
+    })
+    render(<AnalyticsView today={TODAY} />)
+
+    expect(await screen.findByRole('heading', { name: 'Takeaways' })).toBeInTheDocument()
+    expect(await screen.findByText('Takeaways saved for 1 of 14 websites.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Download PDF' }))
+
+    expect(actions.downloadReportPdf).toHaveBeenCalledWith('palm-grove', '2026-10-25', '2026-11-24')
+    expect(download.downloadFile).toHaveBeenCalledWith(
+      expect.objectContaining({ fileName: 'Palm Grove.pdf', contentType: 'application/pdf' }),
+    )
   })
 })

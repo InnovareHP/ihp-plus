@@ -116,3 +116,27 @@ model WebsiteAnalyticsDay {
   @@map("websiteAnalyticsDay")
   @@schema("websites")
 }
+
+// One report's written takeaways, keyed by the exact range so a re-run of the month reopens them.
+// Each section is one point per line; the PDF bolds a short "Label:" at the start of a line.
+model WebsiteReportTakeaways {
+  id             String @id @default(uuid())
+  organizationId String
+  // The key in apps/web/src/features/website-analytics/sites.ts, since report sites live in code.
+  siteKey        String
+  start          DateTime @db.Date
+  end            DateTime @db.Date
+
+  observations    String @default("")
+  strengths       String @default("")
+  improvements    String @default("")
+  recommendations String @default("")
+
+  updatedById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([organizationId, siteKey, start, end])
+  @@map("websiteReportTakeaways")
+  @@schema("websites")
+}
