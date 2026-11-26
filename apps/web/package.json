@@ -76,6 +76,7 @@
     "postcss": "^8.5.28",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
+    "tsx": "^4.23.13",
     "typescript": "^5.9.3",
     "vitest-axe": "^0.1.0"
   }

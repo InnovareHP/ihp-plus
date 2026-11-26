@@ -1,6 +1,7 @@
 'use client'
 
-import { Box, Stack, Text } from '@mantine/core'
+import { Box, Button, Stack, Text } from '@mantine/core'
+import { IconDownload } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { PageSection } from '@/components/page-section'
@@ -9,11 +10,15 @@ import { rangeLabel, reportQueryOf, reportViewOf, type RangePreset } from '../re
 import type { ReportSite } from '../sites'
 import { useGa4Report } from '../hooks/use-ga4-report'
 import { useNetlifyReport } from '../hooks/use-netlify-report'
+import { useDownloadAllReports, useDownloadReportPdf } from '../hooks/use-report-downloads'
+import { useTakeawayStatus } from '../hooks/use-takeaways'
+import { AllReportsSection } from './all-reports-section'
 import { AnalyticsControls } from './analytics-controls'
 import { Ga4ReportBody } from './ga4-report-body'
 import { NetlifyReportBody } from './netlify-report-body'
 import { ReportError } from './report-error'
 import { ReportSkeleton } from './report-skeleton'
+import { TakeawaysPanel } from './takeaways-panel'
 
 const SOURCE_NOTE = {
   ga4: 'From Google Analytics, counted in the property’s own time zone.',
@@ -43,6 +48,9 @@ export function AnalyticsView({ today }: { today: string }) {
   const days = daysIn(view.range)
   const ga4 = useGa4Report(view.site.key, view.range, view.site.source === 'ga4')
   const netlify = useNetlifyReport(view.site.key, view.range, view.site.source === 'netlify')
+  const pdf = useDownloadReportPdf(view.site.key, view.range)
+  const all = useDownloadAllReports(view.range)
+  const status = useTakeawayStatus(view.range)
 
   return (
     <Stack gap="lg">
@@ -57,6 +65,16 @@ export function AnalyticsView({ today }: { today: string }) {
 
       <PageSection
         title={view.site.name}
+        actions={
+          <Button
+            variant="default"
+            leftSection={<IconDownload size={16} aria-hidden />}
+            onClick={() => pdf.mutate()}
+            loading={pdf.isPending}
+          >
+            Download PDF
+          </Button>
+        }
         description={
           <>
             {rangeLabel(view.range)} ({days} {days === 1 ? 'day' : 'days'}), compared with{' '}
@@ -70,6 +88,21 @@ export function AnalyticsView({ today }: { today: string }) {
           <NetlifyBody site={view.site} query={netlify} />
         )}
       </PageSection>
+
+      {/* The site and dates are the takeaways' key, so a new pair starts a fresh form. */}
+      <TakeawaysPanel
+        key={`${view.site.key}:${view.range.start}:${view.range.end}`}
+        site={view.site}
+        range={view.range}
+      />
+
+      <AllReportsSection
+        range={view.range}
+        withTakeaways={status.data}
+        downloading={all.isPending}
+        failed={all.data ?? []}
+        onDownload={() => all.mutate()}
+      />
     </Stack>
   )
 }
